@@ -1,0 +1,187 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for ChatterFix CMMS
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Your ideas help make ChatterFix CMMS better for everyone.
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: ✨ Feature Summary
+      description: A brief summary of the feature you'd like to see
+      placeholder: Briefly describe the feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: 🎯 Problem Description
+      description: What problem does this feature solve?
+      placeholder: |
+        Describe the problem you're trying to solve:
+        - What is the current situation?
+        - What challenges does it create?
+        - Who is affected by this problem?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe your proposed solution in detail
+      placeholder: |
+        Describe your ideal solution:
+        - How would this feature work?
+        - What would the user experience be like?
+        - How would it integrate with existing features?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👤 User Type
+      description: Who would primarily benefit from this feature?
+      options:
+        - Technicians
+        - Managers
+        - Administrators
+        - All Users
+        - External Integrators
+        - API Users
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 🔧 Component Area
+      description: Which area of the system would this feature affect?
+      options:
+        - Work Orders
+        - Assets Management
+        - Inventory Management
+        - Preventive Maintenance
+        - Dashboard & Analytics
+        - AI Assistant
+        - Mobile Interface
+        - API & Integrations
+        - User Management
+        - Reporting
+        - Security
+        - Performance
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚀 Priority
+      description: How important is this feature to your workflow?
+      options:
+        - Critical (Blocks major workflow)
+        - High (Significantly improves workflow)
+        - Medium (Nice to have improvement)
+        - Low (Minor enhancement)
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: 📋 Use Cases
+      description: Provide specific use cases or scenarios
+      placeholder: |
+        Example scenarios where this feature would be used:
+        1. When a technician needs to...
+        2. When a manager wants to...
+        3. During maintenance scheduling...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: What alternatives have you considered?
+      placeholder: |
+        Describe any alternative solutions or workarounds you've considered:
+        - Current workarounds
+        - Other possible approaches
+        - Why this solution is preferred
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: 🎨 Mockups or Examples
+      description: Visual representations or examples (optional)
+      placeholder: |
+        If you have mockups, screenshots, or examples from other systems:
+        - Drag and drop images here
+        - Include URLs to similar features
+        - Describe the visual design
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: ⚙️ Technical Considerations
+      description: Any technical requirements or constraints? (optional)
+      placeholder: |
+        Technical aspects to consider:
+        - Performance requirements
+        - Integration needs
+        - Data requirements
+        - Security considerations
+
+  - type: checkboxes
+    id: feature-scope
+    attributes:
+      label: 📦 Feature Scope
+      description: What type of feature is this? (Select all that apply)
+      options:
+        - label: New user interface component
+        - label: New API endpoint
+        - label: Database schema change
+        - label: Integration with external service
+        - label: Performance improvement
+        - label: Security enhancement
+        - label: Mobile app feature
+        - label: AI/ML enhancement
+        - label: Reporting feature
+        - label: Workflow automation
+
+  - type: textarea
+    id: business-value
+    attributes:
+      label: 💼 Business Value
+      description: What business value would this feature provide?
+      placeholder: |
+        Describe the business impact:
+        - How would this save time or money?
+        - What operational improvements would it provide?
+        - How would it improve user satisfaction?
+        - What competitive advantages would it offer?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and feature requests
+          required: true
+        - label: I have provided clear use cases and business value
+          required: true
+        - label: I have considered alternative solutions
+          required: true
+        - label: This feature aligns with ChatterFix CMMS goals
+          required: true

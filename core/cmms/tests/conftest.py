@@ -1,4 +1,5 @@
 """Test configuration and fixtures for ChatterFix CMMS."""
+
 import asyncio
 import os
 import tempfile

@@ -1,4 +1,5 @@
 """Performance testing for ChatterFix CMMS using Locust."""
+
 import json
 import random
 

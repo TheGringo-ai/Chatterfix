@@ -133,7 +133,9 @@ def test_ui_accessibility():
     }
     print(f"     ✅ Status: {response.status_code}")
     print(f"     ✅ Has Title: {results['dashboard_load']['has_title']}")
-    print(f"     ✅ Has Create Button: {results['dashboard_load']['has_create_button']}")
+    print(
+        f"     ✅ Has Create Button: {results['dashboard_load']['has_create_button']}"
+    )
     print(f"     ✅ Has API Integration: {results['dashboard_load']['has_api_calls']}")
     print(f"     ✅ Has Modal Forms: {results['dashboard_load']['has_modals']}")
 

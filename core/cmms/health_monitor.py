@@ -304,11 +304,11 @@ class HealthMonitor:
             "swap_usage": HealthMetric(
                 "swap_usage_percent",
                 swap.percent,
-                "critical"
-                if swap.percent > 50
-                else "warning"
-                if swap.percent > 25
-                else "healthy",
+                (
+                    "critical"
+                    if swap.percent > 50
+                    else "warning" if swap.percent > 25 else "healthy"
+                ),
             ),
         }
 
@@ -525,9 +525,11 @@ class HealthMonitor:
                                 timestamp,
                                 check_name,
                                 metric_name,
-                                metric_data["value"]
-                                if isinstance(metric_data["value"], (int, float))
-                                else None,
+                                (
+                                    metric_data["value"]
+                                    if isinstance(metric_data["value"], (int, float))
+                                    else None
+                                ),
                                 metric_data["status"],
                                 json.dumps(metric_data),
                             ),

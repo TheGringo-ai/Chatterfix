@@ -23,6 +23,14 @@ on:
         required: true
         default: true
         type: boolean
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
 
 env:
   PROJECT_ID: fredfix

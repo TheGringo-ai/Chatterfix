@@ -130,16 +130,24 @@ jobs:
           if [ "${{ needs.pre-deployment.outputs.has-credentials }}" == "true" ]; then
             echo "🔄 Deploying to production server..."
             
+            # Copy optimization script to production
+            gcloud compute scp scripts/optimize-ollama.sh ${{ env.INSTANCE_NAME }}:/tmp/optimize-ollama.sh --zone=${{ env.ZONE }}
+            
+            # Run Ollama optimization
+            echo "🤖 Optimizing LLaMA/Ollama service..."
+            gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="chmod +x /tmp/optimize-ollama.sh && sudo /tmp/optimize-ollama.sh"
+            
             # Copy new application files to production
             gcloud compute scp core/cmms/app.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/app.py --zone=${{ env.ZONE }}
             
             # Restart the application service
             gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="sudo systemctl restart chatterfix-cmms"
             
-            echo "✅ Deployment completed successfully"
+            echo "✅ Deployment with LLaMA optimization completed successfully"
           else
             echo "⚠️ Deployment simulation mode - GCP credentials not available"
             echo "📋 Deployment would include:"
+            echo "  - Optimize LLaMA/Ollama service configuration"
             echo "  - Copy core/cmms/app.py to /opt/chatterfix-cmms/"
             echo "  - Restart chatterfix-cmms service"
             echo "  - Update AI assistant with floating 🤖 icon"
@@ -161,6 +169,19 @@ jobs:
             echo "✅ Admin dashboard is accessible"
           else
             echo "ℹ️ Admin dashboard check completed"
+          fi
+          
+          # Check AI assistant health endpoint
+          if curl -f --max-time 15 https://chatterfix.com/health > /dev/null 2>&1; then
+            echo "✅ AI assistant API is healthy"
+          else
+            echo "⚠️ AI assistant API health check failed"
+          fi
+          
+          # Test LLaMA integration if credentials available
+          if [ "${{ needs.pre-deployment.outputs.has-credentials }}" == "true" ]; then
+            echo "🤖 Testing LLaMA integration..."
+            gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="curl -s http://localhost:11434/api/tags | head -1" || echo "⚠️ LLaMA health check needs attention"
           fi
           
           echo "🎉 Health checks completed"

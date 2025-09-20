@@ -128,20 +128,21 @@ jobs:
           echo "🌟 Branch: ${{ github.ref_name }}"
           
           if [ "${{ needs.pre-deployment.outputs.has-credentials }}" == "true" ]; then
-            echo "🔄 Ready for actual deployment to production"
-            echo "💡 Note: Full deployment requires GCP service account key in repository secrets"
+            echo "🔄 Deploying to production server..."
+            
+            # Copy new application files to production
+            gcloud compute scp core/cmms/app.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/app.py --zone=${{ env.ZONE }}
+            
+            # Restart the application service
+            gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="sudo systemctl restart chatterfix-cmms"
+            
+            echo "✅ Deployment completed successfully"
           else
-            echo "⚠️ Deployment simulation mode"
-            echo "📋 Deployment package would include:"
-            echo "  - Updated CMMS application files"
-            echo "  - Database migrations"
-            echo "  - Configuration updates"
-            echo "  - Health monitoring setup"
-            echo ""
-            echo "💡 To enable actual deployment:"
-            echo "  1. Add GCP_SA_KEY secret in repository settings"
-            echo "  2. Configure production environment variables"
-            echo "  3. Set up deployment target infrastructure"
+            echo "⚠️ Deployment simulation mode - GCP credentials not available"
+            echo "📋 Deployment would include:"
+            echo "  - Copy core/cmms/app.py to /opt/chatterfix-cmms/"
+            echo "  - Restart chatterfix-cmms service"
+            echo "  - Update AI assistant with floating 🤖 icon"
           fi
 
       - name: 🏥 Post-deployment Health Check

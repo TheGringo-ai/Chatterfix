@@ -11,6 +11,9 @@ from datetime import datetime
 import requests
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+
+# Import universal AI endpoints
+from universal_ai_endpoints import add_universal_ai_endpoints
 # Import unified styles, fallback to inline if not available
 try:
     from unified_cmms_system import get_unified_styles
@@ -151,7 +154,11 @@ llama_client = LLaMAClient()
 
 # Initialize database and LLaMA client on import
 init_database()
-logger.info("ChatterFix CMMS initialized successfully")
+
+# Add universal AI endpoints to make AI assistant available on ALL pages
+add_universal_ai_endpoints(app)
+
+logger.info("ChatterFix CMMS initialized successfully with universal AI assistant")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -455,6 +462,65 @@ async def ai_query(request: Request):
         )
 
 
+@app.post("/global-ai/process-message")
+async def global_ai_process_message(request: Request):
+    """Handle AI assistant messages from universal AI system"""
+    try:
+        data = await request.json()
+        message = data.get("message", "")
+        page = data.get("page", "")
+        context_type = data.get("context", "universal_ai")
+
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+
+        # Enhanced context based on current page
+        page_context = f"User is currently on page: {page}\n"
+        if "/work-orders" in page:
+            page_context += "Context: Work order management page\n"
+        elif "/assets" in page:
+            page_context += "Context: Asset management page\n"
+        elif "/parts" in page:
+            page_context += "Context: Parts inventory page\n"
+        elif "/maintenance" in page:
+            page_context += "Context: Maintenance scheduling page\n"
+        elif "/reports" in page:
+            page_context += "Context: Reports and analytics page\n"
+
+        # Get maintenance context
+        maintenance_context = await get_maintenance_context()
+        full_context = page_context + maintenance_context
+
+        # Query LLaMA with enhanced context
+        response = await llama_client.query(message, full_context)
+
+        # Store interaction with context
+        store_ai_interaction(message, response, context_type)
+
+        # Determine if any actions should be suggested
+        actions = []
+        if any(keyword in message.lower() for keyword in ["emergency", "urgent", "critical", "broken", "leak"]):
+            actions.append("Consider creating a high-priority work order")
+        if any(keyword in message.lower() for keyword in ["schedule", "maintenance", "pm", "preventive"]):
+            actions.append("Check preventive maintenance schedule")
+
+        return JSONResponse({
+            "success": True,
+            "response": response,
+            "actions": actions,
+            "timestamp": datetime.now().isoformat(),
+            "page_context": page
+        })
+
+    except Exception as e:
+        logger.error(f"Global AI processing error: {e}")
+        return JSONResponse({
+            "success": False,
+            "response": "I'm having trouble processing your request. Please try again.",
+            "error": str(e)
+        }, status_code=500)
+
+
 async def get_maintenance_context() -> str:
     """Get relevant maintenance context for AI queries"""
     try:
@@ -501,14 +567,14 @@ async def get_maintenance_context() -> str:
         return ""
 
 
-def store_ai_interaction(query: str, response: str):
+def store_ai_interaction(query: str, response: str, context_type: str = "dashboard"):
     """Store AI interaction in database"""
     try:
         conn = sqlite3.connect(DATABASE_PATH)
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO ai_interactions (query, response) VALUES (?, ?)",
-            (query, response),
+            "INSERT INTO ai_interactions (query, response, context_type) VALUES (?, ?, ?)",
+            (query, response, context_type),
         )
         conn.commit()
         conn.close()
@@ -563,6 +629,41 @@ async def assets_summary():
     except Exception as e:
         logger.error(f"Error getting assets summary: {e}")
         return {"operational": 0, "maintenance": 0, "critical": 0}
+
+
+@app.get("/work-orders", response_class=HTMLResponse)
+async def work_orders_page():
+    """Work orders management page - for testing universal AI"""
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Work Orders - ChatterFix CMMS</title>
+        <style>
+            body { 
+                font-family: Arial, sans-serif; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+            }
+            .container { max-width: 800px; margin: 0 auto; }
+            .card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔧 Work Orders Management</h1>
+            <div class="card">
+                <h3>Active Work Orders</h3>
+                <p>This is a test page to verify universal AI assistant deployment.</p>
+                <p>The AI assistant should appear as a floating button on the bottom right.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """)
 
 
 @app.get("/health")

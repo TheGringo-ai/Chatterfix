@@ -1,0 +1,166 @@
+# Assets Dashboard Fix
+@app.get("/cmms/assets")
+async def assets_dashboard():
+    """Assets Management Dashboard"""
+    return HTMLResponse(content="""
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assets Management - ChatterFix CMMS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #1a1a2e; color: white; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #16213e; padding: 20px; border-radius: 10px; border: 1px solid #0f3460; }
+        .card h3 { color: #f39c12; margin-top: 0; }
+        .feature-btn { background: #f39c12; color: white; border: none; padding: 12px 20px; 
+                      border-radius: 6px; text-decoration: none; display: inline-block; margin: 10px 5px; }
+        .feature-btn:hover { background: #e67e22; }
+        .nav-back { position: absolute; top: 20px; left: 20px; color: #3498db; text-decoration: none; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat { text-align: center; }
+        .stat-value { font-size: 2em; color: #f39c12; font-weight: bold; }
+        .asset-list { margin-top: 20px; }
+        .asset-item { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 6px; 
+                     border-left: 4px solid #f39c12; display: flex; justify-content: space-between; }
+        .health-score { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .health-excellent { background: #27ae60; }
+        .health-good { background: #f39c12; }
+        .health-fair { background: #e67e22; }
+        .health-poor { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <a href="/cmms/dashboard" class="nav-back">← Back to Dashboard</a>
+    
+    <div class="header">
+        <h1>🏭 Assets Management</h1>
+        <p>Monitor equipment health, manage maintenance schedules, and track performance</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value">156</div>
+            <div>Total Assets</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">98.2%</div>
+            <div>Operational</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">3</div>
+            <div>Critical Issues</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">8.7</div>
+            <div>Avg Health Score</div>
+        </div>
+    </div>
+    
+    <div class="cards">
+        <div class="card">
+            <h3>❤️ AI Health Analysis</h3>
+            <p>AI-powered asset health scoring and predictive maintenance insights</p>
+            <a href="#" class="feature-btn" onclick="analyzeAssetHealth()">Run Health Analysis</a>
+        </div>
+        
+        <div class="card">
+            <h3>📋 Asset Registry</h3>
+            <p>Complete asset database with specifications, documentation, and history</p>
+            <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Asset Registry</a>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Performance Tracking</h3>
+            <p>Monitor asset performance metrics, uptime, and efficiency indicators</p>
+            <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Performance Dashboard</a>
+        </div>
+        
+        <div class="card">
+            <h3>🔧 Maintenance Scheduling</h3>
+            <p>Schedule preventive maintenance based on asset conditions and history</p>
+            <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Maintenance Planner</a>
+        </div>
+    </div>
+    
+    <div class="asset-list">
+        <h3>🏭 Critical Assets Overview</h3>
+        
+        <div class="asset-item">
+            <div>
+                <strong>Generator #1 (AST-001)</strong><br>
+                <small>Emergency Power System • Last Service: 2025-08-15</small>
+            </div>
+            <div>
+                <span class="health-score health-good">7.8/10</span><br>
+                <small>Operational</small>
+            </div>
+        </div>
+        
+        <div class="asset-item">
+            <div>
+                <strong>Conveyor Belt A (AST-002)</strong><br>
+                <small>Production Line • Last Service: 2025-09-01</small>
+            </div>
+            <div>
+                <span class="health-score health-poor">4.2/10</span><br>
+                <small>Needs Attention</small>
+            </div>
+        </div>
+        
+        <div class="asset-item">
+            <div>
+                <strong>HVAC Unit #3 (AST-003)</strong><br>
+                <small>Climate Control • Last Service: 2025-07-20</small>
+            </div>
+            <div>
+                <span class="health-score health-excellent">9.1/10</span><br>
+                <small>Excellent</small>
+            </div>
+        </div>
+        
+        <div class="asset-item">
+            <div>
+                <strong>Hydraulic Pump B (AST-004)</strong><br>
+                <small>Hydraulic System • Last Service: 2025-08-30</small>
+            </div>
+            <div>
+                <span class="health-score health-fair">6.5/10</span><br>
+                <small>Fair Condition</small>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function analyzeAssetHealth() {
+            const results = document.createElement('div');
+            results.innerHTML = '<div style="background: #16213e; padding: 20px; margin: 20px 0; border-radius: 8px;">🤖 Running AI health analysis on all assets...</div>';
+            document.body.appendChild(results);
+            
+            try {
+                // Simulate API call to bulk health analysis
+                setTimeout(() => {
+                    results.innerHTML = `
+                        <div style="background: #16213e; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                            <h3>✅ AI Health Analysis Complete</h3>
+                            <p><strong>Fleet Health:</strong> 156 assets analyzed</p>
+                            <p><strong>Average Score:</strong> 8.7/10 (Good)</p>
+                            <p><strong>Recommendations:</strong></p>
+                            <ul>
+                                <li>Conveyor Belt A requires immediate bearing replacement</li>
+                                <li>3 assets due for preventive maintenance this week</li>
+                                <li>Overall fleet health trending upward (+0.3 vs last month)</li>
+                            </ul>
+                            <button onclick="this.parentElement.remove()" style="background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
+                        </div>
+                    `;
+                }, 2000);
+            } catch (error) {
+                results.innerHTML = '<div style="background: #e74c3c; padding: 20px; margin: 20px 0; border-radius: 8px;">❌ Health analysis failed. Please try again.</div>';
+            }
+        }
+    </script>
+</body>
+</html>""")

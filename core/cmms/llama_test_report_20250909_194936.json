@@ -1,0 +1,111 @@
+{
+  "test_metadata": {
+    "testing_start": "2025-09-09T19:49:06.085223",
+    "testing_end": "2025-09-09T19:49:36.407900",
+    "total_duration_seconds": 30.322677,
+    "tester": "LLaMA End-User Comprehensive Tester",
+    "platform_tested": "ChatterFix CMMS",
+    "test_categories": 8
+  },
+  "test_results": {
+    "frontend_tests": {
+      "status": "error",
+      "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]",
+      "timestamp": "2025-09-09T19:49:06.095172"
+    },
+    "backend_tests": {
+      "GET_/health": {
+        "endpoint": "/health",
+        "method": "GET",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "GET_/api": {
+        "endpoint": "/api",
+        "method": "GET",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "GET_/cmms/ai/health": {
+        "endpoint": "/cmms/ai/health",
+        "method": "GET",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "GET_/cmms/meta/metrics": {
+        "endpoint": "/cmms/meta/metrics",
+        "method": "GET",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      }
+    },
+    "integration_tests": {
+      "status": "error",
+      "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]",
+      "llama_assessment": "Workflow testing failed due to technical error: Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+    },
+    "ai_functionality_tests": {
+      "query_1": {
+        "query": "conveyor belt vibrating excessively",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "query_2": {
+        "query": "motor running hot and drawing high current",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "query_3": {
+        "query": "pump cavitating and losing pressure",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "query_4": {
+        "query": "bearing making grinding noise",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "query_5": {
+        "query": "HVAC compressor not starting",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      }
+    },
+    "cms_functionality_tests": {
+      "main": {
+        "url": "/cmms/dashboard/main",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "dashboard": {
+        "url": "/cmms/admin/dashboard",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "portal": {
+        "url": "/cmms/technicians/portal",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      },
+      "universal": {
+        "url": "/cmms/ai-enhanced/dashboard/universal",
+        "status": "error",
+        "error": "Cannot connect to host localhost:8080 ssl:default [Multiple exceptions: [Errno 61] Connect call failed ('::1', 8080, 0, 0), [Errno 61] Connect call failed ('127.0.0.1', 8080)]"
+      }
+    },
+    "user_experience_tests": {},
+    "performance_tests": {},
+    "overall_assessment": {
+      "timestamp": "2025-09-09T19:49:36.407552",
+      "testing_duration": "comprehensive",
+      "total_tests_performed": 8,
+      "llama_final_assessment": "Testing system error: ",
+      "recommendation": "pending_analysis"
+    }
+  },
+  "summary": {
+    "tests_passed": 0,
+    "tests_failed": 2,
+    "overall_status": "comprehensive_testing_complete"
+  }
+}

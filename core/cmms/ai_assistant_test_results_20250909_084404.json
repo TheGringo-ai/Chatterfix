@@ -1,0 +1,228 @@
+{
+  "timestamp": "2025-09-09T08:44:04.924018",
+  "overall_success_rate": 90.0,
+  "test_results": [
+    {
+      "test": "manual_lookup",
+      "query": "lubrication procedure",
+      "asset_id": "AST-001",
+      "context_type": "manual",
+      "success": true,
+      "results_count": 2,
+      "processing_time_ms": 247,
+      "has_citations": true
+    },
+    {
+      "test": "manual_lookup",
+      "query": "maintenance schedule",
+      "asset_id": "AST-001",
+      "context_type": "manual",
+      "success": true,
+      "results_count": 2,
+      "processing_time_ms": 247,
+      "has_citations": true
+    },
+    {
+      "test": "manual_lookup",
+      "query": "operational parameters",
+      "asset_id": "AST-001",
+      "context_type": "manual",
+      "success": true,
+      "results_count": 2,
+      "processing_time_ms": 247,
+      "has_citations": true
+    },
+    {
+      "test": "manual_lookup",
+      "query": "safety protocols",
+      "asset_id": "AST-001",
+      "context_type": "manual",
+      "success": true,
+      "results_count": 2,
+      "processing_time_ms": 247,
+      "has_citations": true
+    },
+    {
+      "test": "parts_search",
+      "query": "air filter replacement",
+      "asset_id": "AST-001",
+      "context_type": "parts",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 189
+    },
+    {
+      "test": "parts_search",
+      "query": "oil specifications",
+      "asset_id": "AST-001",
+      "context_type": "parts",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 189
+    },
+    {
+      "test": "parts_search",
+      "query": "seal kit compatibility",
+      "asset_id": "AST-001",
+      "context_type": "parts",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 189
+    },
+    {
+      "test": "parts_search",
+      "query": "spare parts inventory",
+      "asset_id": "AST-001",
+      "context_type": "parts",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 189
+    },
+    {
+      "test": "troubleshooting_lookup",
+      "query": "high pressure alarm",
+      "asset_id": "AST-001",
+      "context_type": "troubleshooting",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 156
+    },
+    {
+      "test": "troubleshooting_lookup",
+      "query": "unusual vibration",
+      "asset_id": "AST-001",
+      "context_type": "troubleshooting",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 156
+    },
+    {
+      "test": "troubleshooting_lookup",
+      "query": "temperature warning",
+      "asset_id": "AST-001",
+      "context_type": "troubleshooting",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 156
+    },
+    {
+      "test": "troubleshooting_lookup",
+      "query": "startup failure",
+      "asset_id": "AST-001",
+      "context_type": "troubleshooting",
+      "success": true,
+      "results_count": 1,
+      "processing_time_ms": 156
+    },
+    {
+      "test": "availability_check",
+      "scenario": {
+        "date_range": "2025-09-10,2025-09-17",
+        "skills": []
+      },
+      "asset_id": "AST-001",
+      "success": true,
+      "technicians_available": 2,
+      "recommended_slots": 1,
+      "constraints": 1,
+      "overall_availability": "medium"
+    },
+    {
+      "test": "availability_check",
+      "scenario": {
+        "date_range": "2025-09-15,2025-09-22",
+        "skills": [
+          "electrical"
+        ]
+      },
+      "asset_id": "AST-001",
+      "success": true,
+      "technicians_available": 2,
+      "recommended_slots": 1,
+      "constraints": 1,
+      "overall_availability": "medium"
+    },
+    {
+      "test": "availability_check",
+      "scenario": {
+        "date_range": "2025-09-20,2025-09-27",
+        "skills": [
+          "mechanical",
+          "hydraulic"
+        ]
+      },
+      "asset_id": "AST-001",
+      "success": true,
+      "technicians_available": 2,
+      "recommended_slots": 1,
+      "constraints": 1,
+      "overall_availability": "medium"
+    },
+    {
+      "test": "nameplate_ocr",
+      "nameplate_id": "mock_nameplate_1",
+      "success": true,
+      "confidence": 1.0,
+      "fields_extracted": 5,
+      "expected_fields": 5,
+      "field_accuracy": 1.0,
+      "matching_manuals": 1,
+      "matching_parts": 1,
+      "asset_suggestions": 1
+    },
+    {
+      "test": "nameplate_ocr",
+      "nameplate_id": "mock_nameplate_2",
+      "success": true,
+      "confidence": 0.0,
+      "fields_extracted": 0,
+      "expected_fields": 5,
+      "field_accuracy": 0.0,
+      "matching_manuals": 0,
+      "matching_parts": 0,
+      "asset_suggestions": 1
+    },
+    {
+      "test": "nameplate_ocr",
+      "nameplate_id": "mock_nameplate_3",
+      "success": true,
+      "confidence": 0.2,
+      "fields_extracted": 1,
+      "expected_fields": 4,
+      "field_accuracy": 0.25,
+      "matching_manuals": 0,
+      "matching_parts": 0,
+      "asset_suggestions": 1
+    },
+    {
+      "test": "asset_rag_enhancement",
+      "query": "maintenance procedure",
+      "basic_results": 1,
+      "enhanced_results": 2,
+      "improvement_detected": true,
+      "expected_improvement": true,
+      "test_passed": true
+    },
+    {
+      "test": "asset_rag_enhancement",
+      "query": "lubrication schedule",
+      "basic_results": 1,
+      "enhanced_results": 2,
+      "improvement_detected": true,
+      "expected_improvement": true,
+      "test_passed": true
+    }
+  ],
+  "summary": {
+    "total_tests": 20,
+    "successful_tests": 18,
+    "test_groups": {
+      "manual_lookup": 4,
+      "parts_search": 4,
+      "troubleshooting_lookup": 4,
+      "availability_check": 3,
+      "nameplate_ocr": 3,
+      "asset_rag_enhancement": 2
+    }
+  }
+}

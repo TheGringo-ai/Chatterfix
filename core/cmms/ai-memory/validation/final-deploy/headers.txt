@@ -1,0 +1,15 @@
+HTTP/1.1 200 OK
+date: Mon, 08 Sep 2025 23:20:50 GMT
+server: uvicorn
+content-length: 3540
+content-type: text/html; charset=utf-8
+
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ChatterFix CMMS v3.0.0</title>
+        <style>
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

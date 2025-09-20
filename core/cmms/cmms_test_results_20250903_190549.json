@@ -1,0 +1,194 @@
+{
+  "timestamp": "2025-09-03T19:04:04.542354",
+  "base_url": "http://35.237.149.25:8501",
+  "tests_performed": [
+    {
+      "test_name": "URL Accessibility - main_dashboard",
+      "url": "http://35.237.149.25:8501/",
+      "status": "passed",
+      "response_time": 225.66,
+      "status_code": 200,
+      "content_type": "text/html; charset=utf-8",
+      "content_length": 6434,
+      "analysis": "Llama analysis unavailable - manual inspection required for: Analyze this CMMS web page content for functionality and completeness:\n                \nURL: http://...",
+      "issues": []
+    },
+    {
+      "test_name": "URL Accessibility - dashboard_main",
+      "url": "http://35.237.149.25:8501/dashboard/main",
+      "status": "failed",
+      "response_time": 1187.8,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - workorders",
+      "url": "http://35.237.149.25:8501/workorders/dashboard",
+      "status": "failed",
+      "response_time": 186.87,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - assets",
+      "url": "http://35.237.149.25:8501/assets/dashboard",
+      "status": "failed",
+      "response_time": 274.64,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - technicians",
+      "url": "http://35.237.149.25:8501/technicians/portal",
+      "status": "failed",
+      "response_time": 184.45,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - parts",
+      "url": "http://35.237.149.25:8501/parts/dashboard",
+      "status": "failed",
+      "response_time": 192.94,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - preventive",
+      "url": "http://35.237.149.25:8501/preventive/dashboard",
+      "status": "failed",
+      "response_time": 157.82,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - ai",
+      "url": "http://35.237.149.25:8501/ai/dashboard",
+      "status": "passed",
+      "response_time": 166.36,
+      "status_code": 200,
+      "content_type": "text/html; charset=utf-8",
+      "content_length": 6583,
+      "analysis": "Llama analysis unavailable - manual inspection required for: Analyze this CMMS web page content for functionality and completeness:\n                \nURL: http://...",
+      "issues": [
+        "Error indicators found in content"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - admin",
+      "url": "http://35.237.149.25:8501/admin/dashboard",
+      "status": "failed",
+      "response_time": 0,
+      "status_code": null,
+      "content_type": null,
+      "content_length": 0,
+      "analysis": null,
+      "issues": [
+        "Request timeout"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - health",
+      "url": "http://35.237.149.25:8501/health",
+      "status": "failed",
+      "response_time": 146.98,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    },
+    {
+      "test_name": "URL Accessibility - api",
+      "url": "http://35.237.149.25:8501/api",
+      "status": "failed",
+      "response_time": 155.21,
+      "status_code": 404,
+      "content_type": "application/json",
+      "content_length": 22,
+      "analysis": null,
+      "issues": [
+        "HTTP 404 error"
+      ]
+    }
+  ],
+  "issues_found": [
+    "dashboard_main: HTTP 404 error",
+    "workorders: HTTP 404 error",
+    "assets: HTTP 404 error",
+    "technicians: HTTP 404 error",
+    "parts: HTTP 404 error",
+    "preventive: HTTP 404 error",
+    "admin: Request timeout",
+    "health: HTTP 404 error",
+    "api: HTTP 404 error"
+  ],
+  "missing_features": [],
+  "recommendations": [],
+  "overall_score": 1.8,
+  "workflow_tests": [
+    {
+      "workflow_name": "Technician Work Order Management",
+      "test_steps": [
+        "Access technician portal",
+        "View work orders list",
+        "Open individual work order",
+        "Check for time tracking capabilities",
+        "Check for photo upload functionality",
+        "Check for work order completion features",
+        "Check for downtime tracking button"
+      ],
+      "status": "testing",
+      "findings": [
+        "\u274c Technician portal inaccessible (HTTP 404)"
+      ],
+      "score": 0
+    },
+    {
+      "workflow_name": "Asset & Manual Management",
+      "test_steps": [
+        "Access asset dashboard",
+        "Check equipment listings",
+        "Look for manual/documentation access",
+        "Check component documentation",
+        "Verify photo linking capabilities"
+      ],
+      "status": "testing",
+      "findings": [],
+      "score": 0
+    }
+  ],
+  "llama_assessment": "Llama analysis unavailable - manual inspection required for: As an expert CMMS application reviewer, analyze this test summary:\n\nTest Results Summary:\n- Total UR..."
+}

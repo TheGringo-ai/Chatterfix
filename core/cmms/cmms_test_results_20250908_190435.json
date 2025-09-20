@@ -1,0 +1,147 @@
+{
+  "timestamp": "2025-09-08T19:04:21.341530",
+  "base_url": "http://localhost:8888",
+  "application_type": "ChatterFix CMMS v3.0.0",
+  "test_summary": {
+    "total_tests": 12,
+    "successful": 10,
+    "partial": 0,
+    "failed": 0,
+    "timeouts": 0,
+    "rate_limited": 2,
+    "success_rate": 83.33333333333334,
+    "total_time": 14.19879698753357
+  },
+  "endpoint_tests": {
+    "root": {
+      "endpoint": "/",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.01504206657409668,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:21.895986"
+    },
+    "health": {
+      "endpoint": "/health",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.003506898880004883,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:22.494391"
+    },
+    "docs": {
+      "endpoint": "/docs",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.002936840057373047,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:23.051998"
+    },
+    "admin_dashboard": {
+      "endpoint": "/admin/dashboard",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.002357959747314453,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:24.064756"
+    },
+    "admin_users": {
+      "endpoint": "/admin/users",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.0019981861114501953,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:25.075765"
+    },
+    "admin_stats": {
+      "endpoint": "/admin/stats",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.0019230842590332031,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:26.090387"
+    },
+    "admin_config": {
+      "endpoint": "/admin/config",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.0024378299713134766,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:27.107034"
+    },
+    "admin_backup": {
+      "endpoint": "/admin/backup",
+      "method": "POST",
+      "status_code": 200,
+      "response_time": 0.004302263259887695,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:28.127272"
+    },
+    "admin_logs": {
+      "endpoint": "/admin/logs",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0,
+      "result": "TestResult.RATE_LIMITED",
+      "error_message": "Rate limit exceeded for admin category",
+      "timestamp": "2025-09-08 19:04:29.144726"
+    },
+    "ai_health": {
+      "endpoint": "/ai/health",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.2746849060058594,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:31.439154"
+    },
+    "ai_dashboard": {
+      "endpoint": "/ai/dashboard",
+      "method": "GET",
+      "status_code": 200,
+      "response_time": 0.0017910003662109375,
+      "result": "TestResult.SUCCESS",
+      "error_message": null,
+      "timestamp": "2025-09-08 19:04:33.490007"
+    },
+    "ai_chat": {
+      "endpoint": "/ai/chat",
+      "method": "POST",
+      "status_code": null,
+      "response_time": 0,
+      "result": "TestResult.RATE_LIMITED",
+      "error_message": "Rate limit exceeded for ai category",
+      "timestamp": "2025-09-08 19:04:35.540313"
+    }
+  },
+  "performance_metrics": {
+    "average_response_time": 0.031098103523254393,
+    "median_response_time": 0.0026873350143432617,
+    "max_response_time": 0.2746849060058594,
+    "total_successful_requests": 10
+  },
+  "rate_limiting_stats": {
+    "basic": 3,
+    "admin": 5,
+    "ai": 2
+  },
+  "circuit_breaker_status": {
+    "healthy": 12,
+    "degraded": 0,
+    "failed": 0,
+    "circuit_open": 0
+  },
+  "recommendations": [
+    "\u2696\ufe0f High rate limiting - consider adjusting limits or request patterns",
+    "\u2705 Good system health - minor issues detected"
+  ],
+  "overall_health": "good"
+}

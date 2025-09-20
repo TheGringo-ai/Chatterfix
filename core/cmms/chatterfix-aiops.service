@@ -1,0 +1,43 @@
+[Unit]
+Description=ChatterFix CMMS AI Operations Agent
+Documentation=https://github.com/chatterfix/cmms
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=chatterfix
+Group=chatterfix
+WorkingDirectory=/opt/chatterfix/core/cmms
+Environment=PYTHONPATH=/opt/chatterfix/core/cmms
+Environment=AI_MEMORY_DIR=/opt/chatterfix/ai-memory
+ExecStart=/usr/bin/python3 aiops_agent.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart configuration
+Restart=always
+RestartSec=5
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/chatterfix/ai-memory /tmp/chatterfix-health /var/log/chatterfix
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterfix-aiops
+
+[Install]
+WantedBy=multi-user.target

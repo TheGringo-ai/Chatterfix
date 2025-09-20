@@ -1,0 +1,143 @@
+{
+  "timestamp": "2025-09-14T15:02:48.512635",
+  "base_url": "http://localhost:8888",
+  "application_type": "ChatterFix CMMS v3.0.0",
+  "test_summary": {
+    "total_tests": 12,
+    "successful": 0,
+    "partial": 0,
+    "failed": 10,
+    "timeouts": 0,
+    "rate_limited": 2,
+    "success_rate": 0.0,
+    "total_time": 13.923129081726074
+  },
+  "endpoint_tests": {
+    "root": {
+      "endpoint": "/",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.008612871170043945,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10403c830>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:49.077759"
+    },
+    "health": {
+      "endpoint": "/health",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0015506744384765625,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x104039e50>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:49.590796"
+    },
+    "docs": {
+      "endpoint": "/docs",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0015881061553955078,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /docs (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x10403a5d0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:50.156638"
+    },
+    "admin_dashboard": {
+      "endpoint": "/admin/dashboard",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0015859603881835938,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /admin/dashboard (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x104048050>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:51.178961"
+    },
+    "admin_users": {
+      "endpoint": "/admin/users",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0010552406311035156,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /admin/users (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x104048770>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:52.203038"
+    },
+    "admin_stats": {
+      "endpoint": "/admin/stats",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0015747547149658203,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /admin/stats (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x103f0db50>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:53.230075"
+    },
+    "admin_config": {
+      "endpoint": "/admin/config",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0010781288146972656,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /admin/config (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x103f16e00>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:54.256647"
+    },
+    "admin_backup": {
+      "endpoint": "/admin/backup",
+      "method": "POST",
+      "status_code": null,
+      "response_time": 0.0011131763458251953,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /admin/backup (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x103f17460>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:55.284365"
+    },
+    "admin_logs": {
+      "endpoint": "/admin/logs",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0,
+      "result": "TestResult.RATE_LIMITED",
+      "error_message": "Rate limit exceeded for admin category",
+      "timestamp": "2025-09-14 15:02:56.313388"
+    },
+    "ai_health": {
+      "endpoint": "/ai/health",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0012030601501464844,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /ai/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x103f17790>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:02:58.350529"
+    },
+    "ai_dashboard": {
+      "endpoint": "/ai/dashboard",
+      "method": "GET",
+      "status_code": null,
+      "response_time": 0.0011610984802246094,
+      "result": "TestResult.FAILED",
+      "error_message": "HTTPConnectionPool(host='localhost', port=8888): Max retries exceeded with url: /ai/dashboard (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x103f179b0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-09-14 15:03:00.391457"
+    },
+    "ai_chat": {
+      "endpoint": "/ai/chat",
+      "method": "POST",
+      "status_code": null,
+      "response_time": 0,
+      "result": "TestResult.RATE_LIMITED",
+      "error_message": "Rate limit exceeded for ai category",
+      "timestamp": "2025-09-14 15:03:02.435748"
+    }
+  },
+  "performance_metrics": {},
+  "rate_limiting_stats": {
+    "basic": 3,
+    "admin": 5,
+    "ai": 2
+  },
+  "circuit_breaker_status": {
+    "healthy": 12,
+    "degraded": 0,
+    "failed": 0,
+    "circuit_open": 0
+  },
+  "recommendations": [
+    "\ud83d\udea8 Low success rate - investigate failing endpoints",
+    "\u2696\ufe0f High rate limiting - consider adjusting limits or request patterns",
+    "\ud83d\udea8 Poor system health - immediate attention required"
+  ],
+  "overall_health": "poor"
+}

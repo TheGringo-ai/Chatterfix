@@ -1,0 +1,1941 @@
+{
+  "test_metadata": {
+    "timestamp": "2025-09-13T18:58:54.621938",
+    "base_url": "http://localhost:8000",
+    "total_tests": 92,
+    "successful_tests": 16,
+    "failed_tests": 76
+  },
+  "results": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "url": "http://localhost:8000/",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 60,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "60",
+        "content-type": "application/json"
+      },
+      "data": {
+        "message": "ChatterFix CMMS Test Server",
+        "status": "running"
+      }
+    },
+    {
+      "endpoint": "/cmms",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/dashboard",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 135,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "135",
+        "content-type": "application/json"
+      },
+      "data": {
+        "active_work_orders": 12,
+        "assets_monitored": 45,
+        "critical_alerts": 2,
+        "system_health": "good",
+        "technicians_online": 8,
+        "parts_inventory": 156
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard/main",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/dashboard/main",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/kpis",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/kpis",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 51,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "51",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total": 23,
+        "active": 12,
+        "completed": 11,
+        "overdue": 2
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/view",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/view",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/workorders",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/active",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/active",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/completed",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/completed",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 62,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "62",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total": 45,
+        "critical": 2,
+        "maintenance_due": 5,
+        "operational": 38
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/manage",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets/manage",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/assets",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/critical",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets/critical",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 70,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "70",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total_parts": 156,
+        "low_stock": 8,
+        "out_of_stock": 2,
+        "total_value": 24500
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/inventory",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts/inventory",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/parts",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/low-stock",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts/low-stock",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/scheduled",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive/scheduled",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/overdue",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive/overdue",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/active",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians/active",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/assignments",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians/assignments",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/voice-command",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/voice-command",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/chat",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/chat",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/analyze",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/analyze",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/analyze",
+      "method": "POST",
+      "url": "http://localhost:8000/erp/quality/analyze",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/ocr",
+      "method": "POST",
+      "url": "http://localhost:8000/erp/quality/ocr",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/users",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin/users",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/settings",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin/settings",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/WO-123/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/workorders/WO-123/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/A-456/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/assets/A-456/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/P-789/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/parts/P-789/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/workorders",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/workorders",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/assets",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/assets",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/parts",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/parts",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/reports/dashboard",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/reports/dashboard",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "url": "http://localhost:8000/health",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 55,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "55",
+        "content-type": "application/json"
+      },
+      "data": {
+        "status": "healthy",
+        "timestamp": "2025-09-13T23:06:00Z"
+      }
+    },
+    {
+      "endpoint": "/cmms/health",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/health",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/metrics",
+      "method": "GET",
+      "url": "http://localhost:8000/metrics",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/docs",
+      "method": "GET",
+      "url": "http://localhost:8000/docs",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 944,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "944",
+        "content-type": "text/html; charset=utf-8"
+      },
+      "data": {
+        "raw_response": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css\">\n    <link rel=\"shortcut icon\" href=\"https://fastapi.tiangolo.com/img/favicon.png\">\n    <title>ChatterFix CMMS Test - Swagger UI</title>\n    </head>\n    <body>\n    <div id=\"swagger-ui\">\n    </div>\n    <script src=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>\n    <!-- `SwaggerUIBundle` is now available on the p"
+      }
+    },
+    {
+      "endpoint": "/openapi.json",
+      "method": "GET",
+      "url": "http://localhost:8000/openapi.json",
+      "status_code": 200,
+      "response_time": 0.002,
+      "success": true,
+      "response_size": 1385,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:49 GMT",
+        "server": "uvicorn",
+        "content-length": "1385",
+        "content-type": "application/json"
+      },
+      "data": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "ChatterFix CMMS Test",
+          "version": "0.1.0"
+        },
+        "paths": {
+          "/": {
+            "get": {
+              "summary": "Root",
+              "operationId": "root__get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api": {
+            "get": {
+              "summary": "Api Overview",
+              "operationId": "api_overview_api_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/health": {
+            "get": {
+              "summary": "Health Check",
+              "operationId": "health_check_health_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/dashboard": {
+            "get": {
+              "summary": "Dashboard",
+              "operationId": "dashboard_cmms_dashboard_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/workorders": {
+            "get": {
+              "summary": "Workorders",
+              "operationId": "workorders_cmms_workorders_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/assets": {
+            "get": {
+              "summary": "Assets",
+              "operationId": "assets_cmms_assets_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/parts": {
+            "get": {
+              "summary": "Parts",
+              "operationId": "parts_cmms_parts_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "url": "http://localhost:8000/",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 60,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "60",
+        "content-type": "application/json"
+      },
+      "data": {
+        "message": "ChatterFix CMMS Test Server",
+        "status": "running"
+      }
+    },
+    {
+      "endpoint": "/cmms",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/dashboard",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 135,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "135",
+        "content-type": "application/json"
+      },
+      "data": {
+        "active_work_orders": 12,
+        "assets_monitored": 45,
+        "critical_alerts": 2,
+        "system_health": "good",
+        "technicians_online": 8,
+        "parts_inventory": 156
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard/main",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/dashboard/main",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/kpis",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/kpis",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 51,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "51",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total": 23,
+        "active": 12,
+        "completed": 11,
+        "overdue": 2
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/view",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/view",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/workorders",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/active",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/active",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/completed",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/workorders/completed",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 62,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "62",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total": 45,
+        "critical": 2,
+        "maintenance_due": 5,
+        "operational": 38
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/manage",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets/manage",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/assets",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/critical",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/assets/critical",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 70,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "70",
+        "content-type": "application/json"
+      },
+      "data": {
+        "total_parts": 156,
+        "low_stock": 8,
+        "out_of_stock": 2,
+        "total_value": 24500
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/inventory",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts/inventory",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/parts",
+      "status_code": 405,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 31,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "allow": "GET",
+        "content-length": "31",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Method Not Allowed"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/low-stock",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/parts/low-stock",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/scheduled",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive/scheduled",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/overdue",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/preventive/overdue",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/active",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians/active",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/assignments",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/technicians/assignments",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/voice-command",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/voice-command",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/chat",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/chat",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/analyze",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/ai/analyze",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/analyze",
+      "method": "POST",
+      "url": "http://localhost:8000/erp/quality/analyze",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/ocr",
+      "method": "POST",
+      "url": "http://localhost:8000/erp/quality/ocr",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/users",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin/users",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/settings",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/admin/settings",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/WO-123/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/workorders/WO-123/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/A-456/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/assets/A-456/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/P-789/attach-photo",
+      "method": "POST",
+      "url": "http://localhost:8000/cmms/parts/P-789/attach-photo",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/workorders",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/workorders",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/assets",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/assets",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/parts",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/export/parts",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/cmms/reports/dashboard",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/reports/dashboard",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "url": "http://localhost:8000/health",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 55,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "55",
+        "content-type": "application/json"
+      },
+      "data": {
+        "status": "healthy",
+        "timestamp": "2025-09-13T23:06:00Z"
+      }
+    },
+    {
+      "endpoint": "/cmms/health",
+      "method": "GET",
+      "url": "http://localhost:8000/cmms/health",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/metrics",
+      "method": "GET",
+      "url": "http://localhost:8000/metrics",
+      "status_code": 404,
+      "response_time": 0.001,
+      "success": false,
+      "response_size": 22,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "22",
+        "content-type": "application/json"
+      },
+      "data": {
+        "detail": "Not Found"
+      }
+    },
+    {
+      "endpoint": "/docs",
+      "method": "GET",
+      "url": "http://localhost:8000/docs",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 944,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "944",
+        "content-type": "text/html; charset=utf-8"
+      },
+      "data": {
+        "raw_response": "\n    <!DOCTYPE html>\n    <html>\n    <head>\n    <link type=\"text/css\" rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css\">\n    <link rel=\"shortcut icon\" href=\"https://fastapi.tiangolo.com/img/favicon.png\">\n    <title>ChatterFix CMMS Test - Swagger UI</title>\n    </head>\n    <body>\n    <div id=\"swagger-ui\">\n    </div>\n    <script src=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>\n    <!-- `SwaggerUIBundle` is now available on the p"
+      }
+    },
+    {
+      "endpoint": "/openapi.json",
+      "method": "GET",
+      "url": "http://localhost:8000/openapi.json",
+      "status_code": 200,
+      "response_time": 0.001,
+      "success": true,
+      "response_size": 1385,
+      "headers": {
+        "date": "Sat, 13 Sep 2025 23:58:54 GMT",
+        "server": "uvicorn",
+        "content-length": "1385",
+        "content-type": "application/json"
+      },
+      "data": {
+        "openapi": "3.1.0",
+        "info": {
+          "title": "ChatterFix CMMS Test",
+          "version": "0.1.0"
+        },
+        "paths": {
+          "/": {
+            "get": {
+              "summary": "Root",
+              "operationId": "root__get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api": {
+            "get": {
+              "summary": "Api Overview",
+              "operationId": "api_overview_api_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/health": {
+            "get": {
+              "summary": "Health Check",
+              "operationId": "health_check_health_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/dashboard": {
+            "get": {
+              "summary": "Dashboard",
+              "operationId": "dashboard_cmms_dashboard_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/workorders": {
+            "get": {
+              "summary": "Workorders",
+              "operationId": "workorders_cmms_workorders_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/assets": {
+            "get": {
+              "summary": "Assets",
+              "operationId": "assets_cmms_assets_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/cmms/parts": {
+            "get": {
+              "summary": "Parts",
+              "operationId": "parts_cmms_parts_get",
+              "responses": {
+                "200": {
+                  "description": "Successful Response",
+                  "content": {
+                    "application/json": {
+                      "schema": {}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

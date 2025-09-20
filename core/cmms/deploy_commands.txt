@@ -1,0 +1,41 @@
+# Commands to run on the VM as yoyofred
+
+# 1. First, create the deployment directory
+mkdir -p ~/cmms
+cd ~/cmms
+
+# 2. Create the fixed application files
+# Copy and paste each file content below:
+
+# Create app.py
+cat > app.py << 'EOF'
+[PASTE THE FIXED app.py CONTENT]
+EOF
+
+# Create workorders.py  
+cat > workorders.py << 'EOF'
+[PASTE THE FIXED workorders.py CONTENT]
+EOF
+
+# Create technician.py
+cat > technician.py << 'EOF'
+[PASTE THE FIXED technician.py CONTENT]
+EOF
+
+# Create prevenative.py
+cat > prevenative.py << 'EOF'
+[PASTE THE FIXED prevenative.py CONTENT]
+EOF
+
+# 3. Copy the other required files (these should already exist)
+# If they don't exist, we'll need to create them
+
+# 4. Install dependencies
+pip3 install --user fastapi uvicorn pydantic python-multipart
+
+# 5. Test the application
+python3 -m uvicorn app:app --host 0.0.0.0 --port 8000
+
+# 6. If it works, set up as a service
+sudo systemctl restart chatterfix-cmms
+sudo systemctl status chatterfix-cmms

@@ -1,0 +1,840 @@
+{
+  "test_metadata": {
+    "timestamp": "2025-09-13T17:56:33.146276",
+    "base_url": "https://chatterfix-cmms-6506196261019.us-central1.run.app",
+    "total_tests": 46,
+    "successful_tests": 0,
+    "failed_tests": 46
+  },
+  "results": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/",
+      "status_code": 404,
+      "response_time": 0.271,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/dashboard",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/dashboard/main",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/dashboard/main",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/kpis",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/kpis",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/view",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders/view",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/active",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders/active",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/completed",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders/completed",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/assets",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/manage",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/assets/manage",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:30 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/assets",
+      "status_code": 404,
+      "response_time": 0.058,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/critical",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/assets/critical",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/parts",
+      "status_code": 404,
+      "response_time": 0.05,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/inventory",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/parts/inventory",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/parts",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/low-stock",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/parts/low-stock",
+      "status_code": 404,
+      "response_time": 0.062,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/preventive",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/scheduled",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/preventive/scheduled",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/preventive/overdue",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/preventive/overdue",
+      "status_code": 404,
+      "response_time": 0.058,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/technicians",
+      "status_code": 404,
+      "response_time": 0.062,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/active",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/technicians/active",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/technicians/assignments",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/technicians/assignments",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/voice-command",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/ai/voice-command",
+      "status_code": 404,
+      "response_time": 0.091,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/chat",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/ai/chat",
+      "status_code": 404,
+      "response_time": 0.058,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/ai/analyze",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/ai/analyze",
+      "status_code": 404,
+      "response_time": 0.054,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/analyze",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/erp/quality/analyze",
+      "status_code": 404,
+      "response_time": 0.057,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:31 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/erp/quality/ocr",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/erp/quality/ocr",
+      "status_code": 404,
+      "response_time": 0.099,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/admin",
+      "status_code": 404,
+      "response_time": 0.063,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/users",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/admin/users",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/admin/settings",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/admin/settings",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/workorders/WO-123/attach-photo",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/workorders/WO-123/attach-photo",
+      "status_code": 404,
+      "response_time": 0.061,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+        "Connection": "close"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/assets/A-456/attach-photo",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/assets/A-456/attach-photo",
+      "status_code": 404,
+      "response_time": 0.198,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/parts/P-789/attach-photo",
+      "method": "POST",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/parts/P-789/attach-photo",
+      "status_code": 404,
+      "response_time": 0.127,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/export",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/export",
+      "status_code": 404,
+      "response_time": 0.053,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/workorders",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/export/workorders",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/assets",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/export/assets",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/export/parts",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/export/parts",
+      "status_code": 404,
+      "response_time": 0.06,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/reports/dashboard",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/reports/dashboard",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/health",
+      "status_code": 404,
+      "response_time": 0.062,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/cmms/health",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/cmms/health",
+      "status_code": 404,
+      "response_time": 0.051,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:32 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/metrics",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/metrics",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:33 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/docs",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/docs",
+      "status_code": 404,
+      "response_time": 0.059,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:33 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    },
+    {
+      "endpoint": "/openapi.json",
+      "method": "GET",
+      "url": "https://chatterfix-cmms-6506196261019.us-central1.run.app/openapi.json",
+      "status_code": 404,
+      "response_time": 0.05,
+      "success": false,
+      "response_size": 272,
+      "headers": {
+        "Content-Length": "272",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Date": "Sat, 13 Sep 2025 22:56:33 GMT",
+        "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+      },
+      "data": {
+        "raw_response": "\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>404 Page not found</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Page not found</h1>\n<h2>The requested URL was not found on this server.</h2>\n<h2></h2>\n</body></html>\n"
+      }
+    }
+  ]
+}

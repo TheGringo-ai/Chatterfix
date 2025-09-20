@@ -140,6 +140,17 @@ jobs:
             # Copy new application files to production
             gcloud compute scp core/cmms/app.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/app.py --zone=${{ env.ZONE }}
             
+            # Copy voice workorder processor
+            if [ -f core/cmms/voice_workorder_enhanced.py ]; then
+              gcloud compute scp core/cmms/voice_workorder_enhanced.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/voice_workorder_enhanced.py --zone=${{ env.ZONE }}
+            fi
+            
+            # Copy static files including voice-enhanced AI assistant
+            if [ -d core/cmms/static ]; then
+              gcloud compute scp --recurse core/cmms/static/ ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/static/ --zone=${{ env.ZONE }}
+              echo "✅ Static files including voice UI deployed"
+            fi
+            
             # Restart the application service
             gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="sudo systemctl restart chatterfix-cmms"
             

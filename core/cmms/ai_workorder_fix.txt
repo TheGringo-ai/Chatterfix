@@ -4,45 +4,45 @@ def handle_work_order_query(message: str, user_role: str = "technician") -> str:
     """Handle queries about work orders with real data"""
     try:
         from workorders import work_orders_db
-        
+
         message_lower = message.lower()
-        
+
         # Check for different types of work order queries
         if any(keyword in message_lower for keyword in ["open work order", "work order", "workorder", "active work", "pending work"]):
-            
+
             # Filter for open/active work orders
             open_wos = [wo for wo in work_orders_db if wo.get("status") in ["open", "in_progress", "assigned"]]
-            
+
             if not open_wos:
                 return "No open work orders found in the system right now."
-            
+
             # Format response based on user role
             if user_role == "manager":
                 response = f"📋 **Open Work Orders Summary** ({len(open_wos)} total):\n\n"
             else:
                 response = f"Here are the open work orders ({len(open_wos)} total):\n\n"
-            
+
             for wo in open_wos[:5]:  # Limit to 5 for readability
                 status_emoji = {"open": "🔴", "in_progress": "🟡", "assigned": "🔵"}.get(wo.get("status"), "⚪")
                 priority_emoji = {"critical": "🚨", "urgent": "🔥", "high": "⬆️", "medium": "➡️", "low": "⬇️"}.get(wo.get("priority"), "➡️")
-                
+
                 response += f"{status_emoji} **{wo.get('id')}** - {wo.get('title', 'Untitled')}\n"
                 response += f"   {priority_emoji} Priority: {wo.get('priority', 'medium').title()}\n"
                 response += f"   👤 Assigned: {wo.get('assigned_to', 'Unassigned')}\n"
                 response += f"   📅 Due: {wo.get('due_date', 'No due date')}\n\n"
-            
+
             if len(open_wos) > 5:
                 response += f"... and {len(open_wos) - 5} more work orders.\n\n"
-            
+
             response += "Need details on any specific work order? Just ask!"
             return response
-            
+
         # Handle status queries
         elif any(keyword in message_lower for keyword in ["status", "what's happening", "current work"]):
             total_wos = len(work_orders_db)
             open_wos = len([wo for wo in work_orders_db if wo.get("status") in ["open", "in_progress", "assigned"]])
             urgent_wos = len([wo for wo in work_orders_db if wo.get("priority") in ["critical", "urgent"]])
-            
+
             return f"""📊 **Work Order Status**:
 • Total work orders: {total_wos}
 • Currently open: {open_wos}
@@ -71,9 +71,9 @@ def handle_work_order_query(message: str, user_role: str = "technician") -> str:
 **Description**: {wo.get('description', 'No description available')}"""
                 else:
                     return f"Work order {wo_id} not found in the system."
-        
+
         return None  # Not a work order query
-        
+
     except Exception as e:
         logger.error(f"Work order query failed: {e}")
         return "Sorry, I couldn't access the work order data right now. Please try again."

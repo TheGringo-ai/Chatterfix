@@ -10,6 +10,6 @@ content-type: text/html; charset=utf-8
     <head>
         <title>ChatterFix CMMS v3.0.0</title>
         <style>
-            body { 
+            body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

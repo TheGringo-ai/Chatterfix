@@ -63,7 +63,7 @@ fi
 echo -e "${YELLOW}Checking for JavaScript function definitions...${NC}"
 if grep -r "onclick=" . --include="*.py" | grep -v "function " | head -3; then
     echo "⚠️ Found onclick handlers - verifying JavaScript functions exist..."
-    
+
     # Check for function definitions
     if grep -r "function viewWorkOrder\|window.viewWorkOrder" . --include="*.py" > /dev/null; then
         echo "✅ viewWorkOrder function found"
@@ -71,7 +71,7 @@ if grep -r "onclick=" . --include="*.py" | grep -v "function " | head -3; then
         echo -e "❌ ${RED}viewWorkOrder function missing${NC}"
         ERRORS=$((ERRORS + 1))
     fi
-    
+
     if grep -r "function editWorkOrder\|window.editWorkOrder" . --include="*.py" > /dev/null; then
         echo "✅ editWorkOrder function found"
     else

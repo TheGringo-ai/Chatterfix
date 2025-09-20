@@ -81,13 +81,13 @@ import glob
 def check_api_docs():
     """Check if all API endpoints are documented."""
     print("📚 Validating API documentation...")
-    
+
     # Find all route definitions
     routes = []
     for file in glob.glob("**/*.py", recursive=True):
         if "test" in file or "__pycache__" in file:
             continue
-            
+
         try:
             with open(file, 'r') as f:
                 content = f.read()
@@ -97,15 +97,15 @@ def check_api_docs():
                     routes.append(f"{method.upper()} {path}")
         except Exception as e:
             print(f"Warning: Could not read {file}: {e}")
-    
+
     print(f"✅ Found {len(routes)} API endpoints")
-    
+
     # Check for basic documentation
     documented_routes = 0
     for route in routes:
         # Simple check - could be enhanced with proper OpenAPI validation
         documented_routes += 1
-    
+
     print(f"📖 {documented_routes}/{len(routes)} endpoints have documentation")
     return True
 
@@ -132,26 +132,26 @@ import os
 def check_migrations():
     """Check database migration consistency."""
     print("🗄️ Validating database migrations...")
-    
+
     # Check if migration files exist
     migration_dirs = ["migrations", "alembic/versions"]
     migration_files = []
-    
+
     for dir_name in migration_dirs:
         if os.path.exists(dir_name):
             for file in os.listdir(dir_name):
                 if file.endswith(('.py', '.sql')) and not file.startswith('__'):
                     migration_files.append(os.path.join(dir_name, file))
-    
+
     print(f"📄 Found {len(migration_files)} migration files")
-    
+
     # Basic validation - check for SQL injection patterns
     dangerous_patterns = [
         r'DROP\s+TABLE',
         r'DELETE\s+FROM.*WHERE.*=.*\$',
         r'INSERT.*VALUES.*\$'
     ]
-    
+
     for file_path in migration_files:
         try:
             with open(file_path, 'r') as f:
@@ -161,7 +161,7 @@ def check_migrations():
                         print(f"⚠️ Potentially dangerous pattern in {file_path}")
         except Exception as e:
             print(f"Warning: Could not read {file_path}: {e}")
-    
+
     print("✅ Migration validation completed")
     return True
 
@@ -208,7 +208,7 @@ fi
 echo "🔒 Security check completed"
 EOF
 
-# Performance Test Validation Script  
+# Performance Test Validation Script
 cat > scripts/performance_check.py << 'EOF'
 #!/usr/bin/env python3
 """Basic performance validation."""
@@ -219,31 +219,31 @@ import glob
 def check_performance():
     """Check for common performance issues."""
     print("⚡ Running performance check...")
-    
+
     issues = []
-    
+
     # Check for potential performance issues
     for file in glob.glob("**/*.py", recursive=True):
         if "test" in file or "__pycache__" in file:
             continue
-            
+
         try:
             with open(file, 'r') as f:
                 content = f.read()
                 lines = content.split('\n')
-                
+
                 for i, line in enumerate(lines):
                     # Check for N+1 query patterns
                     if re.search(r'for.*in.*:', line) and re.search(r'\.query\(|\.get\(', lines[i+1:i+3]):
                         issues.append(f"{file}:{i+1} - Potential N+1 query pattern")
-                    
+
                     # Check for inefficient string concatenation
                     if '+=' in line and 'str' in line:
                         issues.append(f"{file}:{i+1} - Inefficient string concatenation")
-                        
+
         except Exception as e:
             print(f"Warning: Could not read {file}: {e}")
-    
+
     if issues:
         print("⚠️ Performance issues found:")
         for issue in issues[:5]:  # Show first 5
@@ -252,7 +252,7 @@ def check_performance():
             print(f"  ... and {len(issues) - 5} more")
     else:
         print("✅ No obvious performance issues found")
-    
+
     return len(issues) == 0
 
 if __name__ == "__main__":
@@ -286,7 +286,7 @@ current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 
 if [ $protected_branch = $current_branch ]; then
     echo "🛡️ Pushing to protected branch: $protected_branch"
-    
+
     # Run comprehensive tests
     echo "🧪 Running test suite..."
     if command -v pytest &> /dev/null; then
@@ -295,7 +295,7 @@ if [ $protected_branch = $current_branch ]; then
             exit 1
         }
     fi
-    
+
     # Check for TODO/FIXME in production code
     if git diff --cached --name-only | xargs grep -l "TODO\|FIXME" 2>/dev/null; then
         echo "⚠️ Found TODO/FIXME comments in staged files"
@@ -314,7 +314,7 @@ EOF
 # Commit message template
 cat > .gitmessage << 'EOF'
 # ChatterFix CMMS - Commit Message Template
-# 
+#
 # Format: <type>(<scope>): <subject>
 #
 # Types:

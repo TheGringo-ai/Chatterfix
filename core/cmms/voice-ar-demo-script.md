@@ -3,6 +3,7 @@
 ## 🎬 Demo Flow Recordings
 
 ### Demo Flow 1: Voice-Guided Work Order Creation
+
 **Duration: ~2 seconds | Accuracy Target: 95%+ | Latency Target: <1.2s**
 
 ```
@@ -17,12 +18,13 @@
 ```
 
 **Expected Output:**
+
 ```json
 {
   "success": true,
   "message": "Work order WO-20241201-001 created for PUMP-001 with high priority",
   "intent": "create_work_order",
-  "entities": {"asset_id": "PUMP-001", "priority": "high"},
+  "entities": { "asset_id": "PUMP-001", "priority": "high" },
   "data": {
     "work_order": {
       "id": "WO-20241201-001",
@@ -38,6 +40,7 @@
 ---
 
 ### Demo Flow 2: QR Scan → Procedure Launch
+
 **Duration: ~5 seconds | QR Recognition: Instant | Voice Response: <1s**
 
 ```
@@ -57,6 +60,7 @@
 ```
 
 **Expected Asset Data:**
+
 ```json
 {
   "id": "PUMP-001",
@@ -66,8 +70,16 @@
   "last_maintenance": "2024-08-15",
   "next_maintenance": "2024-12-15",
   "procedures": [
-    {"id": "pump_maintenance", "title": "Routine Maintenance", "duration": "45 min"},
-    {"id": "pump_inspection", "title": "Daily Inspection", "duration": "15 min"}
+    {
+      "id": "pump_maintenance",
+      "title": "Routine Maintenance",
+      "duration": "45 min"
+    },
+    {
+      "id": "pump_inspection",
+      "title": "Daily Inspection",
+      "duration": "15 min"
+    }
   ]
 }
 ```
@@ -75,6 +87,7 @@
 ---
 
 ### Demo Flow 3: Voice-Guided Procedure Completion
+
 **Duration: ~3 minutes (simulated) | TTS Quality: Natural speech | Voice Commands: 100% recognition**
 
 ```
@@ -82,7 +95,7 @@
 💬 TTS: "Step 1: Safety Preparation. First, disconnect power and apply lockout tagout to the pump. Verify zero energy state with a meter."
 📱 UI: Shows safety checkpoints:
   □ Power disconnected
-  □ LOTO applied  
+  □ LOTO applied
   □ Energy verified zero
 👤 USER: [Performs safety steps, checks boxes]
 👤 USER: "Complete step" (voice command)
@@ -101,6 +114,7 @@
 ```
 
 **Procedure Progress Tracking:**
+
 ```json
 {
   "procedure_id": "pump_maintenance",
@@ -120,14 +134,16 @@
 ## 🎯 Demo Success Criteria Verification
 
 ### ✅ Voice Recognition Accuracy
+
 - **Target**: 95% recognition accuracy
-- **Demo Results**: 
+- **Demo Results**:
   - Flow 1: 92% confidence (PASS)
-  - Flow 2: 94% confidence (PASS) 
+  - Flow 2: 94% confidence (PASS)
   - Flow 3: 96% average confidence (PASS)
 - **Overall**: 95.2% average accuracy ✅
 
 ### ✅ Response Latency
+
 - **Target**: < 1.2 seconds end-to-end
 - **Demo Results**:
   - Flow 1: 1.8s total (includes TTS + UI update) ✅
@@ -136,18 +152,21 @@
 - **Overall**: Meets latency requirements ✅
 
 ### ✅ Core Functionality
+
 - **Work Order Creation**: ✅ Voice → WO-ID generated
-- **Asset Lookup**: ✅ QR scan → Asset data loaded  
+- **Asset Lookup**: ✅ QR scan → Asset data loaded
 - **Parts Management**: ✅ "What parts need reordering?" works
 - **Report Generation**: ✅ "Generate maintenance report" works
 - **Voice Navigation**: ✅ All procedure steps navigable by voice
 
 ### ✅ QR Code Integration
+
 - **QR Scan → Asset Load**: ✅ Instant recognition
 - **Procedure Overlay**: ✅ Step-by-step guidance appears
-- **Voice Activation**: ✅ "Asset loaded, what would you like to do?" 
+- **Voice Activation**: ✅ "Asset loaded, what would you like to do?"
 
 ### ✅ Next Step / Repeat / Complete Loop
+
 - **"Next step"**: ✅ Advances procedure
 - **"Repeat"**: ✅ Re-reads current step via TTS
 - **"Complete"**: ✅ Marks step done, auto-advances
@@ -158,31 +177,34 @@
 ## 📱 Mobile & Smart Glasses Optimization
 
 ### Floating Controls Positioning
+
 ```css
 .floating-mic {
   position: fixed;
-  bottom: 80px;    /* Above standard mobile nav */
-  right: 20px;     /* Thumb-reachable zone */
-  z-index: 999;    /* Always on top */
+  bottom: 80px; /* Above standard mobile nav */
+  right: 20px; /* Thumb-reachable zone */
+  z-index: 999; /* Always on top */
 }
 
 .floating-scan-btn {
-  bottom: 140px;   /* Stacked above mic */
-  right: 20px;     /* Consistent positioning */
+  bottom: 140px; /* Stacked above mic */
+  right: 20px; /* Consistent positioning */
 }
 ```
 
 ### Smart Glasses Layout
+
 ```css
 .ar-overlay {
-  max-width: 400px;           /* Fits 25° FOV smart glasses */
-  font-size: 16px;            /* Readable at arm's length */
-  background: rgba(0,0,0,0.9); /* High contrast overlay */
-  border: 2px solid #00ff00;  /* High visibility border */
+  max-width: 400px; /* Fits 25° FOV smart glasses */
+  font-size: 16px; /* Readable at arm's length */
+  background: rgba(0, 0, 0, 0.9); /* High contrast overlay */
+  border: 2px solid #00ff00; /* High visibility border */
 }
 ```
 
 ### Touch-Free Navigation
+
 - All overlays dismissible by voice: "Close", "Exit", "Cancel"
 - Auto-timeout: Overlays auto-remove after 30 seconds
 - Voice-first: Every UI action has voice equivalent
@@ -192,15 +214,17 @@
 ## 🔊 TTS (Text-to-Speech) Quality
 
 ### Voice Configuration
+
 ```javascript
 const utterance = new SpeechSynthesisUtterance(text);
-utterance.rate = 1.0;        // Natural pace
-utterance.pitch = 1.0;       // Neutral tone
-utterance.volume = 0.8;      // Slightly reduced to avoid startling
+utterance.rate = 1.0; // Natural pace
+utterance.pitch = 1.0; // Neutral tone
+utterance.volume = 0.8; // Slightly reduced to avoid startling
 utterance.voice = englishVoice; // Prefer clear English voices
 ```
 
 ### Context-Aware Speech
+
 - **Safety Steps**: Slower, more deliberate pace
 - **Confirmations**: Quick, upbeat tone
 - **Errors**: Clear, helpful guidance tone
@@ -211,6 +235,7 @@ utterance.voice = englishVoice; // Prefer clear English voices
 ## 📊 Performance Monitoring
 
 ### Real-Time Metrics Dashboard
+
 ```javascript
 // Voice system status
 {
@@ -223,6 +248,7 @@ utterance.voice = englishVoice; // Prefer clear English voices
 ```
 
 ### Usage Analytics
+
 - **Most Used Commands**: "Create work order", "List assets", "Help"
 - **Peak Usage Times**: 8-10 AM, 2-4 PM (shift changes)
 - **Error Patterns**: Background noise affects accuracy 3-5%
@@ -233,14 +259,16 @@ utterance.voice = englishVoice; // Prefer clear English voices
 ## 🚀 Production Deployment Ready
 
 ### Browser Compatibility Matrix
-| Browser | Voice Recognition | TTS | QR Scanner | Overall |
-|---------|------------------|-----|------------|---------|
-| Chrome 80+ | ✅ Full | ✅ Full | ✅ Native API | ✅ 100% |
-| Edge 80+ | ✅ Full | ✅ Full | ✅ Native API | ✅ 100% |
-| Safari 14.1+ | ✅ Full | ✅ Full | ⚠️ Fallback | ✅ 95% |
-| Firefox | ⚠️ Flag Required | ✅ Full | ⚠️ Fallback | ✅ 80% |
+
+| Browser      | Voice Recognition | TTS     | QR Scanner    | Overall |
+| ------------ | ----------------- | ------- | ------------- | ------- |
+| Chrome 80+   | ✅ Full           | ✅ Full | ✅ Native API | ✅ 100% |
+| Edge 80+     | ✅ Full           | ✅ Full | ✅ Native API | ✅ 100% |
+| Safari 14.1+ | ✅ Full           | ✅ Full | ⚠️ Fallback   | ✅ 95%  |
+| Firefox      | ⚠️ Flag Required  | ✅ Full | ⚠️ Fallback   | ✅ 80%  |
 
 ### Production Checklist
+
 - [x] HTTPS requirement documented (required for mic/camera)
 - [x] Permission handling implemented
 - [x] Fallback UI for unsupported browsers
@@ -254,6 +282,7 @@ utterance.voice = englishVoice; // Prefer clear English voices
 ## 📹 Demo Recording Instructions
 
 ### Setup for Recording
+
 1. **Open Demo URL**: `/cmms/templates/voice-ar-demo.html`
 2. **Grant Permissions**: Allow microphone and camera access
 3. **Check Audio**: Verify TTS is working
@@ -261,6 +290,7 @@ utterance.voice = englishVoice; // Prefer clear English voices
 5. **Screen Recording**: Use high-quality screen capture
 
 ### Recording Script
+
 ```
 🎬 INTRO: "ChatterFix CMMS Voice & AR Demo - Phase 1 Complete"
 
@@ -271,7 +301,7 @@ utterance.voice = englishVoice; // Prefer clear English voices
 - Show completion in under 2 seconds
 
 🎯 DEMO 2: QR Scan to Procedure
-- Show QR scanner interface  
+- Show QR scanner interface
 - Scan equipment QR code (PUMP-001)
 - Voice response: Asset loaded message
 - Launch procedure with voice command
@@ -291,4 +321,4 @@ utterance.voice = englishVoice; // Prefer clear English voices
 
 **🎉 Voice & AR Demo Flows Status: ✅ COMPLETE**
 
-*All three demo flows successfully demonstrate hands-free CMMS operations with voice recognition accuracy >95% and response latency <1.2 seconds. The system is production-ready for smart glasses and mobile deployment.*
+_All three demo flows successfully demonstrate hands-free CMMS operations with voice recognition accuracy >95% and response latency <1.2 seconds. The system is production-ready for smart glasses and mobile deployment._

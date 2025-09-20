@@ -13,9 +13,9 @@ test_endpoint() {
     local url="$2"
     local method="${3:-GET}"
     local data="$4"
-    
+
     echo -n "Testing $name... "
-    
+
     if [ "$method" = "POST" ]; then
         if [ -n "$data" ]; then
             response=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d "$data" "$url")
@@ -25,7 +25,7 @@ test_endpoint() {
     else
         response=$(curl -s -o /dev/null -w "%{http_code}" "$url")
     fi
-    
+
     if [ "$response" = "200" ]; then
         echo "✅ PASS ($response)"
     else
@@ -43,7 +43,7 @@ test_endpoint "Assets Page" "$BASE_URL/cmms/assets"
 test_endpoint "Work Orders" "$BASE_URL/cmms/workorders"
 test_endpoint "Parts" "$BASE_URL/cmms/parts"
 
-# AI Features tests  
+# AI Features tests
 echo ""
 echo "🤖 AI Features Tests"
 echo "-------------------"

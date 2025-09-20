@@ -7,7 +7,7 @@ repos:
     rev: 23.12.1
     hooks:
       - id: black
-        language_version: python3.10
+        language_version: python3
         args: [--line-length=88]
 
   # Import Sorting
@@ -22,7 +22,7 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: [--max-line-length=88, --extend-ignore=E203,W503]
+        args: [--max-line-length=88, --extend-ignore=E203, W503]
         additional_dependencies:
           - flake8-docstrings
           - flake8-bugbear
@@ -144,14 +144,14 @@ repos:
 
 # Configuration for CI/CD Integration
 ci:
-    autofix_commit_msg: |
-        🤖 [pre-commit.ci] auto fixes from pre-commit hooks
+  autofix_commit_msg: |
+    🤖 [pre-commit.ci] auto fixes from pre-commit hooks
 
-        for more information, see https://pre-commit.ci
-    autofix_prs: true
-    autoupdate_branch: ''
-    autoupdate_commit_msg: |
-        🔄 [pre-commit.ci] pre-commit autoupdate
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ""
+  autoupdate_commit_msg: |
+    🔄 [pre-commit.ci] pre-commit autoupdate
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

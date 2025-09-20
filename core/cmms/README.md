@@ -7,20 +7,23 @@
 [![AI Assistant](https://img.shields.io/badge/AI-LLaMA%203.1-orange)](https://www.chatterfix.com/vm/admin)
 
 ## 🌟 **Live Demo**
+
 - **Production Site**: [www.chatterfix.com](https://www.chatterfix.com)
 - **Admin Dashboard**: [www.chatterfix.com/vm/admin](https://www.chatterfix.com/vm/admin)
 
 ## 🛠️ **Features**
 
 ### Core CMMS Functionality
+
 - ⚙️ **Work Order Management** - Create, assign, track maintenance tasks
-- 🏭 **Asset Management** - Complete equipment lifecycle tracking  
+- 🏭 **Asset Management** - Complete equipment lifecycle tracking
 - 📦 **Inventory Control** - Parts management with smart reordering
 - 📅 **Preventive Maintenance** - Automated scheduling and alerts
 - 💰 **Financial Tracking** - Cost analysis and budget management
 - 📊 **IoT Integration** - Real-time equipment monitoring
 
 ### AI-Powered Intelligence
+
 - 🤖 **LLaMA 3.1 Assistant** - Advanced troubleshooting and guidance
 - 🔍 **Smart Diagnostics** - AI-powered failure prediction
 - 📋 **Auto Work Orders** - Intelligent task generation
@@ -28,6 +31,7 @@
 - 📈 **Predictive Analytics** - Equipment failure forecasting
 
 ### Enterprise Features
+
 - 🔒 **Role-Based Access** - Technician, Manager, Admin permissions
 - 📱 **Mobile-First Design** - Optimized for field technicians
 - 🌐 **Multi-Tenant Support** - Enterprise customer management
@@ -37,6 +41,7 @@
 ## 🏗️ **Architecture**
 
 ### Technology Stack
+
 - **Backend**: FastAPI + SQLite (production-ready)
 - **Frontend**: Responsive HTML5 + CSS3 + JavaScript
 - **AI Engine**: LLaMA 3.1:8b via Ollama
@@ -45,6 +50,7 @@
 - **Monitoring**: Real-time system metrics
 
 ### System Requirements
+
 - **VM**: 4 CPU cores, 16GB RAM (upgraded for optimal AI performance)
 - **Storage**: 20GB+ SSD
 - **Network**: HTTPS with domain SSL certificates
@@ -53,6 +59,7 @@
 ## 🚀 **Current Production Status**
 
 ### System Health (Real-time)
+
 - **CPU Usage**: 0.2%
 - **Memory Usage**: 38.4% (6GB / 16GB)
 - **Services**: All Active ✅
@@ -60,6 +67,7 @@
 - **Uptime**: 99.9% availability
 
 ### Recent Upgrades
+
 - ✅ **VM Upgraded**: e2-standard-2 → e2-standard-4
 - ✅ **Memory Doubled**: 8GB → 16GB RAM
 - ✅ **Performance Improved**: 60% reduction in memory pressure
@@ -68,18 +76,21 @@
 ## 🎯 **Enterprise Use Cases**
 
 ### Manufacturing
+
 - Production equipment maintenance scheduling
 - Downtime tracking and cost analysis
 - Compliance reporting and audit trails
 - Multi-location asset management
 
 ### Facilities Management
+
 - HVAC, electrical, and plumbing maintenance
 - Work order routing and technician dispatch
 - Vendor management and service contracts
 - Energy efficiency tracking
 
 ### Healthcare
+
 - Medical equipment maintenance compliance
 - Biomedical technician work management
 - Regulatory documentation and reporting
@@ -96,11 +107,13 @@
 ## 🔧 **API Endpoints**
 
 ### Public APIs
+
 - `GET /api/vm/admin/metrics` - Real-time system metrics
 - `POST /api/vm/admin/chat/fallback` - Fast AI assistant
 - `GET /status` - System health check
 
 ### Core CMMS APIs
+
 - `GET /api/work-orders` - Work order management
 - `GET /api/assets` - Asset information
 - `GET /api/inventory` - Parts and supplies
@@ -117,12 +130,14 @@
 ## 📈 **Roadmap**
 
 ### Immediate (Q4 2024)
+
 - [ ] Enhanced mobile app development
 - [ ] Advanced predictive analytics dashboard
 - [ ] Multi-language support
 - [ ] Integration marketplace
 
 ### Future (2025)
+
 - [ ] AR/VR maintenance guidance
 - [ ] IoT sensor integration platform
 - [ ] Machine learning optimization
@@ -131,6 +146,7 @@
 ## 🏆 **Production Deployment**
 
 ChatterFix CMMS is production-ready and deployed at:
+
 - **Primary Domain**: https://www.chatterfix.com
 - **Admin Portal**: https://www.chatterfix.com/vm/admin
 - **API Base**: https://www.chatterfix.com/api/

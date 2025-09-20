@@ -26,7 +26,7 @@ Replacement Interval: 5000 hours
 Cross Reference: Parker RV-32-20, Vickers CT-06-B-50
 
 Flow Control Valve:
-Part Number: HP-3000A-FCV-001  
+Part Number: HP-3000A-FCV-001
 Description: Proportional flow control valve
 Torque Specifications: Mounting bolts 25 ft-lbs
 Electrical: 24VDC, 200mA
@@ -36,11 +36,11 @@ HIGH-PRESSURE FITTINGS
 
 Hydraulic Connectors:
 Part Number: HP-CONN-3000-1 (1" NPT Male)
-Part Number: HP-CONN-3000-3/4 (3/4" NPT Male)  
+Part Number: HP-CONN-3000-3/4 (3/4" NPT Male)
 Part Number: HP-CONN-3000-1/2 (1/2" NPT Male)
-Torque Specifications: 
+Torque Specifications:
 - 1" fittings: 75 ft-lbs with thread sealant
-- 3/4" fittings: 55 ft-lbs with thread sealant  
+- 3/4" fittings: 55 ft-lbs with thread sealant
 - 1/2" fittings: 40 ft-lbs with thread sealant
 
 O-Ring Kits:
@@ -81,7 +81,7 @@ Replacement Interval: 2000 hours or 6 months
 Torque: Filter bowl 40 ft-lbs hand tight
 
 Suction Strainer:
-Part Number: HP-STRAINER-SUC-100  
+Part Number: HP-STRAINER-SUC-100
 Mesh Size: 100 microns
 Material: 316 Stainless steel
 Cleaning: Ultrasonic recommended
@@ -100,7 +100,7 @@ Torque: 25 ft-lbs with sealant
 Temperature Sensor:
 Part Number: HP-TS-RTD-001
 Type: RTD PT100, Class A
-Range: -50°C to +150°C  
+Range: -50°C to +150°C
 Connection: 1/2" NPT male
 Torque: 35 ft-lbs with sealant
 

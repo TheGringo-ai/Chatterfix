@@ -17,11 +17,11 @@ from aiops_agent import aiops_agent
 async def generate_summary():
     yesterday = (date.today() - timedelta(days=1))
     summary = await aiops_agent._generate_daily_summary(yesterday)
-    
+
     summary_file = aiops_agent.lessons_dir / f'daily_summary_{yesterday.strftime(\"%Y%m%d\")}.md'
     with open(summary_file, 'w') as f:
         f.write(summary)
-    
+
     print(f'Daily summary generated: {summary_file}')
 
 asyncio.run(generate_summary())

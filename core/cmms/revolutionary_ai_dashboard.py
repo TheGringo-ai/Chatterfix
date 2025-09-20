@@ -6,9 +6,11 @@ This module contains the enhanced AI dashboard that showcases the transformative
 
 from fastapi.responses import HTMLResponse
 
+
 def get_revolutionary_ai_dashboard():
     """Generate the revolutionary AI-powered CMMS dashboard"""
-    return HTMLResponse(content="""
+    return HTMLResponse(
+        content="""
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -17,13 +19,13 @@ def get_revolutionary_ai_dashboard():
     <title>AI Command Center - ChatterFix CMMS</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
+        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
             color: #fff;
             overflow-x: hidden;
         }
-        
+
         /* Header */
         .header {
             background: rgba(0,0,0,0.8);
@@ -37,19 +39,19 @@ def get_revolutionary_ai_dashboard():
             top: 0;
             z-index: 100;
         }
-        
+
         .logo { font-size: 1.8rem; font-weight: bold; color: #3498db; }
         .nav-back { color: #3498db; text-decoration: none; }
         .system-status { display: flex; gap: 1rem; align-items: center; }
-        .status-indicator { 
-            padding: 0.3rem 0.8rem; 
-            border-radius: 20px; 
+        .status-indicator {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: bold;
         }
         .status-online { background: #27ae60; }
         .status-learning { background: #f39c12; }
-        
+
         /* Main Grid Layout */
         .dashboard-grid {
             display: grid;
@@ -59,7 +61,7 @@ def get_revolutionary_ai_dashboard():
             padding: 2rem;
             min-height: calc(100vh - 80px);
         }
-        
+
         /* AI Brain Center */
         .ai-brain {
             grid-column: 1 / -1;
@@ -70,7 +72,7 @@ def get_revolutionary_ai_dashboard():
             position: relative;
             overflow: hidden;
         }
-        
+
         .ai-brain::before {
             content: '';
             position: absolute;
@@ -81,16 +83,16 @@ def get_revolutionary_ai_dashboard():
             background: conic-gradient(from 0deg, transparent, rgba(52,152,219,0.3), transparent);
             animation: rotate 10s linear infinite;
         }
-        
+
         @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+
         .ai-brain-content {
             position: relative;
             z-index: 2;
         }
-        
+
         .ai-brain h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        .ai-pulse { 
+        .ai-pulse {
             display: inline-block;
             width: 12px;
             height: 12px;
@@ -99,9 +101,9 @@ def get_revolutionary_ai_dashboard():
             animation: pulse 2s infinite;
             margin-left: 10px;
         }
-        
+
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        
+
         /* Cards */
         .card {
             background: rgba(255,255,255,0.1);
@@ -111,28 +113,28 @@ def get_revolutionary_ai_dashboard():
             padding: 1.5rem;
             transition: all 0.3s ease;
         }
-        
+
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             border-color: #3498db;
         }
-        
+
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
         }
-        
+
         .card-title { font-size: 1.3rem; font-weight: 600; }
         .card-icon { font-size: 2rem; }
-        
+
         /* Predictive Analytics */
         .predictions {
             grid-column: 1 / 2;
         }
-        
+
         .prediction-item {
             background: rgba(231,76,60,0.2);
             border-left: 4px solid #e74c3c;
@@ -140,47 +142,47 @@ def get_revolutionary_ai_dashboard():
             margin: 0.5rem 0;
             border-radius: 0 8px 8px 0;
         }
-        
+
         .prediction-critical { border-left-color: #e74c3c; background: rgba(231,76,60,0.2); }
         .prediction-warning { border-left-color: #f39c12; background: rgba(243,156,18,0.2); }
         .prediction-info { border-left-color: #3498db; background: rgba(52,152,219,0.2); }
-        
+
         /* Real-time Monitor */
         .realtime-monitor {
             grid-column: 2 / 3;
         }
-        
+
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
             margin: 1rem 0;
         }
-        
+
         .metric {
             text-align: center;
             padding: 1rem;
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
         }
-        
+
         .metric-value {
             font-size: 2rem;
             font-weight: bold;
             color: #3498db;
         }
-        
+
         .metric-label {
             font-size: 0.9rem;
             opacity: 0.8;
             margin-top: 0.5rem;
         }
-        
+
         /* AI Assistant */
         .ai-assistant {
             grid-column: 3 / 4;
         }
-        
+
         .chat-messages {
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
@@ -189,23 +191,23 @@ def get_revolutionary_ai_dashboard():
             overflow-y: auto;
             margin: 1rem 0;
         }
-        
+
         .message {
             margin: 0.5rem 0;
             padding: 0.5rem;
             border-radius: 8px;
         }
-        
+
         .message-ai {
             background: rgba(52,152,219,0.3);
             border-left: 3px solid #3498db;
         }
-        
+
         .message-user {
             background: rgba(39,174,96,0.3);
             border-left: 3px solid #27ae60;
         }
-        
+
         /* AI Capabilities Grid */
         .ai-capabilities {
             grid-column: 1 / -1;
@@ -213,7 +215,7 @@ def get_revolutionary_ai_dashboard():
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
         }
-        
+
         .capability-card {
             background: linear-gradient(135deg, rgba(74,144,226,0.3) 0%, rgba(80,200,120,0.3) 100%);
             border: 1px solid rgba(255,255,255,0.2);
@@ -223,30 +225,30 @@ def get_revolutionary_ai_dashboard():
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        
+
         .capability-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 25px 50px rgba(0,0,0,0.4);
         }
-        
+
         .capability-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
             display: block;
         }
-        
+
         .capability-title {
             font-size: 1.3rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
-        
+
         .capability-description {
             opacity: 0.8;
             font-size: 0.9rem;
             line-height: 1.4;
         }
-        
+
         /* Interactive Elements */
         .action-btn {
             background: linear-gradient(135deg, #3498db, #9b59b6);
@@ -258,12 +260,12 @@ def get_revolutionary_ai_dashboard():
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        
+
         .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
-        
+
         .input-field {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.3);
@@ -273,23 +275,23 @@ def get_revolutionary_ai_dashboard():
             width: 100%;
             margin: 0.5rem 0;
         }
-        
+
         .input-field::placeholder { color: rgba(255,255,255,0.5); }
-        
+
         /* Animations */
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
+
         .slide-up { animation: slideUp 0.5s ease-out; }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
+
         /* Responsive Design */
         @media (max-width: 1200px) {
             .dashboard-grid { grid-template-columns: 1fr 1fr; }
             .ai-brain { grid-column: 1 / -1; }
             .realtime-monitor { grid-column: 1 / -1; }
         }
-        
+
         @media (max-width: 768px) {
             .dashboard-grid { grid-template-columns: 1fr; padding: 1rem; }
             .header { padding: 1rem; }
@@ -306,7 +308,7 @@ def get_revolutionary_ai_dashboard():
         </div>
         <a href="/cmms/dashboard" class="nav-back">← Main Dashboard</a>
     </div>
-    
+
     <div class="dashboard-grid">
         <!-- AI Brain Center -->
         <div class="ai-brain fade-in">
@@ -320,7 +322,7 @@ def get_revolutionary_ai_dashboard():
                 </div>
             </div>
         </div>
-        
+
         <!-- Predictive Analytics -->
         <div class="card predictions slide-up">
             <div class="card-header">
@@ -343,7 +345,7 @@ def get_revolutionary_ai_dashboard():
             </div>
             <button class="action-btn" style="width: 100%; margin-top: 1rem;" onclick="generatePredictions()">🎯 Generate New Predictions</button>
         </div>
-        
+
         <!-- Real-time Operations Monitor -->
         <div class="card realtime-monitor slide-up">
             <div class="card-header">
@@ -376,7 +378,7 @@ def get_revolutionary_ai_dashboard():
                 • Improved efficiency by 7.3%</small>
             </div>
         </div>
-        
+
         <!-- AI Assistant -->
         <div class="card ai-assistant slide-up">
             <div class="card-header">
@@ -397,7 +399,7 @@ def get_revolutionary_ai_dashboard():
             <input type="text" class="input-field" id="chat-input" placeholder="Ask me anything about your facility..." onkeypress="handleChatInput(event)">
             <button class="action-btn" style="width: 100%; margin-top: 0.5rem;" onclick="sendChatMessage()">Send Message</button>
         </div>
-        
+
         <!-- AI Capabilities Grid -->
         <div class="ai-capabilities">
             <div class="capability-card" onclick="window.location.href='/cmms/workorders/smart-demo'">
@@ -405,31 +407,31 @@ def get_revolutionary_ai_dashboard():
                 <div class="capability-title">Smart Work Orders</div>
                 <div class="capability-description">AI-powered work order creation with natural language processing and intelligent task prioritization</div>
             </div>
-            
+
             <div class="capability-card" onclick="window.location.href='/cmms/diagnostics/demo'">
                 <span class="capability-icon">🔧</span>
                 <div class="capability-title">Equipment Diagnostics</div>
                 <div class="capability-description">Advanced troubleshooting assistant that guides technicians through complex repairs</div>
             </div>
-            
+
             <div class="capability-card" onclick="window.location.href='/cmms/parts/suggest-demo'">
                 <span class="capability-icon">🔩</span>
                 <div class="capability-title">Intelligent Parts</div>
                 <div class="capability-description">AI-powered parts suggestions and inventory optimization based on maintenance patterns</div>
             </div>
-            
+
             <div class="capability-card" onclick="predictiveScheduling()">
                 <span class="capability-icon">📅</span>
                 <div class="capability-title">Predictive Scheduling</div>
                 <div class="capability-description">Optimize maintenance schedules using machine learning and historical data analysis</div>
             </div>
-            
+
             <div class="capability-card" onclick="voiceWorkflow()">
                 <span class="capability-icon">🎤</span>
                 <div class="capability-title">Voice Workflows</div>
                 <div class="capability-description">Hands-free operation with voice commands for creating work orders and updates</div>
             </div>
-            
+
             <div class="capability-card" onclick="window.location.href='/cmms/reports/demo'">
                 <span class="capability-icon">📊</span>
                 <div class="capability-title">Intelligent Reports</div>
@@ -437,7 +439,7 @@ def get_revolutionary_ai_dashboard():
             </div>
         </div>
     </div>
-    
+
     <script>
         // Real-time metrics updates
         function updateMetrics() {
@@ -445,7 +447,7 @@ def get_revolutionary_ai_dashboard():
             const workOrders = document.getElementById('active-work-orders');
             const suggestions = document.getElementById('ai-suggestions');
             const efficiency = document.getElementById('efficiency-score');
-            
+
             // Simulate real-time updates
             setInterval(() => {
                 fleetHealth.textContent = (94 + Math.random() * 4).toFixed(1) + '%';
@@ -454,25 +456,25 @@ def get_revolutionary_ai_dashboard():
                 efficiency.textContent = Math.floor(85 + Math.random() * 8) + '%';
             }, 3000);
         }
-        
+
         // AI Chat functionality
         function handleChatInput(event) {
             if (event.key === 'Enter') {
                 sendChatMessage();
             }
         }
-        
+
         function sendChatMessage() {
             const input = document.getElementById('chat-input');
             const messages = document.getElementById('chat-messages');
-            
+
             if (input.value.trim()) {
                 // Add user message
                 const userMsg = document.createElement('div');
                 userMsg.className = 'message message-user';
                 userMsg.innerHTML = `<strong>You:</strong> ${input.value}`;
                 messages.appendChild(userMsg);
-                
+
                 // Simulate AI response
                 setTimeout(() => {
                     const aiMsg = document.createElement('div');
@@ -481,29 +483,29 @@ def get_revolutionary_ai_dashboard():
                     messages.appendChild(aiMsg);
                     messages.scrollTop = messages.scrollHeight;
                 }, 1000);
-                
+
                 input.value = '';
                 messages.scrollTop = messages.scrollHeight;
             }
         }
-        
+
         // AI Action Functions
         function runFleetAnalysis() {
             alert('🔍 Running comprehensive fleet analysis...\n\n✅ Analyzing 156 assets\n⚡ Processing 2.3M data points\n🎯 Generating optimization recommendations\n\nResults will be available in your dashboard shortly.');
         }
-        
+
         function predictiveInsights() {
             alert('📊 Generating predictive insights...\n\n🔮 Forecasting next 30 days\n⚠️ Identifying potential failures\n💡 Optimizing maintenance windows\n📈 Calculating cost savings\n\nInsights generated! Check the predictions panel.');
         }
-        
+
         function optimizeOperations() {
             alert('⚡ Optimizing operations...\n\n🎯 Analyzing workflow efficiency\n⏱️ Optimizing technician schedules\n📦 Rebalancing inventory levels\n💰 Identifying cost reduction opportunities\n\nOptimization complete! Efficiency improved by 7.3%');
         }
-        
+
         function generatePredictions() {
             const content = document.getElementById('predictions-content');
             content.innerHTML = '<div style="text-align: center; padding: 2rem;">🤖 AI is analyzing equipment data...<br><small>Processing sensor data, maintenance history, and usage patterns</small></div>';
-            
+
             setTimeout(() => {
                 content.innerHTML = `
                     <div class="prediction-item prediction-warning">
@@ -521,19 +523,19 @@ def get_revolutionary_ai_dashboard():
                 `;
             }, 2000);
         }
-        
+
         function predictiveScheduling() {
             alert('📅 Predictive Scheduling\n\n🤖 AI is analyzing optimal maintenance windows based on:\n• Equipment usage patterns\n• Historical failure data\n• Production schedules\n• Weather forecasts\n\nScheduling optimization complete! 23% reduction in downtime projected.');
         }
-        
+
         function voiceWorkflow() {
             alert('🎤 Voice Workflow Demo\n\n"Hey ChatterFix, create a work order for the noisy motor in Building A"\n\n🤖 AI Response: "Work order created! I\'ve identified Motor-A-102, assigned to John Smith, and suggested checking the bearings. Priority set to medium. Anything else?"');
         }
-        
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             updateMetrics();
-            
+
             // Add entrance animations
             setTimeout(() => {
                 document.querySelectorAll('.capability-card').forEach((card, index) => {
@@ -546,4 +548,5 @@ def get_revolutionary_ai_dashboard():
     </script>
 </body>
 </html>
-    """)
+    """
+    )

@@ -43,7 +43,7 @@ SECTION 4: PROCEDURE STEPS
 
 Step 1: System Isolation
 - Close inlet valve V-101
-- Close outlet valve V-102  
+- Close outlet valve V-102
 - Open drain valve V-103 completely
 - Verify pump motor is locked out at MCC-1A
 - Attach LOTO tags per company procedure

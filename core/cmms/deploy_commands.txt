@@ -12,7 +12,7 @@ cat > app.py << 'EOF'
 [PASTE THE FIXED app.py CONTENT]
 EOF
 
-# Create workorders.py  
+# Create workorders.py
 cat > workorders.py << 'EOF'
 [PASTE THE FIXED workorders.py CONTENT]
 EOF

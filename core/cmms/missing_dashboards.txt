@@ -17,7 +17,7 @@ async def parts_dashboard():
         .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: #16213e; padding: 20px; border-radius: 10px; border: 1px solid #0f3460; }
         .card h3 { color: #3498db; margin-top: 0; }
-        .feature-btn { background: #3498db; color: white; border: none; padding: 12px 20px; 
+        .feature-btn { background: #3498db; color: white; border: none; padding: 12px 20px;
                       border-radius: 6px; text-decoration: none; display: inline-block; margin: 10px 5px; }
         .feature-btn:hover { background: #2980b9; }
         .nav-back { position: absolute; top: 20px; left: 20px; color: #3498db; text-decoration: none; }
@@ -28,12 +28,12 @@ async def parts_dashboard():
 </head>
 <body>
     <a href="/cmms/dashboard" class="nav-back">← Back to Dashboard</a>
-    
+
     <div class="header">
         <h1>🔧 Parts & Inventory Management</h1>
         <p>Manage parts, track inventory, and optimize procurement</p>
     </div>
-    
+
     <div class="stats">
         <div class="stat">
             <div class="stat-value">847</div>
@@ -52,26 +52,26 @@ async def parts_dashboard():
             <div>Availability</div>
         </div>
     </div>
-    
+
     <div class="cards">
         <div class="card">
             <h3>🤖 AI Parts Assistant</h3>
             <p>Get intelligent parts suggestions based on maintenance descriptions</p>
             <a href="/cmms/parts/suggest-demo" class="feature-btn">Smart Parts Suggestions</a>
         </div>
-        
+
         <div class="card">
             <h3>📦 Inventory Management</h3>
             <p>Track stock levels, manage reorder points, and procurement</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Inventory Dashboard</a>
         </div>
-        
+
         <div class="card">
             <h3>🔍 Parts Lookup</h3>
             <p>Search parts catalog, view specifications and compatibility</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Parts Catalog</a>
         </div>
-        
+
         <div class="card">
             <h3>📊 Usage Analytics</h3>
             <p>Analyze parts consumption patterns and optimize inventory</p>
@@ -81,7 +81,7 @@ async def parts_dashboard():
 </body>
 </html>""")
 
-# Safety Dashboard  
+# Safety Dashboard
 @app.get("/cmms/safety")
 async def safety_dashboard():
     """Safety & Compliance Dashboard"""
@@ -98,7 +98,7 @@ async def safety_dashboard():
         .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: #16213e; padding: 20px; border-radius: 10px; border: 1px solid #0f3460; }
         .card h3 { color: #e74c3c; margin-top: 0; }
-        .feature-btn { background: #e74c3c; color: white; border: none; padding: 12px 20px; 
+        .feature-btn { background: #e74c3c; color: white; border: none; padding: 12px 20px;
                       border-radius: 6px; text-decoration: none; display: inline-block; margin: 10px 5px; }
         .feature-btn:hover { background: #c0392b; }
         .nav-back { position: absolute; top: 20px; left: 20px; color: #3498db; text-decoration: none; }
@@ -110,16 +110,16 @@ async def safety_dashboard():
 </head>
 <body>
     <a href="/cmms/dashboard" class="nav-back">← Back to Dashboard</a>
-    
+
     <div class="header">
         <h1>🦺 Safety & Compliance</h1>
         <p>Monitor safety incidents, manage compliance, and ensure workplace safety</p>
     </div>
-    
+
     <div class="safety-alert">
         <strong>⚠️ Safety Alert:</strong> 2 pending incident investigations - Review required
     </div>
-    
+
     <div class="stats">
         <div class="stat">
             <div class="stat-value">47</div>
@@ -138,26 +138,26 @@ async def safety_dashboard():
             <div>Safety Audits</div>
         </div>
     </div>
-    
+
     <div class="cards">
         <div class="card">
             <h3>📋 Incident Reporting</h3>
             <p>Report and track safety incidents, near misses, and investigations</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Report Incident</a>
         </div>
-        
+
         <div class="card">
             <h3>🎓 Training Management</h3>
             <p>Manage safety training, certifications, and compliance tracking</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Training Dashboard</a>
         </div>
-        
+
         <div class="card">
             <h3>✅ Safety Audits</h3>
             <p>Schedule and conduct safety audits, track corrective actions</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Audit Schedule</a>
         </div>
-        
+
         <div class="card">
             <h3>📊 Safety Analytics</h3>
             <p>Analyze safety trends, incident patterns, and compliance metrics</p>
@@ -184,7 +184,7 @@ async def quality_dashboard():
         .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: #16213e; padding: 20px; border-radius: 10px; border: 1px solid #0f3460; }
         .card h3 { color: #27ae60; margin-top: 0; }
-        .feature-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; 
+        .feature-btn { background: #27ae60; color: white; border: none; padding: 12px 20px;
                       border-radius: 6px; text-decoration: none; display: inline-block; margin: 10px 5px; }
         .feature-btn:hover { background: #229954; }
         .nav-back { position: absolute; top: 20px; left: 20px; color: #3498db; text-decoration: none; }
@@ -195,12 +195,12 @@ async def quality_dashboard():
 </head>
 <body>
     <a href="/cmms/dashboard" class="nav-back">← Back to Dashboard</a>
-    
+
     <div class="header">
         <h1>✅ Quality Management</h1>
         <p>Monitor quality metrics, manage inspections, and ensure standards compliance</p>
     </div>
-    
+
     <div class="stats">
         <div class="stat">
             <div class="stat-value">96.8%</div>
@@ -219,26 +219,26 @@ async def quality_dashboard():
             <div>Pass Rate</div>
         </div>
     </div>
-    
+
     <div class="cards">
         <div class="card">
             <h3>🔍 Quality Inspections</h3>
             <p>Schedule and conduct quality inspections, track results</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Inspection Dashboard</a>
         </div>
-        
+
         <div class="card">
             <h3>📊 Quality Metrics</h3>
             <p>Monitor quality KPIs, track trends, and performance metrics</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Quality Reports</a>
         </div>
-        
+
         <div class="card">
             <h3>⚙️ Process Control</h3>
             <p>Manage quality control processes and standard operating procedures</p>
             <a href="#" class="feature-btn" onclick="alert('Feature coming soon!')">Process Control</a>
         </div>
-        
+
         <div class="card">
             <h3>🏆 Compliance Management</h3>
             <p>Track regulatory compliance, certifications, and audit results</p>

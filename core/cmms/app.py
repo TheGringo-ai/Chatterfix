@@ -15,7 +15,22 @@ from fastapi.responses import HTMLResponse, JSONResponse
 try:
     from unified_cmms_system import get_unified_styles
 except ImportError:
-    def get_unified_styles():
+    from typing import Literal
+
+    def get_unified_styles() -> Literal["""
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .btn { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #5a6fd8; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        """]:
         return """
         body {
             margin: 0;

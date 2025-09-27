@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./pre-deployment-check.sh:*)",
+      "Bash(./test-deployment.sh:*)",
+      "Bash(ssh:*)",
+      "Bash(__NEW_LINE__ echo '💬 Testing inventory question:')",
+      "Bash(__NEW_LINE__ echo -e '\\n💬 Testing scheduling question:')",
+      "Bash(__NEW_LINE__ echo -e '\\n💬 Testing work order creation:')",
+      "Bash(curl:*)",
+      "Bash(__NEW_LINE__ echo -e '\\n💬 Testing general conversation:')",
+      "Bash(chmod:*)",
+      "Bash(./setup-domain.sh:*)",
+      "Bash(scp:*)",
+      "Bash(tar:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

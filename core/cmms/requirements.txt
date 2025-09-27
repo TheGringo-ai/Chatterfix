@@ -1,0 +1,82 @@
+# ChatterFix CMMS Enterprise - Mars-Level AI Platform Requirements
+# 🚀 The most advanced AI-powered CMMS with enterprise-grade intelligence
+# Features: Enterprise AI Brain, Quantum Analytics, Autonomous Operations
+
+# Core FastAPI and web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+gunicorn>=21.2.0
+
+# HTTP client for AI API calls
+httpx>=0.25.0
+requests>=2.31.0
+
+# Authentication and security
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+
+# Template and static files
+jinja2>=3.1.2
+aiofiles>=23.0.0
+
+# Environment and configuration
+python-dotenv>=1.0.0
+
+# Database (SQLite built into Python)
+# Cloud SQL drivers can be added later if needed
+
+# Enhanced CMMS features - data processing and analytics
+pandas>=2.1.0
+openpyxl>=3.1.0
+numpy>=1.25.0
+scikit-learn>=1.3.0
+
+# Monitoring and logging (for Cloud Run)
+prometheus-client>=0.17.0
+
+# Advanced media and AI features
+pillow>=10.0.0
+opencv-python-headless>=4.8.0  # Headless version for containers
+pytesseract>=0.3.10
+speechrecognition>=3.10.0
+openai-whisper>=20231117
+# pyaudio>=0.2.11  # Commented out for container compatibility
+
+# 🚀 MARS-LEVEL AI PLATFORM DEPENDENCIES
+# Enterprise AI Brain & Quantum Analytics
+redis>=5.0.0  # For real-time analytics caching
+websockets>=11.0.0  # For real-time WebSocket connections
+psutil>=5.9.0  # For system health monitoring
+
+# Advanced AI & Machine Learning
+tensorflow>=2.13.0  # For neural architecture search
+torch>=2.0.0  # For federated learning
+scikit-learn>=1.3.0  # Already included but needed for advanced ML
+joblib>=1.3.0  # For model serialization
+
+# Quantum-inspired computing
+qiskit>=0.45.0  # For quantum algorithms (optional)
+cirq>=1.2.0  # Alternative quantum framework (optional)
+
+# Zero-trust security
+cryptography>=41.0.0  # Enhanced encryption
+pynacl>=1.5.0  # Advanced crypto operations
+
+# Real-time data processing
+kafka-python>=2.0.2  # For streaming data (optional)
+# Note: apache-kafka removed for Python 3.13 compatibility
+
+# Digital twins and edge computing
+paho-mqtt>=1.6.1  # For IoT device communication
+influxdb>=5.3.1  # Time-series database for metrics
+
+# Performance optimization
+cython>=3.0.0  # For performance-critical code
+numba>=0.58.0  # JIT compilation for numerical code
+
+# Autonomous operations
+schedule>=1.2.0  # For autonomous task scheduling
+watchdog>=3.0.0  # For file system monitoring

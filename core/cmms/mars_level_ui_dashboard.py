@@ -168,6 +168,56 @@ async def ai_command_center():
             border-color: rgba(79,172,254,0.3);
         }
         
+        /* Status Overview */
+        .status-overview {
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 0.85rem;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status-indicator.active {
+            background: #4caf50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .status-indicator.monitoring {
+            background: #ff9800;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+        }
+        
+        .status-indicator.mars {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+            animation: gradientShift 3s ease infinite;
+        }
+        
+        .platform-info {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.8rem;
+        }
+        
+        .info-item {
+            padding: 4px 0;
+            color: #4facfe;
+            font-weight: 500;
+        }
+        
         /* Main Content */
         .main-content {
             display: grid;
@@ -221,6 +271,12 @@ async def ai_command_center():
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+        }
+        
+        .status-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .status-active {
@@ -364,6 +420,158 @@ async def ai_command_center():
             transform: translateX(30px);
         }
         
+        /* AI Chat Interface */
+        .ai-chat-section {
+            grid-column: 1 / -1;
+        }
+        
+        .ai-chat-card {
+            background: rgba(26,26,46,0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h3 {
+            margin: 0;
+            color: #4facfe;
+            font-size: 1.3rem;
+        }
+        
+        .ai-provider-selector {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .ai-provider-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .ai-provider-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(79,172,254,0.3);
+        }
+        
+        .ai-provider-btn.active {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: #000;
+            border-color: #4facfe;
+        }
+        
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            scrollbar-width: thin;
+            scrollbar-color: #4facfe transparent;
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #4facfe;
+            border-radius: 3px;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .message-user {
+            text-align: right;
+        }
+        
+        .message-ai {
+            text-align: left;
+        }
+        
+        .message-content {
+            display: inline-block;
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+        
+        .message-user .message-content {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: #000;
+            font-weight: 500;
+        }
+        
+        .message-ai .message-content {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .message-provider {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        
+        .chat-input-section {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        #ai-chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid rgba(79,172,254,0.3);
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        #ai-chat-input:focus {
+            border-color: #4facfe;
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 0 3px rgba(79,172,254,0.2);
+        }
+        
+        #ai-chat-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+        
         /* Animations */
         @keyframes gradientShift {
             0%, 100% { background-position: 0% 50%; }
@@ -411,9 +619,9 @@ async def ai_command_center():
         <a href="/" class="nav-item">🏠 Home</a>
         <a href="/work-orders" class="nav-item">📋 Work Orders</a>
         <a href="/assets" class="nav-item">🏭 Assets</a>
+        <a href="/parts" class="nav-item">🔩 Parts</a>
         <a href="/reports" class="nav-item">📊 Reports</a>
         <a href="/ui/ai-command-center" class="nav-item active">🧠 AI Command Center</a>
-        <a href="/mars-status" class="nav-item">🚀 Mars Status</a>
         <a href="/settings" class="nav-item">⚙️ Settings</a>
     </nav>
 
@@ -421,6 +629,32 @@ async def ai_command_center():
     <div class="dashboard">
         <!-- Sidebar -->
         <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>🚀 Platform Status</h3>
+                <div class="status-overview">
+                    <div class="status-item">
+                        <span class="status-indicator active"></span>
+                        <span>AI Brain: OPERATIONAL</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator active"></span>
+                        <span>Quantum Analytics: ACTIVE</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator monitoring"></span>
+                        <span>Autonomous Ops: MONITORING</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator mars"></span>
+                        <span>Performance: MARS-LEVEL</span>
+                    </div>
+                </div>
+                <div class="platform-info">
+                    <div class="info-item">v4.0.0-mars-level-ai</div>
+                    <div class="info-item">4 AI Providers Active</div>
+                </div>
+            </div>
+            
             <div class="sidebar-section">
                 <h3>🧠 AI Systems</h3>
                 <div class="sidebar-item" onclick="showAIModels()">AI Models</div>
@@ -449,13 +683,38 @@ async def ai_command_center():
         <!-- Main Content -->
         <main class="main-content">
             <div id="content-area">
+                <!-- Advanced AI Chat Interface -->
+                <div class="ai-chat-section" style="margin-bottom: 30px;">
+                    <div class="ai-chat-card">
+                        <div class="chat-header">
+                            <h3>🤖 Advanced AI Assistant</h3>
+                            <div class="ai-provider-selector">
+                                <button class="ai-provider-btn active" data-provider="grok">⚡ Grok</button>
+                                <button class="ai-provider-btn" data-provider="openai">🧠 ChatGPT</button>
+                                <button class="ai-provider-btn" data-provider="ollama">🦙 LLAMA</button>
+                                <button class="ai-provider-btn" data-provider="all">🚀 Multi-AI</button>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="ai-chat-messages"></div>
+                        <div class="chat-input-section">
+                            <div class="chat-input-container">
+                                <input type="text" id="ai-chat-input" placeholder="Ask about work orders, assets, parts, or any CMMS functionality..." />
+                                <button id="send-ai-message" class="btn btn-primary">🚀 Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- AI Models Grid -->
                 <div class="ai-models-grid">
                     <!-- Enterprise AI Brain -->
                     <div class="ai-model-card">
                         <div class="model-header">
                             <h3 class="model-name">🧠 Enterprise AI Brain</h3>
-                            <span class="model-status status-active">ACTIVE</span>
+                            <div class="status-group">
+                                <span class="status-indicator active"></span>
+                                <span class="model-status status-active">OPERATIONAL</span>
+                            </div>
                         </div>
                         <div class="model-metrics">
                             <div class="metric">
@@ -806,7 +1065,123 @@ async def ai_command_center():
             console.log('Refreshing AI Command Center data...');
         }, 30000);
 
-        console.log('🚀 ChatterFix AI Command Center initialized - Mars-level interface ready!');
+        // AI Chat Functionality
+        let selectedAIProvider = 'grok';
+        
+        // Initialize AI Chat
+        function initializeAIChat() {
+            const chatMessages = document.getElementById('ai-chat-messages');
+            const chatInput = document.getElementById('ai-chat-input');
+            const sendButton = document.getElementById('send-ai-message');
+            const providerButtons = document.querySelectorAll('.ai-provider-btn');
+            
+            // Add welcome message
+            addChatMessage('ai', 'Welcome to the Advanced AI Assistant! Ask me about work orders, assets, parts, scheduling, or any CMMS functionality.', 'system');
+            
+            // Provider selection
+            providerButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    providerButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedAIProvider = btn.dataset.provider;
+                    addChatMessage('ai', `Switched to ${selectedAIProvider.toUpperCase()} AI provider.`, 'system');
+                });
+            });
+            
+            // Send message function
+            function sendAIMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+                
+                chatInput.value = '';
+                addChatMessage('user', message);
+                
+                // Add typing indicator
+                const typingId = addTypingIndicator();
+                
+                // Send to API
+                const endpoint = selectedAIProvider === 'all' ? '/ai/brain/orchestrate' : '/global-ai/process-message';
+                const payload = selectedAIProvider === 'all' 
+                    ? { query: message, context: { type: 'chat', page: 'ai-command-center' } }
+                    : { message: message, provider: selectedAIProvider, page_context: 'ai-command-center' };
+                
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    removeTypingIndicator(typingId);
+                    if (data.success || data.response) {
+                        const response = data.response || data.result;
+                        const provider = data.provider || selectedAIProvider;
+                        addChatMessage('ai', response, provider);
+                    } else {
+                        addChatMessage('ai', 'Sorry, I encountered an error. Please try again.', 'error');
+                    }
+                })
+                .catch(error => {
+                    removeTypingIndicator(typingId);
+                    addChatMessage('ai', 'Connection error. Please check your network and try again.', 'error');
+                });
+            }
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendAIMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendAIMessage();
+            });
+        }
+        
+        function addChatMessage(type, content, provider = null) {
+            const chatMessages = document.getElementById('ai-chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message message-${type}`;
+            
+            let providerLabel = '';
+            if (provider && provider !== 'system' && provider !== 'error') {
+                const providerEmoji = provider === 'grok' ? '⚡' : provider === 'openai' ? '🧠' : provider === 'ollama' ? '🦙' : '🤖';
+                providerLabel = `<div class="message-provider">${providerEmoji} ${provider.toUpperCase()}</div>`;
+            }
+            
+            messageDiv.innerHTML = `
+                ${providerLabel}
+                <div class="message-content">${content}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function addTypingIndicator() {
+            const typingId = 'typing-' + Date.now();
+            const chatMessages = document.getElementById('ai-chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message message-ai';
+            typingDiv.id = typingId;
+            typingDiv.innerHTML = `
+                <div class="message-content" style="opacity: 0.7;">
+                    🤖 AI is thinking... <span style="animation: pulse 1s infinite;">💭</span>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return typingId;
+        }
+        
+        function removeTypingIndicator(typingId) {
+            const typingElement = document.getElementById(typingId);
+            if (typingElement) {
+                typingElement.remove();
+            }
+        }
+        
+        // Initialize AI Chat when page loads
+        initializeAIChat();
+        
+        console.log('🚀 ChatterFix AI Command Center initialized - Advanced interface ready!');
     </script>
 
     <style>
@@ -851,7 +1226,6 @@ async def navigation_check():
         {"name": "Assets", "url": "/assets", "status": "active"}, 
         {"name": "Reports", "url": "/reports", "status": "active"},
         {"name": "AI Command Center", "url": "/ui/ai-command-center", "status": "active"},
-        {"name": "Mars Status", "url": "/mars-status", "status": "active"},
         {"name": "Settings", "url": "/settings", "status": "active"},
         {"name": "Enterprise AI Brain", "url": "/ai/brain/status", "status": "active"},
         {"name": "Quantum Analytics", "url": "/quantum/status", "status": "needs_redis"},

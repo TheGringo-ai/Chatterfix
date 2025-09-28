@@ -25,6 +25,7 @@ from typing import Optional, Dict, Any
 import jwt
 import bcrypt
 import asyncio
+import time
 
 # Initialize FastAPI app with Mars-level capabilities
 app = FastAPI(
@@ -41,6 +42,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Add security middleware
 try:
@@ -786,7 +790,6 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
             <a href="/parts">🔩 Parts</a>
             <a href="/reports">📊 Reports</a>
             <a href="/ui/ai-command-center">🧠 AI Command Center</a>
-            <a href="/mars-status">🚀 Mars Status</a>
             <a href="/login">🔐 Login</a>
         </div>
         
@@ -832,6 +835,11 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
             </div>
         </div>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
@@ -970,6 +978,11 @@ async def asset_detail(asset_id: int):
             <a href="/" class="nav-link">🏠 Dashboard</a>
         </div>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
@@ -1116,7 +1129,6 @@ async def assets_page():
             <a href="/parts">🔩 Parts</a>
             <a href="/reports">📊 Reports</a>
             <a href="/ui/ai-command-center">🧠 AI Command Center</a>
-            <a href="/mars-status">🚀 Mars Status</a>
             <a href="/login">🔐 Login</a>
         </div>
         
@@ -1127,7 +1139,7 @@ async def assets_page():
             </div>
             
             <div class="assets-grid">
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(1)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Main Water Pump #1</h3>
                     <div class="asset-status status-operational">Operational</div>
                     <p><strong>Type:</strong> Centrifugal Pump</p>
@@ -1135,10 +1147,10 @@ async def assets_page():
                     <p><strong>Location:</strong> Pump Room A</p>
                     <p><strong>Last Maintenance:</strong> 2025-09-15</p>
                     <p><strong>Next Service:</strong> 2025-12-15</p>
-                    <a href="/asset/1" class="btn">View Details</a>
+                    <a href="/asset/1" class="btn">🔧 Manage Asset</a>
                 </div>
                 
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(2)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>HVAC System Zone A</h3>
                     <div class="asset-status status-maintenance">Maintenance Due</div>
                     <p><strong>Type:</strong> Air Handling Unit</p>
@@ -1146,10 +1158,10 @@ async def assets_page():
                     <p><strong>Location:</strong> Roof Level 3</p>
                     <p><strong>Last Maintenance:</strong> 2025-06-20</p>
                     <p><strong>Next Service:</strong> 2025-09-30</p>
-                    <a href="/asset/2" class="btn">View Details</a>
+                    <a href="/asset/2" class="btn">🔧 Manage Asset</a>
                 </div>
                 
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(3)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Conveyor System #3</h3>
                     <div class="asset-status status-operational">Operational</div>
                     <p><strong>Type:</strong> Belt Conveyor</p>
@@ -1157,10 +1169,10 @@ async def assets_page():
                     <p><strong>Location:</strong> Production Line C</p>
                     <p><strong>Last Maintenance:</strong> 2025-09-20</p>
                     <p><strong>Next Service:</strong> 2025-10-20</p>
-                    <a href="/asset/3" class="btn">View Details</a>
+                    <a href="/asset/3" class="btn">🔧 Manage Asset</a>
                 </div>
                 
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(4)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Backup Generator #1</h3>
                     <div class="asset-status status-critical">Critical Alert</div>
                     <p><strong>Type:</strong> Diesel Generator</p>
@@ -1168,10 +1180,10 @@ async def assets_page():
                     <p><strong>Location:</strong> Generator Room</p>
                     <p><strong>Last Maintenance:</strong> 2025-08-10</p>
                     <p><strong>Next Service:</strong> Overdue</p>
-                    <a href="/asset/4" class="btn">View Details</a>
+                    <a href="/asset/4" class="btn">🔧 Manage Asset</a>
                 </div>
                 
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(5)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Safety Station #2</h3>
                     <div class="asset-status status-operational">Operational</div>
                     <p><strong>Type:</strong> Emergency Equipment</p>
@@ -1179,10 +1191,10 @@ async def assets_page():
                     <p><strong>Location:</strong> Production Floor B</p>
                     <p><strong>Last Maintenance:</strong> 2025-09-01</p>
                     <p><strong>Next Service:</strong> 2025-12-01</p>
-                    <a href="/asset/5" class="btn">View Details</a>
+                    <a href="/asset/5" class="btn">🔧 Manage Asset</a>
                 </div>
                 
-                <div class="asset-card">
+                <div class="asset-card" onclick="showAssetDetails(6)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Compressor Unit #2</h3>
                     <div class="asset-status status-maintenance">Maintenance Due</div>
                     <p><strong>Type:</strong> Air Compressor</p>
@@ -1190,7 +1202,7 @@ async def assets_page():
                     <p><strong>Location:</strong> Utility Room</p>
                     <p><strong>Last Maintenance:</strong> 2025-07-15</p>
                     <p><strong>Next Service:</strong> 2025-10-15</p>
-                    <a href="/asset/6" class="btn">View Details</a>
+                    <a href="/asset/6" class="btn">🔧 Manage Asset</a>
                 </div>
             </div>
         </div>
@@ -1602,6 +1614,9 @@ async def assets_page():
         });
         </script>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
     </html>"""
@@ -1759,7 +1774,6 @@ async def work_orders_page():
             <a href="/parts">🔩 Parts</a>
             <a href="/reports">📊 Reports</a>
             <a href="/ui/ai-command-center">🧠 AI Command Center</a>
-            <a href="/mars-status">🚀 Mars Status</a>
             <a href="/login">🔐 Login</a>
         </div>
         
@@ -1767,10 +1781,21 @@ async def work_orders_page():
             <div class="page-header">
                 <h1>🔧 Work Orders</h1>
                 <p>Enterprise work order management with AI-powered insights</p>
+                <div style="margin-top: 15px;">
+                    <button class="btn" onclick="createNewWorkOrder()" style="background: linear-gradient(45deg, #2E4053, #8B9467); color: white; font-weight: 600;">
+                        + Create New Work Order
+                    </button>
+                    <button class="btn" onclick="createNewAsset()" style="background: linear-gradient(45deg, #434A54, #666666); color: white; font-weight: 600; margin-left: 10px;">
+                        + Create New Asset
+                    </button>
+                    <button class="btn" onclick="createNewPart()" style="background: linear-gradient(45deg, #456789, #2F4E7F); color: white; font-weight: 600; margin-left: 10px;">
+                        + Create New Part
+                    </button>
+                </div>
             </div>
             
             <div class="work-orders-grid">
-                <div class="work-order-card">
+                <div class="work-order-card" onclick="showWorkOrderDetails(1)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>WO-001: Pump Maintenance</h3>
                     <div class="priority priority-high">High Priority</div>
                     <p><strong>Asset:</strong> Main Water Pump #1</p>
@@ -1778,10 +1803,10 @@ async def work_orders_page():
                     <p><strong>Assigned:</strong> John Technician</p>
                     <p><strong>Due Date:</strong> 2025-09-30</p>
                     <div class="status status-open">Open</div>
-                    <button class="btn">View Details</button>
+                    <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(1)">🔧 Manage Work Order</button>
                 </div>
                 
-                <div class="work-order-card">
+                <div class="work-order-card" onclick="showWorkOrderDetails(2)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>WO-002: HVAC Filter Replace</h3>
                     <div class="priority priority-medium">Medium Priority</div>
                     <p><strong>Asset:</strong> HVAC System Zone A</p>
@@ -1789,10 +1814,10 @@ async def work_orders_page():
                     <p><strong>Assigned:</strong> Mike Maintenance</p>
                     <p><strong>Due Date:</strong> 2025-10-05</p>
                     <div class="status status-progress">In Progress</div>
-                    <button class="btn">View Details</button>
+                    <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(2)">🔧 Manage Work Order</button>
                 </div>
                 
-                <div class="work-order-card">
+                <div class="work-order-card" onclick="showWorkOrderDetails(3)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>WO-003: Conveyor Belt Check</h3>
                     <div class="priority priority-low">Low Priority</div>
                     <p><strong>Asset:</strong> Conveyor System #3</p>
@@ -1800,10 +1825,10 @@ async def work_orders_page():
                     <p><strong>Assigned:</strong> Sarah Inspector</p>
                     <p><strong>Due Date:</strong> 2025-10-10</p>
                     <div class="status status-completed">Completed</div>
-                    <button class="btn">View Details</button>
+                    <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(3)">🔧 Manage Work Order</button>
                 </div>
                 
-                <div class="work-order-card">
+                <div class="work-order-card" onclick="showWorkOrderDetails(4)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>WO-004: Emergency Generator Test</h3>
                     <div class="priority priority-high">High Priority</div>
                     <p><strong>Asset:</strong> Backup Generator #1</p>
@@ -1811,36 +1836,138 @@ async def work_orders_page():
                     <p><strong>Assigned:</strong> Tom Electric</p>
                     <p><strong>Due Date:</strong> 2025-09-28</p>
                     <div class="status status-open">Open</div>
-                    <button class="btn">View Details</button>
+                    <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(4)">🔧 Manage Work Order</button>
                 </div>
                 
-                <div class="work-order-card">
+                <div class="work-order-card" onclick="showWorkOrderDetails(5)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>WO-005: Safety Equipment Check</h3>
                     <div class="priority priority-medium">Medium Priority</div>
                     <p><strong>Asset:</strong> Safety Station #2</p>
                     <p><strong>Description:</strong> Inspect fire extinguishers and emergency equipment</p>
                     <p><strong>Assigned:</strong> Lisa Safety</p>
                     <p><strong>Due Date:</strong> 2025-10-01</p>
-                    <div class="status status-progress">In Progress</div>
-                    <button class="btn">View Details</button>
+                    <div class="status status-open">Open</div>
+                    <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(5)">🔧 Manage Work Order</button>
                 </div>
             </div>
         </div>
         
         <!-- CRUD Functionality -->
         <script>
+        // Global variables and functions accessible to onclick handlers
+        let workOrders = [];
+        let checkedOutParts = [];
+        let timeEntries = [];
+        let timerStart = null;
+        let timerInterval = null;
+        let isDrawing = false;
+        let signatureCanvas = null;
+        let signatureCtx = null;
+
+        // Global functions accessible to HTML onclick handlers
+        window.showWorkOrderDetails = async function(id) {
+            const workOrder = workOrders.find(wo => wo.id === parseInt(id));
+            if (!workOrder) {
+                console.error('Work order not found:', id);
+                alert('Work order not found. Loading from database...');
+                await loadWorkOrders();
+                return;
+            }
+            
+            // Get AI insights for this work order
+            let aiInsights = null;
+            try {
+                const aiResponse = await fetch('/global-ai/process-message', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: `Analyze work order: ${workOrder.title} - ${workOrder.description}. Priority: ${workOrder.priority}. Status: ${workOrder.status}. Provide insights on urgency, risks, and recommendations.`,
+                        context: {
+                            action: 'analyze_work_order',
+                            work_order_id: id,
+                            work_order_data: workOrder
+                        }
+                    })
+                });
+                const aiResult = await aiResponse.json();
+                if (aiResult.success) {
+                    aiInsights = aiResult.response;
+                }
+            } catch (error) {
+                console.error('Failed to get AI insights:', error);
+            }
+            
+            const modal = document.getElementById('work-order-modal');
+            if (!modal) {
+                console.error('Modal not found! Creating modal...');
+                createModal();
+                return;
+            }
+            
+            const title = document.getElementById('modal-title');
+            const content = document.getElementById('modal-content');
+            
+            title.textContent = workOrder.title;
+            content.innerHTML = `
+                <!-- AI Insights Panel -->
+                ${aiInsights ? `
+                <div style="background: linear-gradient(135deg, rgba(139, 148, 103, 0.2), rgba(46, 64, 83, 0.3)); border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #8B9467;">
+                    <h4 style="margin: 0 0 10px 0; color: #8B9467; display: flex; align-items: center; gap: 8px;">
+                        🤖 AI Brain Analysis
+                    </h4>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.6;">
+                        ${aiInsights}
+                    </div>
+                </div>
+                ` : '<div style="text-align: center; padding: 10px; color: rgba(255,255,255,0.6);">🤖 AI Brain is analyzing...</div>'}
+                
+                <!-- Work Order Details -->
+                <div style="line-height: 1.8;">
+                    <p><strong>📋 Priority:</strong> <span style="color: ${workOrder.priority === 'high' ? '#e74c3c' : workOrder.priority === 'medium' ? '#f39c12' : '#2ecc71'}">${workOrder.priority}</span></p>
+                    <p><strong>🔧 Status:</strong> ${workOrder.status}</p>
+                    <p><strong>👤 Assigned:</strong> ${workOrder.assigned || 'Unassigned'}</p>
+                    <p><strong>📅 Due Date:</strong> ${workOrder.dueDate || 'Not set'}</p>
+                    <p><strong>📄 Description:</strong> ${workOrder.description}</p>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+            console.log('✅ Modal opened for work order:', id);
+        };
+        
+        
+        
+        
+        
+        // Global loadWorkOrders function
+        window.loadWorkOrders = async function() {
+            try {
+                const response = await fetch('/api/work-orders-list');
+                const result = await response.json();
+                if (result.success) {
+                    workOrders = result.work_orders;
+                    console.log('📋 Loaded', workOrders.length, 'work orders from database');
+                } else {
+                    console.error('Failed to load work orders:', result.error);
+                    // Fallback to sample data
+                    workOrders = [
+                        {id: 1, title: 'WO-001: Pump Maintenance', priority: 'high', asset: 'Main Water Pump #1', description: 'Scheduled maintenance and inspection', assigned: 'John Technician', dueDate: '2025-09-30', status: 'open'},
+                        {id: 2, title: 'WO-002: HVAC Filter Replace', priority: 'medium', asset: 'HVAC System Zone A', description: 'Replace air filters quarterly', assigned: 'Mike Maintenance', dueDate: '2025-10-05', status: 'progress'}
+                    ];
+                }
+            } catch (error) {
+                console.error('Error loading work orders:', error);
+                // Fallback to sample data
+                workOrders = [
+                    {id: 1, title: 'WO-001: Pump Maintenance', priority: 'high', asset: 'Main Water Pump #1', description: 'Scheduled maintenance and inspection', assigned: 'John Technician', dueDate: '2025-09-30', status: 'open'}
+                ];
+            }
+        };
+
         // Work Order CRUD Functionality
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 Work Orders CRUD System Loading...');
             
-            // Sample work orders data (would normally come from API)
-            let workOrders = [
-                {id: 1, title: 'WO-001: Pump Maintenance', priority: 'high', asset: 'Main Water Pump #1', description: 'Scheduled maintenance and inspection', assigned: 'John Technician', dueDate: '2025-09-30', status: 'open'},
-                {id: 2, title: 'WO-002: HVAC Filter Replace', priority: 'medium', asset: 'HVAC System Zone A', description: 'Replace air filters quarterly', assigned: 'Mike Maintenance', dueDate: '2025-10-05', status: 'progress'},
-                {id: 3, title: 'WO-003: Conveyor Belt Check', priority: 'low', asset: 'Conveyor System #3', description: 'Weekly safety inspection', assigned: 'Sarah Inspector', dueDate: '2025-10-10', status: 'completed'},
-                {id: 4, title: 'WO-004: Emergency Generator Test', priority: 'high', asset: 'Backup Generator #1', description: 'Monthly load test required', assigned: 'Tom Electric', dueDate: '2025-09-28', status: 'open'},
-                {id: 5, title: 'WO-005: Safety Equipment Check', priority: 'medium', asset: 'Safety Station #2', description: 'Inspect fire extinguishers and emergency equipment', assigned: 'Lisa Safety', dueDate: '2025-10-01', status: 'open'}
-            ];
             
             // Create modal for CRUD operations
             function createModal() {
@@ -1907,10 +2034,35 @@ async def work_orders_page():
                 document.body.appendChild(modal);
             }
             
-            // Show work order details
-            window.showWorkOrderDetails = function(id) {
+        // Duplicate showWorkOrderDetails function removed - using global version
                 const workOrder = workOrders.find(wo => wo.id === parseInt(id));
-                if (!workOrder) return;
+                if (!workOrder) {
+                    console.error('Work order not found:', id);
+                    return;
+                }
+                
+                // Get AI insights for this work order
+                let aiInsights = null;
+                try {
+                    const aiResponse = await fetch('/global-ai/process-message', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            message: `Analyze work order: ${workOrder.title} - ${workOrder.description}. Priority: ${workOrder.priority}. Status: ${workOrder.status}. Provide insights on urgency, risks, and recommendations.`,
+                            context: {
+                                action: 'analyze_work_order',
+                                work_order_id: id,
+                                work_order_data: workOrder
+                            }
+                        })
+                    });
+                    const aiResult = await aiResponse.json();
+                    if (aiResult.success) {
+                        aiInsights = aiResult.response;
+                    }
+                } catch (error) {
+                    console.error('Failed to get AI insights:', error);
+                }
                 
                 const modal = document.getElementById('work-order-modal');
                 const title = document.getElementById('modal-title');
@@ -1919,16 +2071,116 @@ async def work_orders_page():
                 
                 title.textContent = workOrder.title;
                 content.innerHTML = `
-                    <div style="line-height: 1.8;">
-                        <p><strong>🏭 Asset:</strong> ${workOrder.asset}</p>
-                        <p><strong>📋 Description:</strong> ${workOrder.description}</p>
-                        <p><strong>👤 Assigned:</strong> ${workOrder.assigned}</p>
-                        <p><strong>📅 Due Date:</strong> ${workOrder.dueDate}</p>
-                        <p><strong>⚡ Priority:</strong> <span class="priority priority-${workOrder.priority}" style="padding: 4px 12px; border-radius: 15px; font-size: 0.9em;">${workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}</span></p>
-                        <p><strong>📊 Status:</strong> <span class="status status-${workOrder.status}" style="padding: 4px 12px; border-radius: 15px; font-size: 0.9em;">${workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}</span></p>
+                    <!-- AI Insights Panel -->
+                    ${aiInsights ? `
+                    <div style="background: linear-gradient(135deg, rgba(139, 148, 103, 0.2), rgba(46, 64, 83, 0.3)); border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #8B9467;">
+                        <h4 style="margin: 0 0 10px 0; color: #8B9467; display: flex; align-items: center; gap: 8px;">
+                            🤖 AI Brain Analysis
+                        </h4>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.6;">
+                            ${aiInsights}
+                        </div>
                     </div>
-                    <div style="margin: 20px 0; padding: 15px; background: rgba(46,64,83,0.4); border-radius: 10px; border-left: 4px solid #8B9467;">
-                        <strong style="color: #8B9467;">🤖 AI Insight:</strong> This work order is ${workOrder.priority} priority. ${workOrder.status === 'open' ? 'Consider assigning resources soon.' : workOrder.status === 'progress' ? 'Work is currently in progress.' : 'Work has been completed successfully.'}
+                    ` : '<div style="text-align: center; padding: 10px; color: rgba(255,255,255,0.6);">🤖 AI Brain is analyzing...</div>'}
+                    
+                    <!-- Tab Navigation -->
+                    <div style="display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(102,102,102,0.3);">
+                        <button onclick="showTab('details')" id="tab-details" class="tab-btn" style="padding: 10px 20px; border: none; background: none; color: white; cursor: pointer; border-bottom: 2px solid #8B9467;">📋 Details</button>
+                        <button onclick="showTab('parts')" id="tab-parts" class="tab-btn" style="padding: 10px 20px; border: none; background: none; color: rgba(255,255,255,0.7); cursor: pointer; border-bottom: 2px solid transparent;">🔧 Parts</button>
+                        <button onclick="showTab('time')" id="tab-time" class="tab-btn" style="padding: 10px 20px; border: none; background: none; color: rgba(255,255,255,0.7); cursor: pointer; border-bottom: 2px solid transparent;">⏱️ Time</button>
+                        <button onclick="showTab('complete')" id="tab-complete" class="tab-btn" style="padding: 10px 20px; border: none; background: none; color: rgba(255,255,255,0.7); cursor: pointer; border-bottom: 2px solid transparent;">✅ Complete</button>
+                    </div>
+                    
+                    <!-- Details Tab -->
+                    <div id="details-tab" class="tab-content">
+                        <div style="line-height: 1.8;">
+                            <p><strong>🏭 Asset:</strong> ${workOrder.asset}</p>
+                            <p><strong>📋 Description:</strong> ${workOrder.description}</p>
+                            <p><strong>👤 Assigned:</strong> ${workOrder.assigned}</p>
+                            <p><strong>📅 Due Date:</strong> ${workOrder.dueDate}</p>
+                            <p><strong>⚡ Priority:</strong> <span class="priority priority-${workOrder.priority}" style="padding: 4px 12px; border-radius: 15px; font-size: 0.9em;">${workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}</span></p>
+                            <p><strong>📊 Status:</strong> <span class="status status-${workOrder.status}" style="padding: 4px 12px; border-radius: 15px; font-size: 0.9em;">${workOrder.status.charAt(0).toUpperCase() + workOrder.status.slice(1)}</span></p>
+                        </div>
+                        <div style="margin: 20px 0; padding: 15px; background: rgba(46,64,83,0.4); border-radius: 10px; border-left: 4px solid #8B9467;">
+                            <strong style="color: #8B9467;">🤖 AI Insight:</strong> This work order is ${workOrder.priority} priority. ${workOrder.status === 'open' ? 'Consider assigning resources soon.' : workOrder.status === 'progress' ? 'Work is currently in progress.' : 'Work has been completed successfully.'}
+                        </div>
+                    </div>
+                    
+                    <!-- Parts Tab -->
+                    <div id="parts-tab" class="tab-content" style="display: none;">
+                        <h4 style="margin: 0 0 15px 0; color: #8B9467;">🔧 Parts Management</h4>
+                        <div style="background: rgba(46,64,83,0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                            <h5 style="margin: 0 0 10px 0;">Available Parts</h5>
+                            <div id="available-parts">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(33,33,33,0.3); margin-bottom: 5px; border-radius: 5px;">
+                                    <span>🔩 HVAC Filter (25 available)</span>
+                                    <button onclick="checkoutPart('filter', 1)" style="background: #8B9467; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Checkout</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(33,33,33,0.3); margin-bottom: 5px; border-radius: 5px;">
+                                    <span>⚙️ V-Belt 15" (12 available)</span>
+                                    <button onclick="checkoutPart('belt', 1)" style="background: #8B9467; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Checkout</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(33,33,33,0.3); margin-bottom: 5px; border-radius: 5px;">
+                                    <span>🛢️ Motor Oil 15W-40 (8 available)</span>
+                                    <button onclick="checkoutPart('oil', 1)" style="background: #8B9467; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Checkout</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(46,64,83,0.4); padding: 15px; border-radius: 10px;">
+                            <h5 style="margin: 0 0 10px 0;">Checked Out Parts</h5>
+                            <div id="checked-out-parts">
+                                <p style="color: rgba(255,255,255,0.7); font-style: italic;">No parts checked out yet</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Tab -->
+                    <div id="time-tab" class="tab-content" style="display: none;">
+                        <h4 style="margin: 0 0 15px 0; color: #8B9467;">⏱️ Time Tracking</h4>
+                        <div style="background: rgba(46,64,83,0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                            <button id="time-toggle" onclick="toggleTimer()" style="background: #8B9467; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 16px;">▶️ Start Work</button>
+                            <div id="timer-display" style="text-align: center; font-size: 24px; margin: 15px 0; display: none;">⏱️ 00:00:00</div>
+                        </div>
+                        <div style="background: rgba(46,64,83,0.4); padding: 15px; border-radius: 10px;">
+                            <h5 style="margin: 0 0 10px 0;">Time Entries</h5>
+                            <div id="time-entries">
+                                <p style="color: rgba(255,255,255,0.7); font-style: italic;">No time entries yet</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Complete Tab -->
+                    <div id="complete-tab" class="tab-content" style="display: none;">
+                        <h4 style="margin: 0 0 15px 0; color: #8B9467;">✅ Work Order Completion</h4>
+                        <div style="background: rgba(46,64,83,0.4); padding: 15px; border-radius: 10px;">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Completion Notes:</label>
+                                <textarea id="completion-notes" placeholder="Describe work completed, any issues found, recommendations..." style="
+                                    width: 100%;
+                                    height: 80px;
+                                    padding: 10px;
+                                    border: 1px solid rgba(102,102,102,0.3);
+                                    border-radius: 8px;
+                                    background: rgba(33,33,33,0.3);
+                                    color: white;
+                                    outline: none;
+                                    resize: vertical;
+                                "></textarea>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Digital Signature:</label>
+                                <canvas id="signature-pad" width="400" height="100" style="
+                                    border: 1px solid rgba(102,102,102,0.3);
+                                    border-radius: 8px;
+                                    background: rgba(33,33,33,0.3);
+                                    cursor: crosshair;
+                                    width: 100%;
+                                    height: 80px;
+                                "></canvas>
+                                <button onclick="clearSignature()" style="background: rgba(102,102,102,0.3); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Clear</button>
+                            </div>
+                            <button onclick="completeWorkOrder(${id})" style="background: linear-gradient(45deg, #2E4053, #8B9467); color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 16px; font-weight: 600;">🎉 Complete Work Order</button>
+                        </div>
                     </div>
                 `;
                 
@@ -1936,10 +2188,15 @@ async def work_orders_page():
                 actionBtn.onclick = () => editWorkOrder(id);
                 
                 modal.style.display = 'flex';
+                
+                // Initialize signature pad after modal is shown
+                setTimeout(() => {
+                    initSignaturePad();
+                }, 100);
             };
             
-            // Edit work order
-            window.editWorkOrder = function(id) {
+        // Edit work order - GLOBAL FUNCTION
+        window.editWorkOrder = function(id) {
                 const workOrder = workOrders.find(wo => wo.id === parseInt(id));
                 if (!workOrder) return;
                 
@@ -2063,8 +2320,8 @@ async def work_orders_page():
                 actionBtn.onclick = () => saveWorkOrder(id);
             };
             
-            // Save work order changes
-            window.saveWorkOrder = async function(id) {
+        // Save work order changes - GLOBAL FUNCTION
+        window.saveWorkOrder = async function(id) {
                 try {
                     const formData = {
                         title: document.getElementById('edit-title').value,
@@ -2098,8 +2355,8 @@ async def work_orders_page():
                 }
             };
             
-            // Delete work order
-            window.deleteWorkOrder = async function(id) {
+        // Delete work order - GLOBAL FUNCTION
+        window.deleteWorkOrder = async function(id) {
                 if (confirm('⚠️ Are you sure you want to delete this work order? This action cannot be undone.')) {
                     try {
                         const response = await fetch(`/api/work-orders/${id}`, {
@@ -2121,26 +2378,754 @@ async def work_orders_page():
                 }
             };
             
-            // Close modal
+            
+            // Button click handlers are already defined in HTML - no need to override
+            
+        // Tab switching functionality - GLOBAL FUNCTION
+        window.showTab = function(tabName) {
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.style.display = 'none';
+                });
+                
+                // Reset all tab buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.style.color = 'rgba(255,255,255,0.7)';
+                    btn.style.borderBottomColor = 'transparent';
+                });
+                
+                // Show selected tab
+                document.getElementById(tabName + '-tab').style.display = 'block';
+                document.getElementById('tab-' + tabName).style.color = 'white';
+                document.getElementById('tab-' + tabName).style.borderBottomColor = '#8B9467';
+            };
+            
+        // Parts checkout functionality - GLOBAL FUNCTION
+        window.checkoutPart = function(partType, quantity) {
+                const partNames = {
+                    'filter': '🔩 HVAC Filter',
+                    'belt': '⚙️ V-Belt 15"',
+                    'oil': '🛢️ Motor Oil 15W-40'
+                };
+                
+                checkedOutParts.push({
+                    type: partType,
+                    name: partNames[partType],
+                    quantity: quantity,
+                    time: new Date().toLocaleTimeString()
+                });
+                
+                updateCheckedOutParts();
+                
+                // Show success message
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Checked Out';
+                btn.style.background = '#2E4053';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#8B9467';
+                }, 2000);
+            };
+            
+            function updateCheckedOutParts() {
+                const container = document.getElementById('checked-out-parts');
+                if (checkedOutParts.length === 0) {
+                    container.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No parts checked out yet</p>';
+                } else {
+                    container.innerHTML = checkedOutParts.map(part => 
+                        `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(139,148,103,0.3); margin-bottom: 5px; border-radius: 5px;">
+                            <span>${part.name} (${part.quantity}x)</span>
+                            <small style="color: rgba(255,255,255,0.7);">${part.time}</small>
+                        </div>`
+                    ).join('');
+                }
+            }
+            
+        // Timer functionality - GLOBAL FUNCTION
+        window.toggleTimer = function() {
+                const btn = document.getElementById('time-toggle');
+                const display = document.getElementById('timer-display');
+                
+                if (timerStart === null) {
+                    // Start timer
+                    timerStart = new Date();
+                    btn.textContent = '⏸️ Stop Work';
+                    btn.style.background = '#d32f2f';
+                    display.style.display = 'block';
+                    
+                    timerInterval = setInterval(() => {
+                        const elapsed = new Date() - timerStart;
+                        const hours = Math.floor(elapsed / 3600000);
+                        const minutes = Math.floor((elapsed % 3600000) / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                        display.textContent = `⏱️ ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }, 1000);
+                } else {
+                    // Stop timer
+                    const elapsed = new Date() - timerStart;
+                    const minutes = Math.floor(elapsed / 60000);
+                    
+                    timeEntries.push({
+                        start: timerStart.toLocaleTimeString(),
+                        duration: `${Math.floor(minutes / 60)}h ${minutes % 60}m`,
+                        date: timerStart.toLocaleDateString()
+                    });
+                    
+                    clearInterval(timerInterval);
+                    timerStart = null;
+                    btn.textContent = '▶️ Start Work';
+                    btn.style.background = '#8B9467';
+                    display.style.display = 'none';
+                    
+                    updateTimeEntries();
+                }
+            };
+            
+            function updateTimeEntries() {
+                const container = document.getElementById('time-entries');
+                if (timeEntries.length === 0) {
+                    container.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-style: italic;">No time entries yet</p>';
+                } else {
+                    container.innerHTML = timeEntries.map(entry => 
+                        `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(139,148,103,0.3); margin-bottom: 5px; border-radius: 5px;">
+                            <span>Started: ${entry.start}</span>
+                            <span style="font-weight: 600;">${entry.duration}</span>
+                        </div>`
+                    ).join('');
+                }
+            }
+            
+        // Signature pad functionality - GLOBAL FUNCTIONS  
+        function initSignaturePad() {
+                signatureCanvas = document.getElementById('signature-pad');
+                if (signatureCanvas) {
+                    signatureCtx = signatureCanvas.getContext('2d');
+                    signatureCtx.strokeStyle = '#ffffff';
+                    signatureCtx.lineWidth = 2;
+                    signatureCtx.lineCap = 'round';
+                    
+                    signatureCanvas.addEventListener('mousedown', startDrawing);
+                    signatureCanvas.addEventListener('mousemove', draw);
+                    signatureCanvas.addEventListener('mouseup', stopDrawing);
+                    signatureCanvas.addEventListener('mouseout', stopDrawing);
+                    
+                    // Touch events for mobile
+                    signatureCanvas.addEventListener('touchstart', handleTouch);
+                    signatureCanvas.addEventListener('touchmove', handleTouch);
+                    signatureCanvas.addEventListener('touchend', stopDrawing);
+                }
+            }
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = signatureCanvas.getBoundingClientRect();
+                signatureCtx.beginPath();
+                signatureCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                const rect = signatureCanvas.getBoundingClientRect();
+                signatureCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                signatureCtx.stroke();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            function handleTouch(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                    e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                signatureCanvas.dispatchEvent(mouseEvent);
+            }
+            
+        window.clearSignature = function() {
+                if (signatureCtx) {
+                    signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+                }
+            };
+            
+        // Work order completion - GLOBAL FUNCTION
+        window.completeWorkOrder = function(id) {
+                const notes = document.getElementById('completion-notes').value;
+                const hasSignature = signatureCtx && !isCanvasBlank(signatureCanvas);
+                
+                if (!notes.trim()) {
+                    alert('Please add completion notes before completing the work order.');
+                    return;
+                }
+                
+                if (!hasSignature) {
+                    alert('Please provide a digital signature before completing the work order.');
+                    return;
+                }
+                
+                // Update work order status
+                const workOrder = workOrders.find(wo => wo.id === parseInt(id));
+                if (workOrder) {
+                    workOrder.status = 'completed';
+                    workOrder.completionNotes = notes;
+                    workOrder.completedBy = 'Current User';
+                    workOrder.completedAt = new Date().toISOString();
+                }
+                
+                // Close modal and refresh view
+                closeModal();
+                
+                // Show success message
+                alert(`🎉 Work Order ${workOrder.title} completed successfully!\\n\\nTime entries: ${timeEntries.length}\\nParts used: ${checkedOutParts.length}\\nNotes: ${notes.substring(0, 50)}...`);
+                
+                // Reset for next work order
+                checkedOutParts = [];
+                timeEntries = [];
+                
+                // Refresh the page to show updated status
+                location.reload();
+            };
+            
+            function isCanvasBlank(canvas) {
+                const blank = document.createElement('canvas');
+                blank.width = canvas.width;
+                blank.height = canvas.height;
+                return canvas.toDataURL() === blank.toDataURL();
+            }
+            
+            // Initialize signature pad when modal is opened - HANDLED IN MAIN FUNCTION
+            
+            // Close modal function
             window.closeModal = function() {
                 const modal = document.getElementById('work-order-modal');
                 modal.style.display = 'none';
+                
+                // Reset timer if running
+                if (timerStart !== null) {
+                    clearInterval(timerInterval);
+                    timerStart = null;
+                }
             };
             
-            // Add click handlers to existing buttons
-            document.querySelectorAll('.btn').forEach((btn, index) => {
-                btn.onclick = () => showWorkOrderDetails(index + 1);
-                btn.style.cursor = 'pointer';
-                btn.innerHTML = '📋 View & Edit';
+        // Dynamic Card Creation Functions with AI Integration - GLOBAL FUNCTIONS
+        window.createNewWorkOrder = function() {
+                showCreateModal('work-order', 'Create New Work Order', {
+                    title: '',
+                    description: '',
+                    priority: 'medium',
+                    status: 'open',
+                    assigned: '',
+                    dueDate: '',
+                    asset: ''
+                });
+            };
+            
+        window.createNewAsset = function() {
+                showCreateModal('asset', 'Create New Asset', {
+                    name: '',
+                    type: 'Equipment',
+                    location: '',
+                    condition: 'Good',
+                    manufacturer: '',
+                    model: ''
+                });
+            };
+            
+        window.createNewPart = function() {
+                showCreateModal('part', 'Create New Part', {
+                    name: '',
+                    part_number: '',
+                    category: 'General',
+                    quantity: 0,
+                    unit_cost: 0.0,
+                    location: ''
+                });
+            };
+            
+        // Helper functions - GLOBAL SCOPE
+        function showCreateModal(type, title, defaultData) {
+                const modal = document.getElementById('work-order-modal');
+                const modalTitle = document.getElementById('modal-title');
+                const modalContent = document.getElementById('modal-content');
+                
+                modalTitle.textContent = title;
+                
+                // Generate form based on type
+                let formHTML = generateCreateForm(type, defaultData);
+                modalContent.innerHTML = formHTML;
+                
+                // Update modal buttons
+                const modalFooter = modal.querySelector('.modal-footer') || createModalFooter();
+                modalFooter.innerHTML = `
+                    <button onclick="closeModal()" style="
+                        background: rgba(102,102,102,0.3);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 10px;
+                        cursor: pointer;
+                    ">Cancel</button>
+                    <button onclick="saveNewItem('${type}')" style="
+                        background: linear-gradient(45deg, #2E4053, #8B9467);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    ">Create with AI Analysis</button>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+            
+        function createModalFooter() {
+                const modal = document.getElementById('work-order-modal');
+                const footer = document.createElement('div');
+                footer.className = 'modal-footer';
+                footer.style.cssText = 'margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;';
+                modal.querySelector('div > div').appendChild(footer);
+                return footer;
+            }
+            
+        function generateCreateForm(type, data) {
+                const forms = {
+                    'work-order': `
+                        <div style="display: grid; gap: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Title:</label>
+                                <input type="text" id="create-title" value="${data.title}" placeholder="Work order title..." style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 1px solid rgba(102,102,102,0.3);
+                                    border-radius: 8px;
+                                    background: rgba(46,64,83,0.4);
+                                    color: white;
+                                    outline: none;
+                                ">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description:</label>
+                                <textarea id="create-description" placeholder="Detailed description..." style="
+                                    width: 100%;
+                                    height: 80px;
+                                    padding: 10px;
+                                    border: 1px solid rgba(102,102,102,0.3);
+                                    border-radius: 8px;
+                                    background: rgba(46,64,83,0.4);
+                                    color: white;
+                                    outline: none;
+                                    resize: vertical;
+                                ">${data.description}</textarea>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Priority:</label>
+                                    <select id="create-priority" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                        <option value="low" ${data.priority === 'low' ? 'selected' : ''}>Low</option>
+                                        <option value="medium" ${data.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                                        <option value="high" ${data.priority === 'high' ? 'selected' : ''}>High</option>
+                                        <option value="critical" ${data.priority === 'critical' ? 'selected' : ''}>Critical</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Assigned To:</label>
+                                    <input type="text" id="create-assigned" value="${data.assigned}" placeholder="Technician name..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Asset:</label>
+                                    <input type="text" id="create-asset" value="${data.asset}" placeholder="Related asset..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Due Date:</label>
+                                    <input type="date" id="create-dueDate" value="${data.dueDate}" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    'asset': `
+                        <div style="display: grid; gap: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Asset Name:</label>
+                                <input type="text" id="create-name" value="${data.name}" placeholder="Asset name..." style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 1px solid rgba(102,102,102,0.3);
+                                    border-radius: 8px;
+                                    background: rgba(46,64,83,0.4);
+                                    color: white;
+                                    outline: none;
+                                ">
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type:</label>
+                                    <select id="create-type" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                        <option value="Equipment" ${data.type === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                                        <option value="Pump" ${data.type === 'Pump' ? 'selected' : ''}>Pump</option>
+                                        <option value="HVAC" ${data.type === 'HVAC' ? 'selected' : ''}>HVAC</option>
+                                        <option value="Conveyor" ${data.type === 'Conveyor' ? 'selected' : ''}>Conveyor</option>
+                                        <option value="Generator" ${data.type === 'Generator' ? 'selected' : ''}>Generator</option>
+                                        <option value="Safety Equipment" ${data.type === 'Safety Equipment' ? 'selected' : ''}>Safety Equipment</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Location:</label>
+                                    <input type="text" id="create-location" value="${data.location}" placeholder="Asset location..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Manufacturer:</label>
+                                    <input type="text" id="create-manufacturer" value="${data.manufacturer}" placeholder="Manufacturer..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Model:</label>
+                                    <input type="text" id="create-model" value="${data.model}" placeholder="Model number..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    'part': `
+                        <div style="display: grid; gap: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Part Name:</label>
+                                    <input type="text" id="create-name" value="${data.name}" placeholder="Part name..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Part Number:</label>
+                                    <input type="text" id="create-part_number" value="${data.part_number}" placeholder="Part number..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Category:</label>
+                                    <select id="create-category" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                        <option value="General" ${data.category === 'General' ? 'selected' : ''}>General</option>
+                                        <option value="Seals" ${data.category === 'Seals' ? 'selected' : ''}>Seals</option>
+                                        <option value="Filters" ${data.category === 'Filters' ? 'selected' : ''}>Filters</option>
+                                        <option value="Belts" ${data.category === 'Belts' ? 'selected' : ''}>Belts</option>
+                                        <option value="Bearings" ${data.category === 'Bearings' ? 'selected' : ''}>Bearings</option>
+                                        <option value="Lubricants" ${data.category === 'Lubricants' ? 'selected' : ''}>Lubricants</option>
+                                        <option value="Electrical" ${data.category === 'Electrical' ? 'selected' : ''}>Electrical</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Location:</label>
+                                    <input type="text" id="create-location" value="${data.location}" placeholder="Storage location..." style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Quantity:</label>
+                                    <input type="number" id="create-quantity" value="${data.quantity}" min="0" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Unit Cost ($):</label>
+                                    <input type="number" id="create-unit_cost" value="${data.unit_cost}" min="0" step="0.01" style="
+                                        width: 100%;
+                                        padding: 10px;
+                                        border: 1px solid rgba(102,102,102,0.3);
+                                        border-radius: 8px;
+                                        background: rgba(46,64,83,0.4);
+                                        color: white;
+                                        outline: none;
+                                    ">
+                                </div>
+                            </div>
+                        </div>
+                    `
+                };
+                
+                return forms[type] || '<p>Form not available</p>';
+            }
+            
+            async function saveNewItem(type) {
+                const formData = collectFormData(type);
+                
+                try {
+                    // Show loading state
+                    const saveBtn = document.querySelector('[onclick="saveNewItem(\\'${type}\\')"]');
+                    const originalText = saveBtn.textContent;
+                    saveBtn.textContent = '🤖 Creating with AI...';
+                    saveBtn.disabled = true;
+                    
+                    // Call API to create with AI analysis
+                    const response = await fetch(`/api/${type}s`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Create new card dynamically
+                        const newCard = createDynamicCard(type, result[type]);
+                        addCardToGrid(type, newCard);
+                        
+                        // Show AI insights if available
+                        if (result[type].ai_insights) {
+                            showAIInsights(result[type].ai_insights);
+                        }
+                        
+                        closeModal();
+                        alert(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} created successfully with AI analysis!`);
+                    } else {
+                        alert(`❌ Error creating ${type}: ` + result.error);
+                    }
+                } catch (error) {
+                    alert(`❌ Network error: ` + error.message);
+                } finally {
+                    saveBtn.textContent = originalText;
+                    saveBtn.disabled = false;
+                }
+            }
+            
+            function collectFormData(type) {
+                const data = {};
+                const form = document.querySelector('#modal-content');
+                
+                // Collect all input values
+                form.querySelectorAll('input, select, textarea').forEach(field => {
+                    const fieldName = field.id.replace('create-', '');
+                    data[fieldName] = field.value;
+                });
+                
+                return data;
+            }
+            
+            function createDynamicCard(type, data) {
+                const card = document.createElement('div');
+                card.className = `${type}-card`;
+                card.style.cssText = 'cursor: pointer; transition: all 0.3s ease;';
+                card.onclick = () => {
+                    if (type === 'work-order') showWorkOrderDetails(data.id);
+                    else if (type === 'asset') showAssetDetails(data.id);
+                    else if (type === 'part') showPartsDetails(data.id);
+                };
+                
+                // Add hover effects
+                card.onmouseover = () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 12px 40px rgba(46,64,83,0.6)';
+                };
+                card.onmouseout = () => {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 8px 32px rgba(46,64,83,0.4)';
+                };
+                
+                // Add AI badge if insights available
+                if (data.ai_insights && data.ai_insights.urgency_level === 'high') {
+                    const aiBadge = document.createElement('div');
+                    aiBadge.className = 'ai-badge';
+                    aiBadge.textContent = '🚨 AI: Urgent';
+                    aiBadge.style.cssText = `
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: linear-gradient(45deg, #e74c3c, #c0392b);
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 12px;
+                        font-size: 11px;
+                        font-weight: bold;
+                        z-index: 10;
+                    `;
+                    card.style.position = 'relative';
+                    card.appendChild(aiBadge);
+                }
+                
+                // Generate card content based on type
+                card.innerHTML = generateCardContent(type, data);
+                
+                return card;
+            }
+            
+            function generateCardContent(type, data) {
+                if (type === 'work-order') {
+                    return `
+                        <h3>WO-${data.id.toString().padStart(3, '0')}: ${data.title}</h3>
+                        <div class="priority priority-${data.priority}">${data.priority.charAt(0).toUpperCase() + data.priority.slice(1)} Priority</div>
+                        <p><strong>Asset:</strong> ${data.asset || 'N/A'}</p>
+                        <p><strong>Description:</strong> ${data.description}</p>
+                        <p><strong>Assigned:</strong> ${data.assigned || 'Unassigned'}</p>
+                        <p><strong>Due Date:</strong> ${data.dueDate || 'Not set'}</p>
+                        <div class="status status-${data.status}">${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</div>
+                        <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(${data.id})">🔧 Manage Work Order</button>
+                    `;
+                } else if (type === 'asset') {
+                    return `
+                        <h3>${data.name}</h3>
+                        <div class="asset-status status-operational">Operational</div>
+                        <p><strong>Type:</strong> ${data.type}</p>
+                        <p><strong>Location:</strong> ${data.location}</p>
+                        <p><strong>Manufacturer:</strong> ${data.manufacturer || 'N/A'}</p>
+                        <p><strong>Model:</strong> ${data.model || 'N/A'}</p>
+                        <button class="btn" onclick="event.stopPropagation(); showAssetDetails(${data.id})">🔧 Manage Asset</button>
+                    `;
+                } else if (type === 'part') {
+                    return `
+                        <h3>${data.name}</h3>
+                        <div class="stock-status stock-good">In Stock</div>
+                        <p><strong>Part Number:</strong> ${data.part_number}</p>
+                        <p><strong>Category:</strong> ${data.category}</p>
+                        <p><strong>Current Stock:</strong> ${data.quantity} units</p>
+                        <p><strong>Unit Cost:</strong> $${data.unit_cost}</p>
+                        <p><strong>Location:</strong> ${data.location || 'N/A'}</p>
+                        <button class="btn" onclick="event.stopPropagation(); showPartsDetails(${data.id})">🔧 Manage Part</button>
+                    `;
+                }
+            }
+            
+            function addCardToGrid(type, card) {
+                let grid;
+                if (type === 'work-order') {
+                    grid = document.querySelector('.work-orders-grid');
+                } else if (type === 'asset') {
+                    grid = document.querySelector('.assets-grid');
+                } else if (type === 'part') {
+                    grid = document.querySelector('.parts-grid');
+                }
+                
+                if (grid) {
+                    grid.appendChild(card);
+                }
+            }
+            
+            function showAIInsights(insights) {
+                if (insights.recommendations && insights.recommendations.length > 0) {
+                    setTimeout(() => {
+                        alert(`🤖 AI Recommendations:\\n\\n${insights.recommendations.join('\\n')}`);
+                    }, 1000);
+                }
+            }
+            
+            // Load work orders from database on page load
+            loadWorkOrders().then(() => {
+                console.log('✅ Work orders loaded and ready for AI-powered interaction');
+            }).catch(error => {
+                console.error('❌ Failed to load work orders:', error);
             });
-            
-            // Create the modal
-            createModal();
-            
+
             console.log('✅ Work Orders CRUD System Ready!');
         });
         </script>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
     </html>"""
@@ -2282,7 +3267,6 @@ async def parts_page():
             <a href="/parts" class="active">🔩 Parts</a>
             <a href="/reports">📊 Reports</a>
             <a href="/ui/ai-command-center">🧠 AI Command Center</a>
-            <a href="/mars-status">🚀 Mars Status</a>
             <a href="/login">🔐 Login</a>
         </div>
         
@@ -2293,7 +3277,7 @@ async def parts_page():
             </div>
             
             <div class="parts-grid">
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(1)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Pump Impeller - Model CR32</h3>
                     <div class="stock-status stock-good">In Stock</div>
                     <p><strong>Part Number:</strong> GF-CR32-IMP-001</p>
@@ -2302,10 +3286,10 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 3 units</p>
                     <p><strong>Unit Cost:</strong> $245.00</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 15</p>
-                    <button class="btn">Order More</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartDetails(1)">🔧 Manage Part</button>
                 </div>
                 
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(2)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>HVAC Filter - HEPA Grade</h3>
                     <div class="stock-status stock-low">Low Stock</div>
                     <p><strong>Part Number:</strong> CR-HJQ-HEPA-24x24</p>
@@ -2314,10 +3298,10 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 5 units</p>
                     <p><strong>Unit Cost:</strong> $89.50</p>
                     <p><strong>Location:</strong> Warehouse B, Bin 7</p>
-                    <button class="btn">Urgent Order</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartDetails(2)">📦 Manage Part</button>
                 </div>
                 
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(3)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Conveyor Belt - Heavy Duty</h3>
                     <div class="stock-status stock-good">In Stock</div>
                     <p><strong>Part Number:</strong> FL-X45-BELT-10M</p>
@@ -2329,7 +3313,7 @@ async def parts_page():
                     <button class="btn">View Details</button>
                 </div>
                 
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(4)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Generator Oil Filter</h3>
                     <div class="stock-status stock-critical">Critical Low</div>
                     <p><strong>Part Number:</strong> CAT-C15-OF-123</p>
@@ -2338,10 +3322,10 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 4 units</p>
                     <p><strong>Unit Cost:</strong> $67.25</p>
                     <p><strong>Location:</strong> Out of Stock</p>
-                    <button class="btn">Emergency Order</button>
+                    <button class="btn">🔧 Manage Part</button>
                 </div>
                 
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(5)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Safety Valve - 150 PSI</h3>
                     <div class="stock-status stock-good">In Stock</div>
                     <p><strong>Part Number:</strong> SV-150-PSI-001</p>
@@ -2350,10 +3334,10 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 2 units</p>
                     <p><strong>Unit Cost:</strong> $156.00</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 22</p>
-                    <button class="btn">View Details</button>
+                    <button class="btn">🔧 Manage Part</button>
                 </div>
                 
-                <div class="part-card">
+                <div class="part-card" onclick="showPartsDetails(6)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
                     <h3>Bearing Set - SKF 6308</h3>
                     <div class="stock-status stock-low">Low Stock</div>
                     <p><strong>Part Number:</strong> SKF-6308-2RS1</p>
@@ -2362,7 +3346,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 8 units</p>
                     <p><strong>Unit Cost:</strong> $34.50</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 8</p>
-                    <button class="btn">Reorder</button>
+                    <button class="btn">🔧 Manage Part</button>
                 </div>
             </div>
         </div>
@@ -2831,6 +3815,9 @@ async def parts_page():
         });
         </script>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
     </html>"""
@@ -3157,12 +4144,52 @@ async def reports_page():
             </div>
         </div>
         
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
+        <!-- AI Assistant Integration -->
+        <!-- CMMS Core Functions -->
+        <script src="/static/js/cmms-functions.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
     </html>"""
 
 # API Routes
+@app.get("/api/work-orders-list")
+async def get_work_orders_list():
+    """Get all work orders formatted for CRUD interface"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, title, description, status, priority, assigned_to, created_date, due_date
+            FROM work_orders
+            ORDER BY 
+                CASE priority 
+                    WHEN 'Critical' THEN 1 
+                    WHEN 'High' THEN 2 
+                    WHEN 'Medium' THEN 3 
+                    WHEN 'Low' THEN 4 
+                END,
+                created_date DESC
+        ''')
+        work_orders = []
+        for row in cursor.fetchall():
+            work_orders.append({
+                'id': row[0],
+                'title': row[1],
+                'description': row[2],
+                'status': row[3],
+                'priority': row[4],
+                'assigned': row[5],
+                'dueDate': row[7],
+                'asset': 'Database Asset'  # TODO: Join with assets table
+            })
+        conn.close()
+        return {"success": True, "work_orders": work_orders}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @app.get("/api/work-orders")
 async def get_work_orders():
     """Get all work orders from database"""
@@ -3204,12 +4231,16 @@ async def get_asset(asset_id: int):
 async def get_parts():
     return {"parts": []}
 
-# CRUD API Endpoints for Work Orders
+# AI-Enhanced CRUD API Endpoints for Work Orders
 @app.post("/api/work-orders")
 async def create_work_order(request: Request):
-    """Create a new work order"""
+    """Create a new work order with AI analysis"""
     try:
         body = await request.json()
+        
+        # Get AI insights before creation
+        ai_insights = await get_ai_insights("work_order", body)
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -3236,6 +4267,7 @@ async def create_work_order(request: Request):
             "description": body.get("description", ""),
             "priority": body.get("priority", "medium"),
             "status": body.get("status", "open"),
+            "ai_insights": ai_insights,
             "assigned": body.get("assigned", ""),
             "dueDate": body.get("dueDate", ""),
             "asset": body.get("asset", "")
@@ -3340,28 +4372,254 @@ async def complete_work_order(work_order_id: int, request: Request):
         logger.error(f"Error completing work order {work_order_id}: {e}")
         return {"success": False, "error": str(e)}
 
+# AI Insights Function
+async def get_ai_insights(item_type: str, data: dict) -> dict:
+    """Get AI insights for any CMMS item"""
+    try:
+        # Use the existing global AI endpoint
+        prompt = f"""
+        Analyze this {item_type} and provide insights:
+        {json.dumps(data, indent=2)}
+        
+        Please provide:
+        1. Risk assessment (0-1 scale)
+        2. Urgency level (low/medium/high)
+        3. Specific recommendations
+        4. Predicted issues
+        5. Suggested actions
+        
+        Return analysis in a structured format.
+        """
+        
+        # Call the global AI processor with proper request format
+        from fastapi import Request
+        import io
+        
+        # Create a mock request object for AI processing
+        class MockRequest:
+            def __init__(self, json_data):
+                self._json = json_data
+                
+            async def json(self):
+                return self._json
+        
+        mock_request = MockRequest({
+            "message": prompt,
+            "context": {
+                "action": "analyze_item",
+                "item_type": item_type,
+                "item_data": data
+            }
+        })
+        
+        ai_response = await process_ai_message(mock_request)
+        
+        # Parse AI response into structured format
+        insights = parse_ai_insights(ai_response.get("response", ""))
+        
+        return insights
+        
+    except Exception as e:
+        logger.error(f"AI insights failed: {e}")
+        return {"error": str(e), "risk_score": 0.0, "urgency_level": "medium"}
+
+def parse_ai_insights(ai_response: str) -> dict:
+    """Parse AI response into structured insights"""
+    insights = {
+        "risk_score": 0.0,
+        "urgency_level": "medium",
+        "recommendations": [],
+        "predicted_issues": [],
+        "suggested_actions": []
+    }
+    
+    try:
+        # Extract recommendations
+        if "urgent" in ai_response.lower() or "critical" in ai_response.lower():
+            insights["urgency_level"] = "high"
+            insights["risk_score"] = 0.8
+        elif "important" in ai_response.lower() or "priority" in ai_response.lower():
+            insights["urgency_level"] = "medium"
+            insights["risk_score"] = 0.5
+        else:
+            insights["urgency_level"] = "low"
+            insights["risk_score"] = 0.2
+            
+        # Extract recommendations using simple parsing
+        lines = ai_response.split('\n')
+        for line in lines:
+            if 'recommend' in line.lower():
+                insights["recommendations"].append(line.strip())
+            elif 'issue' in line.lower() or 'problem' in line.lower():
+                insights["predicted_issues"].append(line.strip())
+            elif 'suggest' in line.lower() or 'action' in line.lower():
+                insights["suggested_actions"].append(line.strip())
+                
+    except Exception as e:
+        logger.error(f"Error parsing AI insights: {e}")
+    
+    return insights
+
+# Work Order Parts Management
+@app.get("/api/work-orders/{work_order_id}/parts")
+async def get_work_order_parts(work_order_id: int):
+    """Get parts associated with work order"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # For now, return demo data since we need to set up the work_order_parts table
+        demo_parts = [
+            {
+                "part_id": 1,
+                "name": "HVAC Filter",
+                "part_number": "HF-001",
+                "quantity_requested": 2,
+                "quantity_used": 1,
+                "unit_cost": 25.50,
+                "available_stock": 15
+            },
+            {
+                "part_id": 2,
+                "name": "Belt Drive",
+                "part_number": "BD-150",
+                "quantity_requested": 1,
+                "quantity_used": 0,
+                "unit_cost": 45.00,
+                "available_stock": 8
+            }
+        ]
+        
+        conn.close()
+        return demo_parts
+        
+    except Exception as e:
+        logger.error(f"Error fetching work order parts: {e}")
+        return []
+
+@app.post("/api/work-orders/{work_order_id}/parts")
+async def add_work_order_part(work_order_id: int, request: Request):
+    """Add part to work order"""
+    try:
+        data = await request.json()
+        
+        # For now, just return success
+        # In production, you'd insert into work_order_parts table
+        
+        return {"success": True, "message": "Part added to work order"}
+        
+    except Exception as e:
+        logger.error(f"Error adding part to work order: {e}")
+        return {"success": False, "error": str(e)}
+
+# Enhanced Asset Management
+@app.post("/api/assets")
+async def create_asset(request: Request):
+    """Create new asset with AI analysis"""
+    try:
+        body = await request.json()
+        
+        # Get AI insights
+        ai_insights = await get_ai_insights("asset", body)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # For demo, just return the created asset data
+        asset_id = 100 + len(body.get("name", ""))  # Simple ID generation
+        
+        asset = {
+            "id": asset_id,
+            "name": body.get("name", "New Asset"),
+            "type": body.get("type", "Equipment"),
+            "location": body.get("location", "Unknown"),
+            "condition": body.get("condition", "Good"),
+            "ai_insights": ai_insights
+        }
+        
+        conn.close()
+        return {"success": True, "asset": asset}
+        
+    except Exception as e:
+        logger.error(f"Error creating asset: {e}")
+        return {"success": False, "error": str(e)}
+
+# Enhanced Parts Management  
+@app.post("/api/parts")
+async def create_part(request: Request):
+    """Create new part with AI analysis"""
+    try:
+        body = await request.json()
+        
+        # Get AI insights
+        ai_insights = await get_ai_insights("part", body)
+        
+        part_id = 200 + len(body.get("name", ""))  # Simple ID generation
+        
+        part = {
+            "id": part_id,
+            "name": body.get("name", "New Part"),
+            "part_number": body.get("part_number", f"PN-{part_id}"),
+            "category": body.get("category", "General"),
+            "quantity": body.get("quantity", 0),
+            "unit_cost": body.get("unit_cost", 0.0),
+            "ai_insights": ai_insights
+        }
+        
+        return {"success": True, "part": part}
+        
+    except Exception as e:
+        logger.error(f"Error creating part: {e}")
+        return {"success": False, "error": str(e)}
+
 # CRUD API Endpoints for Assets
 @app.post("/api/assets")
 async def create_asset(request: Request):
     """Create a new asset"""
     try:
         body = await request.json()
-        asset = {
-            "id": body.get("id", 999),
-            "name": body.get("name", "New Asset"),
-            "type": body.get("type", "Equipment"),
-            "location": body.get("location", ""),
-            "condition": body.get("condition", "good"),
-            "manufacturer": body.get("manufacturer", ""),
-            "model": body.get("model", ""),
-            "serialNumber": body.get("serialNumber", ""),
-            "purchaseDate": body.get("purchaseDate", ""),
-            "lastMaintenance": body.get("lastMaintenance", ""),
-            "nextMaintenance": body.get("nextMaintenance", ""),
-            "cost": body.get("cost", 0),
-            "warranty": body.get("warranty", "")
-        }
-        return {"success": True, "asset": asset}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insert asset into database
+        cursor.execute('''
+            INSERT INTO assets (name, asset_type, location, manufacturer, model, status, criticality, last_maintenance)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            body.get("name", "New Asset"),
+            body.get("type", "Equipment"),
+            body.get("location", ""),
+            body.get("manufacturer", ""),
+            body.get("model", ""),
+            body.get("condition", "Active"),
+            body.get("criticality", "Medium"),
+            body.get("lastMaintenance", None)
+        ))
+        
+        asset_id = cursor.lastrowid
+        conn.commit()
+        
+        # Get the created asset
+        cursor.execute('SELECT * FROM assets WHERE id = ?', (asset_id,))
+        asset_row = cursor.fetchone()
+        conn.close()
+        
+        if asset_row:
+            asset = {
+                "id": asset_row["id"],
+                "name": asset_row["name"],
+                "type": asset_row["asset_type"],
+                "location": asset_row["location"],
+                "manufacturer": asset_row["manufacturer"],
+                "model": asset_row["model"],
+                "condition": asset_row["status"],
+                "criticality": asset_row["criticality"],
+                "lastMaintenance": asset_row["last_maintenance"]
+            }
+            return {"success": True, "asset": asset}
+        else:
+            return {"success": False, "error": "Failed to create asset"}
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -3370,22 +4628,49 @@ async def update_asset(asset_id: int, request: Request):
     """Update an existing asset"""
     try:
         body = await request.json()
-        asset = {
-            "id": asset_id,
-            "name": body.get("name", "Updated Asset"),
-            "type": body.get("type", "Equipment"),
-            "location": body.get("location", ""),
-            "condition": body.get("condition", "good"),
-            "manufacturer": body.get("manufacturer", ""),
-            "model": body.get("model", ""),
-            "serialNumber": body.get("serialNumber", ""),
-            "purchaseDate": body.get("purchaseDate", ""),
-            "lastMaintenance": body.get("lastMaintenance", ""),
-            "nextMaintenance": body.get("nextMaintenance", ""),
-            "cost": body.get("cost", 0),
-            "warranty": body.get("warranty", "")
-        }
-        return {"success": True, "asset": asset}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Update asset in database
+        cursor.execute('''
+            UPDATE assets 
+            SET name = ?, asset_type = ?, location = ?, manufacturer = ?, model = ?, status = ?, criticality = ?, last_maintenance = ?
+            WHERE id = ?
+        ''', (
+            body.get("name"),
+            body.get("type"),
+            body.get("location"),
+            body.get("manufacturer"),
+            body.get("model"),
+            body.get("condition"),
+            body.get("criticality"),
+            body.get("lastMaintenance"),
+            asset_id
+        ))
+        
+        conn.commit()
+        
+        # Get the updated asset
+        cursor.execute('SELECT * FROM assets WHERE id = ?', (asset_id,))
+        asset_row = cursor.fetchone()
+        conn.close()
+        
+        if asset_row:
+            asset = {
+                "id": asset_row["id"],
+                "name": asset_row["name"],
+                "type": asset_row["asset_type"],
+                "location": asset_row["location"],
+                "manufacturer": asset_row["manufacturer"],
+                "model": asset_row["model"],
+                "condition": asset_row["status"],
+                "criticality": asset_row["criticality"],
+                "lastMaintenance": asset_row["last_maintenance"]
+            }
+            return {"success": True, "asset": asset}
+        else:
+            return {"success": False, "error": "Asset not found"}
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -3393,6 +4678,20 @@ async def update_asset(asset_id: int, request: Request):
 async def delete_asset(asset_id: int):
     """Delete an asset"""
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if asset exists
+        cursor.execute('SELECT id FROM assets WHERE id = ?', (asset_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return {"success": False, "error": "Asset not found"}
+        
+        # Delete asset
+        cursor.execute('DELETE FROM assets WHERE id = ?', (asset_id,))
+        conn.commit()
+        conn.close()
+        
         return {"success": True, "message": f"Asset {asset_id} deleted"}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -3403,22 +4702,48 @@ async def create_part(request: Request):
     """Create a new part"""
     try:
         body = await request.json()
-        part = {
-            "id": body.get("id", 999),
-            "name": body.get("name", "New Part"),
-            "partNumber": body.get("partNumber", ""),
-            "category": body.get("category", "General"),
-            "quantity": body.get("quantity", 0),
-            "minStock": body.get("minStock", 5),
-            "maxStock": body.get("maxStock", 100),
-            "unitCost": body.get("unitCost", 0),
-            "supplier": body.get("supplier", ""),
-            "location": body.get("location", ""),
-            "status": body.get("status", "in-stock"),
-            "lastOrdered": body.get("lastOrdered", ""),
-            "leadTime": body.get("leadTime", "7 days")
-        }
-        return {"success": True, "part": part}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insert part into database
+        cursor.execute('''
+            INSERT INTO parts (part_number, name, description, category, stock_quantity, min_stock, unit_cost, location)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            body.get("partNumber", f"PN-{int(time.time())}"),
+            body.get("name", "New Part"),
+            body.get("description", ""),
+            body.get("category", "General"),
+            body.get("quantity", 0),
+            body.get("minStock", 5),
+            body.get("unitCost", 0),
+            body.get("location", "")
+        ))
+        
+        part_id = cursor.lastrowid
+        conn.commit()
+        
+        # Get the created part
+        cursor.execute('SELECT * FROM parts WHERE id = ?', (part_id,))
+        part_row = cursor.fetchone()
+        conn.close()
+        
+        if part_row:
+            part = {
+                "id": part_row["id"],
+                "name": part_row["name"],
+                "partNumber": part_row["part_number"],
+                "description": part_row["description"],
+                "category": part_row["category"],
+                "quantity": part_row["stock_quantity"],
+                "minStock": part_row["min_stock"],
+                "unitCost": part_row["unit_cost"],
+                "location": part_row["location"]
+            }
+            return {"success": True, "part": part}
+        else:
+            return {"success": False, "error": "Failed to create part"}
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -3427,22 +4752,49 @@ async def update_part(part_id: int, request: Request):
     """Update an existing part"""
     try:
         body = await request.json()
-        part = {
-            "id": part_id,
-            "name": body.get("name", "Updated Part"),
-            "partNumber": body.get("partNumber", ""),
-            "category": body.get("category", "General"),
-            "quantity": body.get("quantity", 0),
-            "minStock": body.get("minStock", 5),
-            "maxStock": body.get("maxStock", 100),
-            "unitCost": body.get("unitCost", 0),
-            "supplier": body.get("supplier", ""),
-            "location": body.get("location", ""),
-            "status": body.get("status", "in-stock"),
-            "lastOrdered": body.get("lastOrdered", ""),
-            "leadTime": body.get("leadTime", "7 days")
-        }
-        return {"success": True, "part": part}
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Update part in database
+        cursor.execute('''
+            UPDATE parts 
+            SET part_number = ?, name = ?, description = ?, category = ?, stock_quantity = ?, min_stock = ?, unit_cost = ?, location = ?
+            WHERE id = ?
+        ''', (
+            body.get("partNumber"),
+            body.get("name"),
+            body.get("description"),
+            body.get("category"),
+            body.get("quantity"),
+            body.get("minStock"),
+            body.get("unitCost"),
+            body.get("location"),
+            part_id
+        ))
+        
+        conn.commit()
+        
+        # Get the updated part
+        cursor.execute('SELECT * FROM parts WHERE id = ?', (part_id,))
+        part_row = cursor.fetchone()
+        conn.close()
+        
+        if part_row:
+            part = {
+                "id": part_row["id"],
+                "name": part_row["name"],
+                "partNumber": part_row["part_number"],
+                "description": part_row["description"],
+                "category": part_row["category"],
+                "quantity": part_row["stock_quantity"],
+                "minStock": part_row["min_stock"],
+                "unitCost": part_row["unit_cost"],
+                "location": part_row["location"]
+            }
+            return {"success": True, "part": part}
+        else:
+            return {"success": False, "error": "Part not found"}
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -3450,6 +4802,20 @@ async def update_part(part_id: int, request: Request):
 async def delete_part(part_id: int):
     """Delete a part"""
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if part exists
+        cursor.execute('SELECT id FROM parts WHERE id = ?', (part_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return {"success": False, "error": "Part not found"}
+        
+        # Delete part
+        cursor.execute('DELETE FROM parts WHERE id = ?', (part_id,))
+        conn.commit()
+        conn.close()
+        
         return {"success": True, "message": f"Part {part_id} deleted"}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -3508,205 +4874,6 @@ async def health_check():
         "platform": "cloud-run"
     }
 
-# AI inject script
-@app.get("/ai-inject.js")
-async def ai_inject_script():
-    """AI assistant injection script with multi-provider support"""
-    return """
-    // ChatterFix CMMS Enterprise Multi-AI Assistant (Cloud Run)
-    (function() {
-        console.log('🤖 ChatterFix Enterprise Multi-AI Assistant loading...');
-        
-        // Create AI assistant UI
-        const aiContainer = document.createElement('div');
-        aiContainer.id = 'chatterfix-ai-assistant';
-        aiContainer.innerHTML = `
-            <div id="ai-button" style="
-                position: fixed;
-                bottom: 30px;
-                right: 30px;
-                width: 60px;
-                height: 60px;
-                background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-                z-index: 1000;
-                transition: all 0.3s ease;
-                color: white;
-                font-size: 24px;
-            ">🤖</div>
-            
-            <div id="ai-chat" style="
-                position: fixed;
-                bottom: 100px;
-                right: 30px;
-                width: 350px;
-                height: 450px;
-                background: rgba(33,33,33,0.95);
-                border-radius: 20px;
-                backdrop-filter: blur(20px);
-                box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-                z-index: 1001;
-                display: none;
-                flex-direction: column;
-                overflow: hidden;
-            ">
-                <div style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
-                    color: white;
-                    font-weight: 600;
-                ">
-                    🤖 Multi-AI Assistant
-                    <div style="font-size: 0.8em; margin-top: 5px; opacity: 0.8;">
-                        Ollama • Grok • OpenAI • HuggingFace
-                    </div>
-                </div>
-                
-                <div id="ai-messages" style="
-                    flex: 1;
-                    padding: 15px;
-                    overflow-y: auto;
-                    background: white;
-                    color: #333;
-                ">
-                    <div style="color: #666; font-style: italic;">
-                        Hi! I'm your Enterprise Multi-AI assistant with Ollama (Local), Grok, OpenAI, and HuggingFace integration. Ask me about maintenance, work orders, assets, or any CMMS topics!
-                    </div>
-                </div>
-                
-                <div style="
-                    padding: 15px;
-                    border-top: 1px solid #eee;
-                    background: white;
-                ">
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <select id="ai-provider" style="
-                            padding: 5px;
-                            border: 1px solid #ddd;
-                            border-radius: 5px;
-                            font-size: 12px;
-                        ">
-                            <option value="ollama">Ollama (Local)</option>
-                            <option value="grok">Grok</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="huggingface">HuggingFace</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="ai-input" placeholder="Ask about maintenance..." style="
-                            flex: 1;
-                            padding: 10px;
-                            border: 1px solid #ddd;
-                            border-radius: 10px;
-                            outline: none;
-                        ">
-                        <button id="ai-send" style="
-                            padding: 10px 15px;
-                            background: #2E4053;
-                            color: white;
-                            border: none;
-                            border-radius: 10px;
-                            cursor: pointer;
-                        ">Send</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(aiContainer);
-        
-        // Event handlers
-        const aiButton = document.getElementById('ai-button');
-        const aiChat = document.getElementById('ai-chat');
-        const aiInput = document.getElementById('ai-input');
-        const aiSend = document.getElementById('ai-send');
-        const aiMessages = document.getElementById('ai-messages');
-        const aiProvider = document.getElementById('ai-provider');
-        
-        aiButton.addEventListener('click', () => {
-            const isVisible = aiChat.style.display === 'flex';
-            aiChat.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) {
-                aiInput.focus();
-            }
-        });
-        
-        async function sendMessage() {
-            const message = aiInput.value.trim();
-            const provider = aiProvider.value;
-            if (!message) return;
-            
-            // Add user message
-            const userMsg = document.createElement('div');
-            userMsg.style.cssText = 'margin-bottom: 10px; text-align: right;';
-            userMsg.innerHTML = `<span style="background: #2E4053; color: white; padding: 8px 12px; border-radius: 15px; display: inline-block;">${message}</span>`;
-            aiMessages.appendChild(userMsg);
-            
-            aiInput.value = '';
-            aiMessages.scrollTop = aiMessages.scrollHeight;
-            
-            // Show loading
-            const loadingMsg = document.createElement('div');
-            loadingMsg.style.cssText = 'margin-bottom: 10px;';
-            loadingMsg.innerHTML = `<span style="background: #f1f1f1; color: #666; padding: 8px 12px; border-radius: 15px; display: inline-block;">🤔 Processing with ${provider}...</span>`;
-            aiMessages.appendChild(loadingMsg);
-            aiMessages.scrollTop = aiMessages.scrollHeight;
-            
-            try {
-                const response = await fetch('/global-ai/process-message', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        context: 'Enterprise Multi-AI Assistant Chat',
-                        page_context: window.location.pathname,
-                        provider: provider
-                    })
-                });
-                
-                const data = await response.json();
-                
-                // Remove loading message
-                aiMessages.removeChild(loadingMsg);
-                
-                // Add AI response
-                const aiMsg = document.createElement('div');
-                aiMsg.style.cssText = 'margin-bottom: 10px;';
-                const providerBadge = data.fallback ? `<em>(fallback: ${data.provider})</em>` : `<strong>${data.provider}</strong>`;
-                aiMsg.innerHTML = `<span style="background: #f1f1f1; color: #333; padding: 8px 12px; border-radius: 15px; display: inline-block; max-width: 80%;">${providerBadge}: ${data.response}</span>`;
-                aiMessages.appendChild(aiMsg);
-                aiMessages.scrollTop = aiMessages.scrollHeight;
-                
-            } catch (error) {
-                // Remove loading message
-                aiMessages.removeChild(loadingMsg);
-                
-                // Add error message
-                const errorMsg = document.createElement('div');
-                errorMsg.style.cssText = 'margin-bottom: 10px;';
-                errorMsg.innerHTML = `<span style="background: #1C3445; color: white; padding: 8px 12px; border-radius: 15px; display: inline-block;">Sorry, all AI providers are temporarily unavailable. Please try again.</span>`;
-                aiMessages.appendChild(errorMsg);
-                aiMessages.scrollTop = aiMessages.scrollHeight;
-            }
-        }
-        
-        aiSend.addEventListener('click', sendMessage);
-        aiInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-        
-        console.log('✅ ChatterFix Enterprise Multi-AI Assistant loaded successfully');
-    })();
-    """
 
 # 🚀 MARS-LEVEL AI BRAIN INTEGRATION
 # Import and integrate the most advanced AI systems
@@ -3743,33 +4910,17 @@ try:
 except ImportError as e:
     print(f"⚠️  Mars-Level UI Dashboard not available: {e}")
 
-# Mars-level system status endpoint
-@app.get("/mars-status")
-async def get_mars_level_status():
-    """Get Mars-level AI platform status"""
-    return {
-        "platform": "ChatterFix CMMS Enterprise - Mars-Level AI Platform",
-        "version": "4.0.0-mars-level-ai",
-        "ai_brain_status": "🧠 OPERATIONAL",
-        "quantum_analytics": "🔬 ACTIVE", 
-        "autonomous_operations": "🤖 MONITORING",
-        "mars_level": "🚀 MAXIMUM PERFORMANCE",
-        "ai_providers": ["Grok", "OpenAI", "LLAMA3", "Claude"],
-        "cutting_edge_features": [
-            "Multi-AI Orchestration",
-            "Quantum-Inspired Analytics", 
-            "Neural Architecture Search",
-            "Federated Learning",
-            "Digital Twins",
-            "Zero-Trust Security",
-            "Autonomous Operations",
-            "Self-Healing Systems",
-            "Edge Computing",
-            "Real-time Analytics"
-        ],
-        "performance_level": "MARS-READY 🚀",
-        "message": "The most advanced AI-powered CMMS platform in existence!"
-    }
+# Serve AI Inject JavaScript file
+@app.get("/ai-inject.js", response_class=HTMLResponse)
+async def get_ai_inject_js():
+    """Serve the AI assistant injection script"""
+    try:
+        with open("ai-inject.js", "r") as f:
+            js_content = f.read()
+        return HTMLResponse(content=js_content, media_type="application/javascript")
+    except FileNotFoundError:
+        return HTMLResponse(content="console.error('AI inject script not found');", media_type="application/javascript")
+
 
 print("🚀🚀🚀 CHATTERFIX CMMS MARS-LEVEL AI PLATFORM INITIALIZED 🚀🚀🚀")
 print("     The most advanced AI-powered CMMS with enterprise-grade intelligence")

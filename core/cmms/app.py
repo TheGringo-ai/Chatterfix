@@ -3668,33 +3668,66 @@ async def work_orders_page():
                         console.log('✅ Work order modal created');
                     }
                     
-                    // Add enhanced click handlers to all work order cards
-                    document.querySelectorAll('.work-order-card').forEach((card, index) => {
-                        if (!card.onclick) {
-                            const workOrderId = index + 1;
-                            card.onclick = () => {
-                                console.log(`Work order card ${workOrderId} clicked`);
-                                showWorkOrderDetails(workOrderId);
-                            };
-                            card.style.cursor = 'pointer';
-                            console.log(`✅ Enhanced click handler added to work order card ${workOrderId}`);
+                    // CRITICAL FIX: Replace static cards with dynamic cards from database
+                    if (workOrders && workOrders.length > 0) {
+                        console.log('🔄 Replacing static cards with dynamic database cards...');
+                        const grid = document.querySelector('.work-orders-grid');
+                        if (grid) {
+                            // Clear existing static cards
+                            grid.innerHTML = '';
+                            
+                            // Create dynamic cards from database
+                            workOrders.slice(0, 10).forEach((workOrder, index) => { // Show first 10 work orders
+                                const priorityClass = workOrder.priority ? `priority-${workOrder.priority.toLowerCase()}` : 'priority-medium';
+                                const statusClass = workOrder.status ? `status-${workOrder.status.toLowerCase().replace(' ', '-')}` : 'status-open';
+                                
+                                const cardHTML = `
+                                    <div class="work-order-card" onclick="showWorkOrderDetails(${workOrder.id})" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
+                                        <h3>${workOrder.title || 'Untitled Work Order'}</h3>
+                                        <div class="priority ${priorityClass}">${workOrder.priority || 'Medium'} Priority</div>
+                                        <p><strong>Asset:</strong> ${workOrder.asset || 'Database Asset'}</p>
+                                        <p><strong>Description:</strong> ${workOrder.description || 'No description available'}</p>
+                                        <p><strong>Assigned:</strong> ${workOrder.assigned || 'Unassigned'}</p>
+                                        <p><strong>Due Date:</strong> ${workOrder.dueDate || 'Not set'}</p>
+                                        <div class="status ${statusClass}">${workOrder.status || 'Open'}</div>
+                                        <button class="btn" onclick="event.stopPropagation(); showWorkOrderDetails(${workOrder.id})">🔧 Manage Work Order</button>
+                                    </div>
+                                `;
+                                grid.innerHTML += cardHTML;
+                                console.log(`✅ Created dynamic card for work order ID ${workOrder.id}: ${workOrder.title}`);
+                            });
+                            
+                            console.log(`🎯 Successfully replaced static cards with ${Math.min(workOrders.length, 10)} dynamic cards using actual database IDs`);
                         }
-                    });
-                    
-                    // Add enhanced click handlers to work order buttons
-                    document.querySelectorAll('.work-order-card .btn').forEach((btn, index) => {
-                        if (!btn.onclick || btn.onclick.toString().includes('showWorkOrderDetails')) {
-                            const workOrderId = index + 1;
-                            const originalOnClick = btn.onclick;
-                            btn.onclick = (e) => {
-                                e.stopPropagation();
-                                console.log(`Work order button ${workOrderId} clicked`);
-                                showWorkOrderDetails(workOrderId);
-                            };
-                            btn.style.cursor = 'pointer';
-                            console.log(`✅ Enhanced click handler added to work order button ${workOrderId}`);
-                        }
-                    });
+                    } else {
+                        console.warn('⚠️ No work orders loaded from database, keeping static cards');
+                        // Add enhanced click handlers to static cards (fallback)
+                        document.querySelectorAll('.work-order-card').forEach((card, index) => {
+                            if (!card.onclick) {
+                                const workOrderId = index + 1;
+                                card.onclick = () => {
+                                    console.log(`Work order card ${workOrderId} clicked`);
+                                    showWorkOrderDetails(workOrderId);
+                                };
+                                card.style.cursor = 'pointer';
+                                console.log(`✅ Enhanced click handler added to work order card ${workOrderId}`);
+                            }
+                        });
+                        
+                        // Add enhanced click handlers to work order buttons (fallback)
+                        document.querySelectorAll('.work-order-card .btn').forEach((btn, index) => {
+                            if (!btn.onclick || btn.onclick.toString().includes('showWorkOrderDetails')) {
+                                const workOrderId = index + 1;
+                                btn.onclick = (e) => {
+                                    e.stopPropagation();
+                                    console.log(`Work order button ${workOrderId} clicked`);
+                                    showWorkOrderDetails(workOrderId);
+                                };
+                                btn.style.cursor = 'pointer';
+                                console.log(`✅ Enhanced click handler added to work order button ${workOrderId}`);
+                            }
+                        });
+                    }
                     
                     console.log('✅ Work Orders CRUD System Ready!');
                     return true;

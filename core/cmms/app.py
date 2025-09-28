@@ -27,6 +27,39 @@ import bcrypt
 import asyncio
 import time
 
+# Import enhanced database
+try:
+    from enhanced_database import init_enhanced_database
+    ENHANCED_DB_AVAILABLE = True
+except ImportError:
+    ENHANCED_DB_AVAILABLE = False
+
+# Import data toggle system
+try:
+    from admin import admin_manager, get_system_mode, get_database_path, can_switch_mode
+    from data_toggle_system import data_toggle_system, switch_data_mode, reset_demo_data, get_system_overview
+    DATA_TOGGLE_AVAILABLE = True
+    print("✅ Data Toggle System loaded successfully")
+except ImportError as e:
+    DATA_TOGGLE_AVAILABLE = False
+    print(f"⚠️  Data Toggle System not available: {e}")
+    # Fallback functions
+    def get_system_mode(): return "production"
+    def get_database_path(mode=None): return "./data/cmms_enhanced.db"
+
+# Import AI brain integration for data mode
+try:
+    from ai_brain_integration import ai_brain_integration, get_ai_mode_analysis, get_smart_mode_suggestion, get_ai_recommendations
+    AI_BRAIN_INTEGRATION_AVAILABLE = True
+    print("✅ AI Brain Data Mode Integration loaded successfully")
+except ImportError as e:
+    AI_BRAIN_INTEGRATION_AVAILABLE = False
+    print(f"⚠️  AI Brain Integration not available: {e}")
+    # Fallback functions
+    def get_ai_mode_analysis(): return {"error": "AI Brain integration not available"}
+    def get_smart_mode_suggestion(): return {"error": "AI Brain integration not available"}
+    def get_ai_recommendations(): return []
+
 # Protocol for request-like objects
 class RequestLike(Protocol):
     async def json(self) -> Dict[str, Any]:
@@ -68,8 +101,11 @@ JWT_EXPIRATION_HOURS = 24
 # Password hashing
 security = HTTPBearer(auto_error=False)
 
-# Database configuration
-DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/cmms.db")
+# Database configuration with data toggle system support
+if DATA_TOGGLE_AVAILABLE:
+    DATABASE_PATH = get_database_path()  # Use current mode's database
+else:
+    DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/cmms_enhanced.db")  # Fallback
 
 # Multi-AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "grok")
@@ -107,132 +143,42 @@ def get_db_connection():
     return conn
 
 def init_database():
-    """Initialize enterprise database with users table"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Create users table for enterprise authentication
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'viewer',
-            is_active BOOLEAN DEFAULT TRUE,
-            created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_login DATETIME,
-            department TEXT,
-            full_name TEXT
-        )
-    ''')
-    
-    # Create work_orders table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS work_orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT DEFAULT 'Open',
-            priority TEXT DEFAULT 'Medium',
-            assigned_to TEXT,
-            created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            due_date DATE,
-            completed_date DATETIME,
-            asset_id INTEGER,
-            created_by INTEGER
-        )
-    ''')
-    
-    # Create assets table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS assets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            asset_type TEXT,
-            location TEXT,
-            manufacturer TEXT,
-            model TEXT,
-            status TEXT DEFAULT 'Active',
-            criticality TEXT DEFAULT 'Medium',
-            last_maintenance DATE
-        )
-    ''')
-    
-    # Create parts table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS parts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            part_number TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT,
-            category TEXT,
-            stock_quantity INTEGER DEFAULT 0,
-            min_stock INTEGER DEFAULT 5,
-            unit_cost DECIMAL(10,2),
-            location TEXT
-        )
-    ''')
-    
-    # Create default admin user if not exists
-    admin_password = bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode('utf-8')
-    cursor.execute('''
-        INSERT OR IGNORE INTO users (username, email, password_hash, role, full_name, department)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', ("admin", "admin@chatterfix.com", admin_password, "admin", "System Administrator", "IT"))
-    
-    # Add completion tracking fields to work_orders table if they don't exist
-    try:
-        cursor.execute('ALTER TABLE work_orders ADD COLUMN completion_notes TEXT')
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-    
-    try:
-        cursor.execute('ALTER TABLE work_orders ADD COLUMN completed_by TEXT')
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-    
-    try:
-        cursor.execute('ALTER TABLE work_orders ADD COLUMN parts_used TEXT')
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-    
-    # Insert demo data
-    demo_work_orders = [
-        ('Critical System Maintenance', 'Urgent maintenance required for production system', 'Open', 'Critical', 'John Smith', '2024-12-01'),
-        ('HVAC System Check', 'Quarterly inspection of HVAC systems', 'Scheduled', 'High', 'Jane Doe', '2024-12-02'),
-        ('Safety Equipment Audit', 'Monthly safety equipment inspection', 'In Progress', 'High', 'Bob Johnson', '2024-12-01'),
-        ('Equipment Calibration', 'Calibrate measurement equipment', 'Open', 'Medium', 'Mike Wilson', '2024-12-03'),
-        ('Preventive Maintenance', 'Scheduled preventive maintenance tasks', 'Planning', 'Medium', 'Sarah Davis', '2024-12-05')
-    ]
-    
-    for wo in demo_work_orders:
-        cursor.execute('INSERT OR IGNORE INTO work_orders (title, description, status, priority, assigned_to, created_date) VALUES (?, ?, ?, ?, ?, ?)', wo)
-    
-    demo_assets = [
-        ('Production Line #1', 'Manufacturing', 'Building A - Floor 1', 'ACME Corp', 'Model PL-1000', 'Active', 'Critical', '2024-11-15'),
-        ('HVAC Unit North', 'HVAC', 'Building A - Roof', 'Climate Corp', 'Model AC-500', 'Active', 'High', '2024-11-20'),
-        ('Safety System', 'Safety', 'Building A - All Floors', 'SafeTech', 'Model SS-200', 'Active', 'Critical', '2024-11-18'),
-        ('Backup Generator', 'Power', 'Building A - Basement', 'PowerGen', 'Model PG-100', 'Active', 'High', '2024-11-10'),
-        ('Quality Control Station', 'Quality', 'Building A - Floor 2', 'QualityFirst', 'Model QC-50', 'Active', 'Medium', '2024-11-22')
-    ]
-    
-    for asset in demo_assets:
-        cursor.execute('INSERT OR IGNORE INTO assets (name, asset_type, location, manufacturer, model, status, criticality, last_maintenance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', asset)
-    
-    demo_parts = [
-        ('PART-001', 'Motor Bearing', 'High-precision bearing for production motors', 'Bearings', 5, 3, 125.50, 'Warehouse A'),
-        ('PART-002', 'HVAC Filter', 'Air filter for HVAC systems', 'Filters', 20, 10, 45.99, 'Warehouse B'),
-        ('PART-003', 'Safety Sensor', 'Proximity sensor for safety systems', 'Sensors', 8, 5, 85.75, 'Warehouse A'),
-        ('PART-004', 'Power Cable', '50ft power cable for equipment', 'Electrical', 12, 8, 65.25, 'Warehouse C'),
-        ('PART-005', 'Control Valve', 'Pneumatic control valve', 'Valves', 3, 2, 245.00, 'Warehouse A')
-    ]
-    
-    for part in demo_parts:
-        cursor.execute('INSERT OR IGNORE INTO parts (part_number, name, description, category, stock_quantity, min_stock, unit_cost, location) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', part)
-    
-    conn.commit()
-    conn.close()
+    """Initialize enterprise database with enhanced schema and realistic data"""
+    if ENHANCED_DB_AVAILABLE:
+        # Use enhanced database with TechFlow Manufacturing Corp data
+        init_enhanced_database()
+        print("✅ Enhanced enterprise database initialized with TechFlow Manufacturing Corp data")
+    else:
+        # Fallback to basic database if enhanced version is not available
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Create basic users table for enterprise authentication
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'viewer',
+                is_active BOOLEAN DEFAULT TRUE,
+                created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_login DATETIME,
+                department TEXT,
+                full_name TEXT
+            )
+        ''')
+        
+        # Create default admin user if not exists
+        admin_password = bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode('utf-8')
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (username, email, password_hash, role, full_name, department)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', ("admin", "admin@chatterfix.com", admin_password, "admin", "System Administrator", "IT"))
+        
+        conn.commit()
+        conn.close()
+        print("⚠️ Using basic database (enhanced version not available)")
 
 # Multi-AI Processing Functions
 async def process_with_grok(message: str, context: str) -> Dict[str, Any]:
@@ -709,6 +655,265 @@ async def startup_event():
     
     logger.info(f"🚀 ChatterFix CMMS Enterprise v3.0 - AI-Powered Competitive Edition started on port {PORT}")
 
+# =================== DATA TOGGLE SYSTEM API ENDPOINTS ===================
+if DATA_TOGGLE_AVAILABLE:
+    
+    @app.get("/api/admin/system-status")
+    async def get_system_status(user: dict = Depends(get_current_user)):
+        """Get current system status and data mode information"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Get comprehensive system overview
+            overview = get_system_overview()
+            
+            return {
+                "success": True,
+                "status": overview,
+                "user": {
+                    "id": user.get("id"),
+                    "username": user.get("username"),
+                    "role": user.get("role"),
+                    "full_name": user.get("full_name")
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error getting system status: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.post("/api/admin/switch-mode")
+    async def switch_system_mode(request: Request, user: dict = Depends(get_current_user)):
+        """Switch between demo and production data modes"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Parse request body
+            body = await request.json()
+            target_mode = body.get("mode")
+            create_backup = body.get("backup", True)
+            
+            if not target_mode:
+                return {"success": False, "error": "Mode parameter required"}
+            
+            # Switch mode using data toggle system
+            result = switch_data_mode(
+                new_mode=target_mode,
+                user_id=user.get("id"),
+                user_role=user.get("role"),
+                backup=create_backup
+            )
+            
+            if result["success"]:
+                # Update global DATABASE_PATH for immediate effect
+                global DATABASE_PATH
+                DATABASE_PATH = get_database_path(target_mode)
+                logger.info(f"Database path updated to: {DATABASE_PATH}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error switching mode: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.post("/api/admin/reset-demo")
+    async def reset_demo_data_endpoint(request: Request, user: dict = Depends(get_current_user)):
+        """Reset demo database to original TechFlow Manufacturing Corp data"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Parse request body
+            body = await request.json()
+            confirm = body.get("confirm", False)
+            
+            # Reset demo data
+            result = reset_demo_data(user_id=user.get("id"), confirm=confirm)
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error resetting demo data: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.get("/api/admin/system-overview")
+    async def get_system_overview_endpoint(user: dict = Depends(get_current_user)):
+        """Get comprehensive system overview for admin dashboard"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Get system overview
+            overview = get_system_overview()
+            return {"success": True, "overview": overview}
+            
+        except Exception as e:
+            logger.error(f"Error getting system overview: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.post("/api/admin/create-backup")
+    async def create_backup_endpoint(request: Request, user: dict = Depends(get_current_user)):
+        """Create backup of current database"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Parse request body
+            body = await request.json()
+            mode = body.get("mode", get_system_mode())
+            reason = body.get("reason", "manual_backup")
+            
+            # Create backup
+            if admin_manager.backup_database(mode, reason):
+                return {
+                    "success": True,
+                    "message": f"Backup created successfully for {mode} mode",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {"success": False, "error": "Failed to create backup"}
+            
+        except Exception as e:
+            logger.error(f"Error creating backup: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.get("/api/admin/company-setup")
+    async def get_company_setup_endpoint(user: dict = Depends(get_current_user)):
+        """Get company setup wizard data"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Get company setup wizard data
+            wizard_data = data_toggle_system.get_company_setup_wizard_data()
+            return {"success": True, "wizard": wizard_data}
+            
+        except Exception as e:
+            logger.error(f"Error getting company setup data: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.post("/api/admin/company-setup")
+    async def update_company_setup_endpoint(request: Request, user: dict = Depends(get_current_user)):
+        """Update company setup configuration"""
+        try:
+            if not user:
+                raise HTTPException(status_code=401, detail="Authentication required")
+            
+            # Parse request body
+            body = await request.json()
+            setup_data = body.get("setup", {})
+            
+            # Update company setup
+            result = admin_manager.update_company_setup(setup_data)
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error updating company setup: {e}")
+            return {"success": False, "error": str(e)}
+    
+    @app.get("/api/admin/data-mode")
+    async def get_current_data_mode():
+        """Get current data mode (demo/production) - public endpoint"""
+        try:
+            mode = get_system_mode()
+            features = admin_manager.get_demo_features() if mode == "demo" else {}
+            
+            return {
+                "success": True,
+                "mode": mode,
+                "features": features,
+                "database_path": get_database_path(mode)
+            }
+        except Exception as e:
+            logger.error(f"Error getting data mode: {e}")
+            return {"success": False, "error": str(e)}
+    
+    # AI Brain Integration Endpoints
+    if AI_BRAIN_INTEGRATION_AVAILABLE:
+        
+        @app.get("/api/admin/ai-analysis")
+        async def get_ai_mode_analysis_endpoint(user: dict = Depends(get_current_user)):
+            """Get AI analysis of data mode usage patterns"""
+            try:
+                if not user:
+                    raise HTTPException(status_code=401, detail="Authentication required")
+                
+                analysis = get_ai_mode_analysis()
+                return {"success": True, "analysis": analysis}
+                
+            except Exception as e:
+                logger.error(f"Error getting AI analysis: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.get("/api/admin/ai-suggestions")
+        async def get_ai_suggestions_endpoint(user: dict = Depends(get_current_user)):
+            """Get AI-powered mode suggestions and recommendations"""
+            try:
+                if not user:
+                    raise HTTPException(status_code=401, detail="Authentication required")
+                
+                suggestion = get_smart_mode_suggestion()
+                recommendations = get_ai_recommendations()
+                
+                return {
+                    "success": True,
+                    "suggestion": suggestion,
+                    "recommendations": recommendations
+                }
+                
+            except Exception as e:
+                logger.error(f"Error getting AI suggestions: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.post("/api/admin/ai-optimize")
+        async def optimize_system_with_ai(request: Request, user: dict = Depends(get_current_user)):
+            """Use AI to optimize system configuration"""
+            try:
+                if not user:
+                    raise HTTPException(status_code=401, detail="Authentication required")
+                
+                # Get optimization request
+                body = await request.json()
+                auto_apply = body.get("auto_apply", False)
+                
+                # Get AI analysis and suggestions
+                analysis = get_ai_mode_analysis()
+                suggestion = get_smart_mode_suggestion()
+                
+                optimization_result = {
+                    "analysis": analysis,
+                    "suggestion": suggestion,
+                    "applied_changes": []
+                }
+                
+                # If auto-apply is enabled and confidence is high, apply suggestions
+                if auto_apply and suggestion.get("confidence", 0) > 0.8:
+                    suggested_mode = suggestion.get("suggested_mode")
+                    current_mode = suggestion.get("current_mode")
+                    
+                    if suggested_mode != current_mode:
+                        # Apply mode switch
+                        switch_result = switch_data_mode(
+                            new_mode=suggested_mode,
+                            user_id=user.get("id"),
+                            user_role=user.get("role"),
+                            backup=True
+                        )
+                        
+                        if switch_result["success"]:
+                            optimization_result["applied_changes"].append({
+                                "type": "mode_switch",
+                                "from": current_mode,
+                                "to": suggested_mode,
+                                "result": switch_result
+                            })
+                
+                return {"success": True, "optimization": optimization_result}
+                
+            except Exception as e:
+                logger.error(f"Error optimizing system with AI: {e}")
+                return {"success": False, "error": str(e)}
+
 # Authentication routes
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
@@ -888,6 +1093,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
     <head>
         <title>ChatterFix CMMS Enterprise - Cloud Run</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/static/css/data-mode.css">
         <style>
         body {{
             margin: 0;
@@ -1051,9 +1257,8 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
         
         <!-- CMMS Core Functions -->
         <script src="/static/js/cmms-functions.js"></script>
-        <!-- AI Assistant Integration -->
-        <!-- CMMS Core Functions -->
-        <script src="/static/js/cmms-functions.js"></script>
+        <!-- Data Mode Toggle System -->
+        <script src="/static/js/data-mode-toggle.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
         
@@ -1382,9 +1587,8 @@ async def asset_detail(asset_id: int):
         
         <!-- CMMS Core Functions -->
         <script src="/static/js/cmms-functions.js"></script>
-        <!-- AI Assistant Integration -->
-        <!-- CMMS Core Functions -->
-        <script src="/static/js/cmms-functions.js"></script>
+        <!-- Data Mode Toggle System -->
+        <script src="/static/js/data-mode-toggle.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>
@@ -4837,9 +5041,8 @@ async def reports_page():
         
         <!-- CMMS Core Functions -->
         <script src="/static/js/cmms-functions.js"></script>
-        <!-- AI Assistant Integration -->
-        <!-- CMMS Core Functions -->
-        <script src="/static/js/cmms-functions.js"></script>
+        <!-- Data Mode Toggle System -->
+        <script src="/static/js/data-mode-toggle.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
     </body>

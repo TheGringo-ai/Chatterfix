@@ -60,6 +60,15 @@ except ImportError as e:
     def get_smart_mode_suggestion(): return {"error": "AI Brain integration not available"}
     def get_ai_recommendations(): return []
 
+# Import AI collaboration system
+try:
+    from ai_collaboration_integration import integrate_ai_collaboration
+    AI_COLLABORATION_AVAILABLE = True
+    print("✅ AI Collaboration System loaded successfully")
+except ImportError as e:
+    AI_COLLABORATION_AVAILABLE = False
+    print(f"⚠️  AI Collaboration System not available: {e}")
+
 # Protocol for request-like objects
 class RequestLike(Protocol):
     async def json(self) -> Dict[str, Any]:
@@ -440,6 +449,14 @@ async def startup_event():
         logger.info("✅ Advanced media and AI admin features loaded successfully!")
     except ImportError as e:
         logger.warning(f"⚠️  Advanced features module not found: {e}")
+    
+    # Initialize AI collaboration system
+    if AI_COLLABORATION_AVAILABLE:
+        try:
+            integrate_ai_collaboration(app)
+            logger.info("✅ AI Collaboration System integrated successfully!")
+        except Exception as e:
+            logger.error(f"❌ Failed to integrate AI Collaboration System: {e}")
     
     # Initialize advanced media system (Whisper voice, OCR, image uploads)
     try:

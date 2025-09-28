@@ -1,0 +1,266 @@
+{
+  "system_architecture": {
+    "overview": "ChatterFix CMMS is an AI-powered maintenance management system",
+    "technology_stack": {
+      "backend": "FastAPI with Python 3",
+      "database": "SQLite with enhanced schema",
+      "frontend": "HTML/CSS/JavaScript with dynamic components",
+      "deployment": "Google Cloud Run",
+      "ai_integration": "Multiple AI models (Claude, ChatGPT, Grok, Llama)"
+    },
+    "key_components": [
+      "Work Order Management System",
+      "Asset Management with Health Scoring",
+      "Parts Inventory with Reorder Management",
+      "Preventive Maintenance Scheduling",
+      "AI Assistant with Voice Commands",
+      "Demo/Production Data Toggle System",
+      "Enterprise Mock Data Generator",
+      "Dynamic Card System with proper ID handling"
+    ]
+  },
+  "current_system_state": {
+    "deployment_ready": true,
+    "main_application": "app.py (FastAPI backend)",
+    "database_schema": "enhanced_database_schema.py",
+    "frontend_architecture": "Dynamic cards with modal detail views",
+    "ai_integration": "Universal AI loader with voice commands",
+    "data_modes": "Demo and Production with toggle system",
+    "known_features": [
+      "Dynamic card creation with proper ID extraction",
+      "Modal-based detail views for work orders",
+      "Real-time DOM monitoring with MutationObserver",
+      "AI-powered recommendations and insights",
+      "Enterprise-grade mock data for demonstrations",
+      "TechFlow Manufacturing sample company data"
+    ]
+  },
+  "recent_issues_solved": {
+    "id_mismatch_problem": {
+      "issue": "Static card IDs (1-5) conflicting with dynamic database IDs",
+      "solution": "Implemented proper ID extraction from database records",
+      "impact": "Click handlers now work correctly with dynamic data"
+    },
+    "click_handlers_not_working": {
+      "issue": "Click handlers failing due to static/dynamic ID conflicts",
+      "solution": "Updated event delegation and ID extraction logic",
+      "impact": "All interactive elements now function properly"
+    },
+    "missing_modal_functions": {
+      "issue": "Modal creation functions were not defined",
+      "solution": "Added comprehensive modal creation and management",
+      "impact": "Detail views now display correctly"
+    },
+    "database_routing_issues": {
+      "issue": "Routing problems between demo and production data modes",
+      "solution": "Implemented proper data toggle system with admin controls",
+      "impact": "Seamless switching between demo and production environments"
+    }
+  },
+  "architecture_patterns": {
+    "dynamic_card_creation": {
+      "pattern": "Generate cards from database records with proper ID extraction",
+      "implementation": "JavaScript functions extract database IDs for event handling",
+      "benefits": "Eliminates static/dynamic ID conflicts"
+    },
+    "modal_based_detail_views": {
+      "pattern": "Use modals for detailed work order, asset, and parts views",
+      "implementation": "Dynamic modal creation with proper content loading",
+      "benefits": "Clean UI without page refreshes"
+    },
+    "real_time_dom_monitoring": {
+      "pattern": "MutationObserver for dynamic content changes",
+      "implementation": "Monitors DOM for new elements and attaches handlers",
+      "benefits": "Handles dynamically added content automatically"
+    },
+    "ai_powered_recommendations": {
+      "pattern": "Integrated AI assistant across all pages",
+      "implementation": "Universal AI loader with context awareness",
+      "benefits": "Intelligent assistance throughout the application"
+    }
+  },
+  "api_endpoints": {
+    "work_orders": {
+      "/cmms/workorders/dashboard": "Work orders dashboard with filters",
+      "/cmms/workorders/create": "Create new work order form",
+      "/cmms/workorders/{id}/view": "View work order details",
+      "/cmms/workorders/{id}/edit": "Edit work order",
+      "/api/workorders": "REST API for work orders",
+      "/api/workorders/{id}": "Individual work order operations"
+    },
+    "assets": {
+      "/cmms/assets/dashboard": "Assets overview with health scores",
+      "/cmms/assets/create": "Add new asset",
+      "/cmms/assets/{id}/view": "Asset details and maintenance history",
+      "/api/assets": "REST API for assets",
+      "/api/assets/{id}/health": "Asset health scoring"
+    },
+    "parts": {
+      "/cmms/parts/dashboard": "Parts inventory overview",
+      "/cmms/parts/inventory": "Detailed inventory management",
+      "/api/parts": "REST API for parts",
+      "/api/parts/reorder-alerts": "Low stock alerts"
+    },
+    "ai_integration": {
+      "/api/ai/chat": "AI assistant chat endpoint",
+      "/api/ai/voice": "Voice command processing",
+      "/api/ai/recommendations": "AI-powered recommendations"
+    }
+  },
+  "database_schema": {
+    "core_tables": [
+      "users - User management and roles",
+      "assets - Equipment and machinery records",
+      "work_orders - Maintenance task tracking",
+      "parts - Inventory management",
+      "pm_schedules - Preventive maintenance scheduling",
+      "time_tracking - Work time logging",
+      "work_order_parts - Parts usage tracking",
+      "parts_transactions - Inventory movement history",
+      "work_order_updates - Comments and status changes"
+    ],
+    "relationships": "Foreign key relationships between work orders, assets, parts, and users",
+    "indexes": "Performance indexes on frequently queried columns"
+  },
+  "deployment_configuration": {
+    "cloud_platform": "Google Cloud Run",
+    "containerization": "Docker container deployment",
+    "environment_variables": [
+      "JWT_SECRET_KEY - Authentication secret",
+      "DATABASE_URL - Database connection string",
+      "AI_API_KEYS - AI service authentication"
+    ],
+    "deployment_script": "deploy-chatterfix.sh for automated deployment",
+    "health_checks": "Built-in health monitoring endpoints"
+  },
+  "ai_integration_details": {
+    "universal_ai_loader": {
+      "purpose": "Load AI assistant on every page",
+      "implementation": "JavaScript module for consistent AI integration",
+      "features": [
+        "Voice commands",
+        "Natural language processing",
+        "Context awareness"
+      ]
+    },
+    "voice_commands": {
+      "supported_commands": [
+        "Create work order for [equipment]",
+        "Show asset health for [asset name]",
+        "Check parts inventory for [part]",
+        "Schedule maintenance for [equipment]",
+        "What's the status of work order [number]"
+      ],
+      "processing": "Speech-to-text with natural language understanding"
+    },
+    "ai_recommendations": {
+      "types": [
+        "Predictive maintenance suggestions",
+        "Parts reorder recommendations",
+        "Work order prioritization",
+        "Asset health insights"
+      ],
+      "integration": "Real-time recommendations throughout the interface"
+    }
+  },
+  "testing_and_quality": {
+    "test_structure": {
+      "unit_tests": "tests/unit/ directory with API endpoint tests",
+      "performance_tests": "tests/performance/ with Locust load testing",
+      "integration_tests": "Comprehensive system integration testing"
+    },
+    "quality_assurance": [
+      "Automated syntax checking",
+      "Import validation",
+      "Database connectivity tests",
+      "Static file validation",
+      "API endpoint health checks"
+    ]
+  },
+  "common_workflows": {
+    "create_work_order": [
+      "Navigate to /cmms/workorders/dashboard",
+      "Click 'Create Work Order' button",
+      "Select asset from dropdown",
+      "Set priority (Low/Medium/High/Critical)",
+      "Describe the maintenance issue",
+      "Assign to technician",
+      "Set due date and estimated hours",
+      "Submit and track progress"
+    ],
+    "manage_assets": [
+      "Access /cmms/assets/dashboard",
+      "View asset health scores",
+      "Check maintenance history",
+      "Schedule preventive maintenance",
+      "Update asset information",
+      "Monitor predictive analytics"
+    ],
+    "inventory_management": [
+      "Check /cmms/parts/dashboard",
+      "Review stock levels",
+      "Set reorder points",
+      "Process reorder alerts",
+      "Update part information",
+      "Track usage patterns"
+    ]
+  },
+  "troubleshooting_guide": {
+    "common_issues": {
+      "work_orders_not_loading": [
+        "Check database connectivity",
+        "Verify work order API endpoints",
+        "Check for JavaScript errors in console",
+        "Validate user permissions"
+      ],
+      "ai_assistant_not_responding": [
+        "Verify AI API keys are configured",
+        "Check network connectivity",
+        "Test microphone permissions for voice",
+        "Check browser compatibility"
+      ],
+      "modal_views_not_opening": [
+        "Check for JavaScript errors",
+        "Verify modal creation functions are loaded",
+        "Check event handler attachment",
+        "Validate data attribute extraction"
+      ],
+      "data_mode_toggle_issues": [
+        "Verify admin permissions",
+        "Check data toggle system initialization",
+        "Validate database mode switching logic",
+        "Check for permission conflicts"
+      ]
+    },
+    "performance_optimization": [
+      "Optimize database queries with proper indexing",
+      "Implement caching for frequently accessed data",
+      "Minimize JavaScript bundle size",
+      "Use efficient DOM manipulation techniques",
+      "Implement lazy loading for large datasets"
+    ]
+  },
+  "best_practices": {
+    "development": [
+      "Always create backups before major changes",
+      "Test thoroughly in demo mode before production",
+      "Use proper error handling and logging",
+      "Follow RESTful API design principles",
+      "Implement comprehensive input validation"
+    ],
+    "ai_collaboration": [
+      "Document all AI interactions and decisions",
+      "Use standardized handoff procedures",
+      "Maintain context across AI model switches",
+      "Validate AI-generated code and suggestions",
+      "Regular knowledge base updates"
+    ],
+    "deployment": [
+      "Run pre-deployment tests",
+      "Create deployment backups",
+      "Monitor system health post-deployment",
+      "Have rollback procedures ready",
+      "Document all deployment changes"
+    ]
+  }
+}

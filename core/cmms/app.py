@@ -5070,8 +5070,19 @@ async def reports_page():
 async def get_work_orders_list():
     """Get all work orders formatted for CRUD interface"""
     try:
+        # Ensure database is initialized for this instance
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Check if work_orders table exists, if not initialize database
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
+        if not cursor.fetchone():
+            logger.info("Work orders table not found, initializing database...")
+            cursor.close()
+            conn.close()
+            init_database()
+            conn = get_db_connection()
+            cursor = conn.cursor()
         cursor.execute('''
             SELECT id, title, description, status, priority, assigned_to, created_date, due_date
             FROM work_orders

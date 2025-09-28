@@ -580,7 +580,7 @@ class ContextManager:
                 ["git", "log", "--oneline", "-n", "10"],
                 capture_output=True,
                 text=True,
-                cwd="/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms"
+                cwd="."
             )
             
             if result.returncode == 0:
@@ -595,7 +595,7 @@ class ContextManager:
         """Check current deployment status"""
         # Check if deployment scripts exist and recent deployment logs
         try:
-            deploy_script = Path("/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/deploy-chatterfix.sh")
+            deploy_script = Path("./deploy-chatterfix.sh")
             if deploy_script.exists():
                 # Check for recent deployment activity
                 return "Deployment ready - script available"
@@ -611,9 +611,9 @@ class ContextManager:
         try:
             # Check if main files exist
             essential_files = [
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/app.py",
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/enhanced_database_schema.py",
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/static/js/cmms-functions.js"
+                "./app.py",
+                "./enhanced_database_schema.py",
+                "./static/js/cmms-functions.js"
             ]
             
             for file_path in essential_files:
@@ -660,7 +660,7 @@ class ContextManager:
     async def _check_database_connectivity(self) -> bool:
         """Check if database is accessible"""
         try:
-            db_path = "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/data/cmms_enhanced.db"
+            db_path = "./data/cmms_enhanced.db"
             if Path(db_path).exists():
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
@@ -673,7 +673,7 @@ class ContextManager:
     
     async def _check_static_files(self) -> bool:
         """Check if static files are present"""
-        static_dir = Path("/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/static")
+        static_dir = Path("./static")
         return static_dir.exists() and len(list(static_dir.rglob("*"))) > 0
     
     async def _check_api_health(self) -> str:
@@ -888,7 +888,7 @@ class DeploymentSafetySystem:
             source_backup = backup_path / "source"
             subprocess.run([
                 "cp", "-r", 
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms",
+                ".",
                 str(source_backup)
             ], check=True)
             
@@ -897,7 +897,7 @@ class DeploymentSafetySystem:
             db_backup.mkdir(exist_ok=True)
             subprocess.run([
                 "cp", 
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/data/cmms_enhanced.db",
+                "./data/cmms_enhanced.db",
                 str(db_backup / "cmms_enhanced.db")
             ], check=True)
             
@@ -965,7 +965,7 @@ class DeploymentSafetySystem:
         try:
             result = subprocess.run([
                 "python3", "-m", "py_compile", 
-                "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/app.py"
+                "./app.py"
             ], capture_output=True, text=True)
             
             return {
@@ -981,7 +981,7 @@ class DeploymentSafetySystem:
         try:
             result = subprocess.run([
                 "python3", "-c", 
-                "import sys; sys.path.append('/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms'); import app"
+                "import sys; sys.path.append('.'); import app"
             ], capture_output=True, text=True)
             
             return {
@@ -995,7 +995,7 @@ class DeploymentSafetySystem:
     async def _test_database(self) -> Dict[str, Any]:
         """Test database connectivity and basic operations"""
         try:
-            db_path = "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/data/cmms_enhanced.db"
+            db_path = "./data/cmms_enhanced.db"
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
@@ -1016,7 +1016,7 @@ class DeploymentSafetySystem:
     async def _test_static_files(self) -> Dict[str, Any]:
         """Test that static files are accessible"""
         try:
-            static_dir = Path("/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/static")
+            static_dir = Path("./static")
             if not static_dir.exists():
                 return {"status": "failed", "error": "Static directory not found"}
             
@@ -1055,13 +1055,13 @@ class DeploymentSafetySystem:
             if source_backup.exists():
                 subprocess.run([
                     "rm", "-rf", 
-                    "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms"
+                    "."
                 ], check=True)
                 
                 subprocess.run([
                     "cp", "-r",
                     str(source_backup),
-                    "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms"
+                    "."
                 ], check=True)
             
             # Restore database
@@ -1070,7 +1070,7 @@ class DeploymentSafetySystem:
                 subprocess.run([
                     "cp",
                     str(db_backup),
-                    "/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/data/cmms_enhanced.db"
+                    "./data/cmms_enhanced.db"
                 ], check=True)
             
             logger.info(f"✅ Rollback completed: {backup_id}")
@@ -1288,7 +1288,7 @@ class ChatterFixKnowledgeBase:
     
     def __init__(self, database: AICollaborationDatabase):
         self.database = database
-        self.knowledge_file = Path("/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/chatterfix_knowledge_base.json")
+        self.knowledge_file = Path("./chatterfix_knowledge_base.json")
         self._initialize_knowledge_base()
     
     def _initialize_knowledge_base(self):

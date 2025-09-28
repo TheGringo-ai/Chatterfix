@@ -15,9 +15,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import sqlite3
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
 import json
 import httpx
 import os
@@ -76,11 +81,124 @@ class RequestLike(Protocol):
     async def json(self) -> Dict[str, Any]:
         ...
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager for startup and shutdown events"""
+    # STARTUP
+    logger.info("🚀 ChatterFix CMMS Enterprise starting up...")
+    
+    try:
+        # Create data directory
+        logger.info(f"📁 Creating data directory for: {DATABASE_PATH}")
+        os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+        logger.info(f"✅ Data directory ready: {os.path.dirname(DATABASE_PATH)}")
+        
+        # Initialize database
+        logger.info("🔧 Initializing database...")
+        init_database()
+        logger.info("✅ Database initialization completed successfully!")
+        
+        # Verify database tables exist
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
+            result = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if result:
+                logger.info("✅ work_orders table verified - database is ready!")
+            else:
+                logger.error("❌ work_orders table not found after initialization!")
+        except Exception as e:
+            logger.error(f"❌ Database verification failed: {e}")
+        
+        # Initialize enhanced features (CSV import/export, bulk operations)
+        try:
+            from enhanced_api_endpoints import add_enhanced_endpoints, setup_enhanced_features
+            add_enhanced_endpoints(app)
+            setup_enhanced_features(app)
+            logger.info("✅ Enhanced competitive features loaded successfully!")
+        except ImportError as e:
+            logger.warning(f"⚠️  Enhanced features module not found: {e}")
+        
+        # Initialize advanced media and AI admin features (Whisper, OCR, Photo uploads)
+        try:
+            from advanced_endpoints import setup_advanced_features
+            setup_advanced_features(app)
+            logger.info("✅ Advanced media and AI admin features loaded successfully!")
+        except ImportError as e:
+            logger.warning(f"⚠️  Advanced features module not found: {e}")
+        
+        # Initialize AI collaboration system
+        if AI_COLLABORATION_AVAILABLE:
+            try:
+                integrate_ai_collaboration(app)
+                logger.info("✅ AI Collaboration System integrated successfully!")
+            except Exception as e:
+                logger.error(f"❌ Failed to integrate AI Collaboration System: {e}")
+        
+        # Initialize advanced media system (Whisper voice, OCR, image uploads)
+        try:
+            from advanced_media_system import AdvancedMediaSystem
+            media_system = AdvancedMediaSystem()
+            app.state.media_system = media_system
+            
+            @app.post("/api/media/upload")
+            async def upload_media_file(request: Request):
+                """Upload and process media files with AI analysis"""
+                try:
+                    form = await request.form()
+                    file = form.get("file")
+                    reference_type = form.get("reference_type", "general")
+                    reference_id = form.get("reference_id", "0")
+                    
+                    if not file or not hasattr(file, 'file'):
+                        return {"success": False, "error": "No file provided"}
+                    
+                    # Read file data
+                    file_data = await file.read()
+                    filename = getattr(file, 'filename', 'uploaded_file')
+                    
+                    # Upload image with AI analysis
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                        result = await media_system.upload_image(
+                            file_data, filename, reference_type, int(reference_id)
+                        )
+                    else:
+                        return {"success": False, "error": "Unsupported file type"}
+                    
+                    return result
+                    
+                except Exception as e:
+                    logger.error(f"Media upload error: {e}")
+                    return {"success": False, "error": str(e)}
+            
+            logger.info("✅ Advanced media system initialized successfully!")
+        except ImportError as e:
+            logger.warning(f"⚠️  Advanced media system not available: {e}")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize advanced media system: {e}")
+        
+        logger.info("🎉 ChatterFix CMMS Enterprise startup completed successfully!")
+        
+    except Exception as e:
+        logger.error(f"❌ CRITICAL: Startup failed: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
+        raise  # Re-raise to prevent startup if critical initialization fails
+    
+    yield  # This separates startup from shutdown
+    
+    # SHUTDOWN
+    logger.info("🛑 ChatterFix CMMS Enterprise shutting down...")
+
 # Initialize FastAPI app with Mars-level capabilities
 app = FastAPI(
     title="ChatterFix CMMS Enterprise - Mars-Level AI Platform", 
     version="4.0.0-mars-level-ai",
-    description="🚀 The most advanced AI-powered CMMS with enterprise AI brain, quantum analytics, and autonomous operations"
+    description="🚀 The most advanced AI-powered CMMS with enterprise AI brain, quantum analytics, and autonomous operations",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -151,7 +269,7 @@ def get_db_connection():
     """Get database connection - PostgreSQL or SQLite fallback"""
     # Try PostgreSQL first (for production)
     db_url = os.getenv("DATABASE_URL")
-    if db_url:
+    if db_url and POSTGRES_AVAILABLE:
         try:
             conn = psycopg2.connect(db_url)
             conn.cursor_factory = psycopg2.extras.DictCursor
@@ -196,18 +314,26 @@ def init_database():
             
             if is_postgresql:
                 # Initialize PostgreSQL database with schema and sample data
-                from postgresql_init import init_postgresql_database
-                if init_postgresql_database():
-                    logger.info("✅ PostgreSQL database initialized with sample data")
-                else:
-                    logger.warning("⚠️ PostgreSQL initialization failed, falling back to basic setup")
+                try:
+                    from postgresql_init import init_postgresql_database
+                    if init_postgresql_database():
+                        logger.info("✅ PostgreSQL database initialized with sample data")
+                    else:
+                        logger.warning("⚠️ PostgreSQL initialization failed, falling back to basic setup")
+                        _create_basic_tables(cursor, conn)
+                except ImportError:
+                    logger.warning("⚠️ PostgreSQL init module not found, creating basic tables...")
+                    _create_basic_tables(cursor, conn)
             else:
-                # Initialize SQLite database
-                if ENHANCED_DB_AVAILABLE:
-                    init_enhanced_database()
-                    logger.info("✅ Enhanced SQLite database initialized")
-                else:
-                    # Create basic tables for SQLite fallback
+                # Initialize SQLite database - always create basic tables as fallback
+                try:
+                    if ENHANCED_DB_AVAILABLE:
+                        init_enhanced_database()
+                        logger.info("✅ Enhanced SQLite database initialized")
+                    else:
+                        raise ImportError("Enhanced database not available")
+                except (ImportError, Exception) as e:
+                    logger.warning(f"⚠️ Enhanced database failed ({e}), creating basic tables...")
                     _create_basic_tables(cursor, conn)
                     logger.info("✅ Basic SQLite tables created")
         else:
@@ -215,8 +341,11 @@ def init_database():
             
     except Exception as e:
         logger.warning(f"Database check failed: {e}, creating basic tables...")
-        if not is_postgresql:
+        try:
             _create_basic_tables(cursor, conn)
+            logger.info("✅ Basic fallback tables created")
+        except Exception as fallback_error:
+            logger.error(f"❌ Critical: Failed to create basic tables: {fallback_error}")
     
     finally:
         conn.close()
@@ -281,6 +410,24 @@ def _create_basic_tables(cursor, conn):
             next_maintenance DATE,
             purchase_date DATE,
             purchase_cost REAL,
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Create parts table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS parts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            part_number TEXT UNIQUE,
+            description TEXT,
+            category TEXT,
+            stock_quantity INTEGER DEFAULT 0,
+            min_stock INTEGER DEFAULT 0,
+            unit_cost REAL DEFAULT 0.0,
+            supplier_id INTEGER,
+            location TEXT,
             notes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -532,251 +679,8 @@ def get_current_user(username: str = Depends(verify_token)):
         return dict(user)
     return None
 
-# Initialize database on startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database and enhanced features"""
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    init_database()
-    
-    # Initialize enhanced features (CSV import/export, bulk operations)
-    try:
-        from enhanced_api_endpoints import add_enhanced_endpoints, setup_enhanced_features
-        add_enhanced_endpoints(app)
-        setup_enhanced_features(app)
-        logger.info("✅ Enhanced competitive features loaded successfully!")
-    except ImportError as e:
-        logger.warning(f"⚠️  Enhanced features module not found: {e}")
-    
-    # Initialize advanced media and AI admin features (Whisper, OCR, Photo uploads)
-    try:
-        from advanced_endpoints import setup_advanced_features
-        setup_advanced_features(app)
-        logger.info("✅ Advanced media and AI admin features loaded successfully!")
-    except ImportError as e:
-        logger.warning(f"⚠️  Advanced features module not found: {e}")
-    
-    # Initialize AI collaboration system
-    if AI_COLLABORATION_AVAILABLE:
-        try:
-            integrate_ai_collaboration(app)
-            logger.info("✅ AI Collaboration System integrated successfully!")
-        except Exception as e:
-            logger.error(f"❌ Failed to integrate AI Collaboration System: {e}")
-    
-    # Initialize advanced media system (Whisper voice, OCR, image uploads)
-    try:
-        from advanced_media_system import AdvancedMediaSystem
-        media_system = AdvancedMediaSystem()
-        app.state.media_system = media_system
-        
-        @app.post("/api/media/upload")
-        async def upload_media_file(request: Request):
-            """Upload and process media files with AI analysis"""
-            try:
-                form = await request.form()
-                file = form.get("file")
-                reference_type = form.get("reference_type", "general")
-                reference_id = form.get("reference_id", "0")
-                
-                if not file or not hasattr(file, 'file'):
-                    return {"success": False, "error": "No file provided"}
-                
-                # Read file data
-                file_data = await file.read()
-                filename = getattr(file, 'filename', 'uploaded_file')
-                
-                # Upload image with AI analysis
-                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-                    result = await media_system.upload_image(
-                        file_data, filename, reference_type, int(reference_id)
-                    )
-                else:
-                    return {"success": False, "error": "Unsupported file type"}
-                
-                return {"success": True, "data": result}
-                
-            except Exception as e:
-                logger.error(f"Media upload error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        @app.post("/api/voice/transcribe")
-        async def transcribe_voice(request: Request):
-            """Convert voice to text using Whisper"""
-            try:
-                form = await request.form()
-                audio_file = form.get("audio")
-                
-                if not audio_file or not hasattr(audio_file, 'file'):
-                    return {"success": False, "error": "No audio file provided"}
-                
-                # Read audio data
-                audio_data = await audio_file.read()
-                filename = getattr(audio_file, 'filename', 'audio.wav')
-                
-                # Upload and transcribe audio
-                result = await media_system.upload_audio_for_transcription(
-                    audio_data, filename, "voice_command", 0
-                )
-                
-                return {"success": True, "transcription": result.get("transcription", "")}
-                
-            except Exception as e:
-                logger.error(f"Voice transcription error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        @app.post("/api/ocr/process")
-        async def process_ocr(request: Request):
-            """Extract text from images using OCR"""
-            try:
-                form = await request.form()
-                image_file = form.get("image")
-                
-                if not image_file or not hasattr(image_file, 'file'):
-                    return {"success": False, "error": "No image file provided"}
-                
-                # Read image data and upload first
-                image_data = await image_file.read()
-                filename = getattr(image_file, 'filename', 'document.jpg')
-                
-                # Upload image first
-                upload_result = await media_system.upload_image(
-                    image_data, filename, "document", 0
-                )
-                
-                if upload_result and upload_result.get("media_file"):
-                    # Extract text using OCR
-                    media_file_id = upload_result["media_file"]["id"]
-                    extracted_text = await media_system.extract_text_from_image(media_file_id)
-                    return {"success": True, "extracted_text": extracted_text}
-                else:
-                    return {"success": False, "error": "Failed to upload image"}
-                
-            except Exception as e:
-                logger.error(f"OCR processing error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        logger.info("✅ Advanced media system with Whisper, OCR, and photo uploads integrated!")
-    except ImportError as e:
-        logger.warning(f"⚠️  Advanced media system not available: {e}")
-    
-    # Initialize voice work order processor
-    try:
-        from core.cmms.voice_workorder_enhanced import VoiceWorkOrderProcessor
-        voice_processor = VoiceWorkOrderProcessor()
-        app.state.voice_processor = voice_processor
-        
-        @app.post("/api/voice/create-workorder")
-        async def create_workorder_from_voice(request: Request):
-            """Create work order from voice command with AI assistance"""
-            try:
-                body = await request.json()
-                voice_text = body.get("transcription", "")
-                
-                if not voice_text:
-                    return {"success": False, "error": "No voice transcription provided"}
-                
-                # Process voice command to create work order
-                work_order = await voice_processor.process_voice_command(voice_text)
-                return {"success": True, "work_order": work_order}
-                
-            except Exception as e:
-                logger.error(f"Voice work order creation error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        @app.post("/api/ai/technician-assist")
-        async def ai_technician_assistance(request: Request):
-            """AI assistance for technicians with parts, directions, and technical advice"""
-            try:
-                body = await request.json()
-                question = body.get("question", "")
-                context = body.get("context", {})
-                provider = body.get("provider", "multi")  # multi, openai, grok, ollama
-                
-                if not question:
-                    return {"success": False, "error": "No question provided"}
-                
-                # Enhanced prompt for technician assistance
-                enhanced_prompt = f"""
-                As an expert CMMS technician assistant, provide helpful guidance for:
-                
-                QUESTION: {question}
-                
-                CONTEXT: {json.dumps(context) if context else 'General maintenance query'}
-                
-                Please provide:
-                1. IMMEDIATE STEPS: What to do right now
-                2. SAFETY CONSIDERATIONS: Any safety concerns or precautions
-                3. REQUIRED PARTS/TOOLS: List specific parts numbers, tools needed
-                4. STEP-BY-STEP INSTRUCTIONS: Clear, numbered steps
-                5. TROUBLESHOOTING TIPS: Common issues and solutions
-                6. PREVENTIVE MEASURES: How to avoid this issue in the future
-                
-                Keep responses practical, clear, and safety-focused for field technicians.
-                """
-                
-                # Try multiple AI providers for best response
-                ai_response = await process_ai_message_multi(enhanced_prompt, json.dumps(context), provider)
-                
-                return {
-                    "success": True,
-                    "assistance": ai_response.get("response", ""),
-                    "provider": ai_response.get("provider", "unknown"),
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-            except Exception as e:
-                logger.error(f"AI technician assistance error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        @app.post("/api/ai/parts-recommendation")
-        async def ai_parts_recommendation(request: Request):
-            """AI-powered parts recommendation based on equipment and issue"""
-            try:
-                body = await request.json()
-                equipment = body.get("equipment", "")
-                issue = body.get("issue", "")
-                symptoms = body.get("symptoms", "")
-                provider = body.get("provider", "grok")  # Grok is good for technical analysis
-                
-                parts_prompt = f"""
-                As a parts specialist for CMMS, analyze this maintenance issue:
-                
-                EQUIPMENT: {equipment}
-                ISSUE: {issue}
-                SYMPTOMS: {symptoms}
-                
-                Provide a detailed parts analysis including:
-                1. LIKELY FAILED PARTS: Most probable components that need replacement
-                2. PART NUMBERS: Specific OEM part numbers if available
-                3. ALTERNATIVE PARTS: Compatible alternatives or generic equivalents
-                4. URGENCY LEVEL: Critical, High, Medium, Low priority
-                5. ESTIMATED COSTS: Rough cost estimates for parts
-                6. DIAGNOSTIC STEPS: How to confirm which parts actually need replacement
-                7. INSTALLATION NOTES: Special tools or procedures needed
-                
-                Focus on accuracy and practical field recommendations.
-                """
-                
-                ai_response = await process_ai_message_multi(parts_prompt, "", provider)
-                
-                return {
-                    "success": True,
-                    "parts_recommendation": ai_response.get("response", ""),
-                    "provider": ai_response.get("provider", "unknown"),
-                    "urgency": "medium",  # Could be enhanced to parse from AI response
-                    "timestamp": datetime.now().isoformat()
-                }
-                
-            except Exception as e:
-                logger.error(f"AI parts recommendation error: {e}")
-                return {"success": False, "error": str(e)}
-        
-        logger.info("✅ Voice work order processor integrated!")
-    except ImportError as e:
-        logger.warning(f"⚠️  Voice work order processor not available: {e}")
-    
-    logger.info(f"🚀 ChatterFix CMMS Enterprise v3.0 - AI-Powered Competitive Edition started on port {PORT}")
+# DEPRECATED startup event removed - now using modern lifespan pattern above
+# The startup initialization is now handled in the lifespan function
 
 # =================== DATA TOGGLE SYSTEM API ENDPOINTS ===================
 if DATA_TOGGLE_AVAILABLE:
@@ -5224,6 +5128,19 @@ async def get_work_orders():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Check if work_orders table exists, if not initialize database
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
+        if not cursor.fetchone():
+            logger.info("🔧 work_orders table missing - initializing database...")
+            cursor.close()
+            conn.close()
+            init_database()
+            # Reconnect after initialization
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            logger.info("✅ Database initialized, proceeding with query...")
+        
         cursor.execute('''
             SELECT id, title, description, status, priority, assigned_to, created_date, due_date
             FROM work_orders 

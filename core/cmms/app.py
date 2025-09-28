@@ -21,11 +21,16 @@ import httpx
 import os
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Protocol
 import jwt
 import bcrypt
 import asyncio
 import time
+
+# Protocol for request-like objects
+class RequestLike(Protocol):
+    async def json(self) -> Dict[str, Any]:
+        ...
 
 # Initialize FastAPI app with Mars-level capabilities
 app = FastAPI(
@@ -379,7 +384,7 @@ Provide helpful responses about maintenance, work orders, assets, and parts mana
     
     return {"provider": "ollama", "success": False, "error": "Ollama API unavailable"}
 
-async def process_ai_message_multi(message: str, context: str, preferred_provider: str = None) -> Dict[str, Any]:
+async def process_ai_message_multi(message: str, context: str, preferred_provider: Optional[str] = None) -> Dict[str, Any]:
     """Process message with multiple AI providers (fallback support)"""
     provider = preferred_provider or AI_PROVIDER
     
@@ -473,25 +478,234 @@ async def startup_event():
     os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
     init_database()
     
-    # Initialize enhanced features
+    # Initialize enhanced features (CSV import/export, bulk operations)
     try:
-        from enhanced_api_endpoints import setup_enhanced_features
-        if setup_enhanced_features(app):
-            logger.info("✅ Enhanced competitive features loaded successfully!")
-        else:
-            logger.warning("⚠️  Some enhanced features failed to load")
+        from enhanced_api_endpoints import add_enhanced_endpoints, setup_enhanced_features
+        add_enhanced_endpoints(app)
+        setup_enhanced_features(app)
+        logger.info("✅ Enhanced competitive features loaded successfully!")
     except ImportError as e:
         logger.warning(f"⚠️  Enhanced features module not found: {e}")
     
-    # Initialize advanced media and AI admin features
+    # Initialize advanced media and AI admin features (Whisper, OCR, Photo uploads)
     try:
         from advanced_endpoints import setup_advanced_features
-        if setup_advanced_features(app):
-            logger.info("✅ Advanced media and AI admin features loaded successfully!")
-        else:
-            logger.warning("⚠️  Some advanced features failed to load")
+        setup_advanced_features(app)
+        logger.info("✅ Advanced media and AI admin features loaded successfully!")
     except ImportError as e:
         logger.warning(f"⚠️  Advanced features module not found: {e}")
+    
+    # Initialize advanced media system (Whisper voice, OCR, image uploads)
+    try:
+        from advanced_media_system import AdvancedMediaSystem
+        media_system = AdvancedMediaSystem()
+        app.state.media_system = media_system
+        
+        @app.post("/api/media/upload")
+        async def upload_media_file(request: Request):
+            """Upload and process media files with AI analysis"""
+            try:
+                form = await request.form()
+                file = form.get("file")
+                reference_type = form.get("reference_type", "general")
+                reference_id = form.get("reference_id", "0")
+                
+                if not file or not hasattr(file, 'file'):
+                    return {"success": False, "error": "No file provided"}
+                
+                # Read file data
+                file_data = await file.read()
+                filename = getattr(file, 'filename', 'uploaded_file')
+                
+                # Upload image with AI analysis
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                    result = await media_system.upload_image(
+                        file_data, filename, reference_type, int(reference_id)
+                    )
+                else:
+                    return {"success": False, "error": "Unsupported file type"}
+                
+                return {"success": True, "data": result}
+                
+            except Exception as e:
+                logger.error(f"Media upload error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.post("/api/voice/transcribe")
+        async def transcribe_voice(request: Request):
+            """Convert voice to text using Whisper"""
+            try:
+                form = await request.form()
+                audio_file = form.get("audio")
+                
+                if not audio_file or not hasattr(audio_file, 'file'):
+                    return {"success": False, "error": "No audio file provided"}
+                
+                # Read audio data
+                audio_data = await audio_file.read()
+                filename = getattr(audio_file, 'filename', 'audio.wav')
+                
+                # Upload and transcribe audio
+                result = await media_system.upload_audio_for_transcription(
+                    audio_data, filename, "voice_command", 0
+                )
+                
+                return {"success": True, "transcription": result.get("transcription", "")}
+                
+            except Exception as e:
+                logger.error(f"Voice transcription error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.post("/api/ocr/process")
+        async def process_ocr(request: Request):
+            """Extract text from images using OCR"""
+            try:
+                form = await request.form()
+                image_file = form.get("image")
+                
+                if not image_file or not hasattr(image_file, 'file'):
+                    return {"success": False, "error": "No image file provided"}
+                
+                # Read image data and upload first
+                image_data = await image_file.read()
+                filename = getattr(image_file, 'filename', 'document.jpg')
+                
+                # Upload image first
+                upload_result = await media_system.upload_image(
+                    image_data, filename, "document", 0
+                )
+                
+                if upload_result and upload_result.get("media_file"):
+                    # Extract text using OCR
+                    media_file_id = upload_result["media_file"]["id"]
+                    extracted_text = await media_system.extract_text_from_image(media_file_id)
+                    return {"success": True, "extracted_text": extracted_text}
+                else:
+                    return {"success": False, "error": "Failed to upload image"}
+                
+            except Exception as e:
+                logger.error(f"OCR processing error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        logger.info("✅ Advanced media system with Whisper, OCR, and photo uploads integrated!")
+    except ImportError as e:
+        logger.warning(f"⚠️  Advanced media system not available: {e}")
+    
+    # Initialize voice work order processor
+    try:
+        from core.cmms.voice_workorder_enhanced import VoiceWorkOrderProcessor
+        voice_processor = VoiceWorkOrderProcessor()
+        app.state.voice_processor = voice_processor
+        
+        @app.post("/api/voice/create-workorder")
+        async def create_workorder_from_voice(request: Request):
+            """Create work order from voice command with AI assistance"""
+            try:
+                body = await request.json()
+                voice_text = body.get("transcription", "")
+                
+                if not voice_text:
+                    return {"success": False, "error": "No voice transcription provided"}
+                
+                # Process voice command to create work order
+                work_order = await voice_processor.process_voice_command(voice_text)
+                return {"success": True, "work_order": work_order}
+                
+            except Exception as e:
+                logger.error(f"Voice work order creation error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.post("/api/ai/technician-assist")
+        async def ai_technician_assistance(request: Request):
+            """AI assistance for technicians with parts, directions, and technical advice"""
+            try:
+                body = await request.json()
+                question = body.get("question", "")
+                context = body.get("context", {})
+                provider = body.get("provider", "multi")  # multi, openai, grok, ollama
+                
+                if not question:
+                    return {"success": False, "error": "No question provided"}
+                
+                # Enhanced prompt for technician assistance
+                enhanced_prompt = f"""
+                As an expert CMMS technician assistant, provide helpful guidance for:
+                
+                QUESTION: {question}
+                
+                CONTEXT: {json.dumps(context) if context else 'General maintenance query'}
+                
+                Please provide:
+                1. IMMEDIATE STEPS: What to do right now
+                2. SAFETY CONSIDERATIONS: Any safety concerns or precautions
+                3. REQUIRED PARTS/TOOLS: List specific parts numbers, tools needed
+                4. STEP-BY-STEP INSTRUCTIONS: Clear, numbered steps
+                5. TROUBLESHOOTING TIPS: Common issues and solutions
+                6. PREVENTIVE MEASURES: How to avoid this issue in the future
+                
+                Keep responses practical, clear, and safety-focused for field technicians.
+                """
+                
+                # Try multiple AI providers for best response
+                ai_response = await process_ai_message_multi(enhanced_prompt, json.dumps(context), provider)
+                
+                return {
+                    "success": True,
+                    "assistance": ai_response.get("response", ""),
+                    "provider": ai_response.get("provider", "unknown"),
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+            except Exception as e:
+                logger.error(f"AI technician assistance error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        @app.post("/api/ai/parts-recommendation")
+        async def ai_parts_recommendation(request: Request):
+            """AI-powered parts recommendation based on equipment and issue"""
+            try:
+                body = await request.json()
+                equipment = body.get("equipment", "")
+                issue = body.get("issue", "")
+                symptoms = body.get("symptoms", "")
+                provider = body.get("provider", "grok")  # Grok is good for technical analysis
+                
+                parts_prompt = f"""
+                As a parts specialist for CMMS, analyze this maintenance issue:
+                
+                EQUIPMENT: {equipment}
+                ISSUE: {issue}
+                SYMPTOMS: {symptoms}
+                
+                Provide a detailed parts analysis including:
+                1. LIKELY FAILED PARTS: Most probable components that need replacement
+                2. PART NUMBERS: Specific OEM part numbers if available
+                3. ALTERNATIVE PARTS: Compatible alternatives or generic equivalents
+                4. URGENCY LEVEL: Critical, High, Medium, Low priority
+                5. ESTIMATED COSTS: Rough cost estimates for parts
+                6. DIAGNOSTIC STEPS: How to confirm which parts actually need replacement
+                7. INSTALLATION NOTES: Special tools or procedures needed
+                
+                Focus on accuracy and practical field recommendations.
+                """
+                
+                ai_response = await process_ai_message_multi(parts_prompt, "", provider)
+                
+                return {
+                    "success": True,
+                    "parts_recommendation": ai_response.get("response", ""),
+                    "provider": ai_response.get("provider", "unknown"),
+                    "urgency": "medium",  # Could be enhanced to parse from AI response
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+            except Exception as e:
+                logger.error(f"AI parts recommendation error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        logger.info("✅ Voice work order processor integrated!")
+    except ImportError as e:
+        logger.warning(f"⚠️  Voice work order processor not available: {e}")
     
     logger.info(f"🚀 ChatterFix CMMS Enterprise v3.0 - AI-Powered Competitive Edition started on port {PORT}")
 
@@ -842,6 +1056,194 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
         <script src="/static/js/cmms-functions.js"></script>
         <!-- AI Assistant Integration -->
         <script src="/ai-inject.js"></script>
+        
+        <!-- Global Click Handler System with Auto-Detection -->
+        <script>
+        // Enhanced Click Handler System with Automatic Detection
+        document.addEventListener('DOMContentLoaded', function() {{
+            console.log('🔧 ChatterFix CMMS: Initializing enhanced click handler system...');
+            
+            // Global automatic click handler attachment system
+            window.ChatterFixAutoHandlers = {{
+                
+                // Attach click handlers to all existing cards
+                initializeAllCards: function() {{
+                    this.initializeWorkOrderCards();
+                    this.initializeAssetCards();
+                    this.initializePartCards();
+                    console.log('🚀 All existing cards initialized with click handlers');
+                }},
+                
+                // Initialize work order cards
+                initializeWorkOrderCards: function() {{
+                    document.querySelectorAll('.work-order-card').forEach((card, index) => {{
+                        if (!card.onclick) {{
+                            const cardId = this.extractCardId(card) || (index + 1);
+                            card.onclick = () => {{
+                                console.log('🔧 Work Order card clicked:', cardId);
+                                if (window.showWorkOrderDetails) {{
+                                    showWorkOrderDetails(cardId);
+                                }} else {{
+                                    console.error('❌ showWorkOrderDetails function not available');
+                                }}
+                            }};
+                            card.style.cursor = 'pointer';
+                            console.log('✅ Work order card ' + cardId + ' handler attached');
+                        }}
+                    }});
+                }},
+                
+                // Initialize asset cards
+                initializeAssetCards: function() {{
+                    document.querySelectorAll('.asset-card').forEach((card, index) => {{
+                        if (!card.onclick) {{
+                            const cardId = this.extractCardId(card) || (index + 1);
+                            card.onclick = () => {{
+                                console.log('🏭 Asset card clicked:', cardId);
+                                if (window.showAssetDetails) {{
+                                    showAssetDetails(cardId);
+                                }} else {{
+                                    console.error('❌ showAssetDetails function not available');
+                                }}
+                            }};
+                            card.style.cursor = 'pointer';
+                            console.log('✅ Asset card ' + cardId + ' handler attached');
+                        }}
+                    }});
+                }},
+                
+                // Initialize part cards
+                initializePartCards: function() {{
+                    document.querySelectorAll('.part-card').forEach((card, index) => {{
+                        if (!card.onclick) {{
+                            const cardId = this.extractCardId(card) || (index + 1);
+                            card.onclick = () => {{
+                                console.log('🔩 Parts card clicked:', cardId);
+                                if (window.showPartsDetails) {{
+                                    showPartsDetails(cardId);
+                                }} else {{
+                                    console.error('❌ showPartsDetails function not available');
+                                }}
+                            }};
+                            card.style.cursor = 'pointer';
+                            console.log('✅ Parts card ' + cardId + ' handler attached');
+                        }}
+                    }});
+                }},
+                
+                // Extract card ID from data attributes or content
+                extractCardId: function(card) {{
+                    // Try to get ID from data attribute
+                    if (card.dataset.id) return parseInt(card.dataset.id);
+                    
+                    // Try to extract from onclick attribute if it exists
+                    if (card.getAttribute('onclick')) {{
+                        const match = card.getAttribute('onclick').match(/\\d+/);
+                        if (match) return parseInt(match[0]);
+                    }}
+                    
+                    // Try to extract from button onclick
+                    const button = card.querySelector('button[onclick]');
+                    if (button) {{
+                        const match = button.getAttribute('onclick').match(/\\d+/);
+                        if (match) return parseInt(match[0]);
+                    }}
+                    
+                    return null;
+                }},
+                
+                // Monitor for new cards being added to the DOM
+                startDOMObserver: function() {{
+                    const observer = new MutationObserver((mutations) => {{
+                        let newCardsFound = false;
+                        
+                        mutations.forEach((mutation) => {{
+                            if (mutation.type === 'childList') {{
+                                mutation.addedNodes.forEach((node) => {{
+                                    if (node.nodeType === 1) {{ // Element node
+                                        // Check if the added node is a card
+                                        if (this.isCard(node)) {{
+                                            console.log('🔍 New card detected:', node.className);
+                                            this.attachHandlerToCard(node);
+                                            newCardsFound = true;
+                                        }}
+                                        
+                                        // Check if the added node contains cards
+                                        const cards = node.querySelectorAll && node.querySelectorAll('.work-order-card, .asset-card, .part-card');
+                                        if (cards && cards.length > 0) {{
+                                            console.log('🔍 Container with ' + cards.length + ' new cards detected');
+                                            cards.forEach(card => {{
+                                                this.attachHandlerToCard(card);
+                                                newCardsFound = true;
+                                            }});
+                                        }}
+                                    }}
+                                }});
+                            }}
+                        }});
+                        
+                        if (newCardsFound) {{
+                            console.log('🔄 New cards processed, handlers attached automatically');
+                        }}
+                    }});
+                    
+                    // Start observing the document with configured parameters
+                    observer.observe(document.body, {{
+                        childList: true,
+                        subtree: true,
+                        attributes: false
+                    }});
+                    
+                    console.log('👁️ DOM observer started - will auto-attach handlers to new cards');
+                }},
+                
+                // Check if a node is a card
+                isCard: function(node) {{
+                    return node.classList && (
+                        node.classList.contains('work-order-card') ||
+                        node.classList.contains('asset-card') ||
+                        node.classList.contains('part-card')
+                    );
+                }},
+                
+                // Attach handler to a specific card
+                attachHandlerToCard: function(card) {{
+                    if (!card.onclick) {{
+                        const cardId = this.extractCardId(card);
+                        
+                        if (card.classList.contains('work-order-card')) {{
+                            card.onclick = () => {{
+                                console.log('🔧 Auto-attached: Work Order card clicked:', cardId);
+                                if (window.showWorkOrderDetails) showWorkOrderDetails(cardId);
+                            }};
+                        }} else if (card.classList.contains('asset-card')) {{
+                            card.onclick = () => {{
+                                console.log('🏭 Auto-attached: Asset card clicked:', cardId);
+                                if (window.showAssetDetails) showAssetDetails(cardId);
+                            }};
+                        }} else if (card.classList.contains('part-card')) {{
+                            card.onclick = () => {{
+                                console.log('🔩 Auto-attached: Parts card clicked:', cardId);
+                                if (window.showPartsDetails) showPartsDetails(cardId);
+                            }};
+                        }}
+                        
+                        card.style.cursor = 'pointer';
+                        console.log('✅ Auto-attached handler to ' + card.className + ' with ID:', cardId);
+                    }}
+                }}
+            }};
+            
+            // Initialize system
+            window.ChatterFixAutoHandlers.initializeAllCards();
+            window.ChatterFixAutoHandlers.startDOMObserver();
+            
+            // Expose globally for manual triggering
+            window.refreshClickHandlers = () => window.ChatterFixAutoHandlers.initializeAllCards();
+            
+            console.log('🚀 ChatterFix CMMS: Enhanced auto-detection click handler system ready!');
+        }});
+        </script>
     </body>
     </html>
     """
@@ -1288,10 +1690,38 @@ async def assets_page():
                 document.body.appendChild(modal);
             }
             
-            // Show asset details
+            // Enhanced modal initialization system
+            window.ensureModalExists = function(modalId, createFunction) {
+                let modal = document.getElementById(modalId);
+                if (!modal) {
+                    console.log(`🔨 Creating ${modalId}...`);
+                    createFunction();
+                    modal = document.getElementById(modalId);
+                }
+                
+                if (!modal) {
+                    console.error(`❌ Failed to create ${modalId}!`);
+                    return false;
+                }
+                return true;
+            };
+
+            // Show asset details with enhanced error handling
             window.showAssetDetails = function(id) {
+                console.log('🏭 Opening asset details for ID:', id);
+                
+                // Ensure modal exists
+                if (!ensureModalExists('asset-modal', createAssetModal)) {
+                    alert('Error: Unable to open asset details. Please refresh the page.');
+                    return;
+                }
+                
                 const asset = assets.find(a => a.id === parseInt(id));
-                if (!asset) return;
+                if (!asset) {
+                    console.error('Asset not found:', id);
+                    alert('Asset not found. Please refresh the page.');
+                    return;
+                }
                 
                 const modal = document.getElementById('asset-modal');
                 const title = document.getElementById('asset-modal-title');
@@ -1607,10 +2037,56 @@ async def assets_page():
                 btn.innerHTML = '🏭 View & Edit Asset';
             });
             
-            // Create the modal
-            createAssetModal();
+            // Enhanced initialization system
+            window.initializeAssetSystem = function() {
+                try {
+                    console.log('🏭 Initializing Asset Management System...');
+                    
+                    // Create the modal
+                    createAssetModal();
+                    
+                    // Add enhanced click handlers to all asset cards
+                    document.querySelectorAll('.asset-card').forEach((card, index) => {
+                        if (!card.onclick) {
+                            const assetId = index + 1;
+                            card.onclick = () => {
+                                console.log(`Asset card ${assetId} clicked`);
+                                showAssetDetails(assetId);
+                            };
+                            card.style.cursor = 'pointer';
+                            console.log(`✅ Enhanced click handler added to asset card ${assetId}`);
+                        }
+                    });
+                    
+                    // Add enhanced click handlers to asset buttons
+                    document.querySelectorAll('.asset-card .btn').forEach((btn, index) => {
+                        if (!btn.onclick || btn.onclick.toString().includes('index + 1')) {
+                            const assetId = index + 1;
+                            btn.onclick = (e) => {
+                                e.stopPropagation();
+                                console.log(`Asset button ${assetId} clicked`);
+                                showAssetDetails(assetId);
+                            };
+                            btn.style.cursor = 'pointer';
+                            btn.innerHTML = '🏭 View & Edit Asset';
+                            console.log(`✅ Enhanced click handler added to asset button ${assetId}`);
+                        }
+                    });
+                    
+                    console.log('✅ Assets CRUD System Ready!');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Error initializing asset system:', error);
+                    return false;
+                }
+            };
             
-            console.log('✅ Assets CRUD System Ready!');
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeAssetSystem);
+            } else {
+                initializeAssetSystem();
+            }
         });
         </script>
         
@@ -1866,11 +2342,35 @@ async def work_orders_page():
 
         // Global functions accessible to HTML onclick handlers
         window.showWorkOrderDetails = async function(id) {
+            console.log('🔧 Opening work order details for ID:', id);
+            
+            // Ensure work orders are loaded
+            if (!workOrders || workOrders.length === 0) {
+                console.log('📋 Loading work orders from database...');
+                await loadWorkOrders();
+            }
+            
             const workOrder = workOrders.find(wo => wo.id === parseInt(id));
             if (!workOrder) {
-                console.error('Work order not found:', id);
-                alert('Work order not found. Loading from database...');
-                await loadWorkOrders();
+                console.error('❌ Work order not found:', id);
+                console.log('Available work orders:', workOrders);
+                alert('Work order not found. Please try again.');
+                return;
+            }
+            
+            console.log('✅ Found work order:', workOrder);
+            
+            // Ensure modal exists
+            let modal = document.getElementById('work-order-modal');
+            if (!modal) {
+                console.log('🔨 Creating modal...');
+                createModal();
+                modal = document.getElementById('work-order-modal');
+            }
+            
+            if (!modal) {
+                console.error('❌ Failed to create modal!');
+                alert('Error: Unable to open work order details. Please refresh the page.');
                 return;
             }
             
@@ -1895,31 +2395,29 @@ async def work_orders_page():
                 }
             } catch (error) {
                 console.error('Failed to get AI insights:', error);
-            }
-            
-            const modal = document.getElementById('work-order-modal');
-            if (!modal) {
-                console.error('Modal not found! Creating modal...');
-                createModal();
-                return;
+                aiInsights = 'AI analysis temporarily unavailable';
             }
             
             const title = document.getElementById('modal-title');
             const content = document.getElementById('modal-content');
             
+            if (!title || !content) {
+                console.error('❌ Modal elements not found!');
+                alert('Error: Modal is corrupted. Please refresh the page.');
+                return;
+            }
+            
             title.textContent = workOrder.title;
             content.innerHTML = `
                 <!-- AI Insights Panel -->
-                ${aiInsights ? `
                 <div style="background: linear-gradient(135deg, rgba(139, 148, 103, 0.2), rgba(46, 64, 83, 0.3)); border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #8B9467;">
                     <h4 style="margin: 0 0 10px 0; color: #8B9467; display: flex; align-items: center; gap: 8px;">
                         🤖 AI Brain Analysis
                     </h4>
                     <div style="color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.6;">
-                        ${aiInsights}
+                        ${aiInsights || 'Loading AI insights...'}
                     </div>
                 </div>
-                ` : '<div style="text-align: center; padding: 10px; color: rgba(255,255,255,0.6);">🤖 AI Brain is analyzing...</div>'}
                 
                 <!-- Work Order Details -->
                 <div style="line-height: 1.8;">
@@ -1932,7 +2430,7 @@ async def work_orders_page():
             `;
             
             modal.style.display = 'flex';
-            console.log('✅ Modal opened for work order:', id);
+            console.log('✅ Modal opened successfully for work order:', id);
         };
         
         
@@ -3007,13 +3505,42 @@ async def work_orders_page():
             }
             
             function createDynamicCard(type, data) {
+                console.log(`🔨 Creating new ${type} card with ID: ${data.id || 'auto-generated'}`);
+                
                 const card = document.createElement('div');
                 card.className = `${type}-card`;
                 card.style.cssText = 'cursor: pointer; transition: all 0.3s ease;';
+                
+                // Enhanced click handler with error handling
                 card.onclick = () => {
-                    if (type === 'work-order') showWorkOrderDetails(data.id);
-                    else if (type === 'asset') showAssetDetails(data.id);
-                    else if (type === 'part') showPartsDetails(data.id);
+                    console.log(`✅ ${type} card clicked - ID: ${data.id}`);
+                    try {
+                        if (type === 'work-order') {
+                            if (window.showWorkOrderDetails) {
+                                showWorkOrderDetails(data.id);
+                            } else {
+                                console.error('❌ showWorkOrderDetails function not found');
+                                alert('Unable to open work order details. Please refresh the page.');
+                            }
+                        } else if (type === 'asset') {
+                            if (window.showAssetDetails) {
+                                showAssetDetails(data.id);
+                            } else {
+                                console.error('❌ showAssetDetails function not found');
+                                alert('Unable to open asset details. Please refresh the page.');
+                            }
+                        } else if (type === 'part') {
+                            if (window.showPartsDetails) {
+                                showPartsDetails(data.id);
+                            } else {
+                                console.error('❌ showPartsDetails function not found');
+                                alert('Unable to open parts details. Please refresh the page.');
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`❌ Error opening ${type} details:`, error);
+                        alert(`Error opening ${type} details. Please try again.`);
+                    }
                 };
                 
                 // Add hover effects
@@ -3090,17 +3617,35 @@ async def work_orders_page():
             }
             
             function addCardToGrid(type, card) {
+                console.log(`📋 Adding ${type} card to grid...`);
+                
                 let grid;
+                let gridSelector;
+                
                 if (type === 'work-order') {
-                    grid = document.querySelector('.work-orders-grid');
+                    gridSelector = '.work-orders-grid';
+                    grid = document.querySelector(gridSelector);
                 } else if (type === 'asset') {
-                    grid = document.querySelector('.assets-grid');
+                    gridSelector = '.assets-grid';
+                    grid = document.querySelector(gridSelector);
                 } else if (type === 'part') {
-                    grid = document.querySelector('.parts-grid');
+                    gridSelector = '.parts-grid';
+                    grid = document.querySelector(gridSelector);
                 }
                 
                 if (grid) {
                     grid.appendChild(card);
+                    console.log(`✅ ${type} card successfully added to grid`);
+                    
+                    // Trigger re-initialization of click handlers if needed
+                    setTimeout(() => {
+                        if (window.ChatterFixDebug && window.ChatterFixDebug.testAllClickHandlers) {
+                            window.ChatterFixDebug.testAllClickHandlers();
+                        }
+                    }, 100);
+                } else {
+                    console.error(`❌ Grid not found for ${type}: ${gridSelector}`);
+                    console.log('🔍 Available grids:', document.querySelectorAll('[class*="grid"]').length);
                 }
             }
             
@@ -3112,14 +3657,69 @@ async def work_orders_page():
                 }
             }
             
-            // Load work orders from database on page load
+            // Enhanced initialization system for work orders
+            window.initializeWorkOrderSystem = function() {
+                try {
+                    console.log('🔧 Initializing Work Order Management System...');
+                    
+                    // Create modal if it doesn't exist
+                    if (!document.getElementById('work-order-modal')) {
+                        createModal();
+                        console.log('✅ Work order modal created');
+                    }
+                    
+                    // Add enhanced click handlers to all work order cards
+                    document.querySelectorAll('.work-order-card').forEach((card, index) => {
+                        if (!card.onclick) {
+                            const workOrderId = index + 1;
+                            card.onclick = () => {
+                                console.log(`Work order card ${workOrderId} clicked`);
+                                showWorkOrderDetails(workOrderId);
+                            };
+                            card.style.cursor = 'pointer';
+                            console.log(`✅ Enhanced click handler added to work order card ${workOrderId}`);
+                        }
+                    });
+                    
+                    // Add enhanced click handlers to work order buttons
+                    document.querySelectorAll('.work-order-card .btn').forEach((btn, index) => {
+                        if (!btn.onclick || btn.onclick.toString().includes('showWorkOrderDetails')) {
+                            const workOrderId = index + 1;
+                            const originalOnClick = btn.onclick;
+                            btn.onclick = (e) => {
+                                e.stopPropagation();
+                                console.log(`Work order button ${workOrderId} clicked`);
+                                showWorkOrderDetails(workOrderId);
+                            };
+                            btn.style.cursor = 'pointer';
+                            console.log(`✅ Enhanced click handler added to work order button ${workOrderId}`);
+                        }
+                    });
+                    
+                    console.log('✅ Work Orders CRUD System Ready!');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Error initializing work order system:', error);
+                    return false;
+                }
+            };
+
+            // Load work orders from database and initialize system
             loadWorkOrders().then(() => {
                 console.log('✅ Work orders loaded and ready for AI-powered interaction');
+                initializeWorkOrderSystem();
             }).catch(error => {
                 console.error('❌ Failed to load work orders:', error);
+                // Still try to initialize the system even if loading fails
+                initializeWorkOrderSystem();
             });
-
-            console.log('✅ Work Orders CRUD System Ready!');
+            
+            // Initialize when DOM is ready (fallback)
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeWorkOrderSystem);
+            } else {
+                setTimeout(initializeWorkOrderSystem, 100);
+            }
         });
         </script>
         
@@ -3286,7 +3886,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 3 units</p>
                     <p><strong>Unit Cost:</strong> $245.00</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 15</p>
-                    <button class="btn" onclick="event.stopPropagation(); showPartDetails(1)">🔧 Manage Part</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(1)">🔧 Manage Part</button>
                 </div>
                 
                 <div class="part-card" onclick="showPartsDetails(2)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
@@ -3298,7 +3898,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 5 units</p>
                     <p><strong>Unit Cost:</strong> $89.50</p>
                     <p><strong>Location:</strong> Warehouse B, Bin 7</p>
-                    <button class="btn" onclick="event.stopPropagation(); showPartDetails(2)">📦 Manage Part</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(2)">📦 Manage Part</button>
                 </div>
                 
                 <div class="part-card" onclick="showPartsDetails(3)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
@@ -3310,7 +3910,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 50 meters</p>
                     <p><strong>Unit Cost:</strong> $12.75/meter</p>
                     <p><strong>Location:</strong> Warehouse C, Roll Storage</p>
-                    <button class="btn">View Details</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(3)">🔧 Manage Part</button>
                 </div>
                 
                 <div class="part-card" onclick="showPartsDetails(4)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
@@ -3322,7 +3922,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 4 units</p>
                     <p><strong>Unit Cost:</strong> $67.25</p>
                     <p><strong>Location:</strong> Out of Stock</p>
-                    <button class="btn">🔧 Manage Part</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(4)">🔧 Manage Part</button>
                 </div>
                 
                 <div class="part-card" onclick="showPartsDetails(5)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
@@ -3334,7 +3934,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 2 units</p>
                     <p><strong>Unit Cost:</strong> $156.00</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 22</p>
-                    <button class="btn">🔧 Manage Part</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(5)">🔧 Manage Part</button>
                 </div>
                 
                 <div class="part-card" onclick="showPartsDetails(6)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(46,64,83,0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(46,64,83,0.4)'">
@@ -3346,7 +3946,7 @@ async def parts_page():
                     <p><strong>Min Stock Level:</strong> 8 units</p>
                     <p><strong>Unit Cost:</strong> $34.50</p>
                     <p><strong>Location:</strong> Warehouse A, Bin 8</p>
-                    <button class="btn">🔧 Manage Part</button>
+                    <button class="btn" onclick="event.stopPropagation(); showPartsDetails(6)">🔧 Manage Part</button>
                 </div>
             </div>
         </div>
@@ -3432,10 +4032,22 @@ async def parts_page():
                 document.body.appendChild(modal);
             }
             
-            // Show parts details
+            // Show parts details with enhanced error handling
             window.showPartsDetails = function(id) {
+                console.log('🔩 Opening parts details for ID:', id);
+                
+                // Ensure modal exists
+                if (!ensureModalExists('parts-modal', createPartsModal)) {
+                    alert('Error: Unable to open parts details. Please refresh the page.');
+                    return;
+                }
+                
                 const part = parts.find(p => p.id === parseInt(id));
-                if (!part) return;
+                if (!part) {
+                    console.error('Part not found:', id);
+                    alert('Part not found. Please refresh the page.');
+                    return;
+                }
                 
                 const modal = document.getElementById('parts-modal');
                 const title = document.getElementById('parts-modal-title');
@@ -3808,10 +4420,56 @@ async def parts_page():
                 btn.innerHTML = '🔩 Manage Inventory';
             });
             
-            // Create the modal
-            createPartsModal();
+            // Enhanced initialization system for parts
+            window.initializePartsSystem = function() {
+                try {
+                    console.log('🔩 Initializing Parts Management System...');
+                    
+                    // Create the modal
+                    createPartsModal();
+                    
+                    // Add enhanced click handlers to all part cards
+                    document.querySelectorAll('.part-card').forEach((card, index) => {
+                        if (!card.onclick) {
+                            const partId = index + 1;
+                            card.onclick = () => {
+                                console.log(`Part card ${partId} clicked`);
+                                showPartsDetails(partId);
+                            };
+                            card.style.cursor = 'pointer';
+                            console.log(`✅ Enhanced click handler added to part card ${partId}`);
+                        }
+                    });
+                    
+                    // Add enhanced click handlers to parts buttons
+                    document.querySelectorAll('.part-card .btn').forEach((btn, index) => {
+                        if (!btn.onclick || btn.onclick.toString().includes('index + 1')) {
+                            const partId = index + 1;
+                            btn.onclick = (e) => {
+                                e.stopPropagation();
+                                console.log(`Part button ${partId} clicked`);
+                                showPartsDetails(partId);
+                            };
+                            btn.style.cursor = 'pointer';
+                            btn.innerHTML = '🔩 Manage Inventory';
+                            console.log(`✅ Enhanced click handler added to part button ${partId}`);
+                        }
+                    });
+                    
+                    console.log('✅ Parts Inventory CRUD System Ready!');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Error initializing parts system:', error);
+                    return false;
+                }
+            };
             
-            console.log('✅ Parts Inventory CRUD System Ready!');
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializePartsSystem);
+            } else {
+                initializePartsSystem();
+            }
         });
         </script>
         
@@ -4512,65 +5170,7 @@ async def add_work_order_part(work_order_id: int, request: Request):
         logger.error(f"Error adding part to work order: {e}")
         return {"success": False, "error": str(e)}
 
-# Enhanced Asset Management
-@app.post("/api/assets")
-async def create_asset(request: Request):
-    """Create new asset with AI analysis"""
-    try:
-        body = await request.json()
-        
-        # Get AI insights
-        ai_insights = await get_ai_insights("asset", body)
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # For demo, just return the created asset data
-        asset_id = 100 + len(body.get("name", ""))  # Simple ID generation
-        
-        asset = {
-            "id": asset_id,
-            "name": body.get("name", "New Asset"),
-            "type": body.get("type", "Equipment"),
-            "location": body.get("location", "Unknown"),
-            "condition": body.get("condition", "Good"),
-            "ai_insights": ai_insights
-        }
-        
-        conn.close()
-        return {"success": True, "asset": asset}
-        
-    except Exception as e:
-        logger.error(f"Error creating asset: {e}")
-        return {"success": False, "error": str(e)}
 
-# Enhanced Parts Management  
-@app.post("/api/parts")
-async def create_part(request: Request):
-    """Create new part with AI analysis"""
-    try:
-        body = await request.json()
-        
-        # Get AI insights
-        ai_insights = await get_ai_insights("part", body)
-        
-        part_id = 200 + len(body.get("name", ""))  # Simple ID generation
-        
-        part = {
-            "id": part_id,
-            "name": body.get("name", "New Part"),
-            "part_number": body.get("part_number", f"PN-{part_id}"),
-            "category": body.get("category", "General"),
-            "quantity": body.get("quantity", 0),
-            "unit_cost": body.get("unit_cost", 0.0),
-            "ai_insights": ai_insights
-        }
-        
-        return {"success": True, "part": part}
-        
-    except Exception as e:
-        logger.error(f"Error creating part: {e}")
-        return {"success": False, "error": str(e)}
 
 # CRUD API Endpoints for Assets
 @app.post("/api/assets")

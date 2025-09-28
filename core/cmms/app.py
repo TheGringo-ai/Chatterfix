@@ -70,12 +70,12 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/cmms.db")
 AI_PROVIDER = os.getenv("AI_PROVIDER", "grok")
 
 # Grok (xAI) Configuration
-XAI_API_KEY = os.getenv("XAI_API_KEY", "REDACTED_XAI_KEY")
+XAI_API_KEY = os.getenv("XAI_API_KEY")
 XAI_BASE_URL = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
 XAI_MODEL = os.getenv("XAI_MODEL", "grok-4-latest")
 
 # OpenAI Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "REDACTED_OPENAI_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 

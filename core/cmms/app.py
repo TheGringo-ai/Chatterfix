@@ -16,6 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+import psycopg2
+import psycopg2.extras
 import json
 import httpx
 import os
@@ -146,7 +148,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
-    """Get database connection"""
+    """Get database connection - PostgreSQL or SQLite fallback"""
+    # Try PostgreSQL first (for production)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        try:
+            conn = psycopg2.connect(db_url)
+            conn.cursor_factory = psycopg2.extras.DictCursor
+            return conn
+        except Exception as e:
+            logger.warning(f"PostgreSQL connection failed: {e}, falling back to SQLite")
+    
+    # Fallback to SQLite
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn

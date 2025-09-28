@@ -1,0 +1,13 @@
+id,supplier_code,name,contact_person,email,phone,address,city,state,zip_code,country,payment_terms,lead_time_days,rating,notes,is_preferred,is_active,created_date
+TRUE,SUP-001,Industrial Components Inc,Jacob Scott,orders@industrialcompo.com,512-978-7669,6212 Tech Dr,Austin,TX,78060,USA,Net 30,7,4.1,Industrial supplies,TRUE,TRUE,2025-09-28 18:39:07
+2,SUP-002,AutomationPro Supply,Helen Flores,orders@automationprosu.com,512-534-8814,207 Tech Dr,Dallas,TX,78135,USA,Net 30,12,4.4,Automation equipment,TRUE,TRUE,2025-09-28 18:39:07
+3,SUP-003,MRO Solutions LLC,Brian Campbell,orders@mrosolutionsllc.com,512-629-9760,1050 Commerce Dr,Houston,TX,78395,USA,Net 30,3,4.6,Maintenance supplies,TRUE,TRUE,2025-09-28 18:39:07
+4,SUP-004,TechParts Distributors,David Hill,orders@techpartsdistri.com,512-239-1431,9882 Industrial Dr,San Antonio,TX,78412,USA,Net 30,9,4.6,Electronic components,TRUE,TRUE,2025-09-28 18:39:07
+5,SUP-005,Bearing & Power Systems,Sandra Campbell,orders@bearingandpower.com,512-438-9337,642 Commerce Dr,Austin,TX,78737,USA,Net 30,7,4.6,Mechanical components,TRUE,TRUE,2025-09-28 18:39:07
+6,SUP-006,Electrical Supply Co,Jennifer Johnson,orders@electricalsuppl.com,512-327-6485,7445 Business Dr,Dallas,TX,78754,USA,Net 30,3,4.9,Electrical supplies,TRUE,TRUE,2025-09-28 18:39:07
+7,SUP-007,HVAC Systems Texas,Lisa Collins,orders@hvacsystemstexa.com,512-253-8302,8604 Tech Dr,Houston,TX,78301,USA,Net 30,5,4.8,HVAC equipment,FALSE,TRUE,2025-09-28 18:39:07
+8,SUP-008,Safety First Supply,John Gomez,orders@safetyfirstsupp.com,512-547-9034,4392 Tech Dr,Austin,TX,78574,USA,Net 30,7,3.9,Safety equipment,FALSE,TRUE,2025-09-28 18:39:07
+9,SUP-009,Precision Tools Inc,Patricia Hernandez,orders@precisiontoolsi.com,512-989-3387,5946 Commerce Dr,Dallas,TX,78584,USA,Net 30,4,4.2,Tools and equipment,FALSE,TRUE,2025-09-28 18:39:07
+10,SUP-010,Chemical Solutions Ltd,Helen Young,orders@chemicalsolutio.com,512-826-5810,4788 Tech Dr,Houston,TX,78585,USA,Net 30,13,4.8,Chemicals and fluids,FALSE,TRUE,2025-09-28 18:39:07
+11,SUP-011,Fastener World,Steven Nguyen,orders@fastenerworld.com,512-428-5773,1124 Industrial Dr,Austin,TX,78338,USA,Net 30,14,4.3,Fasteners and hardware,FALSE,TRUE,2025-09-28 18:39:07
+12,SUP-012,Motor & Drive Systems,David Stewart,orders@motoranddrivesy.com,512-756-6254,398 Business Dr,San Antonio,TX,78384,USA,Net 30,6,4.6,Motors and drives,FALSE,TRUE,2025-09-28 18:39:07

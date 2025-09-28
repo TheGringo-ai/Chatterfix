@@ -1,0 +1,21 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-f', 'Dockerfile.cloudrun',
+      '-t', 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:$COMMIT_SHA',
+      '-t', 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:latest',
+      '.'
+    ]
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:$COMMIT_SHA']
+  
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:latest']
+
+images:
+  - 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:$COMMIT_SHA'
+  - 'gcr.io/chatterfix-cmms/chatterfix-cmms-working:latest'

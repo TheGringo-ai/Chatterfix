@@ -40,3 +40,6 @@ websockets>=11.0.0
 
 # System monitoring
 psutil>=5.9.0
+
+# PostgreSQL database support
+psycopg2-binary>=2.9.0

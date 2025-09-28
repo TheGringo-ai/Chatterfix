@@ -1,0 +1,53 @@
+[Unit]
+Description=ChatterFix CMMS Health Monitor
+Documentation=https://github.com/chatterfix/cmms
+After=network.target
+
+[Service]
+Type=simple
+User=chatterfix
+Group=chatterfix
+WorkingDirectory=/opt/chatterfix/core/cmms
+Environment=PYTHONPATH=/opt/chatterfix/core/cmms
+Environment=HEALTH_DATA_DIR=/tmp/chatterfix-health
+ExecStart=/usr/bin/python3 -c "
+import asyncio
+from health_monitor import health_monitor
+
+async def continuous_monitoring():
+    while True:
+        try:
+            health_status = await health_monitor.comprehensive_health_check()
+            print(f'Health check completed: {health_status[\"overall_status\"]}')
+            await asyncio.sleep(60)  # Check every minute
+        except Exception as e:
+            print(f'Health monitor error: {e}')
+            await asyncio.sleep(60)
+
+asyncio.run(continuous_monitoring())
+"
+
+# Restart configuration
+Restart=always
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=3
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/tmp/chatterfix-health /var/log/chatterfix
+PrivateTmp=true
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=25%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterfix-health
+
+[Install]
+WantedBy=multi-user.target

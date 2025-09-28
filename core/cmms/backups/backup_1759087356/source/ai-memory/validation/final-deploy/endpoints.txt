@@ -1,0 +1,41 @@
+=== Testing /health ===
+HTTP/1.1 200 OK
+date: Mon, 08 Sep 2025 23:18:38 GMT
+server: uvicorn
+content-length: 164
+content-type: application/json
+
+{"status":"healthy","service":"ChatterFix CMMS v3.0.0","modules":{"admin":"operational","ai":"operational"},"ollama":"connected","timestamp":"2025-09-01T23:45:00Z"}
+=== Testing /ai/health ===
+HTTP/1.1 200 OK
+date: Mon, 08 Sep 2025 23:18:38 GMT
+server: uvicorn
+content-length: 626
+content-type: application/json
+
+{"status":"healthy","intelligence_level":"expert","centralized_provider":true,"warm_loaded":true,"providers":{"llama":{"status":"healthy","models":["llama3.2:latest","llama3.2:1b","llama3.1:latest","nomic-embed-text:latest","llama3.2:3b","llama3:8b-instruct-q4_0"],"current_model":"llama3.2:1b"},"openai":{"status":"not_implemented"},"anthropic":{"status":"not_implemented"},"fallback":{"status":"healthy","note":"always_available"}},"features":["contextual_analysis","safety_protocols","technical_specs","root_cause"],"response_quality":"enhanced","config":{"priority":["llama","fallback"],"warm_loaded":true,"cache_size":1}}
+=== Testing /api ===
+HTTP/1.1 404 Not Found
+date: Mon, 08 Sep 2025 23:18:38 GMT
+server: uvicorn
+content-length: 22
+content-type: application/json
+
+{"detail":"Not Found"}
+=== Testing /docs ===
+HTTP/1.1 200 OK
+date: Mon, 08 Sep 2025 23:18:38 GMT
+server: uvicorn
+content-length: 939
+content-type: text/html; charset=utf-8
+
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+    <link rel="shortcut icon" href="https://fastapi.tiangolo.com/img/favicon.png">
+    <title>ChatterFix CMMS - Swagger UI</title>
+    </head>
+    <body>
+

@@ -1,0 +1,116 @@
+# ChatterFix CMMS Mars-Level AI Platform - Production Dockerfile
+# 🚀 The most advanced AI-powered CMMS with enterprise-grade deployment
+# Multi-stage build for optimized production deployment
+
+# Build stage
+FROM python:3.13-slim AS builder
+
+# Set environment variables for build
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create and set working directory
+WORKDIR /build
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Production stage
+FROM python:3.13-slim AS production
+
+# Set environment variables for production
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080 \
+    ENVIRONMENT=production \
+    LOG_LEVEL=INFO
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y \
+    libpq5 \
+    curl \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user for security
+RUN groupadd -r cmms && useradd -r -g cmms cmms
+
+# Create application directory
+WORKDIR /app
+
+# Copy Python packages from builder stage
+COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Create directories for application data
+RUN mkdir -p /app/data /app/logs /app/media /app/static && \
+    chown -R cmms:cmms /app
+
+# Copy application code
+COPY --chown=cmms:cmms . /app/
+
+# Create production configuration
+RUN echo '#!/bin/bash\n\
+# Mars-Level AI Platform Production Startup\n\
+echo "🚀 Starting ChatterFix CMMS Mars-Level AI Platform..."\n\
+echo "🧠 Initializing Enterprise AI Brain..."\n\
+echo "🔬 Activating Quantum Analytics..."\n\
+echo "🤖 Starting Autonomous Operations..."\n\
+exec gunicorn app:app \\\n\
+    --bind 0.0.0.0:${PORT} \\\n\
+    --workers 4 \\\n\
+    --worker-class uvicorn.workers.UvicornWorker \\\n\
+    --worker-connections 1000 \\\n\
+    --max-requests 1000 \\\n\
+    --max-requests-jitter 100 \\\n\
+    --timeout 300 \\\n\
+    --keep-alive 5 \\\n\
+    --log-level ${LOG_LEVEL} \\\n\
+    --access-logfile - \\\n\
+    --error-logfile - \\\n\
+    --capture-output \\\n\
+    --enable-stdio-inheritance' > /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Health check script
+RUN echo '#!/bin/bash\n\
+curl -f http://localhost:${PORT}/mars-status || exit 1' > /app/healthcheck.sh && \
+    chmod +x /app/healthcheck.sh
+
+# Switch to non-root user
+USER cmms
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# Set the startup command
+CMD ["/app/start.sh"]
+
+# Metadata
+LABEL maintainer="ChatterFix CMMS Team" \
+      version="4.0.0-mars-level-ai" \
+      description="Mars-Level AI Platform - The most advanced CMMS with Enterprise AI Brain" \
+      org.opencontainers.image.title="ChatterFix CMMS Mars-Level AI Platform" \
+      org.opencontainers.image.description="Advanced AI-powered CMMS with Multi-AI orchestration" \
+      org.opencontainers.image.version="4.0.0-mars-level-ai" \
+      org.opencontainers.image.vendor="ChatterFix"

@@ -166,41 +166,134 @@ def get_db_connection():
 
 def init_database():
     """Initialize enterprise database with enhanced schema and realistic data"""
-    if ENHANCED_DB_AVAILABLE:
-        # Use enhanced database with TechFlow Manufacturing Corp data
-        init_enhanced_database()
-        print("✅ Enhanced enterprise database initialized with TechFlow Manufacturing Corp data")
-    else:
-        # Fallback to basic database if enhanced version is not available
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if we're using PostgreSQL or SQLite
+    db_url = os.getenv("DATABASE_URL")
+    is_postgresql = db_url is not None
+    
+    try:
+        # Check if work_orders table exists
+        if is_postgresql:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'work_orders'
+                );
+            """)
+        else:
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='work_orders';
+            """)
         
-        # Create basic users table for enterprise authentication
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'viewer',
-                is_active BOOLEAN DEFAULT TRUE,
-                created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_login DATETIME,
-                department TEXT,
-                full_name TEXT
-            )
-        ''')
+        table_exists = cursor.fetchone()
         
-        # Create default admin user if not exists
-        admin_password = bcrypt.hashpw(b'admin123', bcrypt.gensalt()).decode('utf-8')
-        cursor.execute('''
-            INSERT OR IGNORE INTO users (username, email, password_hash, role, full_name, department)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', ("admin", "admin@chatterfix.com", admin_password, "admin", "System Administrator", "IT"))
-        
-        conn.commit()
+        if not table_exists or (is_postgresql and not table_exists[0]):
+            logger.info("🔧 Database tables missing - initializing...")
+            
+            if is_postgresql:
+                # Initialize PostgreSQL database with schema and sample data
+                from postgresql_init import init_postgresql_database
+                if init_postgresql_database():
+                    logger.info("✅ PostgreSQL database initialized with sample data")
+                else:
+                    logger.warning("⚠️ PostgreSQL initialization failed, falling back to basic setup")
+            else:
+                # Initialize SQLite database
+                if ENHANCED_DB_AVAILABLE:
+                    init_enhanced_database()
+                    logger.info("✅ Enhanced SQLite database initialized")
+                else:
+                    # Create basic tables for SQLite fallback
+                    _create_basic_tables(cursor, conn)
+                    logger.info("✅ Basic SQLite tables created")
+        else:
+            logger.info("✅ Database tables already exist")
+            
+    except Exception as e:
+        logger.warning(f"Database check failed: {e}, creating basic tables...")
+        if not is_postgresql:
+            _create_basic_tables(cursor, conn)
+    
+    finally:
         conn.close()
-        print("⚠️ Using basic database (enhanced version not available)")
+
+def _create_basic_tables(cursor, conn):
+    """Create basic tables for SQLite fallback"""
+    # Create basic users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'viewer',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_login DATETIME,
+            department TEXT,
+            full_name TEXT
+        )
+    ''')
+    
+    # Create work_orders table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS work_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            work_order_number TEXT UNIQUE,
+            title TEXT NOT NULL,
+            description TEXT,
+            asset_id INTEGER,
+            priority TEXT DEFAULT 'Medium',
+            status TEXT DEFAULT 'Open',
+            work_type TEXT,
+            assigned_to INTEGER,
+            created_by INTEGER,
+            estimated_hours REAL,
+            actual_hours REAL,
+            scheduled_start DATETIME,
+            scheduled_end DATETIME,
+            actual_start DATETIME,
+            actual_end DATETIME,
+            created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+            due_date DATETIME,
+            completion_notes TEXT,
+            safety_notes TEXT
+        )
+    ''')
+    
+    # Create assets table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            type TEXT,
+            model TEXT,
+            serial_number TEXT,
+            manufacturer TEXT,
+            location_id INTEGER,
+            status TEXT DEFAULT 'active',
+            health_score INTEGER DEFAULT 100,
+            last_maintenance DATE,
+            next_maintenance DATE,
+            purchase_date DATE,
+            purchase_cost REAL,
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Create default admin user if not exists
+    admin_password = bcrypt.hashpw(b'REDACTED_DB_PASSWORD', bcrypt.gensalt()).decode('utf-8')
+    cursor.execute('''
+        INSERT OR IGNORE INTO users (username, email, password_hash, role, full_name, department)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', ("yoyofred", "yoyofred@chatterfix.com", admin_password, "admin", "Fred Admin", "IT"))
+    
+    conn.commit()
 
 # Multi-AI Processing Functions
 async def process_with_grok(message: str, context: str) -> Dict[str, Any]:

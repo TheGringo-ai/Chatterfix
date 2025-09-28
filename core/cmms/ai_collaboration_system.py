@@ -874,8 +874,8 @@ class DeploymentSafetySystem:
     
     def __init__(self, database: AICollaborationDatabase):
         self.database = database
-        self.backup_dir = Path("/Users/fredtaylor/Desktop/Projects/ai-tools/core/cmms/backups")
-        self.backup_dir.mkdir(exist_ok=True)
+        self.backup_dir = Path("./backups")
+        self.backup_dir.mkdir(exist_ok=True, parents=True)
     
     async def create_backup(self, description: str = "") -> str:
         """Create full system backup before changes"""

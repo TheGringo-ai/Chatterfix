@@ -262,5 +262,128 @@
       "Have rollback procedures ready",
       "Document all deployment changes"
     ]
+  },
+  "development_notes": {
+    "complete_reference": {
+      "title": "ChatterFix CMMS - Complete Development Notes & AI Collaboration Guide",
+      "status": "production_ready",
+      "last_updated": "2025-09-28T14:36:08.602030",
+      "production_url": "https://chatterfix-cmms-psycl7nhha-uc.a.run.app",
+      "ai_dashboard": "/ai-collaboration",
+      "latest_revision": "chatterfix-cmms-00004-sux",
+      "deployment_date": "2025-09-28"
+    },
+    "critical_fixes": {
+      "card_clicking_issue": {
+        "problem": "Cards not opening detail views",
+        "root_cause": "ID mismatches between static HTML (1-5) and database IDs (344, 343, 342)",
+        "solution": "Dynamic card generation with real database IDs",
+        "status": "resolved"
+      },
+      "json_serialization": {
+        "problem": "DateTime objects not JSON serializable",
+        "solution": "Added to_dict() methods with isoformat() conversion",
+        "status": "resolved"
+      },
+      "function_naming": {
+        "problem": "Inconsistent showPartDetails vs showPartsDetails",
+        "solution": "Standardized all calls to showPartsDetails",
+        "status": "resolved"
+      },
+      "modal_system": {
+        "problem": "Missing and broken modal creation",
+        "solution": "Enhanced ensureModalExists with comprehensive error handling",
+        "status": "resolved"
+      }
+    },
+    "ai_collaboration_system": {
+      "architecture": {
+        "session_management": "Multi-AI (Claude, ChatGPT, Grok, Llama)",
+        "persistent_memory": "SQLite database (ai_collaboration.db)",
+        "role_assignments": {
+          "claude": "Architecture & Code Quality",
+          "chatgpt": "Frontend & User Experience",
+          "grok": "Debugging & Performance",
+          "llama": "Data & Analytics"
+        },
+        "api_endpoints": "15+ collaboration endpoints",
+        "dashboard": "Real-time web interface",
+        "knowledge_entries": 172
+      },
+      "workflow": [
+        "AI starts session with context",
+        "Tasks assigned by specialization",
+        "Context shared across all models",
+        "Seamless handoffs between AIs",
+        "Discoveries captured in knowledge base",
+        "Automated deployment safety checks"
+      ]
+    },
+    "development_team_coordination": {
+      "specializations": {
+        "claude": [
+          "System design",
+          "Architecture decisions",
+          "Code quality",
+          "Technical documentation"
+        ],
+        "chatgpt": [
+          "User interface",
+          "Frontend frameworks",
+          "User experience",
+          "Responsive design"
+        ],
+        "grok": [
+          "Error diagnosis",
+          "Performance optimization",
+          "System monitoring",
+          "Infrastructure"
+        ],
+        "llama": [
+          "Database design",
+          "Data analysis",
+          "Business intelligence",
+          "ETL processes"
+        ]
+      }
+    },
+    "key_files": {
+      "app.py": "5,800+ lines - Main FastAPI application",
+      "ai_collaboration_system.py": "1,400+ lines - Core collaboration logic",
+      "ai_collaboration_api.py": "550+ lines - REST API endpoints",
+      "ai_collaboration_integration.py": "FastAPI integration module",
+      "AI_COLLABORATION_SYSTEM_GUIDE.md": "Complete documentation",
+      "CHATTERFIX_DEVELOPMENT_NOTES.md": "Comprehensive development reference",
+      "chatterfix_knowledge_base.json": "AI knowledge entries"
+    },
+    "troubleshooting_guide": {
+      "card_clicks_not_working": "Check ID mismatches in DOM elements",
+      "ai_session_json_errors": "Verify datetime serialization with to_dict()",
+      "import_errors": "Check try/except fallbacks in integration",
+      "deployment_issues": "Review Cloud Run deployment logs",
+      "api_router_errors": "Remove exception handlers from routers, use app-level"
+    },
+    "deployment_reference": {
+      "platform": "Google Cloud Run",
+      "region": "us-central1",
+      "service": "chatterfix-cmms",
+      "commands": {
+        "local_development": "python3 app.py",
+        "deploy_production": "./deploy-chatterfix.sh",
+        "setup_ai_collaboration": "python3 setup_ai_collaboration.py",
+        "domain_setup": "./setup-chatterfix-domain.sh"
+      }
+    },
+    "enterprise_features": {
+      "mock_data": "TechFlow Manufacturing Corp (250 employees)",
+      "work_orders": 129,
+      "assets": 87,
+      "parts": 156,
+      "features": [
+        "Demo/Production toggle",
+        "AI Brain integration",
+        "Advanced media system"
+      ]
+    }
   }
 }

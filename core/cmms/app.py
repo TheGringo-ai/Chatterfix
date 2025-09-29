@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 # Import universal AI endpoints
-from universal_ai_endpoints import add_universal_ai_endpoints
+from universal_ai_endpoints import add_universal_ai_endpoints, inject_ai_script
 # Import unified styles, fallback to inline if not available
 try:
     from unified_cmms_system import get_unified_styles
@@ -368,6 +368,12 @@ Current System Status:
         logger.error(f"Error getting maintenance context: {e}")
         return "System context unavailable"
 
+def create_html_response(content: str) -> HTMLResponse:
+    """Create HTML response with AI script injection"""
+    # Inject the AI assistant script
+    content_with_ai = inject_ai_script(content)
+    return HTMLResponse(content=content_with_ai)
+
 @app.get("/")
 async def dashboard():
     """Main dashboard with system overview"""
@@ -488,11 +494,56 @@ async def dashboard():
         </html>
         """
         
-        return HTMLResponse(content=html_content)
+        return create_html_response(html_content)
         
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
-        return HTMLResponse(content=f"<h1>Error loading dashboard: {e}</h1>", status_code=500)
+        error_html = f"<h1>Error loading dashboard: {e}</h1>"
+        return create_html_response(error_html)
+
+@app.post("/api/work-orders")
+async def create_work_order(request: Request):
+    """Create a new work order"""
+    try:
+        data = await request.json()
+        
+        # Validate required fields
+        if not data.get("title"):
+            raise HTTPException(status_code=400, detail="Title is required")
+        
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Insert new work order
+        cursor.execute("""
+            INSERT INTO work_orders (title, description, priority, assigned_to, due_date)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            data.get("title"),
+            data.get("description", ""),
+            data.get("priority", "Medium"),
+            data.get("assigned_to", ""),
+            data.get("due_date") or None
+        ))
+        
+        work_order_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Created work order #{work_order_id}: {data.get('title')}")
+        
+        return JSONResponse({
+            "success": True,
+            "id": work_order_id,
+            "message": "Work order created successfully"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating work order: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
 
 @app.get("/work-orders")
 async def work_orders():
@@ -523,14 +574,65 @@ async def work_orders():
         <head>
             <title>Work Orders - ChatterFix CMMS</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>{styles}</style>
+            <style>
+            {styles}
+            .modal {{
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+            }}
+            .modal-content {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                margin: 5% auto;
+                padding: 20px;
+                border-radius: 15px;
+                width: 80%;
+                max-width: 600px;
+                color: white;
+            }}
+            .form-group {{
+                margin-bottom: 15px;
+            }}
+            .form-group label {{
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }}
+            .form-group input, .form-group select, .form-group textarea {{
+                width: 100%;
+                padding: 10px;
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 5px;
+                background: rgba(255,255,255,0.1);
+                color: white;
+                font-size: 14px;
+            }}
+            .form-group input::placeholder, .form-group textarea::placeholder {{
+                color: rgba(255,255,255,0.7);
+            }}
+            .close {{
+                color: white;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+            }}
+            .close:hover {{
+                opacity: 0.7;
+            }}
+            </style>
         </head>
         <body>
             <div class="container">
                 <h1>📋 Work Orders Management</h1>
                 <div style="margin: 20px 0;">
                     <a href="/" class="btn">← Dashboard</a>
-                    <button class="btn btn-primary" style="margin-left: 10px;">+ Create New Work Order</button>
+                    <button class="btn btn-primary" style="margin-left: 10px;" onclick="openCreateWorkOrderModal()">+ Create New Work Order</button>
                 </div>
                 
                 <div class="table">
@@ -567,7 +669,7 @@ async def work_orders():
             html_content += f"""
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                                 <td style="padding: 10px;">#{order[0]}</td>
-                                <td style="padding: 10px;"><strong>{order[1]}</strong><br><small>{order[2][:50]}...</small></td>
+                                <td style="padding: 10px;"><strong>{order[1]}</strong><br><small>{order[2][:50] if order[2] else ''}...</small></td>
                                 <td style="padding: 10px; color: {priority_color};">●{order[4]}</td>
                                 <td style="padding: 10px; color: {status_color};">●{order[3]}</td>
                                 <td style="padding: 10px;">{order[5] or 'Unassigned'}</td>
@@ -581,15 +683,102 @@ async def work_orders():
                     </table>
                 </div>
             </div>
+            
+            <!-- Create Work Order Modal -->
+            <div id="createWorkOrderModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCreateWorkOrderModal()">&times;</span>
+                    <h2>📋 Create New Work Order</h2>
+                    <form id="workOrderForm" onsubmit="submitWorkOrder(event)">
+                        <div class="form-group">
+                            <label for="title">Title *</label>
+                            <input type="text" id="title" name="title" required placeholder="Enter work order title">
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="3" placeholder="Describe the work to be performed"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <select id="priority" name="priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="assigned_to">Assigned To</label>
+                            <input type="text" id="assigned_to" name="assigned_to" placeholder="Technician name">
+                        </div>
+                        <div class="form-group">
+                            <label for="due_date">Due Date</label>
+                            <input type="date" id="due_date" name="due_date">
+                        </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button type="button" class="btn" onclick="closeCreateWorkOrderModal()" style="margin-right: 10px;">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Work Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <script>
+                function openCreateWorkOrderModal() {
+                    document.getElementById('createWorkOrderModal').style.display = 'block';
+                }
+                
+                function closeCreateWorkOrderModal() {
+                    document.getElementById('createWorkOrderModal').style.display = 'none';
+                    document.getElementById('workOrderForm').reset();
+                }
+                
+                async function submitWorkOrder(event) {
+                    event.preventDefault();
+                    
+                    const formData = new FormData(event.target);
+                    const workOrderData = Object.fromEntries(formData.entries());
+                    
+                    try {
+                        const response = await fetch('/api/work-orders', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(workOrderData)
+                        });
+                        
+                        if (response.ok) {
+                            alert('Work order created successfully!');
+                            closeCreateWorkOrderModal();
+                            location.reload(); // Refresh the page to show the new work order
+                        } else {
+                            const error = await response.json();
+                            alert('Error creating work order: ' + (error.detail || 'Unknown error'));
+                        }
+                    } catch (error) {
+                        alert('Network error: ' + error.message);
+                    }
+                }
+                
+                // Close modal when clicking outside of it
+                window.onclick = function(event) {
+                    const modal = document.getElementById('createWorkOrderModal');
+                    if (event.target === modal) {
+                        closeCreateWorkOrderModal();
+                    }
+                }
+            </script>
         </body>
         </html>
         """
         
-        return HTMLResponse(content=html_content)
+        return create_html_response(html_content)
         
     except Exception as e:
         logger.error(f"Work orders error: {e}")
-        return HTMLResponse(content=f"<h1>Error loading work orders: {e}</h1>", status_code=500)
+        error_html = f"<h1>Error loading work orders: {e}</h1>"
+        return create_html_response(error_html)
 
 @app.get("/assets")
 async def assets():
@@ -676,11 +865,12 @@ async def assets():
         </html>
         """
         
-        return HTMLResponse(content=html_content)
+        return create_html_response(html_content)
         
     except Exception as e:
         logger.error(f"Assets error: {e}")
-        return HTMLResponse(content=f"<h1>Error loading assets: {e}</h1>", status_code=500)
+        error_html = f"<h1>Error loading assets: {e}</h1>"
+        return create_html_response(error_html)
 
 @app.get("/parts")
 async def parts():
@@ -755,11 +945,12 @@ async def parts():
         </html>
         """
         
-        return HTMLResponse(content=html_content)
+        return create_html_response(html_content)
         
     except Exception as e:
         logger.error(f"Parts error: {e}")
-        return HTMLResponse(content=f"<h1>Error loading parts: {e}</h1>", status_code=500)
+        error_html = f"<h1>Error loading parts: {e}</h1>"
+        return create_html_response(error_html)
 
 @app.get("/maintenance") 
 async def maintenance():
@@ -796,7 +987,7 @@ async def maintenance():
     </body>
     </html>
     """
-    return HTMLResponse(content=html_content)
+    return create_html_response(html_content)
 
 @app.post("/global-ai/process-message")
 async def global_ai_process_message(request: Request):

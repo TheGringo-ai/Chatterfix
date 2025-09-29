@@ -12,6 +12,7 @@ import os
 import requests
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 # Import universal AI endpoints
 from universal_ai_endpoints import add_universal_ai_endpoints
@@ -62,6 +63,9 @@ logger = logging.getLogger(__name__)
 
 # FastAPI app
 app = FastAPI(title="ChatterFix CMMS", description="Complete Maintenance Management System")
+
+# Mount static files directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Database configuration
 DATABASE_PATH = "/var/lib/chatterfix/cmms.db"
@@ -483,6 +487,9 @@ async def dashboard():
                     </a>
                 </div>
             </div>
+            
+            <!-- CMMS Interactive Functionality -->
+            <script src="/static/js/cmms-interactions.js"></script>
         </body>
         </html>
         """
@@ -580,6 +587,9 @@ async def work_orders():
                     </table>
                 </div>
             </div>
+            
+            <!-- CMMS Interactive Functionality -->
+            <script src="/static/js/cmms-interactions.js"></script>
         </body>
         </html>
         """
@@ -671,6 +681,9 @@ async def assets():
                     </table>
                 </div>
             </div>
+            
+            <!-- CMMS Interactive Functionality -->
+            <script src="/static/js/cmms-interactions.js"></script>
         </body>
         </html>
         """
@@ -750,6 +763,9 @@ async def parts():
                     </table>
                 </div>
             </div>
+            
+            <!-- CMMS Interactive Functionality -->
+            <script src="/static/js/cmms-interactions.js"></script>
         </body>
         </html>
         """
@@ -792,6 +808,9 @@ async def maintenance():
                 <p>Coming soon: Automated PM scheduling, maintenance calendars, and predictive analytics.</p>
             </div>
         </div>
+        
+        <!-- CMMS Interactive Functionality -->
+        <script src="/static/js/cmms-interactions.js"></script>
     </body>
     </html>
     """

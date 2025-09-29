@@ -54,6 +54,15 @@ except ImportError as e:
     def get_system_mode(): return "production"
     def get_database_path(mode=None): return "./data/cmms_enhanced.db"
 
+# Import database utilities for PostgreSQL compatibility
+try:
+    from database_utils import get_db_connection as db_get_connection, is_postgresql as db_is_postgresql, get_table_exists_query as db_get_table_exists_query, get_table_count_query as db_get_table_count_query
+    DATABASE_UTILS_AVAILABLE = True
+    print("✅ Database utilities loaded successfully")
+except ImportError as e:
+    DATABASE_UTILS_AVAILABLE = False
+    print(f"⚠️ Database utilities not available: {e}")
+
 # Import AI brain integration for data mode
 try:
     from ai_brain_integration import ai_brain_integration, get_ai_mode_analysis, get_smart_mode_suggestion, get_ai_recommendations
@@ -268,43 +277,53 @@ PORT = int(os.getenv("PORT", 8080))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Use database utilities functions with fallback for local functions
 def get_db_connection():
     """Get database connection - PostgreSQL or SQLite fallback"""
-    # Try PostgreSQL first (for production)
-    db_url = os.getenv("DATABASE_URL")
-    if db_url and POSTGRES_AVAILABLE:
-        try:
-            # Add connection timeout to prevent UI freeze (Grok's recommendation)
-            conn = psycopg2.connect(db_url, connect_timeout=5)
-            conn.cursor_factory = psycopg2.extras.DictCursor
-            return conn
-        except Exception as e:
-            logger.warning(f"PostgreSQL connection failed: {e}, falling back to SQLite")
-    
-    # Fallback to SQLite
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if DATABASE_UTILS_AVAILABLE:
+        return db_get_connection()
+    else:
+        # Fallback implementation
+        db_url = os.getenv("DATABASE_URL")
+        if db_url and POSTGRES_AVAILABLE:
+            try:
+                # Add connection timeout to prevent UI freeze (Grok's recommendation)
+                conn = psycopg2.connect(db_url, connect_timeout=5)
+                conn.cursor_factory = psycopg2.extras.DictCursor
+                return conn
+            except Exception as e:
+                logger.warning(f"PostgreSQL connection failed: {e}, falling back to SQLite")
+        
+        # Fallback to SQLite
+        conn = sqlite3.connect(DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 def is_postgresql():
     """Check if we're using PostgreSQL or SQLite"""
-    db_url = os.getenv("DATABASE_URL")
-    return db_url is not None and POSTGRES_AVAILABLE
+    if DATABASE_UTILS_AVAILABLE:
+        return db_is_postgresql()
+    else:
+        db_url = os.getenv("DATABASE_URL")
+        return db_url is not None and POSTGRES_AVAILABLE
 
 def get_table_exists_query(table_name):
     """Get database-agnostic query to check if table exists"""
-    # Simple environment-based detection for better reliability
-    db_url = os.getenv("DATABASE_URL")
-    if db_url and db_url.startswith("postgresql://"):
-        return """
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = %s
-            );
-        """, (table_name,)
+    if DATABASE_UTILS_AVAILABLE:
+        return db_get_table_exists_query(table_name)
     else:
-        return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+        # Fallback implementation
+        db_url = os.getenv("DATABASE_URL")
+        if db_url and db_url.startswith("postgresql://"):
+            return """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s
+                );
+            """, (table_name,)
+        else:
+            return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
 
 def get_all_tables_query():
     """Get database-agnostic query to list all tables"""
@@ -320,15 +339,18 @@ def get_all_tables_query():
 
 def get_table_count_query():
     """Get database-agnostic query to count tables"""
-    db_url = os.getenv("DATABASE_URL")
-    if db_url and db_url.startswith("postgresql://") and POSTGRES_AVAILABLE:
-        return """
-            SELECT COUNT(*) FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_type = 'BASE TABLE'
-        """, ()
+    if DATABASE_UTILS_AVAILABLE:
+        return db_get_table_count_query()
     else:
-        return "SELECT COUNT(*) FROM sqlite_master WHERE type='table'", ()
+        db_url = os.getenv("DATABASE_URL")
+        if db_url and db_url.startswith("postgresql://") and POSTGRES_AVAILABLE:
+            return """
+                SELECT COUNT(*) FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_type = 'BASE TABLE'
+            """, ()
+        else:
+            return "SELECT COUNT(*) FROM sqlite_master WHERE type='table'", ()
 
 def init_database():
     """Initialize enterprise database with enhanced schema and realistic data"""

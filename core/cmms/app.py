@@ -5283,12 +5283,15 @@ async def get_work_orders():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Check if work_orders table exists, if not initialize database
-        query, params = get_table_exists_query('work_orders')
-        cursor.execute(query, params)
-        table_exists = cursor.fetchone()
-        if not table_exists or (is_postgresql() and not table_exists[0]):
-            logger.warning("⚠️ Work orders table not found - returning emergency fallback data to prevent UI freeze")
+        # Check if work_orders table exists - wrap in try-catch for emergency fallback
+        try:
+            query, params = get_table_exists_query('work_orders')
+            cursor.execute(query, params)
+            table_exists = cursor.fetchone()
+            if not table_exists or (is_postgresql() and not table_exists[0]):
+                raise Exception("Table not found")
+        except Exception as db_error:
+            logger.warning(f"⚠️ Database check failed: {db_error} - returning emergency fallback data to prevent UI freeze")
             cursor.close()
             conn.close()
             

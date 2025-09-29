@@ -102,7 +102,10 @@ async def lifespan(app: FastAPI):
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
+            
+            # Use our database-agnostic helper function
+            query, params = get_table_exists_query('work_orders')
+            cursor.execute(query, params)
             result = cursor.fetchone()
             cursor.close()
             conn.close()
@@ -282,6 +285,71 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def is_postgresql():
+    """Check if we're using PostgreSQL or SQLite"""
+    db_url = os.getenv("DATABASE_URL")
+    return db_url is not None and POSTGRES_AVAILABLE
+
+def get_table_exists_query(table_name):
+    """Get database-agnostic query to check if table exists"""
+    # More robust PostgreSQL detection based on actual connection
+    try:
+        conn = get_db_connection()
+        # Check if this is a PostgreSQL connection by testing a PostgreSQL-specific query
+        cursor = conn.cursor()
+        cursor.execute("SELECT version()")
+        version_info = cursor.fetchone()[0]
+        cursor.close()
+        conn.close()
+        
+        if "PostgreSQL" in version_info:
+            return """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s
+                );
+            """, (table_name,)
+        else:
+            return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+    except Exception:
+        # Fallback to environment-based detection
+        db_url = os.getenv("DATABASE_URL")
+        if db_url and db_url.startswith("postgresql://"):
+            return """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = %s
+                );
+            """, (table_name,)
+        else:
+            return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+
+def get_all_tables_query():
+    """Get database-agnostic query to list all tables"""
+    db_url = os.getenv("DATABASE_URL")
+    if db_url and db_url.startswith("postgresql://") and POSTGRES_AVAILABLE:
+        return """
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+        """, ()
+    else:
+        return "SELECT name FROM sqlite_master WHERE type='table'", ()
+
+def get_table_count_query():
+    """Get database-agnostic query to count tables"""
+    db_url = os.getenv("DATABASE_URL")
+    if db_url and db_url.startswith("postgresql://") and POSTGRES_AVAILABLE:
+        return """
+            SELECT COUNT(*) FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+        """, ()
+    else:
+        return "SELECT COUNT(*) FROM sqlite_master WHERE type='table'", ()
+
 def init_database():
     """Initialize enterprise database with enhanced schema and realistic data"""
     conn = get_db_connection()
@@ -292,21 +360,9 @@ def init_database():
     is_postgresql = db_url is not None
     
     try:
-        # Check if work_orders table exists
-        if is_postgresql:
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = 'work_orders'
-                );
-            """)
-        else:
-            cursor.execute("""
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name='work_orders';
-            """)
-        
+        # Check if work_orders table exists using database-agnostic helper
+        query, params = get_table_exists_query('work_orders')
+        cursor.execute(query, params)
         table_exists = cursor.fetchone()
         
         if not table_exists or (is_postgresql and not table_exists[0]):
@@ -5085,8 +5141,10 @@ async def get_work_orders_list():
         cursor = conn.cursor()
         
         # Check if work_orders table exists, if not initialize database
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
-        if not cursor.fetchone():
+        query, params = get_table_exists_query('work_orders')
+        cursor.execute(query, params)
+        table_exists = cursor.fetchone()
+        if not table_exists or (is_postgresql() and not table_exists[0]):
             logger.info("Work orders table not found, initializing database...")
             cursor.close()
             conn.close()
@@ -5130,8 +5188,10 @@ async def get_work_orders():
         cursor = conn.cursor()
         
         # Check if work_orders table exists, if not initialize database
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='work_orders'")
-        if not cursor.fetchone():
+        query, params = get_table_exists_query('work_orders')
+        cursor.execute(query, params)
+        table_exists = cursor.fetchone()
+        if not table_exists or (is_postgresql() and not table_exists[0]):
             logger.info("🔧 work_orders table missing - initializing database...")
             cursor.close()
             conn.close()

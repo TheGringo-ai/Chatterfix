@@ -64,16 +64,17 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="ChatterFix CMMS", description="Complete Maintenance Management System")
 
 # Database configuration
-DATABASE_PATH = "/var/lib/chatterfix/cmms.db"
-BACKUP_DATABASE_PATH = "/opt/chatterfix-cmms/data/cmms.db"
+DATABASE_PATH = "cmms.db"
+BACKUP_DATABASE_PATH = "data/cmms.db"
 
 def ensure_database_dir():
     """Ensure database directory exists with proper permissions"""
-    db_dir = os.path.dirname(DATABASE_PATH)
-    backup_dir = os.path.dirname(BACKUP_DATABASE_PATH)
+    # Use current directory for database files
+    db_dir = "."
+    backup_dir = "data"
     
-    for directory in [db_dir, backup_dir]:
-        os.makedirs(directory, exist_ok=True)
+    # Create backup directory if it doesn't exist
+    os.makedirs(backup_dir, exist_ok=True)
         
     # If main database doesn't exist but backup does, copy it
     if not os.path.exists(DATABASE_PATH) and os.path.exists(BACKUP_DATABASE_PATH):

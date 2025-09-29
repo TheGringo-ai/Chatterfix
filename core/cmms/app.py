@@ -292,43 +292,18 @@ def is_postgresql():
 
 def get_table_exists_query(table_name):
     """Get database-agnostic query to check if table exists"""
-    # More robust PostgreSQL detection based on actual connection
-    try:
-        conn = get_db_connection()
-        # Check if this is a PostgreSQL connection by testing a PostgreSQL-specific query
-        cursor = conn.cursor()
-        cursor.execute("SELECT version()")
-        result = cursor.fetchone()
-        if result:
-            version_info = result[0]
-        else:
-            version_info = ""
-        cursor.close()
-        conn.close()
-        
-        if "PostgreSQL" in version_info:
-            return """
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = %s
-                );
-            """, (table_name,)
-        else:
-            return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
-    except Exception:
-        # Fallback to environment-based detection
-        db_url = os.getenv("DATABASE_URL")
-        if db_url and db_url.startswith("postgresql://"):
-            return """
-                SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_schema = 'public' 
-                    AND table_name = %s
-                );
-            """, (table_name,)
-        else:
-            return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+    # Simple environment-based detection for better reliability
+    db_url = os.getenv("DATABASE_URL")
+    if db_url and db_url.startswith("postgresql://"):
+        return """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = %s
+            );
+        """, (table_name,)
+    else:
+        return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
 
 def get_all_tables_query():
     """Get database-agnostic query to list all tables"""

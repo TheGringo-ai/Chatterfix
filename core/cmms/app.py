@@ -298,7 +298,11 @@ def get_table_exists_query(table_name):
         # Check if this is a PostgreSQL connection by testing a PostgreSQL-specific query
         cursor = conn.cursor()
         cursor.execute("SELECT version()")
-        version_info = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        if result:
+            version_info = result[0]
+        else:
+            version_info = ""
         cursor.close()
         conn.close()
         

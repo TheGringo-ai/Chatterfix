@@ -1010,7 +1010,7 @@ async def login_page():
         <title>Login - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1020,7 +1020,7 @@ async def login_page():
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-        }}
+        }}}}
         .login-container {{
             background: rgba(33,33,33,0.3);
             padding: 40px;
@@ -1029,17 +1029,17 @@ async def login_page():
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
             width: 100%;
             max-width: 400px;
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             text-align: center;
             margin-bottom: 30px;
-        }}
+        }}}}
         .logo h1 {{
             margin: 0;
             font-size: 2em;
             font-weight: 700;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -1047,15 +1047,15 @@ async def login_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
+        }}}}
         .form-group {{
             margin-bottom: 20px;
-        }}
+        }}}}
         label {{
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-        }}
+        }}}}
         input {{
             width: 100%;
             padding: 12px;
@@ -1065,10 +1065,10 @@ async def login_page():
             color: white;
             font-size: 16px;
             box-sizing: border-box;
-        }}
+        }}}}
         input::placeholder {{
             color: rgba(255,255,255,0.7);
-        }}
+        }}}}
         button {{
             width: 100%;
             padding: 15px;
@@ -1080,17 +1080,17 @@ async def login_page():
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-        }}
+        }}}}
         button:hover {{
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.2);
-        }}
+        }}}}
         .demo-info {{
             margin-top: 20px;
             text-align: center;
             font-size: 14px;
             opacity: 0.8;
-        }}
+        }}}}
         .ai-info {{
             margin-top: 15px;
             text-align: center;
@@ -1098,7 +1098,7 @@ async def login_page():
             opacity: 0.7;
             border-top: 1px solid rgba(255,255,255,0.2);
             padding-top: 15px;
-        }}
+        }}}}
         </style>
     </head>
     <body>
@@ -1172,7 +1172,10 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
     if not current_user:
         current_user = {"username": "demo", "role": "admin", "full_name": "Demo User"}
     
-    return """
+    user_display_name = current_user['full_name'] or current_user['username']
+    user_role = current_user['role'].title()
+    
+    return f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1180,14 +1183,14 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/static/css/data-mode.css">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }}
-        .header {{
+        }}}}
+        .header {{{{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -1195,12 +1198,12 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
             justify-content: space-between;
             align-items: center;
             color: white;
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             font-size: 1.5em;
             font-weight: 700;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -1208,75 +1211,75 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
-        .user-info {{
+        }}}}
+        .user-info {{{{
             display: flex;
             align-items: center;
             gap: 15px;
-        }}
-        .nav {{
+        }}}}
+        .nav {{{{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }}
-        .nav a {{
+        }}}}
+        .nav a {{{{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }}
-        .nav a:hover {{
+        }}}}
+        .nav a:hover {{{{
             background: rgba(33,33,33,0.3);
-        }}
-        .dashboard {{
+        }}}}
+        .dashboard {{{{
             padding: 30px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             max-width: 1200px;
             margin: 0 auto;
-        }}
-        .card {{
+        }}}}
+        .card {{{{
             background: rgba(33,33,33,0.3);
             padding: 25px;
             border-radius: 20px;
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }}
-        .card h3 {{
+        }}}}
+        .card h3 {{{{
             margin: 0 0 15px 0;
             font-size: 1.2em;
-        }}
-        .metric {{
+        }}}}
+        .metric {{{{
             font-size: 2em;
             font-weight: 700;
             margin: 10px 0;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .ai-providers {{
+        }}}}
+        .ai-providers {{{{
             display: flex;
             gap: 10px;
             margin-top: 10px;
-        }}
-        .ai-badge {{
+        }}}}
+        .ai-badge {{{{
             padding: 4px 8px;
             border-radius: 10px;
             font-size: 0.7em;
             font-weight: 500;
-        }}
-        .ai-grok {{ background: #1C3445; }}
-        .ai-openai {{ background: #456789; }}
-        .ai-hf {{ background: #2F4E7F; }}
+        }}}}
+        .ai-grok {{{{ background: #1C3445; }}
+        .ai-openai {{{{ background: #456789; }}
+        .ai-hf {{{{ background: #2F4E7F; }}
         </style>
     </head>
     <body>
@@ -1362,7 +1365,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                     this.initializeAssetCards();
                     this.initializePartCards();
                     console.log('🚀 All existing cards initialized with click handlers');
-                }},
+                }}}},
                 
                 // Initialize work order cards
                 initializeWorkOrderCards: function() {{
@@ -1373,15 +1376,15 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                                 console.log('🔧 Work Order card clicked:', cardId);
                                 if (window.showWorkOrderDetails) {{
                                     showWorkOrderDetails(cardId);
-                                }} else {{
+                                }}}} else {{
                                     console.error('❌ showWorkOrderDetails function not available');
-                                }}
-                            }};
+                                }}}}
+                            }}}};
                             card.style.cursor = 'pointer';
                             console.log('✅ Work order card ' + cardId + ' handler attached');
-                        }}
-                    }});
-                }},
+                        }}}}
+                    }}}});
+                }}}},
                 
                 // Initialize asset cards
                 initializeAssetCards: function() {{
@@ -1392,15 +1395,15 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                                 console.log('🏭 Asset card clicked:', cardId);
                                 if (window.showAssetDetails) {{
                                     showAssetDetails(cardId);
-                                }} else {{
+                                }}}} else {{
                                     console.error('❌ showAssetDetails function not available');
-                                }}
-                            }};
+                                }}}}
+                            }}}};
                             card.style.cursor = 'pointer';
                             console.log('✅ Asset card ' + cardId + ' handler attached');
-                        }}
-                    }});
-                }},
+                        }}}}
+                    }}}});
+                }}}},
                 
                 // Initialize part cards
                 initializePartCards: function() {{
@@ -1411,15 +1414,15 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                                 console.log('🔩 Parts card clicked:', cardId);
                                 if (window.showPartsDetails) {{
                                     showPartsDetails(cardId);
-                                }} else {{
+                                }}}} else {{
                                     console.error('❌ showPartsDetails function not available');
-                                }}
-                            }};
+                                }}}}
+                            }}}};
                             card.style.cursor = 'pointer';
                             console.log('✅ Parts card ' + cardId + ' handler attached');
-                        }}
-                    }});
-                }},
+                        }}}}
+                    }}}});
+                }}}},
                 
                 // Extract card ID from data attributes or content
                 extractCardId: function(card) {{
@@ -1430,17 +1433,17 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                     if (card.getAttribute('onclick')) {{
                         const match = card.getAttribute('onclick').match(/\\d+/);
                         if (match) return parseInt(match[0]);
-                    }}
+                    }}}}
                     
                     // Try to extract from button onclick
                     const button = card.querySelector('button[onclick]');
                     if (button) {{
                         const match = button.getAttribute('onclick').match(/\\d+/);
                         if (match) return parseInt(match[0]);
-                    }}
+                    }}}}
                     
                     return null;
-                }},
+                }}}},
                 
                 // Monitor for new cards being added to the DOM
                 startDOMObserver: function() {{
@@ -1456,7 +1459,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                                             console.log('🔍 New card detected:', node.className);
                                             this.attachHandlerToCard(node);
                                             newCardsFound = true;
-                                        }}
+                                        }}}}
                                         
                                         // Check if the added node contains cards
                                         const cards = node.querySelectorAll && node.querySelectorAll('.work-order-card, .asset-card, .part-card');
@@ -1465,27 +1468,27 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                                             cards.forEach(card => {{
                                                 this.attachHandlerToCard(card);
                                                 newCardsFound = true;
-                                            }});
-                                        }}
-                                    }}
-                                }});
-                            }}
-                        }});
+                                            }}}});
+                                        }}}}
+                                    }}}}
+                                }}}});
+                            }}}}
+                        }}}});
                         
                         if (newCardsFound) {{
                             console.log('🔄 New cards processed, handlers attached automatically');
-                        }}
-                    }});
+                        }}}}
+                    }}}});
                     
                     // Start observing the document with configured parameters
                     observer.observe(document.body, {{
                         childList: true,
                         subtree: true,
                         attributes: false
-                    }});
+                    }}}});
                     
                     console.log('👁️ DOM observer started - will auto-attach handlers to new cards');
-                }},
+                }}}},
                 
                 // Check if a node is a card
                 isCard: function(node) {{
@@ -1494,7 +1497,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                         node.classList.contains('asset-card') ||
                         node.classList.contains('part-card')
                     );
-                }},
+                }}}},
                 
                 // Attach handler to a specific card
                 attachHandlerToCard: function(card) {{
@@ -1505,24 +1508,24 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
                             card.onclick = () => {{
                                 console.log('🔧 Auto-attached: Work Order card clicked:', cardId);
                                 if (window.showWorkOrderDetails) showWorkOrderDetails(cardId);
-                            }};
-                        }} else if (card.classList.contains('asset-card')) {{
+                            }}}};
+                        }}}} else if (card.classList.contains('asset-card')) {{
                             card.onclick = () => {{
                                 console.log('🏭 Auto-attached: Asset card clicked:', cardId);
                                 if (window.showAssetDetails) showAssetDetails(cardId);
-                            }};
-                        }} else if (card.classList.contains('part-card')) {{
+                            }}}};
+                        }}}} else if (card.classList.contains('part-card')) {{
                             card.onclick = () => {{
                                 console.log('🔩 Auto-attached: Parts card clicked:', cardId);
                                 if (window.showPartsDetails) showPartsDetails(cardId);
-                            }};
-                        }}
+                            }}}};
+                        }}}}
                         
                         card.style.cursor = 'pointer';
                         console.log('✅ Auto-attached handler to ' + card.className + ' with ID:', cardId);
-                    }}
-                }}
-            }};
+                    }}}}
+                }}}}
+            }}}};
             
             // Initialize system
             window.ChatterFixAutoHandlers.initializeAllCards();
@@ -1532,14 +1535,11 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
             window.refreshClickHandlers = () => window.ChatterFixAutoHandlers.initializeAllCards();
             
             console.log('🚀 ChatterFix CMMS: Enhanced auto-detection click handler system ready!');
-        }});
+        }}}});
         </script>
     </body>
     </html>
-    """.format(
-        user_display_name=current_user['full_name'] or current_user['username'],
-        user_role=current_user['role'].title()
-    )
+    """
 
 # Asset detail page
 @app.get("/asset/{asset_id}", response_class=HTMLResponse)
@@ -1566,48 +1566,56 @@ async def asset_detail(asset_id: int):
     else:
         asset = dict(asset)
     
-    return """
+    asset_name = asset['name']
+    asset_type = asset['asset_type']
+    asset_location = asset['location']
+    asset_status = asset['status']
+    asset_criticality = asset['criticality']
+    asset_manufacturer = asset.get('manufacturer', 'N/A')
+    asset_model = asset.get('model', 'N/A')
+    
+    return f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>{asset_name} - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
             color: white;
-        }}
+        }}}}
         .container {{
             padding: 30px;
             max-width: 800px;
             margin: 0 auto;
-        }}
+        }}}}
         .asset-header {{
             background: rgba(33,33,33,0.3);
             padding: 30px;
             border-radius: 20px;
             backdrop-filter: blur(20px);
             margin-bottom: 20px;
-        }}
+        }}}}
         .asset-title {{
             font-size: 2em;
             margin-bottom: 10px;
-        }}
+        }}}}
         .asset-info {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-top: 20px;
-        }}
+        }}}}
         .info-card {{
             background: rgba(33,33,33,0.2);
             padding: 15px;
             border-radius: 10px;
-        }}
+        }}}}
         .nav-link {{
             display: inline-block;
             margin-top: 20px;
@@ -1616,23 +1624,23 @@ async def asset_detail(asset_id: int):
             color: white;
             text-decoration: none;
             border-radius: 10px;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
+        }}}}
         </style>
     </head>
     <body>
@@ -1681,16 +1689,7 @@ async def asset_detail(asset_id: int):
         <script src="/ai-inject.js"></script>
     </body>
     </html>
-    """.format(
-        asset_name=asset['name'],
-        asset_id=asset['id'],
-        asset_type=asset['asset_type'],
-        asset_location=asset['location'],
-        asset_status=asset['status'],
-        asset_criticality=asset['criticality'],
-        asset_manufacturer=asset.get('manufacturer', 'N/A'),
-        asset_model=asset.get('model', 'N/A')
-    )
+    """
 
 # Additional pages (simplified for Cloud Run)
 @app.get("/assets", response_class=HTMLResponse)
@@ -1701,14 +1700,14 @@ async def assets_page():
         <title>Assets - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }}
-        .header {{
+        }}}}
+        .header {{{{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -1716,20 +1715,20 @@ async def assets_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             font-size: 1.5em;
             font-weight: 700;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -1737,45 +1736,45 @@ async def assets_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
-        .nav {{
+        }}}}
+        .nav {{{{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }}
-        .nav a {{
+        }}}}
+        .nav a {{{{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }}
+        }}}}
         .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }}
+        }}}}
         .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }}
+        }}}}
         .page-header {{
             color: white;
             margin-bottom: 30px;
-        }}
+        }}}}
         .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }}
+        }}}}
         .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }}
+        }}}}
         .assets-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }}
+        }}}}
         .asset-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
@@ -1783,11 +1782,11 @@ async def assets_page():
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }}
+        }}}}
         .asset-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }}
+        }}}}
         .asset-status {{
             padding: 6px 12px;
             border-radius: 15px;
@@ -1795,7 +1794,7 @@ async def assets_page():
             font-weight: 500;
             margin-bottom: 15px;
             display: inline-block;
-        }}
+        }}}}
         .status-operational {{ background: #456789; }}
         .status-maintenance {{ background: #455A64; }}
         .status-critical {{ background: #1C3445; }}
@@ -1810,10 +1809,10 @@ async def assets_page():
             font-weight: 500;
             text-decoration: none;
             display: inline-block;
-        }}
+        }}}}
         .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }}
+        }}}}
         </style>
     </head>
     <body>
@@ -2411,14 +2410,14 @@ async def work_orders_page():
         <title>Work Orders - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }}
-        .header {{
+        }}}}
+        .header {{{{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -2426,20 +2425,20 @@ async def work_orders_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             font-size: 1.5em;
             font-weight: 700;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -2447,45 +2446,45 @@ async def work_orders_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
-        .nav {{
+        }}}}
+        .nav {{{{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }}
-        .nav a {{
+        }}}}
+        .nav a {{{{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }}
+        }}}}
         .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }}
+        }}}}
         .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }}
+        }}}}
         .page-header {{
             color: white;
             margin-bottom: 30px;
-        }}
+        }}}}
         .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }}
+        }}}}
         .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }}
+        }}}}
         .work-orders-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }}
+        }}}}
         .work-order-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
@@ -2493,11 +2492,11 @@ async def work_orders_page():
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }}
+        }}}}
         .work-order-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }}
+        }}}}
         .priority {{
             padding: 4px 12px;
             border-radius: 10px;
@@ -2505,7 +2504,7 @@ async def work_orders_page():
             font-weight: 600;
             margin-bottom: 10px;
             display: inline-block;
-        }}
+        }}}}
         .priority-high {{ background: #1C3445; }}
         .priority-medium {{ background: #2F4E7F; }}
         .priority-low {{ background: #456789; }}
@@ -2516,7 +2515,7 @@ async def work_orders_page():
             font-weight: 500;
             margin-top: 10px;
             display: inline-block;
-        }}
+        }}}}
         .status-open {{ background: #3498db; }}
         .status-progress {{ background: #455A64; }}
         .status-completed {{ background: #456789; }}
@@ -2529,10 +2528,10 @@ async def work_orders_page():
             cursor: pointer;
             margin-top: 15px;
             font-weight: 500;
-        }}
+        }}}}
         .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }}
+        }}}}
         </style>
     </head>
     <body>
@@ -4135,14 +4134,14 @@ async def parts_page():
         <title>Parts - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }}
-        .header {{
+        }}}}
+        .header {{{{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -4150,20 +4149,20 @@ async def parts_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             font-size: 1.5em;
             font-weight: 700;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -4171,45 +4170,45 @@ async def parts_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
-        .nav {{
+        }}}}
+        .nav {{{{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }}
-        .nav a {{
+        }}}}
+        .nav a {{{{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }}
+        }}}}
         .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }}
+        }}}}
         .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }}
+        }}}}
         .page-header {{
             color: white;
             margin-bottom: 30px;
-        }}
+        }}}}
         .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }}
+        }}}}
         .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }}
+        }}}}
         .parts-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }}
+        }}}}
         .part-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
@@ -4217,11 +4216,11 @@ async def parts_page():
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }}
+        }}}}
         .part-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }}
+        }}}}
         .stock-status {{
             padding: 6px 12px;
             border-radius: 15px;
@@ -4229,7 +4228,7 @@ async def parts_page():
             font-weight: 500;
             margin-bottom: 15px;
             display: inline-block;
-        }}
+        }}}}
         .stock-good {{ background: #456789; }}
         .stock-low {{ background: #455A64; }}
         .stock-critical {{ background: #1C3445; }}
@@ -4242,10 +4241,10 @@ async def parts_page():
             cursor: pointer;
             margin-top: 15px;
             font-weight: 500;
-        }}
+        }}}}
         .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }}
+        }}}}
         </style>
     </head>
     <body>
@@ -4885,14 +4884,14 @@ async def reports_page():
         <title>📊 Enterprise Reports - ChatterFix CMMS</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {{
+        body {{{{
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }}
-        .header {{
+        }}}}
+        .header {{{{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -4901,20 +4900,20 @@ async def reports_page():
             align-items: center;
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }}
-        .logo {{
+        }}}}
+        .logo {{{{
             font-size: 1.5em;
             font-weight: 700;
-        }}
-        .enterprise-badge {{
+        }}}}
+        .enterprise-badge {{{{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }}
-        .cloud-badge {{
+        }}}}
+        .cloud-badge {{{{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -4922,33 +4921,33 @@ async def reports_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }}
-        .nav {{
+        }}}}
+        .nav {{{{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }}
-        .nav a {{
+        }}}}
+        .nav a {{{{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }}
+        }}}}
         .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }}
+        }}}}
         .content {{
             padding: 30px;
             max-width: 1400px;
             margin: 0 auto;
-        }}
+        }}}}
         .page-header {{
             color: white;
             margin-bottom: 30px;
             text-align: center;
-        }}
+        }}}}
         .page-header h1 {{
             font-size: 2.8em;
             margin: 0;
@@ -4956,34 +4955,34 @@ async def reports_page():
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        }}
+        }}}}
         .page-header p {{
             font-size: 1.3em;
             opacity: 0.9;
             margin: 10px 0;
-        }}
-        .ai-providers {{
+        }}}}
+        .ai-providers {{{{
             display: flex;
             justify-content: center;
             gap: 15px;
             margin: 20px 0;
-        }}
-        .ai-provider {{
+        }}}}
+        .ai-provider {{{{
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.9em;
             font-weight: 600;
             color: white;
-        }}
-        .ai-grok {{ background: #1C3445; }}
-        .ai-openai {{ background: #456789; }}
-        .ai-hf {{ background: #2F4E7F; }}
+        }}}}
+        .ai-grok {{{{ background: #1C3445; }}
+        .ai-openai {{{{ background: #456789; }}
+        .ai-hf {{{{ background: #2F4E7F; }}
         .reports-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 25px;
             margin-top: 30px;
-        }}
+        }}}}
         .report-card {{
             background: rgba(33,33,33,0.3);
             padding: 30px;
@@ -4992,36 +4991,36 @@ async def reports_page():
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
             transition: all 0.3s ease;
-        }}
+        }}}}
         .report-card:hover {{
             transform: translateY(-5px);
             box-shadow: 0 12px 40px rgba(46,64,83,0.5), 0 0 0 1px rgba(102,102,102,0.4);
-        }}
+        }}}}
         .report-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.4em;
             display: flex;
             align-items: center;
             gap: 10px;
-        }}
+        }}}}
         .report-icon {{
             font-size: 1.2em;
-        }}
+        }}}}
         .report-desc {{
             opacity: 0.8;
             margin-bottom: 20px;
             line-height: 1.6;
-        }}
+        }}}}
         .ai-insight {{
             background: rgba(46,64,83,0.4);
             padding: 15px;
             border-radius: 10px;
             margin: 15px 0;
             border-left: 4px solid #8B9467;
-        }}
+        }}}}
         .ai-insight strong {{
             color: #8B9467;
-        }}
+        }}}}
         .generate-btn {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
@@ -5032,11 +5031,11 @@ async def reports_page():
             font-weight: 600;
             transition: all 0.3s ease;
             width: 100%;
-        }}
+        }}}}
         .generate-btn:hover {{
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.2);
-        }}
+        }}}}
         .status-indicator {{
             padding: 6px 12px;
             border-radius: 15px;
@@ -5044,7 +5043,7 @@ async def reports_page():
             font-weight: 500;
             display: inline-block;
             margin-bottom: 10px;
-        }}
+        }}}}
         .status-active {{ background: #456789; }}
         .status-generating {{ background: #455A64; }}
         .filter-section {{
@@ -5057,17 +5056,17 @@ async def reports_page():
             gap: 20px;
             align-items: center;
             flex-wrap: wrap;
-        }}
+        }}}}
         .filter-item {{
             display: flex;
             flex-direction: column;
             gap: 5px;
-        }}
+        }}}}
         .filter-item label {{
             color: white;
             font-weight: 500;
             font-size: 0.9em;
-        }}
+        }}}}
         .filter-item select, .filter-item input {{
             padding: 8px 12px;
             border: 1px solid rgba(102,102,102,0.3);
@@ -5075,7 +5074,7 @@ async def reports_page():
             background: rgba(46,64,83,0.4);
             color: white;
             outline: none;
-        }}
+        }}}}
         </style>
     </head>
     <body>

@@ -1172,7 +1172,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
     if not current_user:
         current_user = {"username": "demo", "role": "admin", "full_name": "Demo User"}
     
-    return f"""
+    return """
     <!DOCTYPE html>
     <html>
     <head>
@@ -1283,7 +1283,7 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
         <div class="header">
             <div class="logo">🔧 ChatterFix CMMS <span class="enterprise-badge">ENTERPRISE</span><span class="cloud-badge">CLOUD RUN</span></div>
             <div class="user-info">
-                <span>Welcome, {current_user['full_name'] or current_user['username']} ({current_user['role'].title()})</span>
+                <span>Welcome, {user_display_name} ({user_role})</span>
                 <a href="/login" style="color: white;">Login</a>
             </div>
         </div>
@@ -1536,7 +1536,10 @@ async def dashboard(current_user: Optional[dict] = Depends(get_current_user)):
         </script>
     </body>
     </html>
-    """
+    """.format(
+        user_display_name=current_user['full_name'] or current_user['username'],
+        user_role=current_user['role'].title()
+    )
 
 # Asset detail page
 @app.get("/asset/{asset_id}", response_class=HTMLResponse)
@@ -1563,11 +1566,11 @@ async def asset_detail(asset_id: int):
     else:
         asset = dict(asset)
     
-    return f"""
+    return """
     <!DOCTYPE html>
     <html>
     <head>
-        <title>{asset['name']} - ChatterFix CMMS Enterprise</title>
+        <title>{asset_name} - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
         body {{
@@ -1635,34 +1638,34 @@ async def asset_detail(asset_id: int):
     <body>
         <div class="container">
             <div class="asset-header">
-                <div class="asset-title">🏭 {asset['name']} <span class="enterprise-badge">ENTERPRISE</span> <span class="cloud-badge">CLOUD</span></div>
-                <p>Asset ID: {asset['id']} | Enterprise Asset Management | Cloud Run Optimized</p>
+                <div class="asset-title">🏭 {asset_name} <span class="enterprise-badge">ENTERPRISE</span> <span class="cloud-badge">CLOUD</span></div>
+                <p>Asset ID: {asset_id} | Enterprise Asset Management | Cloud Run Optimized</p>
             </div>
             
             <div class="asset-info">
                 <div class="info-card">
                     <h3>Type</h3>
-                    <p>{asset['asset_type']}</p>
+                    <p>{asset_type}</p>
                 </div>
                 <div class="info-card">
                     <h3>Location</h3>
-                    <p>{asset['location']}</p>
+                    <p>{asset_location}</p>
                 </div>
                 <div class="info-card">
                     <h3>Status</h3>
-                    <p>{asset['status']}</p>
+                    <p>{asset_status}</p>
                 </div>
                 <div class="info-card">
                     <h3>Criticality</h3>
-                    <p>{asset['criticality']}</p>
+                    <p>{asset_criticality}</p>
                 </div>
                 <div class="info-card">
                     <h3>Manufacturer</h3>
-                    <p>{asset.get('manufacturer', 'N/A')}</p>
+                    <p>{asset_manufacturer}</p>
                 </div>
                 <div class="info-card">
                     <h3>Model</h3>
-                    <p>{asset.get('model', 'N/A')}</p>
+                    <p>{asset_model}</p>
                 </div>
             </div>
             
@@ -1678,7 +1681,16 @@ async def asset_detail(asset_id: int):
         <script src="/ai-inject.js"></script>
     </body>
     </html>
-    """
+    """.format(
+        asset_name=asset['name'],
+        asset_id=asset['id'],
+        asset_type=asset['asset_type'],
+        asset_location=asset['location'],
+        asset_status=asset['status'],
+        asset_criticality=asset['criticality'],
+        asset_manufacturer=asset.get('manufacturer', 'N/A'),
+        asset_model=asset.get('model', 'N/A')
+    )
 
 # Additional pages (simplified for Cloud Run)
 @app.get("/assets", response_class=HTMLResponse)

@@ -12,7 +12,43 @@ from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Tuple
 import os
 
+try:
+    import psycopg2
+    import psycopg2.extras
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
+
+def is_postgresql():
+    """Check if we're using PostgreSQL or SQLite"""
+    db_url = os.getenv("DATABASE_URL")
+    return db_url is not None and POSTGRES_AVAILABLE and ("postgresql://" in db_url or "postgres://" in db_url)
+
+def get_table_exists_query(table_name):
+    """Get database-agnostic query to check if table exists"""
+    if is_postgresql():
+        return """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = %s
+            );
+        """, (table_name,)
+    else:
+        return "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)
+
+def get_table_count_query():
+    """Get database-agnostic query to count tables"""
+    if is_postgresql():
+        return """
+            SELECT COUNT(*) FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+        """, ()
+    else:
+        return "SELECT COUNT(*) FROM sqlite_master WHERE type='table'", ()
 
 class DatabaseManager:
     """Enhanced database manager with transaction safety"""
@@ -23,92 +59,156 @@ class DatabaseManager:
         self.connection_timeout = 30.0
         self.retry_attempts = 3
         
-    def get_connection(self) -> sqlite3.Connection:
-        """Get thread-local database connection with enhanced configuration"""
-        if not hasattr(self._local, 'connection') or self._local.connection is None:
+    def get_connection(self):
+        """Get fresh database connection for each request (Cloud Run optimized)"""
+        # Check if we should use PostgreSQL
+        if is_postgresql():
             try:
-                # Ensure directory exists
-                os.makedirs(os.path.dirname(self.database_path), exist_ok=True)
+                # PostgreSQL connection
+                if not POSTGRES_AVAILABLE:
+                    raise ImportError("psycopg2 not available for PostgreSQL connection")
                 
-                # Create connection with optimized settings
-                conn = sqlite3.connect(
-                    self.database_path,
-                    timeout=self.connection_timeout,
-                    check_same_thread=False
-                )
+                db_url = os.getenv("DATABASE_URL")
+                conn = psycopg2.connect(db_url, connect_timeout=5)
+                conn.cursor_factory = psycopg2.extras.DictCursor
+                logger.debug("PostgreSQL database connection established")
+                return conn
                 
-                # Enable WAL mode for better concurrency
-                conn.execute("PRAGMA journal_mode=WAL")
-                
-                # Enable foreign key constraints
-                conn.execute("PRAGMA foreign_keys=ON")
-                
-                # Optimize for performance
-                conn.execute("PRAGMA synchronous=NORMAL")
-                conn.execute("PRAGMA cache_size=10000")
-                conn.execute("PRAGMA temp_store=MEMORY")
-                
-                # Set row factory for easier data access
-                conn.row_factory = sqlite3.Row
-                
-                self._local.connection = conn
-                logger.debug("Database connection established")
-                
-            except sqlite3.Error as e:
-                logger.error(f"Database connection failed: {e}")
-                raise
+            except Exception as e:
+                logger.warning(f"PostgreSQL connection failed: {e}, falling back to SQLite")
         
-        return self._local.connection
+        # SQLite fallback
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.database_path), exist_ok=True)
+            
+            # Create connection with optimized settings
+            conn = sqlite3.connect(
+                self.database_path,
+                timeout=self.connection_timeout,
+                check_same_thread=False
+            )
+            
+            # Enable WAL mode for better concurrency
+            conn.execute("PRAGMA journal_mode=WAL")
+            
+            # Enable foreign key constraints
+            conn.execute("PRAGMA foreign_keys=ON")
+            
+            # Optimize for performance
+            conn.execute("PRAGMA synchronous=NORMAL")
+            conn.execute("PRAGMA cache_size=10000")
+            conn.execute("PRAGMA temp_store=MEMORY")
+            
+            # Set row factory for easier data access
+            conn.row_factory = sqlite3.Row
+            
+            logger.debug("SQLite database connection established")
+            return conn
+            
+        except sqlite3.Error as e:
+            logger.error(f"Database connection failed: {e}")
+            raise
     
     def close_connection(self):
         """Close thread-local connection"""
         if hasattr(self._local, 'connection') and self._local.connection:
             try:
                 self._local.connection.close()
-                self._local.connection = None
                 logger.debug("Database connection closed")
-            except sqlite3.Error as e:
+            except Exception as e:
                 logger.error(f"Error closing database connection: {e}")
+            finally:
+                self._local.connection = None
+    
+    @contextmanager
+    def managed_connection(self):
+        """Context manager for safe connection handling"""
+        conn = self.get_connection()
+        try:
+            yield conn
+        finally:
+            self.close_connection()
     
     @contextmanager
     def transaction(self, read_only: bool = False):
-        """Context manager for database transactions with automatic rollback"""
+        """Context manager for database transactions with automatic rollback and connection closing."""
         conn = self.get_connection()
-        
-        if read_only:
-            # For read-only operations, start a deferred transaction
-            conn.execute("BEGIN DEFERRED")
-        else:
-            # For write operations, start an immediate transaction
-            conn.execute("BEGIN IMMEDIATE")
-        
         try:
-            yield conn
-            if not read_only:
-                conn.commit()
-                logger.debug("Transaction committed successfully")
-        except Exception as e:
-            conn.rollback()
-            logger.error(f"Transaction rolled back due to error: {e}")
-            raise
-    
+            if is_postgresql():
+                # PostgreSQL transaction handling
+                try:
+                    yield conn
+                    if not read_only:
+                        conn.commit()
+                        logger.debug("Transaction committed successfully")
+                except Exception as e:
+                    conn.rollback()
+                    logger.error(f"Transaction rolled back due to error: {e}")
+                    raise
+            else:
+                # SQLite transaction handling
+                if read_only:
+                    conn.execute("BEGIN DEFERRED")
+                else:
+                    conn.execute("BEGIN IMMEDIATE")
+                
+                try:
+                    yield conn
+                    if not read_only:
+                        conn.commit()
+                        logger.debug("Transaction committed successfully")
+                except Exception as e:
+                    conn.rollback()
+                    logger.error(f"Transaction rolled back due to error: {e}")
+                    raise
+        finally:
+            self.close_connection()
+
     def execute_with_retry(self, query: str, params: Tuple = (), fetch: str = None) -> Any:
-        """Execute query with retry logic for handling locked database"""
+        """Execute query with retry logic and proper connection management"""
         last_error = None
         
         for attempt in range(self.retry_attempts):
+            conn = None
             try:
-                with self.transaction(read_only=fetch is not None) as conn:
+                # Get fresh connection for each attempt
+                conn = self.get_connection()
+                
+                if is_postgresql():
+                    # PostgreSQL execution with proper transaction handling
+                    cursor = conn.cursor()
+                    cursor.execute(query, params)
+                    
+                    if fetch == 'one':
+                        result = cursor.fetchone()
+                    elif fetch == 'all':
+                        result = cursor.fetchall()
+                    elif fetch == 'many':
+                        result = cursor.fetchmany()
+                    else:
+                        result = cursor.rowcount
+                    
+                    # Commit for PostgreSQL
+                    conn.commit()
+                    return result
+                    
+                else:
+                    # SQLite execution
                     cursor = conn.execute(query, params)
                     
                     if fetch == 'one':
-                        return cursor.fetchone()
+                        result = cursor.fetchone()
                     elif fetch == 'all':
-                        return cursor.fetchall()
+                        result = cursor.fetchall()
                     elif fetch == 'many':
-                        return cursor.fetchmany()
+                        result = cursor.fetchmany()
                     else:
-                        return cursor.lastrowid
+                        result = cursor.lastrowid
+                    
+                    # Commit for SQLite
+                    conn.commit()
+                    return result
                         
             except sqlite3.OperationalError as e:
                 last_error = e
@@ -122,7 +222,19 @@ class DatabaseManager:
                     raise
             except Exception as e:
                 logger.error(f"Database operation failed: {e}")
+                if conn:
+                    try:
+                        conn.rollback()
+                    except:
+                        pass
                 raise
+            finally:
+                # Always close the connection
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass
         
         # If all retries failed
         logger.error(f"Database operation failed after {self.retry_attempts} attempts")
@@ -171,9 +283,12 @@ class DatabaseManager:
 
     def check_table_exists(self, table_name: str) -> bool:
         """Check if table exists"""
-        query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
-        result = self.execute_with_retry(query, (table_name,), fetch='one')
-        return result is not None
+        query, params = get_table_exists_query(table_name)
+        result = self.execute_with_retry(query, params, fetch='one')
+        if is_postgresql():
+            return result is not None and result[0]
+        else:
+            return result is not None
 
     def get_database_stats(self) -> Dict[str, Any]:
         """Get database statistics"""
@@ -184,19 +299,29 @@ class DatabaseManager:
                 # Get database size
                 stats['file_size'] = os.path.getsize(self.database_path)
                 
-                # Get table count
-                cursor = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table'")
+                # Get table count using database-agnostic query
+                query, params = get_table_count_query()
+                cursor = conn.execute(query, params)
                 stats['table_count'] = cursor.fetchone()[0]
                 
-                # Get page count and size
-                cursor = conn.execute("PRAGMA page_count")
-                stats['page_count'] = cursor.fetchone()[0]
-                
-                cursor = conn.execute("PRAGMA page_size")
-                stats['page_size'] = cursor.fetchone()[0]
-                
-                # Calculate database size in pages
-                stats['database_size_pages'] = stats['page_count']
+                # Get database-specific metrics
+                if is_postgresql():
+                    # PostgreSQL: Get database size from pg_database
+                    cursor = conn.execute("SELECT pg_database_size(current_database())")
+                    db_size = cursor.fetchone()[0]
+                    stats['page_count'] = db_size // 8192  # Assume 8KB pages
+                    stats['page_size'] = 8192
+                    stats['database_size_pages'] = stats['page_count']
+                else:
+                    # SQLite: Use PRAGMA commands
+                    cursor = conn.execute("PRAGMA page_count")
+                    stats['page_count'] = cursor.fetchone()[0]
+                    
+                    cursor = conn.execute("PRAGMA page_size")
+                    stats['page_size'] = cursor.fetchone()[0]
+                    
+                    # Calculate database size in pages
+                    stats['database_size_pages'] = stats['page_count']
                 
                 return stats
         except Exception as e:

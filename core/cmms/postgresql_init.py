@@ -120,13 +120,23 @@ def insert_sample_data(cursor):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, part)
     
+    # Get user IDs for foreign key references
+    cursor.execute("SELECT id FROM users WHERE username = 'johndoe'")
+    johndoe_id = cursor.fetchone()[0]
+    cursor.execute("SELECT id FROM users WHERE username = 'maryjane'")
+    maryjane_id = cursor.fetchone()[0]
+    cursor.execute("SELECT id FROM users WHERE username = 'mikecool'")
+    mikecool_id = cursor.fetchone()[0]
+    cursor.execute("SELECT id FROM users WHERE username = 'yoyofred'")
+    admin_id = cursor.fetchone()[0]
+    
     # Insert sample work orders
     work_orders_data = [
-        ('WO-001', 'Motor Bearing Replacement', 'Replace worn bearing in Motor A-001', 1, 'High', 'Open', 'Preventive', 2, 1, 4.0, None, '2024-03-15 08:00:00', '2024-03-15 12:00:00', None, None, '2024-03-01 10:30:00', '2024-03-15 17:00:00', None, 'Follow lockout/tagout procedures'),
-        ('WO-002', 'Pump Seal Replacement', 'Replace leaking seals in Pump B-002', 2, 'Critical', 'In Progress', 'Corrective', 2, 1, 6.0, 2.5, '2024-03-10 09:00:00', '2024-03-10 15:00:00', '2024-03-10 09:15:00', None, '2024-03-01 14:20:00', '2024-03-10 16:00:00', None, 'System must be drained before work'),
-        ('WO-003', 'Conveyor Belt Inspection', 'Quarterly inspection of conveyor belt', 3, 'Medium', 'Completed', 'Inspection', 3, 1, 2.0, 1.8, '2024-03-05 10:00:00', '2024-03-05 12:00:00', '2024-03-05 10:00:00', '2024-03-05 11:48:00', '2024-02-28 09:15:00', '2024-03-05 17:00:00', 'Belt condition good, no replacement needed', 'No safety concerns'),
-        ('WO-004', 'HVAC Filter Replacement', 'Replace air filters in HVAC D-004', 4, 'Low', 'Scheduled', 'Preventive', 2, 1, 1.5, None, '2024-03-20 13:00:00', '2024-03-20 14:30:00', None, None, '2024-03-01 11:45:00', '2024-03-20 17:00:00', None, 'Standard PPE required'),
-        ('WO-005', 'Generator Monthly Test', 'Monthly load test of backup generator', 5, 'Medium', 'Open', 'Testing', 4, 1, 3.0, None, '2024-03-25 08:00:00', '2024-03-25 11:00:00', None, None, '2024-03-01 16:30:00', '2024-03-25 17:00:00', None, 'Coordinate with facilities for power switching')
+        ('WO-001', 'Motor Bearing Replacement', 'Replace worn bearing in Motor A-001', 1, 'High', 'Open', 'Preventive', johndoe_id, admin_id, 4.0, None, '2024-03-15 08:00:00', '2024-03-15 12:00:00', None, None, '2024-03-01 10:30:00', '2024-03-15 17:00:00', None, 'Follow lockout/tagout procedures'),
+        ('WO-002', 'Pump Seal Replacement', 'Replace leaking seals in Pump B-002', 2, 'Critical', 'In Progress', 'Corrective', johndoe_id, admin_id, 6.0, 2.5, '2024-03-10 09:00:00', '2024-03-10 15:00:00', '2024-03-10 09:15:00', None, '2024-03-01 14:20:00', '2024-03-10 16:00:00', None, 'System must be drained before work'),
+        ('WO-003', 'Conveyor Belt Inspection', 'Quarterly inspection of conveyor belt', 3, 'Medium', 'Completed', 'Inspection', maryjane_id, admin_id, 2.0, 1.8, '2024-03-05 10:00:00', '2024-03-05 12:00:00', '2024-03-05 10:00:00', '2024-03-05 11:48:00', '2024-02-28 09:15:00', '2024-03-05 17:00:00', 'Belt condition good, no replacement needed', 'No safety concerns'),
+        ('WO-004', 'HVAC Filter Replacement', 'Replace air filters in HVAC D-004', 4, 'Low', 'Scheduled', 'Preventive', johndoe_id, admin_id, 1.5, None, '2024-03-20 13:00:00', '2024-03-20 14:30:00', None, None, '2024-03-01 11:45:00', '2024-03-20 17:00:00', None, 'Standard PPE required'),
+        ('WO-005', 'Generator Monthly Test', 'Monthly load test of backup generator', 5, 'Medium', 'Open', 'Testing', mikecool_id, admin_id, 3.0, None, '2024-03-25 08:00:00', '2024-03-25 11:00:00', None, None, '2024-03-01 16:30:00', '2024-03-25 17:00:00', None, 'Coordinate with facilities for power switching')
     ]
     
     for wo in work_orders_data:

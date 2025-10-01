@@ -25,12 +25,35 @@ try:
 except ImportError:
     AIOSQLITE_AVAILABLE = False
 
+try:
+    import psycopg2
+    import psycopg2.extras
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+
 # Import admin manager
 from admin import admin_manager, get_system_mode, get_database_path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def is_postgresql():
+    """Check if we're using PostgreSQL or SQLite"""
+    db_url = os.getenv("DATABASE_URL")
+    return db_url is not None and POSTGRES_AVAILABLE
+
+def get_all_tables_query():
+    """Get database-agnostic query to list all tables"""
+    if is_postgresql():
+        return """
+            SELECT table_name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+        """, ()
+    else:
+        return "SELECT name FROM sqlite_master WHERE type='table'", ()
 
 class DataToggleSystem:
     """Main data toggle system for managing demo/production modes"""
@@ -247,8 +270,9 @@ class DataToggleSystem:
         # Verify database integrity
         try:
             with self.get_database_connection(mode) as conn:
-                # Basic integrity check
-                conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                # Basic integrity check using database-agnostic query
+                query, params = get_all_tables_query()
+                conn.execute(query, params)
                 tables = conn.fetchall()
                 
                 if len(tables) == 0:

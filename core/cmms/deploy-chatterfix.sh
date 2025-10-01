@@ -37,7 +37,7 @@ gcloud run deploy $SERVICE_NAME \
     --cpu 2 \
     --max-instances 10 \
     --min-instances 1 \
-    --set-env-vars "ENVIRONMENT=production,DOMAIN=$DOMAIN" \
+    --set-env-vars "ENVIRONMENT=production,DOMAIN=$DOMAIN,DATABASE_URL=postgresql://yoyofred:%40Gringo420@136.112.167.114/chatterfix_cmms" \
     --tag latest
 
 echo_info "Deployment completed successfully!"

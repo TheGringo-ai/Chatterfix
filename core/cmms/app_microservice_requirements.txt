@@ -1,0 +1,29 @@
+# ChatterFix CMMS Main Application - Minimal Requirements
+# Optimized for Cloud Run deployment without database dependencies
+
+# Core FastAPI and web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# HTTP client for database service communication
+httpx>=0.25.0
+
+# Authentication and security
+pyjwt>=2.8.0
+bcrypt>=4.0.0
+
+# Template and static files
+jinja2>=3.1.2
+aiofiles>=23.0.0
+
+# Form handling
+python-multipart>=0.0.6
+
+# Environment configuration
+python-dotenv>=1.0.0
+
+# CORS support
+starlette>=0.27.0
+
+# Basic data validation
+pydantic>=2.4.0

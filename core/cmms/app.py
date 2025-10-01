@@ -1010,7 +1010,7 @@ async def login_page():
         <title>Login - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1020,8 +1020,8 @@ async def login_page():
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-        }
-        .login-container {
+        }}
+        .login-container {{
             background: rgba(33,33,33,0.3);
             padding: 40px;
             border-radius: 20px;
@@ -1029,17 +1029,17 @@ async def login_page():
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
             width: 100%;
             max-width: 400px;
-        }
-        .logo {
+        }}
+        .logo {{
             text-align: center;
             margin-bottom: 30px;
-        }
-        .logo h1 {
+        }}
+        .logo h1 {{
             margin: 0;
             font-size: 2em;
             font-weight: 700;
-        }
-        .cloud-badge {
+        }}
+        .cloud-badge {{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -1047,16 +1047,16 @@ async def login_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }
-        .form-group {
+        }}
+        .form-group {{
             margin-bottom: 20px;
-        }
-        label {
+        }}
+        label {{
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-        }
-        input {
+        }}
+        input {{
             width: 100%;
             padding: 12px;
             border: none;
@@ -1065,11 +1065,11 @@ async def login_page():
             color: white;
             font-size: 16px;
             box-sizing: border-box;
-        }
-        input::placeholder {
+        }}
+        input::placeholder {{
             color: rgba(255,255,255,0.7);
-        }
-        button {
+        }}
+        button {{
             width: 100%;
             padding: 15px;
             border: none;
@@ -1080,25 +1080,25 @@ async def login_page():
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-        button:hover {
+        }}
+        button:hover {{
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.2);
-        }
-        .demo-info {
+        }}
+        .demo-info {{
             margin-top: 20px;
             text-align: center;
             font-size: 14px;
             opacity: 0.8;
-        }
-        .ai-info {
+        }}
+        .ai-info {{
             margin-top: 15px;
             text-align: center;
             font-size: 12px;
             opacity: 0.7;
             border-top: 1px solid rgba(255,255,255,0.2);
             padding-top: 15px;
-        }
+        }}
         </style>
     </head>
     <body>
@@ -1689,14 +1689,14 @@ async def assets_page():
         <title>Assets - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }
-        .header {
+        }}
+        .header {{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -1704,20 +1704,20 @@ async def assets_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }
-        .logo {
+        }}
+        .logo {{
             font-size: 1.5em;
             font-weight: 700;
-        }
-        .enterprise-badge {
+        }}
+        .enterprise-badge {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }
-        .cloud-badge {
+        }}
+        .cloud-badge {{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -1725,69 +1725,69 @@ async def assets_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }
-        .nav {
+        }}
+        .nav {{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }
-        .nav a {
+        }}
+        .nav a {{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }
-        .nav a:hover, .nav a.active {
+        }}
+        .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }
-        .content {
+        }}
+        .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }
-        .page-header {
+        }}
+        .page-header {{
             color: white;
             margin-bottom: 30px;
-        }
-        .page-header h1 {
+        }}
+        .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }
-        .page-header p {
+        }}
+        .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }
-        .assets-grid {
+        }}
+        .assets-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }
-        .asset-card {
+        }}
+        .asset-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
             border-radius: 20px;
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }
-        .asset-card h3 {
+        }}
+        .asset-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }
-        .asset-status {
+        }}
+        .asset-status {{
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.9em;
             font-weight: 500;
             margin-bottom: 15px;
             display: inline-block;
-        }
-        .status-operational { background: #456789; }
-        .status-maintenance { background: #455A64; }
-        .status-critical { background: #1C3445; }
-        .btn {
+        }}
+        .status-operational {{ background: #456789; }}
+        .status-maintenance {{ background: #455A64; }}
+        .status-critical {{ background: #1C3445; }}
+        .btn {{
             background: rgba(46,64,83,0.4);
             color: white;
             border: none;
@@ -1798,10 +1798,10 @@ async def assets_page():
             font-weight: 500;
             text-decoration: none;
             display: inline-block;
-        }
-        .btn:hover {
+        }}
+        .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }
+        }}
         </style>
     </head>
     <body>
@@ -2399,14 +2399,14 @@ async def work_orders_page():
         <title>Work Orders - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }
-        .header {
+        }}
+        .header {{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -2414,20 +2414,20 @@ async def work_orders_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }
-        .logo {
+        }}
+        .logo {{
             font-size: 1.5em;
             font-weight: 700;
-        }
-        .enterprise-badge {
+        }}
+        .enterprise-badge {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }
-        .cloud-badge {
+        }}
+        .cloud-badge {{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -2435,80 +2435,80 @@ async def work_orders_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }
-        .nav {
+        }}
+        .nav {{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }
-        .nav a {
+        }}
+        .nav a {{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }
-        .nav a:hover, .nav a.active {
+        }}
+        .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }
-        .content {
+        }}
+        .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }
-        .page-header {
+        }}
+        .page-header {{
             color: white;
             margin-bottom: 30px;
-        }
-        .page-header h1 {
+        }}
+        .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }
-        .page-header p {
+        }}
+        .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }
-        .work-orders-grid {
+        }}
+        .work-orders-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }
-        .work-order-card {
+        }}
+        .work-order-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
             border-radius: 20px;
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }
-        .work-order-card h3 {
+        }}
+        .work-order-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }
-        .priority {
+        }}
+        .priority {{
             padding: 4px 12px;
             border-radius: 10px;
             font-size: 0.8em;
             font-weight: 600;
             margin-bottom: 10px;
             display: inline-block;
-        }
-        .priority-high { background: #1C3445; }
-        .priority-medium { background: #2F4E7F; }
-        .priority-low { background: #456789; }
-        .status {
+        }}
+        .priority-high {{ background: #1C3445; }}
+        .priority-medium {{ background: #2F4E7F; }}
+        .priority-low {{ background: #456789; }}
+        .status {{
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.9em;
             font-weight: 500;
             margin-top: 10px;
             display: inline-block;
-        }
-        .status-open { background: #3498db; }
-        .status-progress { background: #455A64; }
-        .status-completed { background: #456789; }
-        .btn {
+        }}
+        .status-open {{ background: #3498db; }}
+        .status-progress {{ background: #455A64; }}
+        .status-completed {{ background: #456789; }}
+        .btn {{
             background: rgba(46,64,83,0.4);
             color: white;
             border: none;
@@ -2517,10 +2517,10 @@ async def work_orders_page():
             cursor: pointer;
             margin-top: 15px;
             font-weight: 500;
-        }
-        .btn:hover {
+        }}
+        .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }
+        }}
         </style>
     </head>
     <body>
@@ -4123,14 +4123,14 @@ async def parts_page():
         <title>Parts - ChatterFix CMMS Enterprise</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }
-        .header {
+        }}
+        .header {{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -4138,20 +4138,20 @@ async def parts_page():
             justify-content: space-between;
             align-items: center;
             color: white;
-        }
-        .logo {
+        }}
+        .logo {{
             font-size: 1.5em;
             font-weight: 700;
-        }
-        .enterprise-badge {
+        }}
+        .enterprise-badge {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }
-        .cloud-badge {
+        }}
+        .cloud-badge {{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -4159,69 +4159,69 @@ async def parts_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }
-        .nav {
+        }}
+        .nav {{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }
-        .nav a {
+        }}
+        .nav a {{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }
-        .nav a:hover, .nav a.active {
+        }}
+        .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }
-        .content {
+        }}
+        .content {{
             padding: 30px;
             max-width: 1200px;
             margin: 0 auto;
-        }
-        .page-header {
+        }}
+        .page-header {{
             color: white;
             margin-bottom: 30px;
-        }
-        .page-header h1 {
+        }}
+        .page-header h1 {{
             font-size: 2.5em;
             margin: 0;
-        }
-        .page-header p {
+        }}
+        .page-header p {{
             font-size: 1.2em;
             opacity: 0.8;
-        }
-        .parts-grid {
+        }}
+        .parts-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
-        }
-        .part-card {
+        }}
+        .part-card {{
             background: rgba(33,33,33,0.3);
             padding: 25px;
             border-radius: 20px;
             backdrop-filter: blur(20px);
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }
-        .part-card h3 {
+        }}
+        .part-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.3em;
-        }
-        .stock-status {
+        }}
+        .stock-status {{
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.9em;
             font-weight: 500;
             margin-bottom: 15px;
             display: inline-block;
-        }
-        .stock-good { background: #456789; }
-        .stock-low { background: #455A64; }
-        .stock-critical { background: #1C3445; }
-        .btn {
+        }}
+        .stock-good {{ background: #456789; }}
+        .stock-low {{ background: #455A64; }}
+        .stock-critical {{ background: #1C3445; }}
+        .btn {{
             background: rgba(46,64,83,0.4);
             color: white;
             border: none;
@@ -4230,10 +4230,10 @@ async def parts_page():
             cursor: pointer;
             margin-top: 15px;
             font-weight: 500;
-        }
-        .btn:hover {
+        }}
+        .btn:hover {{
             background: rgba(67,74,84,0.5);
-        }
+        }}
         </style>
     </head>
     <body>
@@ -4873,14 +4873,14 @@ async def reports_page():
         <title>📊 Enterprise Reports - ChatterFix CMMS</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #212121 0%, #434A54 50%, #2E4053 100%);
             min-height: 100vh;
-        }
-        .header {
+        }}
+        .header {{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             backdrop-filter: blur(20px);
@@ -4889,20 +4889,20 @@ async def reports_page():
             align-items: center;
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
-        }
-        .logo {
+        }}
+        .logo {{
             font-size: 1.5em;
             font-weight: 700;
-        }
-        .enterprise-badge {
+        }}
+        .enterprise-badge {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
-        }
-        .cloud-badge {
+        }}
+        .cloud-badge {{
             background: linear-gradient(45deg, #434A54, #8B9467);
             color: white;
             padding: 4px 12px;
@@ -4910,69 +4910,69 @@ async def reports_page():
             font-size: 0.7em;
             font-weight: 600;
             margin-left: 10px;
-        }
-        .nav {
+        }}
+        .nav {{
             background: rgba(33,33,33,0.2);
             padding: 15px 20px;
             display: flex;
             gap: 20px;
-        }
-        .nav a {
+        }}
+        .nav a {{
             color: white;
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 10px;
             transition: all 0.3s ease;
-        }
-        .nav a:hover, .nav a.active {
+        }}
+        .nav a:hover, .nav a.active {{
             background: rgba(33,33,33,0.3);
-        }
-        .content {
+        }}
+        .content {{
             padding: 30px;
             max-width: 1400px;
             margin: 0 auto;
-        }
-        .page-header {
+        }}
+        .page-header {{
             color: white;
             margin-bottom: 30px;
             text-align: center;
-        }
-        .page-header h1 {
+        }}
+        .page-header h1 {{
             font-size: 2.8em;
             margin: 0;
             background: linear-gradient(45deg, #434A54, #8B9467);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        }
-        .page-header p {
+        }}
+        .page-header p {{
             font-size: 1.3em;
             opacity: 0.9;
             margin: 10px 0;
-        }
-        .ai-providers {
+        }}
+        .ai-providers {{
             display: flex;
             justify-content: center;
             gap: 15px;
             margin: 20px 0;
-        }
-        .ai-provider {
+        }}
+        .ai-provider {{
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.9em;
             font-weight: 600;
             color: white;
-        }
-        .ai-grok { background: #1C3445; }
-        .ai-openai { background: #456789; }
-        .ai-hf { background: #2F4E7F; }
-        .reports-grid {
+        }}
+        .ai-grok {{ background: #1C3445; }}
+        .ai-openai {{ background: #456789; }}
+        .ai-hf {{ background: #2F4E7F; }}
+        .reports-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 25px;
             margin-top: 30px;
-        }
-        .report-card {
+        }}
+        .report-card {{
             background: rgba(33,33,33,0.3);
             padding: 30px;
             border-radius: 20px;
@@ -4980,37 +4980,37 @@ async def reports_page():
             color: white;
             box-shadow: 0 8px 32px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.3);
             transition: all 0.3s ease;
-        }
-        .report-card:hover {
+        }}
+        .report-card:hover {{
             transform: translateY(-5px);
             box-shadow: 0 12px 40px rgba(46,64,83,0.5), 0 0 0 1px rgba(102,102,102,0.4);
-        }
-        .report-card h3 {
+        }}
+        .report-card h3 {{
             margin: 0 0 15px 0;
             font-size: 1.4em;
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        .report-icon {
+        }}
+        .report-icon {{
             font-size: 1.2em;
-        }
-        .report-desc {
+        }}
+        .report-desc {{
             opacity: 0.8;
             margin-bottom: 20px;
             line-height: 1.6;
-        }
-        .ai-insight {
+        }}
+        .ai-insight {{
             background: rgba(46,64,83,0.4);
             padding: 15px;
             border-radius: 10px;
             margin: 15px 0;
             border-left: 4px solid #8B9467;
-        }
-        .ai-insight strong {
+        }}
+        .ai-insight strong {{
             color: #8B9467;
-        }
-        .generate-btn {
+        }}
+        .generate-btn {{
             background: linear-gradient(45deg, #2E4053, #666666);
             color: white;
             border: none;
@@ -5020,22 +5020,22 @@ async def reports_page():
             font-weight: 600;
             transition: all 0.3s ease;
             width: 100%;
-        }
-        .generate-btn:hover {
+        }}
+        .generate-btn:hover {{
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(46,64,83,0.4), 0 0 0 1px rgba(102,102,102,0.2);
-        }
-        .status-indicator {
+        }}
+        .status-indicator {{
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.8em;
             font-weight: 500;
             display: inline-block;
             margin-bottom: 10px;
-        }
-        .status-active { background: #456789; }
-        .status-generating { background: #455A64; }
-        .filter-section {
+        }}
+        .status-active {{ background: #456789; }}
+        .status-generating {{ background: #455A64; }}
+        .filter-section {{
             background: rgba(33,33,33,0.3);
             padding: 20px;
             border-radius: 15px;
@@ -5045,25 +5045,25 @@ async def reports_page():
             gap: 20px;
             align-items: center;
             flex-wrap: wrap;
-        }
-        .filter-item {
+        }}
+        .filter-item {{
             display: flex;
             flex-direction: column;
             gap: 5px;
-        }
-        .filter-item label {
+        }}
+        .filter-item label {{
             color: white;
             font-weight: 500;
             font-size: 0.9em;
-        }
-        .filter-item select, .filter-item input {
+        }}
+        .filter-item select, .filter-item input {{
             padding: 8px 12px;
             border: 1px solid rgba(102,102,102,0.3);
             border-radius: 8px;
             background: rgba(46,64,83,0.4);
             color: white;
             outline: none;
-        }
+        }}
         </style>
     </head>
     <body>

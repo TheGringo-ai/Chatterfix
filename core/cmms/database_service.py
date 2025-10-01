@@ -256,7 +256,7 @@ async def get_work_orders(limit: int = 100, offset: int = 0):
         FROM work_orders wo 
         LEFT JOIN users u ON wo.assigned_to = u.id 
         LEFT JOIN assets a ON wo.asset_id = a.id 
-        ORDER BY wo.created_at DESC 
+        ORDER BY wo.created_date DESC 
         LIMIT ? OFFSET ?
         """
         
@@ -332,7 +332,7 @@ async def create_work_order(work_order: WorkOrder):
 async def get_assets(limit: int = 100, offset: int = 0):
     """Get all assets with optional pagination"""
     try:
-        query = "SELECT * FROM assets ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        query = "SELECT * FROM assets ORDER BY created_date DESC LIMIT ? OFFSET ?"
         
         if db.config.db_type.value == "postgresql":
             query = query.replace("LIMIT ? OFFSET ?", "LIMIT %s OFFSET %s")
@@ -374,7 +374,7 @@ async def create_asset(asset: Asset):
 async def get_users():
     """Get all users (excluding password hashes)"""
     try:
-        query = "SELECT id, username, email, full_name, role, created_at, is_active FROM users ORDER BY created_at DESC"
+        query = "SELECT id, username, email, full_name, role, created_date, is_active FROM users ORDER BY created_date DESC"
         results = db.execute_query(query, fetch='all')
         return [dict(row) for row in results] if results else []
     except Exception as e:
@@ -385,7 +385,7 @@ async def get_users():
 async def get_user(user_id: int):
     """Get a specific user by ID"""
     try:
-        query = "SELECT id, username, email, full_name, role, created_at, is_active FROM users WHERE id = ?"
+        query = "SELECT id, username, email, full_name, role, created_date, is_active FROM users WHERE id = ?"
         
         if db.config.db_type.value == "postgresql":
             query = query.replace("?", "%s")
@@ -405,7 +405,7 @@ async def get_user(user_id: int):
 async def get_parts(limit: int = 100, offset: int = 0):
     """Get all parts with optional pagination"""
     try:
-        query = "SELECT * FROM parts ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        query = "SELECT * FROM parts ORDER BY created_date DESC LIMIT ? OFFSET ?"
         
         if db.config.db_type.value == "postgresql":
             query = query.replace("LIMIT ? OFFSET ?", "LIMIT %s OFFSET %s")

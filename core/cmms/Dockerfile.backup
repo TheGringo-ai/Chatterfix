@@ -1,5 +1,5 @@
-# ChatterFix CMMS - Full Enterprise Application Dockerfile
-# Deploy complete monolithic application with all features
+# ChatterFix CMMS - Optimized Cloud Run Dockerfile
+# 🚀 Fixed ASGI/WSGI compatibility issue for production deployment
 
 FROM python:3.11-slim
 
@@ -11,12 +11,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 # Create application directory
 WORKDIR /app
 
-# Copy requirements first
+# Copy essential requirements for faster builds
 COPY requirements.cloudrun.txt .
 
 # Install Python dependencies
@@ -25,18 +26,15 @@ RUN pip install --no-cache-dir -r requirements.cloudrun.txt
 # Copy application code
 COPY . .
 
-# Create startup script for full enterprise application
+# Create startup script with proper ASGI server
 RUN echo '#!/bin/bash\n\
-echo "🚀 Starting ChatterFix CMMS ENTERPRISE APPLICATION..."\n\
-echo "📄 Using full monolithic app.py (284KB)"\n\
-ls -la app.py\n\
-head -5 app.py\n\
+echo "🚀 Starting ChatterFix CMMS with ASGI compatibility..."\n\
 exec gunicorn app:app \\\n\
     --bind 0.0.0.0:${PORT} \\\n\
-    --workers 4 \\\n\
+    --workers 2 \\\n\
     --worker-class uvicorn.workers.UvicornWorker \\\n\
     --timeout 300 \\\n\
-    --keep-alive 10 \\\n\
+    --keep-alive 5 \\\n\
     --log-level info \\\n\
     --access-logfile - \\\n\
     --error-logfile -' > /app/start.sh && \
@@ -45,9 +43,9 @@ exec gunicorn app:app \\\n\
 # Expose port
 EXPOSE 8080
 
-# Health check for enterprise application
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+    CMD curl -f http://localhost:${PORT}/mars-status || exit 1
 
 # Start the application
 CMD ["/app/start.sh"]

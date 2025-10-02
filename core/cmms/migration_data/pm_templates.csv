@@ -1,0 +1,6 @@
+id,template_name,description,asset_category,frequency_type,frequency_value,estimated_duration,required_skills,required_parts,required_tools,safety_requirements,instructions,checklist_items,is_active,created_date,created_by
+TRUE,Monthly Equipment PM,Monthly preventive maintenance,Production Equipment,Calendar,30,2,[],[],[],,,[],TRUE,2025-09-28 18:39:07,TRUE
+2,Quarterly HVAC PM,Quarterly HVAC system maintenance,HVAC Systems,Calendar,90,2,[],[],[],,,[],TRUE,2025-09-28 18:39:07,TRUE
+3,Annual Safety Inspection,Annual safety compliance check,All Categories,Calendar,365,2,[],[],[],,,[],TRUE,2025-09-28 18:39:07,TRUE
+4,Weekly Lubrication,Weekly lubrication of moving parts,Production Equipment,Calendar,7,2,[],[],[],,,[],TRUE,2025-09-28 18:39:07,TRUE
+5,Semi-Annual Calibration,Bi-annual calibration check,Production Equipment,Calendar,180,2,[],[],[],,,[],TRUE,2025-09-28 18:39:07,TRUE

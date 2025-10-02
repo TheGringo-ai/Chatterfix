@@ -1,0 +1,201 @@
+# ChatterFix CMMS - Git Ignore File
+# This file prevents sensitive data and development files from being committed
+
+# ===== SENSITIVE DATA =====
+# API Keys and Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*-key.json
+service-account*.json
+gcp-service-account*.json
+
+# Environment Files with Secrets
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+*.env.local
+*.env.production
+*.env.development
+
+# Configuration files that might contain secrets
+config/secrets.json
+config/keys.json
+config/*.key
+secrets/
+keys/
+
+# ===== DEVELOPMENT FILES =====
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== DATABASE FILES =====
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+database/
+*.db-journal
+
+# PostgreSQL dumps
+*.sql
+*.dump
+
+# ===== LOGS AND TEMP FILES =====
+# Log files
+*.log
+logs/
+log/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# ===== DEPLOYMENT ARTIFACTS =====
+# Docker
+.dockerignore
+
+# Cloud deployment files
+cloudbuild.yaml
+.gcloudignore
+
+# Kubernetes secrets
+k8s/secrets/
+kubernetes/secrets/
+
+# ===== BACKUP AND ARCHIVE FILES =====
+# Compressed files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Backup files
+*.bak
+*.backup
+backup/
+backups/
+*.old
+
+# ===== MEDIA AND UPLOADS =====
+# User uploads
+uploads/
+media/
+static/uploads/
+
+# Large files
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.iso
+
+# ===== NODE.JS (if applicable) =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ===== TESTING =====
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# ===== OS SPECIFIC =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ===== PROJECT SPECIFIC =====
+# ChatterFix specific sensitive files
+chatterfix_knowledge_base.json
+ai-memory/
+gcp-credentials.json
+service-credentials.json
+
+# Development databases
+cmms.db
+chatterfix.db
+development.db
+
+# SSL Certificates
+*.crt
+*.cert
+*.ca-bundle
+
+# Configuration overrides
+local_settings.py
+settings_local.py
+config_local.py
+
+# ===== EXAMPLES TO KEEP =====
+# Keep template and example files
+!*.example
+!*.template
+!.env.template
+!.env.example
+!example.env

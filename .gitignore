@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.db
+
+# Development scripts (may contain secrets)
+deploy_*.sh
+*deployment*.yaml
+*deployment*.yml
+
+# OS
+.DS_Store
+
+# Local artifacts
+*.log
+.env
+*.key
+*.pem
+
+# Archives and uploads
+archive/
+uploads/
+customer-data/
+
+# IDE
+.vscode/

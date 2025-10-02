@@ -131,9 +131,9 @@ sudo systemctl enable chatterfix-cmms
 Edit `.env` file:
 ```bash
 # Add your real API keys
-XAI_API_KEY=REDACTED_XAI_KEY
-OPENAI_API_KEY=sk-your-openai-key-here
-ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+XAI_API_KEY=your-xai-api-key-here
+OPENAI_API_KEY=your-openai-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
 ```
 
 ---

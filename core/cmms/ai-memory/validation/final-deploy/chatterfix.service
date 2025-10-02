@@ -1,0 +1,19 @@
+[Unit]
+Description=ChatterFix CMMS FastAPI application
+After=network.target
+
+[Service]
+Type=exec
+User=yoyofred_gringosgambit_com
+Group=www-data
+WorkingDirectory=/home/yoyofred_gringosgambit_com/ai-tools/core/cmms
+Environment="PATH=/home/yoyofred_gringosgambit_com/.venvs/ai/bin"
+ExecStart=/home/yoyofred_gringosgambit_com/.venvs/ai/bin/uvicorn simple_app:app --host 127.0.0.1 --port 8000 --workers 4 --proxy-headers --access-log
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chatterfix
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+# ChatterFix CMMS Database Service - Minimal Requirements
+# Optimized for Cloud Run deployment with minimal dependencies
+
+# Core FastAPI and web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# Database support
+psycopg2-binary>=2.9.0
+
+# Basic data validation
+pydantic>=2.4.0
+
+# Environment configuration
+python-dotenv>=1.0.0
+
+# CORS support
+starlette>=0.27.0

@@ -93,6 +93,10 @@ The application includes automated deployment workflows:
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
 
+For detailed PR creation instructions, see:
+- 📘 [Quick PR Guide](QUICK_PR_GUIDE.md) - Fast reference for creating PRs
+- 📚 [Complete PR Guide](PULL_REQUEST_GUIDE.md) - Comprehensive documentation
+
 ## 📊 Project Status
 
 - ✅ Core CMMS functionality complete

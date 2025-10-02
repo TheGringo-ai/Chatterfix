@@ -21,8 +21,8 @@ import json
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-# Import the simplified database manager
-from simple_database_manager import db, DatabaseError, check_database_health
+# Import the database utilities
+from database_utils import get_db_connection, execute_query, check_database_health, is_postgresql
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

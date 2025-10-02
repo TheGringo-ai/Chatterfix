@@ -1,4 +1,4 @@
-# ChatterFix CMMS Main Application Dockerfile
+# ChatterFix CMMS UI Gateway Dockerfile
 # Optimized for Cloud Run deployment
 
 FROM python:3.11-slim
@@ -7,12 +7,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY app_microservice_requirements.txt .
-RUN pip install --no-cache-dir -r app_microservice_requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY database_client.py .
-COPY app_microservice.py .
+COPY app.py .
 
 # Create static directory (if needed)
 RUN mkdir -p /app/static
@@ -28,5 +27,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8080/health')"
 
-# Run the main application
-CMD ["python", "app_microservice.py"]
+# Run the UI Gateway application
+CMD ["python", "app.py"]

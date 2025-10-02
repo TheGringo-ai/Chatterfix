@@ -25,8 +25,9 @@ echo_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-# Deploy to Cloud Run
-echo "📦 Building and deploying to Cloud Run..."
+# Deploy to Cloud Run using clean UI Gateway
+echo "📦 Building and deploying ChatterFix UI Gateway to Cloud Run..."
+echo "🚀 Using clean microservices architecture with app.py..."
 gcloud run deploy $SERVICE_NAME \
     --source . \
     --platform managed \
@@ -35,7 +36,7 @@ gcloud run deploy $SERVICE_NAME \
     --port 8080 \
     --memory 2Gi \
     --cpu 2 \
-    --max-instances 10 \
+    --max-instances 5 \
     --min-instances 1 \
     --set-env-vars "ENVIRONMENT=production,DOMAIN=$DOMAIN,DATABASE_URL=postgresql://yoyofred:%40Gringo420@136.112.167.114/chatterfix_cmms" \
     --tag latest

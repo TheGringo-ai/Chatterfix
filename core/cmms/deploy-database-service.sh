@@ -32,7 +32,7 @@ mkdir -p /tmp/database-service
 
 # Copy database service files
 cp database_service.py /tmp/database-service/main.py
-cp simple_database_manager.py /tmp/database-service/
+cp database_utils.py /tmp/database-service/
 cp database_service_requirements.txt /tmp/database-service/requirements.txt
 
 # Create Dockerfile for database service

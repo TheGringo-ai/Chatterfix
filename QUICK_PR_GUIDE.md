@@ -78,6 +78,11 @@ See [PULL_REQUEST_GUIDE.md](PULL_REQUEST_GUIDE.md) for:
 - Troubleshooting
 - Deployment notes
 
+See [PR_CREATION_FLOWCHART.md](PR_CREATION_FLOWCHART.md) for:
+- Visual decision tree
+- Method comparison
+- Step-by-step flowchart
+
 ---
 
 **🎉 That's it! Your PR will be ready in less than 2 minutes!**

@@ -93,9 +93,15 @@ The application includes automated deployment workflows:
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
 
-For detailed PR creation instructions, see:
-- 📘 [Quick PR Guide](QUICK_PR_GUIDE.md) - Fast reference for creating PRs
-- 📚 [Complete PR Guide](PULL_REQUEST_GUIDE.md) - Comprehensive documentation
+### 📘 Pull Request Creation Resources
+
+Need help creating a PR? We have comprehensive guides:
+
+- 📖 **[PR Documentation Index](PR_DOCUMENTATION_INDEX.md)** - Start here! Complete index of all PR resources
+- ⚡ **[Quick PR Guide](QUICK_PR_GUIDE.md)** - Fast reference for creating PRs (2 minutes)
+- 📚 **[Complete PR Guide](PULL_REQUEST_GUIDE.md)** - Comprehensive documentation with all methods
+- 🎨 **[Visual Flowchart](PR_CREATION_FLOWCHART.md)** - Decision tree and step-by-step flowcharts
+- 🤖 **[Automated Script](create-pr.sh)** - Helper script: `./create-pr.sh`
 
 ## 📊 Project Status
 

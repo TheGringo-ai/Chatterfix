@@ -1,0 +1,152 @@
+{
+  "timestamp": "2025-10-04T14:07:14.495625",
+  "tests": [
+    {
+      "category": "Environment",
+      "name": "Python Version Check",
+      "status": "\u2705 PASS",
+      "details": "Python 3.12.3",
+      "duration": 5.0067901611328125e-06
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import fastapi",
+      "status": "\u2705 PASS",
+      "details": "Version: 0.118.0",
+      "duration": 0.2719993591308594
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import uvicorn",
+      "status": "\u2705 PASS",
+      "details": "Version: 0.37.0",
+      "duration": 0.024285316467285156
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import pytest",
+      "status": "\u2705 PASS",
+      "details": "Version: 8.4.2",
+      "duration": 0.05351591110229492
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import httpx",
+      "status": "\u2705 PASS",
+      "details": "Version: 0.28.1",
+      "duration": 0.06687283515930176
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import requests",
+      "status": "\u2705 PASS",
+      "details": "Version: 2.32.5",
+      "duration": 0.033773183822631836
+    },
+    {
+      "category": "Dependencies",
+      "name": "Import pydantic",
+      "status": "\u2705 PASS",
+      "details": "Version: 2.11.10",
+      "duration": 2.1457672119140625e-06
+    },
+    {
+      "category": "File Structure",
+      "name": "Check app.py",
+      "status": "\u2705 PASS",
+      "details": "Size: 41628 bytes",
+      "duration": 6.604194641113281e-05
+    },
+    {
+      "category": "File Structure",
+      "name": "Check requirements.txt",
+      "status": "\u2705 PASS",
+      "details": "Size: 2399 bytes",
+      "duration": 2.4080276489257812e-05
+    },
+    {
+      "category": "File Structure",
+      "name": "Check tests/conftest.py",
+      "status": "\u2705 PASS",
+      "details": "Size: 6365 bytes",
+      "duration": 1.9311904907226562e-05
+    },
+    {
+      "category": "File Structure",
+      "name": "Check tests/unit/test_api_endpoints.py",
+      "status": "\u2705 PASS",
+      "details": "Size: 11024 bytes",
+      "duration": 1.8358230590820312e-05
+    },
+    {
+      "category": "Configuration",
+      "name": "Verify requirements.txt",
+      "status": "\u2705 PASS",
+      "details": "Contains expected content",
+      "duration": 7.510185241699219e-05
+    },
+    {
+      "category": "Configuration",
+      "name": "Verify .gitignore",
+      "status": "\u2705 PASS",
+      "details": "Contains expected content",
+      "duration": 8.082389831542969e-05
+    },
+    {
+      "category": "Configuration",
+      "name": "Verify .pre-commit-config.yaml",
+      "status": "\u2705 PASS",
+      "details": "Contains expected content",
+      "duration": 6.318092346191406e-05
+    },
+    {
+      "category": "Database",
+      "name": "Database Creation",
+      "status": "\u2705 PASS",
+      "details": "Can create and write to SQLite database",
+      "duration": 0.0050127506256103516
+    },
+    {
+      "category": "Application",
+      "name": "app.py Syntax Check",
+      "status": "\u2705 PASS",
+      "details": "No syntax errors",
+      "duration": 0.02881026268005371
+    },
+    {
+      "category": "Test Collection",
+      "name": "Pytest Collection",
+      "status": "\u2705 PASS",
+      "details": "Collected 18 tests",
+      "duration": 0.6881608963012695
+    },
+    {
+      "category": "Unit Tests",
+      "name": "Run pytest unit tests",
+      "status": "\u2705 PASS",
+      "details": "18/18 tests passed",
+      "duration": 0.8156764507293701
+    }
+  ],
+  "summary": {
+    "total": 18,
+    "passed": 18,
+    "failed": 0,
+    "warnings": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "environment": {
+    "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]"
+  },
+  "dependencies": {
+    "fastapi": "0.118.0",
+    "uvicorn": "0.37.0",
+    "pytest": "8.4.2",
+    "httpx": "0.28.1",
+    "requests": "2.32.5",
+    "pydantic": "2.11.10"
+  },
+  "issues": [],
+  "recommendations": []
+}

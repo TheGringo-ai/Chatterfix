@@ -1,0 +1,49 @@
+# ChatterFix CMMS - Enterprise Security Service Dockerfile
+# Phase 3: Enterprise Integration & Go-to-Market
+
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional enterprise dependencies
+RUN pip install --no-cache-dir \
+    PyJWT==2.8.0 \
+    bcrypt==4.1.2 \
+    python-multipart==0.0.6 \
+    cryptography==41.0.8 \
+    python-jose[cryptography]==3.3.0
+
+# Copy application code
+COPY enterprise_security_service.py .
+COPY database_utils.py .
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash enterprise
+RUN chown -R enterprise:enterprise /app
+USER enterprise
+
+# Expose port
+EXPOSE 8080
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8080/health')"
+
+# Run the enterprise security service
+CMD ["python", "enterprise_security_service.py"]

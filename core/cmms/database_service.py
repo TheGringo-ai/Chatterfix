@@ -190,10 +190,10 @@ async def initialize_database_schema():
         try:
             # Adapt query for SQLite if needed
             adapted_query = query
-            if db.config.db_type.value == "sqlite":
+            if not is_postgresql():
                 adapted_query = query.replace("SERIAL", "INTEGER").replace("REFERENCES", "-- REFERENCES")
             
-            db.execute_query(adapted_query, fetch=None)
+            execute_query(adapted_query, fetch=None)
             logger.info(f"Schema query executed successfully")
         except Exception as e:
             logger.warning(f"Schema query failed (may already exist): {e}")
@@ -204,12 +204,27 @@ async def health_check():
     """Database health check endpoint"""
     try:
         health = check_database_health()
+        
+        # Determine database type
+        db_type = "postgresql" if is_postgresql() else "sqlite"
+        
+        # Count tables
+        table_count = 0
+        try:
+            conn = get_db_connection()
+            query, params = get_table_count_query()
+            cursor = conn.execute(query, params) if params else conn.execute(query)
+            table_count = cursor.fetchone()[0]
+            conn.close()
+        except Exception as e:
+            logger.warning(f"Could not count tables: {e}")
+        
         return HealthResponse(
-            status=health["status"],
-            database_type=health["database_type"],
-            connection=health["connection"],
-            tables=health["tables"],
-            errors=health["errors"],
+            status="healthy" if health.get("connection", False) else "error",
+            database_type=db_type,
+            connection=health.get("connection", False),
+            tables=table_count,
+            errors=health.get("errors", []),
             timestamp=datetime.now().isoformat()
         )
     except Exception as e:
@@ -225,10 +240,10 @@ async def health_check():
 
 # Generic query endpoint
 @app.post("/api/query", response_model=QueryResponse)
-async def execute_query(request: QueryRequest):
+async def execute_database_query(request: QueryRequest):
     """Execute a generic database query"""
     try:
-        result = db.execute_query(
+        result = execute_query(
             request.query, 
             tuple(request.params) if isinstance(request.params, list) else request.params,
             request.fetch
@@ -239,9 +254,6 @@ async def execute_query(request: QueryRequest):
             data=result,
             affected_rows=result if request.fetch is None else None
         )
-    except DatabaseError as e:
-        logger.error(f"Database query failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         logger.error(f"Query execution failed: {e}")
         raise HTTPException(status_code=500, detail=f"Query execution failed: {e}")
@@ -260,10 +272,10 @@ async def get_work_orders(limit: int = 100, offset: int = 0):
         LIMIT ? OFFSET ?
         """
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("LIMIT ? OFFSET ?", "LIMIT %s OFFSET %s")
             
-        results = db.execute_query(query, (limit, offset), fetch='all')
+        results = execute_query(query, (limit, offset), fetch='all')
         return [dict(row) for row in results] if results else []
     except Exception as e:
         logger.error(f"Failed to get work orders: {e}")
@@ -281,10 +293,10 @@ async def get_work_order(work_order_id: int):
         WHERE wo.id = ?
         """
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("?", "%s")
             
-        result = db.execute_query(query, (work_order_id,), fetch='one')
+        result = execute_query(query, (work_order_id,), fetch='one')
         if not result:
             raise HTTPException(status_code=404, detail="Work order not found")
         return dict(result)
@@ -303,7 +315,7 @@ async def create_work_order(work_order: WorkOrder):
         VALUES (?, ?, ?, ?, ?, ?)
         """
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("?", "%s") + " RETURNING id"
             
         params = (
@@ -315,12 +327,12 @@ async def create_work_order(work_order: WorkOrder):
             work_order.asset_id
         )
         
-        if db.config.db_type.value == "postgresql":
-            result = db.execute_query(query, params, fetch='one')
+        if is_postgresql():
+            result = execute_query(query, params, fetch='one')
             work_order_id = result[0] if result else None
         else:
-            db.execute_query(query, params, fetch=None)
-            work_order_id = db.execute_query("SELECT last_insert_rowid()", fetch='one')[0]
+            execute_query(query, params, fetch=None)
+            work_order_id = execute_query("SELECT last_insert_rowid()", fetch='one')[0]
         
         return {"id": work_order_id, "message": "Work order created successfully"}
     except Exception as e:
@@ -334,10 +346,10 @@ async def get_assets(limit: int = 100, offset: int = 0):
     try:
         query = "SELECT * FROM assets ORDER BY created_date DESC LIMIT ? OFFSET ?"
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("LIMIT ? OFFSET ?", "LIMIT %s OFFSET %s")
             
-        results = db.execute_query(query, (limit, offset), fetch='all')
+        results = execute_query(query, (limit, offset), fetch='all')
         return [dict(row) for row in results] if results else []
     except Exception as e:
         logger.error(f"Failed to get assets: {e}")
@@ -352,17 +364,17 @@ async def create_asset(asset: Asset):
         VALUES (?, ?, ?, ?, ?)
         """
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("?", "%s") + " RETURNING id"
             
         params = (asset.name, asset.description, asset.asset_type, asset.location, asset.status)
         
-        if db.config.db_type.value == "postgresql":
-            result = db.execute_query(query, params, fetch='one')
+        if is_postgresql():
+            result = execute_query(query, params, fetch='one')
             asset_id = result[0] if result else None
         else:
-            db.execute_query(query, params, fetch=None)
-            asset_id = db.execute_query("SELECT last_insert_rowid()", fetch='one')[0]
+            execute_query(query, params, fetch=None)
+            asset_id = execute_query("SELECT last_insert_rowid()", fetch='one')[0]
         
         return {"id": asset_id, "message": "Asset created successfully"}
     except Exception as e:
@@ -375,7 +387,7 @@ async def get_users():
     """Get all users (excluding password hashes)"""
     try:
         query = "SELECT id, username, email, full_name, role, created_date, is_active FROM users ORDER BY created_date DESC"
-        results = db.execute_query(query, fetch='all')
+        results = execute_query(query, fetch='all')
         return [dict(row) for row in results] if results else []
     except Exception as e:
         logger.error(f"Failed to get users: {e}")
@@ -387,10 +399,10 @@ async def get_user(user_id: int):
     try:
         query = "SELECT id, username, email, full_name, role, created_date, is_active FROM users WHERE id = ?"
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("?", "%s")
             
-        result = db.execute_query(query, (user_id,), fetch='one')
+        result = execute_query(query, (user_id,), fetch='one')
         if not result:
             raise HTTPException(status_code=404, detail="User not found")
         return dict(result)
@@ -407,10 +419,10 @@ async def get_parts(limit: int = 100, offset: int = 0):
     try:
         query = "SELECT * FROM parts ORDER BY created_date DESC LIMIT ? OFFSET ?"
         
-        if db.config.db_type.value == "postgresql":
+        if is_postgresql():
             query = query.replace("LIMIT ? OFFSET ?", "LIMIT %s OFFSET %s")
             
-        results = db.execute_query(query, (limit, offset), fetch='all')
+        results = execute_query(query, (limit, offset), fetch='all')
         return [dict(row) for row in results] if results else []
     except Exception as e:
         logger.error(f"Failed to get parts: {e}")
@@ -428,7 +440,7 @@ async def get_overview_stats():
         for table in tables:
             try:
                 count_query = f"SELECT COUNT(*) FROM {table}"
-                result = db.execute_query(count_query, fetch='one')
+                result = execute_query(count_query, fetch='one')
                 stats[f"{table}_count"] = result[0] if result else 0
             except Exception as e:
                 logger.warning(f"Failed to count {table}: {e}")

@@ -1,0 +1,35 @@
+{
+  "gcp-compute": {
+    "id": "gcp-compute",
+    "name": "Google Compute Engine",
+    "provider": "gcp",
+    "category": "compute",
+    "pricing": {
+      "base": 0.1,
+      "model": "per_hour"
+    },
+    "description": "Virtual machines on Google Cloud"
+  },
+  "aws-ec2": {
+    "id": "aws-ec2",
+    "name": "Amazon EC2",
+    "provider": "aws",
+    "category": "compute",
+    "pricing": {
+      "base": 0.08,
+      "model": "per_hour"
+    },
+    "description": "Elastic compute instances on AWS"
+  },
+  "azure-vm": {
+    "id": "azure-vm",
+    "name": "Azure Virtual Machines",
+    "provider": "azure",
+    "category": "compute",
+    "pricing": {
+      "base": 0.09,
+      "model": "per_hour"
+    },
+    "description": "Virtual machines on Microsoft Azure"
+  }
+}

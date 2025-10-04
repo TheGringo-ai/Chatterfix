@@ -903,6 +903,11 @@ async def readiness_check():
             status_code=503
         )
 
+@app.get("/ready")
+async def ready_check():
+    """Readiness endpoint alias for service compatibility"""
+    return await readiness_check()
+
 # Initialize database and AI client on import
 init_database()
 

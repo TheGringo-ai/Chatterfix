@@ -31,9 +31,9 @@ PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
 # App state lives here; systemd creates it owned by chatterfix:chatterfix
-StateDirectory=chatterfix-cmms
-# Explicitly allow writes to /var/lib/chatterfix-cmms (needed with ProtectSystem=full)
-ReadWritePaths=/var/lib/chatterfix-cmms
+StateDirectory=chatterfix
+# Explicitly allow writes to /var/lib/chatterfix (needed with ProtectSystem=full)
+ReadWritePaths=/var/lib/chatterfix
 LimitNOFILE=65535
 
 # Logs to journald

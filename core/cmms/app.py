@@ -64,8 +64,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="ChatterFix CMMS", description="Complete Maintenance Management System")
 
 # Database configuration
-DATABASE_PATH = "/var/lib/chatterfix/cmms.db"
-BACKUP_DATABASE_PATH = "/opt/chatterfix-cmms/data/cmms.db"
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/var/lib/chatterfix/cmms.db")
+BACKUP_DATABASE_PATH = os.getenv("BACKUP_DATABASE_PATH", "/opt/chatterfix-cmms/data/cmms.db")
 
 def ensure_database_dir():
     """Ensure database directory exists with proper permissions"""

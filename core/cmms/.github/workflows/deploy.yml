@@ -1,0 +1,116 @@
+name: Deploy ChatterFix SaaS Platform
+
+on:
+  push:
+    branches: [ main, main-clean ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PROJECT_ID: fredfix
+  REGION: us-central1
+  GAR_LOCATION: us-central1
+  SERVICE: chatterfix-saas-platform
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/650169261019/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+  SERVICE_ACCOUNT: 'github-actions@fredfix.iam.gserviceaccount.com'
+
+jobs:
+  deploy:
+    # Add 'id-token' with the intended permissions for OIDC Token requests
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Google Auth
+      id: auth
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: 'Use gcloud CLI'
+      run: 'gcloud info'
+
+    - name: Configure Docker to use gcloud as a credential helper
+      run: |-
+        gcloud --quiet auth configure-docker
+
+    - name: Build and Push Container Images
+      run: |-
+        # Build SaaS Platform
+        docker build -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" -f Dockerfile.saas .
+        docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA"
+        
+        # Build Unified Backend
+        docker build -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/chatterfix-unified:$GITHUB_SHA" .
+        docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/chatterfix-unified:$GITHUB_SHA"
+
+    - name: Deploy SaaS Platform to Cloud Run
+      run: |-
+        gcloud run deploy "$SERVICE" \
+          --quiet \
+          --platform "managed" \
+          --region "$REGION" \
+          --image "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" \
+          --memory "4Gi" \
+          --cpu "2" \
+          --max-instances "10" \
+          --min-instances "1" \
+          --allow-unauthenticated \
+          --set-env-vars "ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_REGION=$REGION"
+
+    - name: Deploy Backend Services
+      run: |-
+        # Deploy Backend Unified
+        gcloud run deploy "chatterfix-backend-unified" \
+          --quiet \
+          --platform "managed" \
+          --region "$REGION" \
+          --image "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/chatterfix-unified:$GITHUB_SHA" \
+          --memory "2Gi" \
+          --cpu "1" \
+          --max-instances "5" \
+          --min-instances "1" \
+          --allow-unauthenticated \
+          --set-env-vars "SERVICE_MODE=unified_backend,ENVIRONMENT=production"
+
+        # Deploy AI Unified
+        gcloud run deploy "chatterfix-ai-unified" \
+          --quiet \
+          --platform "managed" \
+          --region "$REGION" \
+          --image "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/chatterfix-unified:$GITHUB_SHA" \
+          --memory "4Gi" \
+          --cpu "2" \
+          --max-instances "3" \
+          --min-instances "1" \
+          --allow-unauthenticated \
+          --set-env-vars "SERVICE_MODE=unified_ai,ENVIRONMENT=production"
+
+        # Deploy UI Gateway
+        gcloud run deploy "chatterfix-ui-gateway" \
+          --quiet \
+          --platform "managed" \
+          --region "$REGION" \
+          --image "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/chatterfix-unified:$GITHUB_SHA" \
+          --memory "1Gi" \
+          --cpu "1" \
+          --max-instances "5" \
+          --min-instances "1" \
+          --allow-unauthenticated \
+          --set-env-vars "SERVICE_MODE=ui_gateway,ENVIRONMENT=production"
+
+    - name: Show Service URLs
+      run: |-
+        echo "🚀 ChatterFix SaaS Platform Deployed Successfully!"
+        echo "SaaS Platform URL: $(gcloud run services describe chatterfix-saas-platform --platform managed --region $REGION --format 'value(status.url)')"
+        echo "Backend API URL: $(gcloud run services describe chatterfix-backend-unified --platform managed --region $REGION --format 'value(status.url)')"
+        echo "AI Services URL: $(gcloud run services describe chatterfix-ai-unified --platform managed --region $REGION --format 'value(status.url)')"
+        echo "UI Gateway URL: $(gcloud run services describe chatterfix-ui-gateway --platform managed --region $REGION --format 'value(status.url)')"

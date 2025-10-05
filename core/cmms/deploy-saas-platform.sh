@@ -8,7 +8,7 @@ echo "===================================================="
 echo ""
 
 # Configuration
-PROJECT_ID="chatterfix-ai-platform"
+PROJECT_ID="fredfix"
 REGION="us-central1"
 SERVICE_NAME="chatterfix-saas-platform"
 MEMORY="4Gi"

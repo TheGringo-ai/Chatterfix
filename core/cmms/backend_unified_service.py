@@ -5,8 +5,8 @@ Combines: Database + Work Orders + Assets + Parts services
 PostgreSQL PRESERVED with all PM scheduling enhancements
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Query, status, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Depends, Query, status, Request, File, UploadFile, Form
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, Any, Union
@@ -248,6 +248,25 @@ async def initialize_database_schema():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(user_id, setting_category, setting_key)
+        )
+        """,
+        
+        # Attachments table for file uploads
+        """
+        CREATE TABLE IF NOT EXISTS attachments (
+            id SERIAL PRIMARY KEY,
+            entity_type VARCHAR(50) NOT NULL,  -- 'work-orders', 'parts', 'assets'
+            entity_id INTEGER NOT NULL,
+            filename VARCHAR(255) NOT NULL,
+            stored_filename VARCHAR(255) NOT NULL,
+            file_path VARCHAR(500) NOT NULL,
+            file_size BIGINT NOT NULL,
+            mime_type VARCHAR(100),
+            attachment_type VARCHAR(50) DEFAULT 'document',  -- 'document', 'manual', 'sop', 'photo'
+            description TEXT,
+            ocr_text TEXT,  -- Extracted text from OCR processing
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """
     ]
@@ -496,6 +515,218 @@ async def create_asset(asset: Asset):
         logger.error(f"Failed to create asset: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/api/assets/{asset_id}")
+async def update_asset(asset_id: int, asset: Asset):
+    """Update an existing asset"""
+    try:
+        query = """
+        UPDATE assets 
+        SET name = %s, description = %s, asset_type = %s, location = %s, status = %s, updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        """
+        
+        params = (asset.name, asset.description, asset.asset_type, asset.location, asset.status, asset_id)
+        execute_query(query, params, fetch=None)
+        
+        return {"message": "Asset updated successfully"}
+    except Exception as e:
+        logger.error(f"Failed to update asset: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== ASSETS BULK OPERATIONS =====
+
+@app.post("/api/assets/bulk-upload")
+async def bulk_upload_assets(request: Request):
+    """Bulk upload assets from CSV/Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        form = await request.form()
+        file = form.get("file")
+        
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        # Read the file content
+        content = await file.read()
+        
+        # Determine file type and parse accordingly
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Use CSV or Excel.")
+        
+        # Validate required columns
+        required_columns = ['name', 'asset_type', 'location', 'status']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_columns)}"
+            )
+        
+        # Process each row
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Prepare asset data
+                asset_data = {
+                    'name': str(row['name']).strip(),
+                    'description': str(row.get('description', '')).strip(),
+                    'asset_type': str(row['asset_type']).strip(),
+                    'location': str(row['location']).strip(),
+                    'status': str(row['status']).strip()
+                }
+                
+                # Validate status
+                valid_statuses = ['Active', 'Inactive', 'Maintenance', 'Retired']
+                if asset_data['status'] not in valid_statuses:
+                    raise ValueError(f"Invalid status '{asset_data['status']}'. Must be one of: {', '.join(valid_statuses)}")
+                
+                # Insert into database
+                query = """
+                INSERT INTO assets (name, description, asset_type, location, status, created_at)
+                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id
+                """
+                
+                params = (
+                    asset_data['name'],
+                    asset_data['description'],
+                    asset_data['asset_type'],
+                    asset_data['location'],
+                    asset_data['status']
+                )
+                
+                result = execute_query(query, params, fetch='one')
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Row {index + 2}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Processed {len(df)} assets",
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10]  # Limit to first 10 errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in bulk upload assets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/assets/bulk-download")
+async def bulk_download_assets(format: str = "csv"):
+    """Bulk download assets as CSV or Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Get all assets
+        query = "SELECT * FROM assets ORDER BY name"
+        results = execute_query(query, (), fetch='all')
+        
+        if not results:
+            raise HTTPException(status_code=404, detail="No assets found")
+        
+        # Convert to DataFrame
+        df = pd.DataFrame([dict(row) for row in results])
+        
+        # Generate file
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Assets', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=assets.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=assets.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error in bulk download assets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/assets/template")
+async def download_assets_template(format: str = "csv"):
+    """Download assets upload template"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Create template with sample data
+        template_data = {
+            'name': ['Asset Example 1', 'Asset Example 2'],
+            'description': ['Sample asset description', 'Another asset description'],
+            'asset_type': ['Equipment', 'Vehicle'],
+            'location': ['Building A', 'Parking Lot'],
+            'status': ['Active', 'Active']
+        }
+        
+        df = pd.DataFrame(template_data)
+        
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Assets Template', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=assets_template.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=assets_template.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating assets template: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/assets/{asset_id}")
+async def get_asset(asset_id: int):
+    """Get a specific asset by ID"""
+    try:
+        query = "SELECT * FROM assets WHERE id = %s"
+        result = execute_query(query, (asset_id,), fetch='one')
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Asset not found")
+            
+        return dict(result)
+    except Exception as e:
+        logger.error(f"Failed to get asset: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Parts endpoints
 @app.get("/api/parts")
 async def get_parts(limit: int = 100, offset: int = 0):
@@ -534,6 +765,553 @@ async def create_part(part: Part):
         return {"id": part_id, "message": "Part created successfully"}
     except Exception as e:
         logger.error(f"Failed to create part: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/parts/{part_id}")
+async def update_part(part_id: int, part: Part):
+    """Update an existing part"""
+    try:
+        query = """
+        UPDATE parts 
+        SET name = %s, part_number = %s, description = %s, category = %s, 
+            quantity = %s, min_stock = %s, unit_cost = %s, location = %s, updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s
+        """
+        
+        params = (
+            part.name,
+            part.part_number,
+            part.description,
+            part.category,
+            part.quantity,
+            part.min_stock,
+            part.unit_cost,
+            part.location,
+            part_id
+        )
+        
+        execute_query(query, params, fetch=None)
+        
+        return {"message": "Part updated successfully"}
+    except Exception as e:
+        logger.error(f"Failed to update part: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/parts/{part_id}")
+async def get_part(part_id: int):
+    """Get a specific part by ID"""
+    try:
+        query = "SELECT * FROM parts WHERE id = %s"
+        result = execute_query(query, (part_id,), fetch='one')
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Part not found")
+            
+        return dict(result)
+    except Exception as e:
+        logger.error(f"Failed to get part: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== PARTS BULK OPERATIONS =====
+
+@app.post("/api/parts/bulk-upload")
+async def bulk_upload_parts(request: Request):
+    """Bulk upload parts from CSV/Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        form = await request.form()
+        file = form.get("file")
+        
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        # Read the file content
+        content = await file.read()
+        
+        # Determine file type and parse accordingly
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Use CSV or Excel.")
+        
+        # Validate required columns
+        required_columns = ['name', 'part_number', 'category', 'quantity', 'unit_cost']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_columns)}"
+            )
+        
+        # Process each row
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Prepare part data
+                part_data = {
+                    'name': str(row['name']).strip(),
+                    'part_number': str(row['part_number']).strip(),
+                    'description': str(row.get('description', '')).strip(),
+                    'category': str(row['category']).strip(),
+                    'quantity': int(row['quantity']) if pd.notna(row['quantity']) else 0,
+                    'min_stock': int(row.get('min_stock', 0)) if pd.notna(row.get('min_stock', 0)) else 0,
+                    'unit_cost': float(row['unit_cost']) if pd.notna(row['unit_cost']) else 0.0,
+                    'location': str(row.get('location', '')).strip()
+                }
+                
+                # Validate numeric values
+                if part_data['quantity'] < 0:
+                    raise ValueError("Quantity cannot be negative")
+                if part_data['unit_cost'] < 0:
+                    raise ValueError("Unit cost cannot be negative")
+                
+                # Insert into database
+                query = """
+                INSERT INTO parts (name, part_number, description, category, quantity, min_stock, unit_cost, location, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id
+                """
+                
+                params = (
+                    part_data['name'],
+                    part_data['part_number'],
+                    part_data['description'],
+                    part_data['category'],
+                    part_data['quantity'],
+                    part_data['min_stock'],
+                    part_data['unit_cost'],
+                    part_data['location']
+                )
+                
+                result = execute_query(query, params, fetch='one')
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Row {index + 2}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Processed {len(df)} parts",
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10]  # Limit to first 10 errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in bulk upload parts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/parts/bulk-download")
+async def bulk_download_parts(format: str = "csv"):
+    """Bulk download parts as CSV or Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Get all parts
+        query = "SELECT * FROM parts ORDER BY name"
+        results = execute_query(query, (), fetch='all')
+        
+        if not results:
+            raise HTTPException(status_code=404, detail="No parts found")
+        
+        # Convert to DataFrame
+        df = pd.DataFrame([dict(row) for row in results])
+        
+        # Generate file
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Parts', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=parts.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=parts.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error in bulk download parts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/parts/template")
+async def download_parts_template(format: str = "csv"):
+    """Download parts upload template"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Create template with sample data
+        template_data = {
+            'name': ['Brake Pad Set', 'Engine Oil Filter'],
+            'part_number': ['BP-001', 'OF-002'],
+            'description': ['Front brake pad set for heavy machinery', 'Oil filter for diesel engines'],
+            'category': ['Brake System', 'Engine'],
+            'quantity': [10, 25],
+            'min_stock': [5, 10],
+            'unit_cost': [89.99, 24.50],
+            'location': ['Warehouse A-1', 'Warehouse B-3']
+        }
+        
+        df = pd.DataFrame(template_data)
+        
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='Parts Template', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=parts_template.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=parts_template.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating parts template: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Bulk Operations endpoints
+@app.post("/api/work-orders/bulk-upload")
+async def bulk_upload_work_orders(request: Request):
+    """Bulk upload work orders from CSV/Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        form = await request.form()
+        file = form.get("file")
+        
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        # Read the file content
+        content = await file.read()
+        
+        # Determine file type and parse accordingly
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Use CSV or Excel.")
+        
+        # Expected columns for work orders
+        required_columns = ['title', 'description', 'priority', 'status']
+        optional_columns = ['assigned_to', 'asset_id']
+        
+        # Validate required columns
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(status_code=400, detail=f"Missing required columns: {missing_columns}")
+        
+        # Process each row
+        created_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Build work order data
+                work_order_data = {
+                    'title': str(row['title']),
+                    'description': str(row['description']),
+                    'priority': str(row['priority']),
+                    'status': str(row['status']),
+                    'assigned_to': str(row.get('assigned_to', '')) if pd.notna(row.get('assigned_to')) else None,
+                    'asset_id': int(row['asset_id']) if pd.notna(row.get('asset_id')) else None
+                }
+                
+                # Insert into database
+                query = """
+                INSERT INTO work_orders (title, description, priority, status, assigned_to, asset_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                
+                params = (
+                    work_order_data['title'],
+                    work_order_data['description'],
+                    work_order_data['priority'],
+                    work_order_data['status'],
+                    work_order_data['assigned_to'],
+                    work_order_data['asset_id']
+                )
+                
+                execute_query(query, params, fetch=None)
+                created_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {index + 1}: {str(e)}")
+        
+        return {
+            "success": True,
+            "created_count": created_count,
+            "total_rows": len(df),
+            "errors": errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Bulk upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/work-orders/bulk-download")
+async def bulk_download_work_orders(format: str = "csv"):
+    """Bulk download work orders as CSV or Excel"""
+    try:
+        import pandas as pd
+        import io
+        from fastapi.responses import StreamingResponse
+        
+        # Get all work orders
+        query = """
+        SELECT wo.*, a.name as asset_name 
+        FROM work_orders wo 
+        LEFT JOIN assets a ON wo.asset_id = a.id 
+        ORDER BY wo.created_at DESC
+        """
+        
+        results = execute_query(query, fetch='all')
+        
+        if not results:
+            raise HTTPException(status_code=404, detail="No work orders found")
+        
+        # Convert to DataFrame
+        df = pd.DataFrame([dict(row) for row in results])
+        
+        # Generate file content
+        if format.lower() == 'csv':
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            content = output.getvalue()
+            media_type = 'text/csv'
+            filename = 'work_orders.csv'
+        elif format.lower() == 'excel':
+            output = io.BytesIO()
+            df.to_excel(output, index=False, engine='openpyxl')
+            content = output.getvalue()
+            media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            filename = 'work_orders.xlsx'
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use 'csv' or 'excel'.")
+        
+        # Return as streaming response
+        return StreamingResponse(
+            io.BytesIO(content) if format.lower() == 'excel' else io.StringIO(content),
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Bulk download failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/work-orders/template")
+async def download_work_orders_template(format: str = "csv"):
+    """Download template for bulk work orders upload"""
+    try:
+        import pandas as pd
+        import io
+        from fastapi.responses import StreamingResponse
+        
+        # Create template with sample data
+        template_data = {
+            'title': ['Sample Work Order 1', 'Sample Work Order 2'],
+            'description': ['Replace air filter', 'Check electrical connections'],
+            'priority': ['medium', 'high'],
+            'status': ['open', 'open'],
+            'assigned_to': ['John Doe', 'Jane Smith'],
+            'asset_id': [1, 2]
+        }
+        
+        df = pd.DataFrame(template_data)
+        
+        if format.lower() == 'csv':
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            content = output.getvalue()
+            media_type = 'text/csv'
+            filename = 'work_orders_template.csv'
+        elif format.lower() == 'excel':
+            output = io.BytesIO()
+            df.to_excel(output, index=False, engine='openpyxl')
+            content = output.getvalue()
+            media_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            filename = 'work_orders_template.xlsx'
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use 'csv' or 'excel'.")
+        
+        return StreamingResponse(
+            io.BytesIO(content) if format.lower() == 'excel' else io.StringIO(content),
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Template download failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# File Attachments endpoints
+@app.post("/api/{entity_type}/{entity_id}/attachments")
+async def upload_attachment(entity_type: str, entity_id: int, request: Request):
+    """Upload file attachment for work orders, parts, or assets"""
+    try:
+        from fastapi import File, UploadFile, Form
+        import uuid
+        import aiofiles
+        import os
+        
+        # Get form data
+        form = await request.form()
+        file = form.get("file")
+        attachment_type = form.get("type", "document")  # document, manual, sop, photo
+        description = form.get("description", "")
+        
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        # Validate entity type
+        if entity_type not in ["work-orders", "parts", "assets"]:
+            raise HTTPException(status_code=400, detail="Invalid entity type")
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'bin'
+        file_id = str(uuid.uuid4())
+        stored_filename = f"{file_id}.{file_extension}"
+        
+        # Create upload directory if it doesn't exist
+        upload_dir = f"uploads/{entity_type}"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = f"{upload_dir}/{stored_filename}"
+        
+        # Save file
+        async with aiofiles.open(file_path, 'wb') as f:
+            content = await file.read()
+            await f.write(content)
+        
+        # Store attachment metadata in database
+        entity_table = entity_type.replace('-', '_')  # work-orders -> work_orders
+        query = """
+        INSERT INTO attachments (entity_type, entity_id, filename, stored_filename, file_path, 
+                               file_size, mime_type, attachment_type, description)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """
+        
+        params = (
+            entity_type,
+            entity_id,
+            file.filename,
+            stored_filename,
+            file_path,
+            len(content),
+            file.content_type or 'application/octet-stream',
+            attachment_type,
+            description
+        )
+        
+        result = execute_query(query, params, fetch='one')
+        attachment_id = result[0] if result else None
+        
+        # If it's an image or PDF, trigger OCR processing
+        if attachment_type in ['photo', 'manual', 'sop'] or file.content_type.startswith('image/') or file.content_type == 'application/pdf':
+            # Use existing document intelligence service
+            import httpx
+            try:
+                async with httpx.AsyncClient() as client:
+                    with open(file_path, 'rb') as f:
+                        files = {'file': (file.filename, f, file.content_type)}
+                        data = {'entity_type': entity_type, 'entity_id': entity_id}
+                        # Process with document intelligence (if service is available)
+                        # This will store OCR results in the database
+                        pass  # We'll implement this after basic upload works
+            except Exception as ocr_error:
+                logger.warning(f"OCR processing failed: {ocr_error}")
+        
+        return {
+            "id": attachment_id,
+            "filename": file.filename,
+            "file_path": file_path,
+            "attachment_type": attachment_type,
+            "message": "File uploaded successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to upload attachment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/{entity_type}/{entity_id}/attachments")
+async def get_attachments(entity_type: str, entity_id: int):
+    """Get all attachments for a specific entity"""
+    try:
+        query = """
+        SELECT id, filename, stored_filename, file_size, mime_type, 
+               attachment_type, description, created_at
+        FROM attachments 
+        WHERE entity_type = %s AND entity_id = %s 
+        ORDER BY created_at DESC
+        """
+        
+        results = execute_query(query, (entity_type, entity_id), fetch='all')
+        return [dict(row) for row in results] if results else []
+        
+    except Exception as e:
+        logger.error(f"Failed to get attachments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/attachments/{attachment_id}")
+async def delete_attachment(attachment_id: int):
+    """Delete a file attachment"""
+    try:
+        # Get attachment info first
+        query = "SELECT file_path FROM attachments WHERE id = %s"
+        result = execute_query(query, (attachment_id,), fetch='one')
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Attachment not found")
+        
+        file_path = result[0]
+        
+        # Delete file from filesystem
+        import os
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Delete from database
+        query = "DELETE FROM attachments WHERE id = %s"
+        execute_query(query, (attachment_id,), fetch=None)
+        
+        return {"message": "Attachment deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Failed to delete attachment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # PM Schedules endpoints (Enhanced PM scheduling preserved)
@@ -621,6 +1399,211 @@ async def generate_pm_work_orders():
         return {"message": f"Generated {generated_count} work orders from PM schedules"}
     except Exception as e:
         logger.error(f"Failed to generate PM work orders: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== PM SCHEDULES BULK OPERATIONS =====
+
+@app.post("/api/pm-schedules/bulk-upload")
+async def bulk_upload_pm_schedules(request: Request):
+    """Bulk upload PM schedules from CSV/Excel file"""
+    try:
+        import pandas as pd
+        import io
+        from datetime import datetime, timedelta
+        
+        form = await request.form()
+        file = form.get("file")
+        
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        # Read the file content
+        content = await file.read()
+        
+        # Determine file type and parse accordingly
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format. Use CSV or Excel.")
+        
+        # Validate required columns
+        required_columns = ['title', 'asset_id', 'frequency_value', 'frequency_unit', 'priority']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_columns)}"
+            )
+        
+        # Process each row
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Prepare PM schedule data
+                pm_data = {
+                    'title': str(row['title']).strip(),
+                    'description': str(row.get('description', '')).strip(),
+                    'asset_id': int(row['asset_id']) if pd.notna(row['asset_id']) else None,
+                    'frequency_value': int(row['frequency_value']) if pd.notna(row['frequency_value']) else 1,
+                    'frequency_unit': str(row['frequency_unit']).strip().lower(),
+                    'priority': str(row['priority']).strip(),
+                    'estimated_hours': float(row.get('estimated_hours', 1.0)) if pd.notna(row.get('estimated_hours', 1.0)) else 1.0,
+                    'active': bool(row.get('active', True)) if pd.notna(row.get('active', True)) else True
+                }
+                
+                # Validate frequency unit
+                valid_frequency_units = ['days', 'weeks', 'months', 'years']
+                if pm_data['frequency_unit'] not in valid_frequency_units:
+                    raise ValueError(f"Invalid frequency unit '{pm_data['frequency_unit']}'. Must be one of: {', '.join(valid_frequency_units)}")
+                
+                # Validate priority
+                valid_priorities = ['Low', 'Medium', 'High', 'Critical']
+                if pm_data['priority'] not in valid_priorities:
+                    raise ValueError(f"Invalid priority '{pm_data['priority']}'. Must be one of: {', '.join(valid_priorities)}")
+                
+                # Calculate next due date
+                frequency_mapping = {
+                    'days': timedelta(days=pm_data['frequency_value']),
+                    'weeks': timedelta(weeks=pm_data['frequency_value']),
+                    'months': timedelta(days=pm_data['frequency_value'] * 30),
+                    'years': timedelta(days=pm_data['frequency_value'] * 365)
+                }
+                next_due = datetime.now() + frequency_mapping.get(pm_data['frequency_unit'], timedelta(days=30))
+                
+                # Insert into database
+                query = """
+                INSERT INTO pm_schedules (title, description, asset_id, frequency_value, frequency_unit, 
+                                        priority, estimated_hours, next_due, active, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id
+                """
+                
+                params = (
+                    pm_data['title'],
+                    pm_data['description'],
+                    pm_data['asset_id'],
+                    pm_data['frequency_value'],
+                    pm_data['frequency_unit'],
+                    pm_data['priority'],
+                    pm_data['estimated_hours'],
+                    next_due,
+                    pm_data['active']
+                )
+                
+                result = execute_query(query, params, fetch='one')
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Row {index + 2}: {str(e)}")
+        
+        return {
+            "success": True,
+            "message": f"Processed {len(df)} PM schedules",
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:10]  # Limit to first 10 errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in bulk upload PM schedules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/pm-schedules/bulk-download")
+async def bulk_download_pm_schedules(format: str = "csv"):
+    """Bulk download PM schedules as CSV or Excel file"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Get all PM schedules
+        query = "SELECT * FROM pm_schedules ORDER BY title"
+        results = execute_query(query, (), fetch='all')
+        
+        if not results:
+            raise HTTPException(status_code=404, detail="No PM schedules found")
+        
+        # Convert to DataFrame
+        df = pd.DataFrame([dict(row) for row in results])
+        
+        # Generate file
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='PM Schedules', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=pm_schedules.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=pm_schedules.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error in bulk download PM schedules: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/pm-schedules/template")
+async def download_pm_schedules_template(format: str = "csv"):
+    """Download PM schedules upload template"""
+    try:
+        import pandas as pd
+        import io
+        
+        # Create template with sample data
+        template_data = {
+            'title': ['Monthly HVAC Filter Change', 'Quarterly Generator Test'],
+            'description': ['Replace air filters in HVAC system', 'Test backup generator functionality'],
+            'asset_id': [1, 2],
+            'frequency_value': [1, 3],
+            'frequency_unit': ['months', 'months'],
+            'priority': ['Medium', 'High'],
+            'estimated_hours': [2.0, 4.0],
+            'active': [True, True]
+        }
+        
+        df = pd.DataFrame(template_data)
+        
+        if format.lower() == "excel":
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name='PM Schedules Template', index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.BytesIO(output.read()),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=pm_schedules_template.xlsx"}
+            )
+        else:
+            # Default to CSV
+            output = io.StringIO()
+            df.to_csv(output, index=False)
+            output.seek(0)
+            
+            return StreamingResponse(
+                io.StringIO(output.getvalue()),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=pm_schedules_template.csv"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error generating PM schedules template: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Statistics endpoints

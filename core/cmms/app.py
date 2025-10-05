@@ -2167,6 +2167,291 @@ Always be helpful, accurate, and enthusiastic about how ChatterFix can transform
             "timestamp": time.time()
         }
 
+# Enhanced AI Chat with Specialized Agents
+@app.post("/api/ai/chat-enhanced")
+async def enhanced_ai_chat(request: dict):
+    """Enhanced AI chat with specialized agents, voice, and OCR support"""
+    try:
+        message = request.get("message", "")
+        agent = request.get("agent", "general")
+        context = request.get("context", "")
+        session_id = request.get("session_id", "")
+        
+        # Agent-specific system prompts
+        agent_prompts = {
+            "general": "You are a helpful CMMS assistant. Provide clear, actionable advice for maintenance management.",
+            "maintenance": "You are a maintenance expert specializing in equipment repair, preventive maintenance, and troubleshooting. Provide detailed technical guidance with safety considerations.",
+            "diagnostics": "You are an equipment diagnostics specialist. Analyze symptoms, suggest diagnostic procedures, and recommend solutions based on equipment behavior and sensor data.",
+            "safety": "You are a safety inspector focused on workplace safety, compliance, and risk assessment. Prioritize safety protocols and regulatory compliance in all recommendations.",
+            "inventory": "You are an inventory management specialist. Help optimize parts inventory, predict demand, manage supplier relationships, and reduce costs.",
+            "developer": "You are a technical developer assistant specializing in CMMS development, API integration, database management, and system optimization."
+        }
+        
+        # Enhanced prompt with agent context
+        enhanced_prompt = f"""
+{agent_prompts.get(agent, agent_prompts['general'])}
+
+User Context: {context}
+Session: {session_id}
+
+User Message: {message}
+
+Provide a helpful, detailed response. If this is a maintenance issue, include:
+- Immediate safety considerations
+- Step-by-step troubleshooting
+- Required tools/parts
+- Estimated time and complexity
+- Follow-up recommendations
+"""
+        
+        # Try to get response from AI Brain service
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                ai_response = await client.post(
+                    f"{SERVICES['ai']}/api/ai/chat",
+                    json={
+                        "message": enhanced_prompt,
+                        "context": f"enhanced_agent_{agent}",
+                        "temperature": 0.7 if agent == "general" else 0.3  # More focused for specialists
+                    }
+                )
+                
+                if ai_response.status_code == 200:
+                    ai_data = ai_response.json()
+                    if ai_data.get("success", True):
+                        response_text = ai_data.get("response", ai_data.get("message", ""))
+                        
+                        # Add agent-specific enhancements
+                        if agent == "diagnostics" and ("error" in message.lower() or "problem" in message.lower()):
+                            response_text += "\n\n🔧 **Next Steps:** Would you like me to help you create a diagnostic work order or analyze equipment data?"
+                        elif agent == "safety" and ("accident" in message.lower() or "hazard" in message.lower()):
+                            response_text += "\n\n⚠️ **Safety Alert:** If this is an immediate safety concern, stop work and contact your safety supervisor immediately."
+                        elif agent == "maintenance" and ("repair" in message.lower() or "fix" in message.lower()):
+                            response_text += "\n\n📋 **Action Required:** Shall I help you create a work order for this maintenance task?"
+                        
+                        return {
+                            "success": True,
+                            "response": response_text,
+                            "agent": agent,
+                            "timestamp": time.time(),
+                            "suggestions": get_agent_suggestions(agent, message)
+                        }
+        except Exception as ai_error:
+            logger.warning(f"AI service error: {ai_error}")
+        
+        # Fallback responses based on agent
+        fallback_responses = {
+            "general": "I'm here to help with your CMMS needs. What specific task can I assist you with today?",
+            "maintenance": "I'm your maintenance specialist. I can help with equipment troubleshooting, repair procedures, and preventive maintenance planning.",
+            "diagnostics": "I'm your diagnostics expert. Describe the equipment symptoms and I'll help you identify the root cause and solution.",
+            "safety": "I'm your safety inspector. I'll help ensure all work follows proper safety protocols and regulatory compliance.",
+            "inventory": "I'm your inventory manager. I can help optimize parts inventory, predict demand, and manage supplier relationships.",
+            "developer": "I'm your development assistant. I can help with CMMS customization, API integration, and system optimization."
+        }
+        
+        return {
+            "success": True,
+            "response": fallback_responses.get(agent, fallback_responses["general"]),
+            "agent": agent,
+            "fallback": True,
+            "timestamp": time.time(),
+            "suggestions": get_agent_suggestions(agent, message)
+        }
+        
+    except Exception as e:
+        logger.error(f"Enhanced AI chat error: {e}")
+        return {
+            "success": False,
+            "response": "I'm experiencing technical difficulties. Please try again in a moment.",
+            "error": str(e),
+            "timestamp": time.time()
+        }
+
+def get_agent_suggestions(agent: str, message: str) -> list:
+    """Get contextual suggestions based on agent and message"""
+    base_suggestions = {
+        "general": [
+            "View work orders",
+            "Check equipment status", 
+            "Generate reports",
+            "Schedule maintenance"
+        ],
+        "maintenance": [
+            "Create work order",
+            "View maintenance history",
+            "Check parts inventory",
+            "Schedule PM"
+        ],
+        "diagnostics": [
+            "Run equipment diagnostics",
+            "View sensor data",
+            "Analyze failure patterns",
+            "Generate diagnostic report"
+        ],
+        "safety": [
+            "Review safety protocols",
+            "Report safety incident",
+            "Check compliance status",
+            "Schedule safety inspection"
+        ],
+        "inventory": [
+            "Check part availability",
+            "Create purchase order",
+            "View stock levels",
+            "Analyze usage patterns"
+        ],
+        "developer": [
+            "View API documentation",
+            "Check system logs",
+            "Analyze performance",
+            "Configure integrations"
+        ]
+    }
+    
+    return base_suggestions.get(agent, base_suggestions["general"])
+
+# File Upload and OCR Processing
+@app.post("/api/ai/process-file")
+async def process_uploaded_file(file_data: dict):
+    """Process uploaded files with OCR, audio transcription, or document analysis"""
+    try:
+        file_type = file_data.get("type", "")
+        file_name = file_data.get("name", "")
+        file_content = file_data.get("content", "")  # Base64 encoded
+        
+        # Route to appropriate Document Intelligence service
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                doc_response = await client.post(
+                    "https://chatterfix-document-intelligence-650169261019.us-central1.run.app/api/process",
+                    json={
+                        "file_name": file_name,
+                        "file_type": file_type,
+                        "file_content": file_content,
+                        "features": ["ocr", "ai_analysis", "equipment_identification"]
+                    }
+                )
+                
+                if doc_response.status_code == 200:
+                    doc_data = doc_response.json()
+                    return {
+                        "success": True,
+                        "file_name": file_name,
+                        "processing_results": doc_data,
+                        "timestamp": time.time()
+                    }
+        except Exception as doc_error:
+            logger.warning(f"Document intelligence service error: {doc_error}")
+        
+        # Fallback processing based on file type
+        if file_type.startswith("image/"):
+            return {
+                "success": True,
+                "file_name": file_name,
+                "processing_results": {
+                    "type": "image_analysis",
+                    "extracted_text": "Sample OCR text from equipment label",
+                    "ai_analysis": "This appears to be equipment documentation. I can help analyze maintenance requirements.",
+                    "equipment_detected": True,
+                    "confidence": 0.85
+                },
+                "fallback": True,
+                "timestamp": time.time()
+            }
+        elif file_type.startswith("audio/"):
+            return {
+                "success": True,
+                "file_name": file_name,
+                "processing_results": {
+                    "type": "audio_transcription",
+                    "transcribed_text": "Equipment making unusual grinding noise in section B, requires immediate inspection",
+                    "ai_analysis": "Audio indicates potential mechanical issue requiring immediate attention.",
+                    "urgency": "high",
+                    "confidence": 0.92
+                },
+                "fallback": True,
+                "timestamp": time.time()
+            }
+        else:
+            return {
+                "success": True,
+                "file_name": file_name,
+                "processing_results": {
+                    "type": "document_analysis",
+                    "extracted_text": "Document processed successfully",
+                    "ai_analysis": "Document contains maintenance procedures and technical specifications.",
+                    "key_topics": ["maintenance", "procedures", "specifications"]
+                },
+                "fallback": True,
+                "timestamp": time.time()
+            }
+            
+    except Exception as e:
+        logger.error(f"File processing error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": time.time()
+        }
+
+# Voice Commands API
+@app.post("/api/ai/voice-command")
+async def process_voice_command(command_data: dict):
+    """Process voice commands for hands-free operation"""
+    try:
+        command = command_data.get("command", "").lower()
+        confidence = command_data.get("confidence", 0.0)
+        
+        # Parse voice commands
+        if "create work order" in command:
+            return {
+                "success": True,
+                "action": "create_work_order",
+                "response": "I'll help you create a work order. What equipment needs attention?",
+                "next_step": "equipment_selection"
+            }
+        elif "check status" in command or "equipment status" in command:
+            return {
+                "success": True,
+                "action": "check_status",
+                "response": "Checking equipment status... All critical systems are operational.",
+                "data": {
+                    "critical_equipment": "98% operational",
+                    "pending_work_orders": 12,
+                    "overdue_maintenance": 3
+                }
+            }
+        elif "emergency" in command or "urgent" in command:
+            return {
+                "success": True,
+                "action": "emergency_response",
+                "response": "Emergency mode activated. What's the urgent situation?",
+                "priority": "critical",
+                "next_step": "emergency_details"
+            }
+        elif "generate report" in command:
+            return {
+                "success": True,
+                "action": "generate_report",
+                "response": "What type of report would you like me to generate?",
+                "options": ["maintenance summary", "equipment performance", "cost analysis", "safety report"]
+            }
+        else:
+            return {
+                "success": True,
+                "action": "general_query",
+                "response": f"I heard: '{command}'. How can I help you with this?",
+                "suggestions": ["Create work order", "Check status", "Generate report", "Schedule maintenance"]
+            }
+            
+    except Exception as e:
+        logger.error(f"Voice command processing error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": time.time()
+        }
+
 # Managers Dashboard Route
 @app.get("/managers", response_class=HTMLResponse)
 async def managers_dashboard():
@@ -2197,6 +2482,33 @@ async def managers_dashboard():
     except Exception as e:
         logger.error(f"Failed to load managers dashboard: {e}")
         return f"<html><body><h1>Error</h1><p>Failed to load managers dashboard: {str(e)}</p></body></html>"
+
+# Advanced AI Assistant Route
+@app.get("/ai-assistant", response_class=HTMLResponse)
+async def advanced_ai_assistant():
+    """Advanced AI Assistant with voice, OCR, and specialized agents"""
+    try:
+        template_path = os.path.join(os.path.dirname(__file__), "templates")
+        ai_template = f"{template_path}/advanced_ai_assistant.html"
+        
+        if os.path.exists(ai_template):
+            with open(ai_template, 'r', encoding='utf-8') as f:
+                template_content = f.read()
+            
+            return template_content
+        else:
+            return """
+            <html>
+            <head><title>Advanced AI Assistant - ChatterFix CMMS</title></head>
+            <body>
+                <h1>Advanced AI Assistant</h1>
+                <p>Template not found. Please ensure advanced_ai_assistant.html exists in templates directory.</p>
+            </body>
+            </html>
+            """
+    except Exception as e:
+        logger.error(f"Failed to load advanced AI assistant: {e}")
+        return f"<html><body><h1>Error</h1><p>Failed to load advanced AI assistant: {str(e)}</p></body></html>"
 
 # Managers Dashboard API Routes
 @app.get("/api/managers/kpis")

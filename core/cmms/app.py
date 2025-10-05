@@ -2167,6 +2167,189 @@ Always be helpful, accurate, and enthusiastic about how ChatterFix can transform
             "timestamp": time.time()
         }
 
+# Managers Dashboard Route
+@app.get("/managers", response_class=HTMLResponse)
+async def managers_dashboard():
+    """Comprehensive managers dashboard with KPIs, user management, scheduling, and analytics"""
+    try:
+        template_path = os.path.join(os.path.dirname(__file__), "templates")
+        managers_template = f"{template_path}/managers_dashboard.html"
+        
+        if os.path.exists(managers_template):
+            with open(managers_template, 'r', encoding='utf-8') as f:
+                template_content = f.read()
+            
+            # Replace any template variables if needed
+            template_content = template_content.replace("{{ url_for('static', path='/css/cmms-styles.css') }}", "/static/css/cmms-styles.css")
+            
+            return template_content
+        else:
+            # Fallback basic dashboard
+            return """
+            <html>
+            <head><title>Managers Dashboard - ChatterFix CMMS</title></head>
+            <body>
+                <h1>Managers Dashboard</h1>
+                <p>Template not found. Please ensure managers_dashboard.html exists in templates directory.</p>
+            </body>
+            </html>
+            """
+    except Exception as e:
+        logger.error(f"Failed to load managers dashboard: {e}")
+        return f"<html><body><h1>Error</h1><p>Failed to load managers dashboard: {str(e)}</p></body></html>"
+
+# Managers Dashboard API Routes
+@app.get("/api/managers/kpis")
+async def get_manager_kpis():
+    """Get KPI data for managers dashboard"""
+    try:
+        # In a real implementation, this would fetch from database
+        return {
+            "total_users": 142,
+            "total_users_change": "+12%",
+            "active_work_orders": 89,
+            "active_work_orders_change": "+8%",
+            "system_uptime": "99.8%",
+            "system_uptime_change": "+0.2%",
+            "response_time": "2.3hrs",
+            "response_time_change": "-15%",
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get manager KPIs: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/managers/users")
+async def get_users():
+    """Get list of users for management"""
+    try:
+        # In a real implementation, this would fetch from database
+        return {
+            "users": [
+                {
+                    "id": "john.smith",
+                    "name": "John Smith",
+                    "email": "john.smith@company.com",
+                    "role": "Maintenance Manager",
+                    "status": "Active",
+                    "last_login": "2025-10-05 14:30:00"
+                },
+                {
+                    "id": "sarah.johnson",
+                    "name": "Sarah Johnson",
+                    "email": "sarah.johnson@company.com",
+                    "role": "Technician",
+                    "status": "Active",
+                    "last_login": "2025-10-05 13:45:00"
+                },
+                {
+                    "id": "mike.wilson",
+                    "name": "Mike Wilson",
+                    "email": "mike.wilson@company.com",
+                    "role": "Supervisor",
+                    "status": "Active",
+                    "last_login": "2025-10-05 15:20:00"
+                }
+            ],
+            "total": 142,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get users: {e}")
+        return {"error": str(e)}
+
+@app.post("/api/managers/users")
+async def add_user(user_data: dict):
+    """Add new user"""
+    try:
+        # In a real implementation, this would save to database
+        logger.info(f"Adding new user: {user_data}")
+        return {
+            "success": True,
+            "message": "User added successfully",
+            "user_id": f"user_{int(time.time())}",
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to add user: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/managers/activity")
+async def get_recent_activity():
+    """Get recent activity for managers dashboard"""
+    try:
+        return {
+            "activities": [
+                {
+                    "user": "John Smith",
+                    "action": "Created Work Order #1234",
+                    "status": "Completed",
+                    "time": "2 mins ago"
+                },
+                {
+                    "user": "Sarah Johnson",
+                    "action": "Updated Asset #567",
+                    "status": "In Progress",
+                    "time": "15 mins ago"
+                },
+                {
+                    "user": "Mike Wilson",
+                    "action": "Completed PM Task",
+                    "status": "Completed",
+                    "time": "1 hour ago"
+                }
+            ],
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get activity: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/managers/services-status")
+async def get_services_status():
+    """Get microservices status for managers dashboard"""
+    try:
+        # Check actual service health
+        services = [
+            {"name": "AI Brain Service", "url": "https://chatterfix-ai-brain-650169261019.us-central1.run.app/health"},
+            {"name": "Work Orders Service", "url": "https://chatterfix-work-orders-650169261019.us-central1.run.app/health"},
+            {"name": "Assets Service", "url": "https://chatterfix-assets-650169261019.us-central1.run.app/health"},
+            {"name": "Parts Service", "url": "https://chatterfix-parts-650169261019.us-central1.run.app/health"}
+        ]
+        
+        status_data = []
+        for service in services:
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.get(service["url"])
+                    if response.status_code == 200:
+                        status_data.append({
+                            "service": service["name"],
+                            "status": "Online",
+                            "response_time": f"{response.elapsed.total_seconds() * 1000:.0f}ms"
+                        })
+                    else:
+                        status_data.append({
+                            "service": service["name"],
+                            "status": "Warning",
+                            "response_time": "N/A"
+                        })
+            except:
+                status_data.append({
+                    "service": service["name"],
+                    "status": "Offline",
+                    "response_time": "N/A"
+                })
+        
+        return {
+            "services": status_data,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get services status: {e}")
+        return {"error": str(e)}
+
 # Individual service dashboard routes
 @app.get("/work-orders", response_class=HTMLResponse)
 async def work_orders_dashboard():

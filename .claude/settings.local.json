@@ -65,7 +65,18 @@
       "Bash(PORT=8007 python3 enterprise_security_service.py)",
       "Bash(./deploy-chatterfix-production.sh:*)",
       "Bash(gcloud compute forwarding-rules list:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(gcloud billing accounts:*)",
+      "Bash(cp:*)",
+      "Bash(nslookup:*)",
+      "Bash(gcloud container clusters:*)",
+      "Bash(git checkout:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(./deploy-document-intelligence-lite.sh:*)",
+      "Bash(gcloud compute project-info:*)",
+      "Bash(gcloud alpha run jobs list:*)",
+      "Bash(gcloud alpha run services list:*)",
+      "Bash(pip3 install:*)"
     ],
     "deny": [],
     "ask": []

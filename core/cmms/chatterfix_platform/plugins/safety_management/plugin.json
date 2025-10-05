@@ -1,0 +1,22 @@
+{
+  "name": "safety_management",
+  "version": "1.0.0",
+  "description": "Safety Department Management and OSHA Compliance",
+  "author": "ChatterFix AI Platform",
+  "app_type": "web_app",
+  "dependencies": [],
+  "routes": ["/safety_management/.*", "/api/safety_management/.*"],
+  "permissions": ["web.access"],
+  "enabled": true,
+  "auto_start": true,
+  "port": 8200,
+  "health_endpoint": "/health",
+  "config_schema": {
+    "include_auth": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include authentication middleware"
+    }
+  },
+  "created_at": "2025-10-04T22:09:22.928953"
+}

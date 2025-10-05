@@ -1,0 +1,113 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="ChatterFix CMMS/Introduction" />
+
+# ChatterFix CMMS Design System
+
+Welcome to the ChatterFix CMMS component library! This Storybook contains all the UI components, patterns, and guidelines for building consistent and powerful maintenance management interfaces.
+
+## 🎯 Overview
+
+ChatterFix CMMS is an AI-powered Computerized Maintenance Management System that helps facilities manage work orders, assets, inventory, and maintenance schedules. This design system ensures all components follow consistent styling and behavior patterns.
+
+## 🎨 Design Principles
+
+### **Dark Theme First**
+- Primary background: `#0a0a0a` to `#16213e` gradient
+- Purple accent colors: `#667eea` to `#764ba2`
+- Glass morphism effects with backdrop blur
+- High contrast for accessibility
+
+### **Maintenance-Focused UX**
+- Clear status indicators with color-coded badges
+- Priority-based visual hierarchy
+- Quick action buttons for common tasks
+- Responsive design for mobile technicians
+
+### **AI-Enhanced Interface**
+- Smart defaults and suggestions
+- Predictive text and autocomplete
+- Contextual help and insights
+- Automated workflow indicators
+
+## 📚 Component Categories
+
+### **Core Components**
+- **Buttons**: Primary, secondary, and danger actions
+- **Cards**: Content containers with hover effects
+- **Forms**: Input fields, selects, and form layouts
+- **Navigation**: Navbar, breadcrumbs, tabs, and side navigation
+
+### **CMMS-Specific Components**
+- **Work Order Management**: Lists, cards, and forms
+- **Asset Management**: Grid views and detail cards
+- **Parts Inventory**: Stock levels and reorder alerts
+- **Maintenance Scheduling**: Calendar and list views
+- **KPI Dashboards**: Metrics and performance indicators
+
+## 🚀 Getting Started
+
+1. **Browse Components**: Explore the component library in the sidebar
+2. **View Stories**: Each component has multiple story variations
+3. **Check Controls**: Use the Controls panel to interact with components
+4. **Review Code**: View the source code for implementation details
+
+## 🔧 Usage Guidelines
+
+### **Component Integration**
+```javascript
+// Import components from your component library
+import { Button, Card, WorkOrderList } from './components';
+
+// Use ChatterFix CMMS styling classes
+<div className="chatterfix-form">
+  <Button variant="primary">Create Work Order</Button>
+</div>
+```
+
+### **Styling Classes**
+- `.btn-primary`, `.btn-secondary`, `.btn-danger` - Button variants
+- `.card`, `.feature-card`, `.stat-card` - Card types
+- `.form-group`, `.form-input`, `.form-label` - Form elements
+- `.status-badge` with modifiers - Status indicators
+- `.chatterfix-table` - Data tables
+
+### **Color Palette**
+- **Primary**: `#667eea` (ChatterFix Purple)
+- **Secondary**: `#764ba2` (Deep Purple)
+- **Success**: `#10b981` (Green)
+- **Warning**: `#f59e0b` (Amber)
+- **Error**: `#ef4444` (Red)
+- **Info**: `#3b82f6` (Blue)
+
+## 📱 Responsive Design
+
+All components are designed mobile-first with breakpoints at:
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
+
+## ♿ Accessibility
+
+- High contrast ratios (WCAG AA compliant)
+- Keyboard navigation support
+- Screen reader friendly markup
+- Focus indicators on interactive elements
+
+## 🔍 Testing Components
+
+Use the **Controls** panel to:
+- Modify component props
+- Test different states
+- Simulate user interactions
+- Verify responsive behavior
+
+## 📖 Additional Resources
+
+- [ChatterFix CMMS Documentation](./CHATTERFIX_AI_PLATFORM_DOCUMENTATION.md)
+- [Deployment Guide](./DEPLOYMENT_GUIDE_MILESTONE.md)
+- [API Documentation](./DOCUMENT_INTELLIGENCE_API.md)
+
+---
+
+**Built with ❤️ for maintenance teams worldwide**

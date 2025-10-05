@@ -1,31 +1,26 @@
+# ChatterFix CMMS - Unified Services Dockerfile
+# Supports multiple service modes based on environment variables
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for monitoring
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    procps \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir \
-    fastapi==0.104.1 \
-    uvicorn==0.24.0 \
-    httpx==0.25.2 \
-    pydantic==2.5.0 \
-    psutil==5.9.6
+# Copy all service files
+COPY app.py .
+COPY backend_unified_service.py .
+COPY ai_unified_service.py .
+COPY database_utils.py .
 
-# Copy self-healing monitor
-COPY ai_self_healing_monitor.py .
+# Copy any additional files needed
+COPY templates/ templates/
+COPY static/ static/
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash aiuser
-RUN chown -R aiuser:aiuser /app
-USER aiuser
+# Expose port
+EXPOSE 8080
 
-EXPOSE 8010
-ENV PORT=8010
-
-CMD ["python", "ai_self_healing_monitor.py"]
+# Use environment variable to determine which service to run
+CMD ["sh", "-c", "if [ \"$SERVICE_MODE\" = \"unified_backend\" ]; then python backend_unified_service.py; elif [ \"$SERVICE_MODE\" = \"unified_ai\" ]; then python ai_unified_service.py; else python app.py; fi"]

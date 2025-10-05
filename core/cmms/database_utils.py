@@ -337,16 +337,57 @@ def get_db_connection():
     """Get database connection (legacy compatibility)"""
     return db_manager.get_connection()
 
+def convert_query_for_sqlite(query: str):
+    """Convert PostgreSQL-style %s parameter markers to SQLite ? markers and schema types"""
+    if not is_postgresql():
+        # Replace %s with ? for SQLite
+        converted = query.replace('%s', '?')
+        
+        # Convert PostgreSQL types to SQLite equivalents
+        converted = converted.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
+        converted = converted.replace('SERIAL', 'INTEGER')
+        converted = converted.replace('VARCHAR(255)', 'TEXT')
+        converted = converted.replace('VARCHAR(100)', 'TEXT')
+        converted = converted.replace('VARCHAR(50)', 'TEXT')
+        converted = converted.replace('VARCHAR(20)', 'TEXT')
+        converted = converted.replace('DECIMAL(10,2)', 'REAL')
+        converted = converted.replace('DECIMAL(5,2)', 'REAL')
+        converted = converted.replace('BOOLEAN', 'INTEGER')
+        converted = converted.replace('TIMESTAMP', 'DATETIME')
+        converted = converted.replace('CURRENT_TIMESTAMP', 'CURRENT_TIMESTAMP')
+        converted = converted.replace('TRUE', '1')
+        converted = converted.replace('FALSE', '0')
+        
+        # Remove foreign key references for SQLite (they don't work the same way)
+        import re
+        converted = re.sub(r'\s+REFERENCES\s+\w+\(\w+\)', '', converted)
+        
+        # Clean up leftover comments from foreign key removal
+        converted = re.sub(r'\s+--\s*,', ',', converted)
+        converted = re.sub(r'\s+--\s*$', '', converted, flags=re.MULTILINE)
+        
+        # Fix PRIMARY KEY to include AUTOINCREMENT
+        converted = converted.replace('id INTEGER PRIMARY KEY,', 'id INTEGER PRIMARY KEY AUTOINCREMENT,')
+        
+        # Fix CURRENT_DATETIME to CURRENT_TIMESTAMP
+        converted = converted.replace('CURRENT_DATETIME', 'CURRENT_TIMESTAMP')
+        
+        return converted
+    return query
+
 def execute_query(query: str, params: Tuple = (), fetch: str = None):
-    """Execute query with enhanced error handling"""
-    return db_manager.execute_with_retry(query, params, fetch)
+    """Execute query with enhanced error handling and parameter conversion"""
+    # Convert query parameters for SQLite if needed
+    converted_query = convert_query_for_sqlite(query)
+    return db_manager.execute_with_retry(converted_query, params, fetch)
 
 def execute_transaction(operations: List[Tuple[str, Tuple]]) -> bool:
     """Execute multiple operations in a single transaction"""
     try:
         with db_manager.transaction() as conn:
             for query, params in operations:
-                conn.execute(query, params)
+                converted_query = convert_query_for_sqlite(query)
+                conn.execute(converted_query, params)
         return True
     except Exception as e:
         logger.error(f"Transaction failed: {e}")

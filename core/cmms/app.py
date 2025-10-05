@@ -82,13 +82,17 @@ app.add_middleware(
 )
 
 # Microservice URLs - Local Development
+# Unified Service URLs - Consolidated Architecture (3 services instead of 7)
 SERVICES = {
-    "database": "http://localhost:8001",
-    "work_orders": "http://localhost:8002", 
-    "assets": "http://localhost:8003",
-    "parts": "http://localhost:8004",
-    "ai_brain": "http://localhost:8005",
-    "document_intelligence": "http://localhost:8006"
+    "backend": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
+    "ai": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app"),
+    # Legacy URLs for backward compatibility - all route to unified backend
+    "database": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
+    "work_orders": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
+    "assets": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
+    "parts": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
+    "ai_brain": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app"),
+    "document_intelligence": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app")
 }
 
 @app.get("/health")
@@ -1148,6 +1152,13 @@ async def dashboard():
                 <div class="service-description">🚀 Revolutionary OCR & AI - Voice processing, equipment recognition, automated data entry</div>
                 <div class="service-status">🔥 NEW!</div>
             </div>
+
+            <div class="service-card" onclick="window.open('/pm-scheduling', '_blank')">
+                <div class="service-icon">⏰</div>
+                <div class="service-title">PM Scheduling</div>
+                <div class="service-description">🎯 Advanced preventive maintenance scheduling with AI optimization and automated work order generation</div>
+                <div class="service-status">🔥 ENHANCED!</div>
+            </div>
         </div>
 
         <div class="api-section">
@@ -1157,6 +1168,7 @@ async def dashboard():
                 <li><strong>/api/work-orders/*</strong> → Work Orders Service</li>
                 <li><strong>/api/assets/*</strong> → Assets Service</li>
                 <li><strong>/api/parts/*</strong> → Parts Service</li>
+                <li><strong>/api/pm-schedules/*</strong> → Database Service (PM Scheduling)</li>
                 <li><strong>/api/ai/*</strong> → AI Brain Service</li>
                 <li><strong>/api/documents/*</strong> → Document Intelligence Service</li>
                 <li><strong>/health</strong> → System Health Check</li>
@@ -2246,6 +2258,377 @@ async def get_document_capabilities():
             return JSONResponse(content=response.json())
         except Exception as e:
             return JSONResponse(content={"error": f"Capabilities service error: {str(e)}"}, status_code=500)
+
+@app.get("/pm-scheduling", response_class=HTMLResponse)
+async def pm_scheduling_dashboard():
+    """PM Scheduling dashboard with live data"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PM Scheduling - ChatterFix CMMS</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        .nav-back {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .nav-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dashboard-card h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 1.25rem;
+        }
+        .pm-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        .pm-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .pm-details {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        .priority-high { border-left-color: #ef4444; }
+        .priority-medium { border-left-color: #f59e0b; }
+        .priority-low { border-left-color: #10b981; }
+        .loading {
+            text-align: center;
+            color: #b0b0b0;
+            padding: 2rem;
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>⏰ PM Scheduling Dashboard</h1>
+            <a href="/dashboard" class="nav-back">← Back to Dashboard</a>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalPMs">-</span>
+                    <span class="stat-label">Total PM Schedules</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="duePMs">-</span>
+                    <span class="stat-label">Due This Week</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="recentWOs">-</span>
+                    <span class="stat-label">Recent PM Work Orders</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="upcomingPMs">-</span>
+                    <span class="stat-label">Upcoming This Month</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="generatePMWorkOrders()">🔄 Generate PM Work Orders</button>
+                <button class="btn secondary" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
+                <button class="btn secondary" onclick="optimizeScheduling()">🎯 Optimize Scheduling</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>📅 Due PM Schedules</h3>
+                    <div id="duePMSchedules" class="loading">Loading due PM schedules...</div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3>🛠️ Recent PM Work Orders</h3>
+                    <div id="recentPMWorkOrders" class="loading">Loading recent PM work orders...</div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>📊 PM Scheduling Analytics</h3>
+                <div id="pmAnalytics" class="loading">Loading PM analytics...</div>
+            </div>
+        </div>
+
+        <script>
+        let dashboardData = {};
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/work-orders/pm/dashboard');
+                dashboardData = await response.json();
+                
+                updateStats();
+                updateDuePMSchedules();
+                updateRecentPMWorkOrders();
+                updateAnalytics();
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+                showError('Failed to load PM dashboard data');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalPMs').textContent = dashboardData.pm_stats?.pm_schedules_count || 0;
+            document.getElementById('duePMs').textContent = dashboardData.due_pm_schedules?.length || 0;
+            document.getElementById('recentWOs').textContent = dashboardData.recent_pm_work_orders?.length || 0;
+            document.getElementById('upcomingPMs').textContent = dashboardData.pm_stats?.pm_due_count || 0;
+        }
+
+        function updateDuePMSchedules() {
+            const container = document.getElementById('duePMSchedules');
+            const schedules = dashboardData.due_pm_schedules || [];
+            
+            if (schedules.length === 0) {
+                container.innerHTML = '<p style="color: #10b981;">No PM schedules due!</p>';
+                return;
+            }
+
+            container.innerHTML = schedules.slice(0, 5).map(pm => `
+                <div class="pm-item priority-${pm.priority}">
+                    <div class="pm-title">${pm.title}</div>
+                    <div class="pm-details">
+                        Asset: ${pm.asset_name || 'N/A'} | 
+                        Due: ${new Date(pm.next_due).toLocaleDateString()} |
+                        Priority: ${pm.priority?.toUpperCase()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateRecentPMWorkOrders() {
+            const container = document.getElementById('recentPMWorkOrders');
+            const workOrders = dashboardData.recent_pm_work_orders || [];
+            
+            if (workOrders.length === 0) {
+                container.innerHTML = '<p style="color: #b0b0b0;">No recent PM work orders</p>';
+                return;
+            }
+
+            container.innerHTML = workOrders.slice(0, 5).map(wo => `
+                <div class="pm-item priority-${wo.priority}">
+                    <div class="pm-title">${wo.title}</div>
+                    <div class="pm-details">
+                        Status: ${wo.status?.toUpperCase()} | 
+                        Asset: ${wo.asset_name || 'N/A'} |
+                        Created: ${new Date(wo.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAnalytics() {
+            const container = document.getElementById('pmAnalytics');
+            const stats = dashboardData.pm_stats || {};
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${stats.work_orders_count || 0}</div>
+                        <div style="color: #b0b0b0;">Total Work Orders</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${stats.assets_count || 0}</div>
+                        <div style="color: #b0b0b0;">Total Assets</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${stats.parts_count || 0}</div>
+                        <div style="color: #b0b0b0;">Parts in Inventory</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function generatePMWorkOrders() {
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = '🔄 Generating...';
+                
+                const response = await fetch('/api/work-orders/pm/generate', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                alert(result.message || 'PM work orders generated successfully!');
+                await loadDashboard();
+            } catch (error) {
+                console.error('Failed to generate PM work orders:', error);
+                alert('Failed to generate PM work orders');
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.textContent = '🔄 Generate PM Work Orders';
+            }
+        }
+
+        async function optimizeScheduling() {
+            try {
+                const response = await fetch('/api/work-orders/scheduling/optimize');
+                const result = await response.json();
+                
+                alert(`Scheduling optimization complete!\\n${result.optimization_notes?.join('\\n') || 'Optimization completed successfully.'}`);
+            } catch (error) {
+                console.error('Failed to optimize scheduling:', error);
+                alert('Failed to optimize scheduling');
+            }
+        }
+
+        function refreshDashboard() {
+            loadDashboard();
+        }
+
+        function showError(message) {
+            document.querySelectorAll('.loading').forEach(el => {
+                el.innerHTML = `<p style="color: #ef4444;">${message}</p>`;
+            });
+        }
+
+        // Load dashboard on page load
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+        </script>
+    </body>
+    </html>
+    """
+
+# PM Scheduling API proxy routes
+@app.get("/api/pm-schedules")
+async def get_pm_schedules():
+    """Get PM schedules from database service"""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{SERVICES['database']}/api/pm-schedules")
+        return response.json()
+
+@app.get("/api/pm-schedules/due")
+async def get_due_pm_schedules(days_ahead: int = 7):
+    """Get due PM schedules from database service"""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{SERVICES['database']}/api/pm-schedules/due?days_ahead={days_ahead}")
+        return response.json()
+
+@app.post("/api/pm-schedules/generate-work-orders")
+async def generate_pm_work_orders():
+    """Generate work orders from PM schedules"""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"{SERVICES['database']}/api/pm-schedules/generate-work-orders")
+        return response.json()
 
 if __name__ == "__main__":
     import uvicorn

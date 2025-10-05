@@ -440,6 +440,99 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
         }
+
+        /* ============ AI CHAT WIDGET ============ */
+        .ai-chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .ai-chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            transition: all 0.3s;
+        }
+
+        .ai-chat-toggle:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .ai-chat-header {
+            background: var(--primary-color);
+            color: white;
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chat-body {
+            flex: 1;
+            padding: var(--space-lg);
+            overflow-y: auto;
+            max-height: 350px;
+        }
+
+        .ai-chat-footer {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .ai-chat-input {
+            width: 100%;
+            padding: var(--space-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .chat-message {
+            margin-bottom: var(--space-md);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            max-width: 80%;
+        }
+
+        .chat-message.user {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .chat-message.ai {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: var(--space-md);
+            color: var(--text-secondary);
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -837,6 +930,64 @@
         </div>
     </div>
 
+    <!-- AI Chat Widget -->
+    <button class="ai-chat-toggle" onclick="toggleAIChat()">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div id="aiChatWidget" class="ai-chat-widget">
+        <div class="ai-chat-header">
+            <div>
+                <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-robot"></i>
+                    AI Assistant
+                </h4>
+                <p style="margin: 0; font-size: 0.75rem; opacity: 0.8;">Ask me about your CMMS</p>
+            </div>
+            <button onclick="toggleAIChat()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="ai-chat-body" id="chatMessages">
+            <div class="chat-message ai">
+                <div style="font-weight: 500; margin-bottom: 0.25rem;">ChatterFix AI</div>
+                Hello! I'm your AI assistant for ChatterFix CMMS. I can help you with:
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                    <li>Managing work orders and assets</li>
+                    <li>Analyzing performance metrics</li>
+                    <li>User management questions</li>
+                    <li>Scheduling and maintenance planning</li>
+                    <li>System status and troubleshooting</li>
+                </ul>
+                How can I assist you today?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            AI is thinking...
+        </div>
+        
+        <div class="ai-chat-footer">
+            <div style="display: flex; gap: 0.5rem;">
+                <input 
+                    type="text" 
+                    class="ai-chat-input" 
+                    id="chatInput" 
+                    placeholder="Ask me anything about your CMMS..."
+                    onkeypress="handleChatInput(event)"
+                >
+                <button 
+                    onclick="sendChatMessage()" 
+                    class="btn btn-primary" 
+                    style="padding: 0.5rem; min-width: auto;"
+                >
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============ NAVIGATION ============
         function showSection(sectionName) {
@@ -1020,6 +1171,90 @@
                 const current = parseInt(totalUsers.textContent);
                 totalUsers.textContent = current + Math.floor(Math.random() * 3 - 1);
             }
+        }
+
+        // ============ AI CHAT FUNCTIONALITY ============
+        function toggleAIChat() {
+            const widget = document.getElementById('aiChatWidget');
+            const toggle = document.querySelector('.ai-chat-toggle');
+            
+            if (widget.style.display === 'flex') {
+                widget.style.display = 'none';
+                toggle.innerHTML = '<i class="fas fa-robot"></i>';
+            } else {
+                widget.style.display = 'flex';
+                toggle.innerHTML = '<i class="fas fa-times"></i>';
+            }
+        }
+
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addChatMessage('user', message);
+            input.value = '';
+            
+            // Show typing indicator
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        context: 'managers_dashboard'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                if (data.success !== false) {
+                    addChatMessage('ai', data.response || data.message || 'I received your message!');
+                } else {
+                    addChatMessage('ai', data.message || 'Sorry, I encountered an error. Please try again.');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                typingIndicator.style.display = 'none';
+                addChatMessage('ai', 'Sorry, I\'m having trouble connecting right now. Please try again in a moment.');
+            }
+        }
+
+        function addChatMessage(sender, message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            if (sender === 'ai') {
+                messageDiv.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 0.25rem;">ChatterFix AI</div>
+                    ${message}
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 0.25rem;">You</div>
+                    ${message}
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // ============ INITIALIZATION ============

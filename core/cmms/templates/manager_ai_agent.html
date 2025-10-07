@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager AI Assistant - ChatterFix CMMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Manager AI Agent Styles */
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #3730a3;
+            --accent-color: #06b6d4;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+            --manager-color: #7c3aed;
+            
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Manager AI Widget */
+        .manager-ai-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--manager-color);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .manager-ai-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--manager-color), var(--primary-color));
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .manager-ai-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.3);
+        }
+
+        .manager-ai-toggle .label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Header */
+        .manager-ai-header {
+            background: linear-gradient(135deg, var(--manager-color), var(--primary-color));
+            color: white;
+            padding: var(--space-lg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .manager-ai-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-weight: 700;
+        }
+
+        .manager-ai-title .subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Quick Actions Bar */
+        .quick-actions {
+            background: var(--bg-secondary);
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-sm);
+        }
+
+        .quick-action {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .quick-action:hover {
+            background: var(--manager-color);
+            color: white;
+            border-color: var(--manager-color);
+        }
+
+        .quick-action i {
+            display: block;
+            margin-bottom: var(--space-xs);
+            font-size: 1rem;
+        }
+
+        /* Chat Area */
+        .manager-ai-chat {
+            flex: 1;
+            padding: var(--space-lg);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .manager-message {
+            display: flex;
+            gap: var(--space-sm);
+            max-width: 90%;
+        }
+
+        .manager-message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .manager-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .manager-message.ai .manager-avatar {
+            background: var(--manager-color);
+            color: white;
+        }
+
+        .manager-message.user .manager-avatar {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .manager-content {
+            background: var(--bg-secondary);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .manager-message.user .manager-content {
+            background: var(--manager-color);
+            color: white;
+        }
+
+        .manager-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: var(--space-xs);
+        }
+
+        .manager-message.user .manager-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Suggestions */
+        .manager-suggestions {
+            padding: var(--space-md);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .suggestion-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .suggestion-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+        }
+
+        .suggestion-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-btn:hover {
+            background: var(--manager-color);
+            color: white;
+            border-color: var(--manager-color);
+        }
+
+        /* Input Area */
+        .manager-ai-input {
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            padding: var(--space-lg);
+        }
+
+        .manager-input-container {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: flex-end;
+        }
+
+        .manager-input-field {
+            flex: 1;
+            min-height: 40px;
+            padding: var(--space-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .manager-input-field:focus {
+            outline: none;
+            border-color: var(--manager-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .manager-send-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--manager-color);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .manager-send-btn:hover {
+            background: var(--primary-color);
+        }
+
+        /* Typing Indicator */
+        .manager-typing {
+            display: none;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: var(--space-xs);
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--manager-color);
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingAnimation {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Priority Indicators */
+        .priority-high { border-left: 4px solid var(--error-color); }
+        .priority-medium { border-left: 4px solid var(--warning-color); }
+        .priority-low { border-left: 4px solid var(--success-color); }
+
+        /* Manager Stats */
+        .manager-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-sm);
+            margin: var(--space-md) 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--manager-color);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Action Items */
+        .action-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            margin: var(--space-sm) 0;
+        }
+
+        .action-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+        }
+
+        .action-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .action-priority {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .action-priority.high {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error-color);
+        }
+
+        .action-priority.medium {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+        }
+
+        .action-priority.low {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Manager AI Toggle Button -->
+    <button class="manager-ai-toggle" onclick="toggleManagerAI()" id="managerToggle">
+        <i class="fas fa-user-tie"></i>
+        <span class="label">Manager AI</span>
+    </button>
+
+    <!-- Manager AI Widget -->
+    <div id="managerAIWidget" class="manager-ai-widget">
+        <!-- Header -->
+        <div class="manager-ai-header">
+            <div class="manager-ai-title">
+                <i class="fas fa-user-tie"></i>
+                <div>
+                    <div>Manager AI Assistant</div>
+                    <div class="subtitle">Your Executive Decision Partner</div>
+                </div>
+            </div>
+            <button onclick="toggleManagerAI()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="quick-action" onclick="quickAction('daily-briefing')">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Daily Brief</span>
+            </div>
+            <div class="quick-action" onclick="quickAction('team-status')">
+                <i class="fas fa-users"></i>
+                <span>Team Status</span>
+            </div>
+            <div class="quick-action" onclick="quickAction('budget-review')">
+                <i class="fas fa-chart-line"></i>
+                <span>Budget</span>
+            </div>
+            <div class="quick-action" onclick="quickAction('priorities')">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Priorities</span>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="manager-ai-chat" id="managerChat">
+            <!-- Welcome Message -->
+            <div class="manager-message ai">
+                <div class="manager-avatar">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="manager-content">
+                    <strong>Good morning! I'm your Manager AI Assistant.</strong><br><br>
+                    I'm here to help you with your daily management tasks:
+                    
+                    <div class="manager-stats">
+                        <div class="stat-card">
+                            <div class="stat-value">12</div>
+                            <div class="stat-label">Open Issues</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">89%</div>
+                            <div class="stat-label">Team Efficiency</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">Urgent Items</div>
+                        </div>
+                    </div>
+
+                    <strong>Today's Priorities:</strong>
+                    <div class="action-item priority-high">
+                        <div class="action-header">
+                            <span class="action-title">Pump 001 Bearing Replacement</span>
+                            <span class="action-priority high">High</span>
+                        </div>
+                        Scheduled for 2 PM - Team assigned, parts ready
+                    </div>
+
+                    How can I assist you today?
+                    <div class="manager-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="manager-typing" id="managerTyping">
+            <i class="fas fa-user-tie"></i>
+            <span>Manager AI is analyzing...</span>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="manager-suggestions">
+            <div class="suggestion-title">Quick Commands</div>
+            <div class="suggestion-buttons" id="managerSuggestions">
+                <div class="suggestion-btn" onclick="sendManagerMessage('Show me today\'s critical tasks')">Critical Tasks</div>
+                <div class="suggestion-btn" onclick="sendManagerMessage('Team performance summary')">Team Performance</div>
+                <div class="suggestion-btn" onclick="sendManagerMessage('Budget variance report')">Budget Status</div>
+                <div class="suggestion-btn" onclick="sendManagerMessage('Schedule next week\'s priorities')">Schedule Planning</div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="manager-ai-input">
+            <div class="manager-input-container">
+                <textarea 
+                    class="manager-input-field" 
+                    id="managerInput" 
+                    placeholder="Ask about team performance, budgets, priorities, scheduling..."
+                    onkeydown="handleManagerKeyDown(event)"
+                ></textarea>
+                <button class="manager-send-btn" onclick="sendManagerMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Manager AI State
+        let managerAIOpen = false;
+        let managerSession = Date.now().toString();
+
+        // Toggle Manager AI Widget
+        function toggleManagerAI() {
+            const widget = document.getElementById('managerAIWidget');
+            const toggle = document.getElementById('managerToggle');
+            
+            managerAIOpen = !managerAIOpen;
+            
+            if (managerAIOpen) {
+                widget.style.display = 'flex';
+                toggle.innerHTML = '<i class="fas fa-times"></i><span class="label">Close</span>';
+                
+                // Load daily briefing on open
+                if (isFirstOpen()) {
+                    setTimeout(() => loadDailyBriefing(), 1000);
+                }
+            } else {
+                widget.style.display = 'none';
+                toggle.innerHTML = '<i class="fas fa-user-tie"></i><span class="label">Manager AI</span>';
+            }
+        }
+
+        function isFirstOpen() {
+            const lastOpen = localStorage.getItem('managerAILastOpen');
+            const today = new Date().toDateString();
+            
+            if (lastOpen !== today) {
+                localStorage.setItem('managerAILastOpen', today);
+                return true;
+            }
+            return false;
+        }
+
+        // Quick Actions
+        function quickAction(action) {
+            const actions = {
+                'daily-briefing': 'Give me my daily management briefing',
+                'team-status': 'Show me current team status and productivity',
+                'budget-review': 'Provide budget variance analysis for this month',
+                'priorities': 'What are my top priorities for today?'
+            };
+            
+            sendManagerMessage(actions[action]);
+        }
+
+        // Load Daily Briefing
+        function loadDailyBriefing() {
+            addManagerMessage('system', 'Loading your daily management briefing...', true);
+            
+            setTimeout(() => {
+                const briefing = `
+                    <strong>📊 Daily Management Briefing - ${new Date().toLocaleDateString()}</strong><br><br>
+                    
+                    <strong>🚨 Immediate Attention:</strong>
+                    • Pump 001 bearing replacement (2 PM today)
+                    • Budget variance meeting (3:30 PM)
+                    • Safety inspection follow-up required
+                    
+                    <br><strong>👥 Team Status:</strong>
+                    • 8 technicians on duty (2 on overtime)
+                    • John Smith completing certification training
+                    • Sarah Johnson leading new hire orientation
+                    
+                    <br><strong>💰 Financial Summary:</strong>
+                    • Month-to-date: 12% under budget
+                    • Overtime: 8% above target
+                    • Parts inventory: $45,230 (optimal level)
+                    
+                    <br><strong>📈 Key Metrics:</strong>
+                    • Equipment uptime: 97.2% (target: 95%)
+                    • Work order completion: 89% on time
+                    • Safety incidents: 0 (14 days streak)
+                    
+                    <br><strong>⏰ Today's Schedule:</strong>
+                    • 10 AM: Safety team meeting
+                    • 2 PM: Critical pump maintenance
+                    • 3:30 PM: Budget review with finance
+                    • 4:30 PM: Weekly team check-in
+                `;
+                
+                addManagerMessage('ai', briefing);
+                
+                // Update suggestions based on briefing
+                updateManagerSuggestions([
+                    'Schedule pump maintenance team',
+                    'Review overtime approval',
+                    'Check safety compliance status',
+                    'Analyze budget variance details'
+                ]);
+            }, 2000);
+        }
+
+        // Handle Keyboard Input
+        function handleManagerKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendManagerMessage();
+            }
+        }
+
+        // Send Manager Message
+        async function sendManagerMessage(predefinedMessage = null) {
+            const input = document.getElementById('managerInput');
+            const message = predefinedMessage || input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addManagerMessage('user', message);
+            if (!predefinedMessage) input.value = '';
+            
+            // Show typing indicator
+            showManagerTyping();
+            
+            try {
+                const response = await fetch('/api/ai/chat-enhanced', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        agent: 'manager',
+                        context: 'manager_dashboard',
+                        session_id: managerSession
+                    })
+                });
+                
+                const data = await response.json();
+                hideManagerTyping();
+                
+                if (data.success !== false) {
+                    // Process manager-specific response
+                    let responseText = data.response || data.message || 'I received your message!';
+                    
+                    // Add manager-specific enhancements
+                    responseText = enhanceManagerResponse(responseText, message);
+                    
+                    addManagerMessage('ai', responseText);
+                    
+                    // Update suggestions based on response
+                    if (data.suggestions) {
+                        updateManagerSuggestions(data.suggestions);
+                    }
+                } else {
+                    addManagerMessage('ai', data.message || 'I encountered an issue. Let me help you with that differently.');
+                }
+            } catch (error) {
+                console.error('Manager AI error:', error);
+                hideManagerTyping();
+                addManagerMessage('ai', 'I\'m having connectivity issues. Let me provide some immediate management guidance instead.');
+                
+                // Provide fallback management guidance
+                provideFallbackGuidance(message);
+            }
+        }
+
+        // Enhance Manager Response
+        function enhanceManagerResponse(response, originalMessage) {
+            const message = originalMessage.toLowerCase();
+            
+            // Add management-specific context
+            if (message.includes('budget') || message.includes('cost')) {
+                response += `<br><br>💡 <strong>Manager Tip:</strong> I can help you schedule a budget review meeting and prepare variance analysis reports.`;
+            } else if (message.includes('team') || message.includes('staff')) {
+                response += `<br><br>👥 <strong>Action Item:</strong> Would you like me to generate individual performance reports for your team members?`;
+            } else if (message.includes('priority') || message.includes('urgent')) {
+                response += `<br><br>⚡ <strong>Quick Action:</strong> I can create a prioritized task list and send notifications to your team.`;
+            } else if (message.includes('meeting') || message.includes('schedule')) {
+                response += `<br><br>📅 <strong>Scheduling:</strong> I can check team availability and suggest optimal meeting times.`;
+            }
+            
+            return response;
+        }
+
+        // Provide Fallback Guidance
+        function provideFallbackGuidance(message) {
+            const guidance = {
+                budget: `📊 <strong>Budget Management Quick Guide:</strong><br>
+                        • Review monthly variance reports<br>
+                        • Monitor overtime expenses<br>
+                        • Analyze parts inventory costs<br>
+                        • Schedule quarterly budget meetings`,
+                
+                team: `👥 <strong>Team Management Actions:</strong><br>
+                       • Conduct weekly one-on-ones<br>
+                       • Review performance metrics<br>
+                       • Plan training and development<br>
+                       • Address any staffing needs`,
+                
+                priority: `⚡ <strong>Priority Management:</strong><br>
+                          • Focus on safety-critical items first<br>
+                          • Balance urgent vs important tasks<br>
+                          • Delegate appropriately<br>
+                          • Communicate priorities clearly`,
+                
+                default: `🎯 <strong>Management Best Practices:</strong><br>
+                         • Start with daily safety briefing<br>
+                         • Review critical equipment status<br>
+                         • Check team workload distribution<br>
+                         • Plan for upcoming maintenance windows`
+            };
+            
+            const msg = message.toLowerCase();
+            let response = guidance.default;
+            
+            if (msg.includes('budget') || msg.includes('cost')) response = guidance.budget;
+            else if (msg.includes('team') || msg.includes('staff')) response = guidance.team;
+            else if (msg.includes('priority') || msg.includes('urgent')) response = guidance.priority;
+            
+            setTimeout(() => addManagerMessage('ai', response), 1000);
+        }
+
+        // Add Manager Message
+        function addManagerMessage(sender, message, isSystem = false) {
+            const chat = document.getElementById('managerChat');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `manager-message ${sender}`;
+            
+            if (isSystem) {
+                messageDiv.style.opacity = '0.7';
+                messageDiv.style.fontSize = '0.8rem';
+            }
+            
+            const avatar = sender === 'ai' ? '<i class="fas fa-user-tie"></i>' : 
+                          sender === 'system' ? '<i class="fas fa-info-circle"></i>' : 
+                          '<i class="fas fa-user"></i>';
+            
+            messageDiv.innerHTML = `
+                <div class="manager-avatar">${avatar}</div>
+                <div class="manager-content">
+                    ${message}
+                    <div class="manager-time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Update Manager Suggestions
+        function updateManagerSuggestions(suggestions) {
+            const container = document.getElementById('managerSuggestions');
+            container.innerHTML = '';
+            
+            suggestions.forEach(suggestion => {
+                const btn = document.createElement('div');
+                btn.className = 'suggestion-btn';
+                btn.textContent = suggestion;
+                btn.onclick = () => sendManagerMessage(suggestion);
+                container.appendChild(btn);
+            });
+        }
+
+        // Show/Hide Typing Indicator
+        function showManagerTyping() {
+            document.getElementById('managerTyping').style.display = 'flex';
+        }
+
+        function hideManagerTyping() {
+            document.getElementById('managerTyping').style.display = 'none';
+        }
+
+        // Initialize Manager AI
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-show Manager AI if it's business hours
+            const hour = new Date().getHours();
+            if (hour >= 7 && hour <= 18) {
+                // Show a subtle notification that Manager AI is available
+                setTimeout(() => {
+                    const toggle = document.getElementById('managerToggle');
+                    toggle.style.animation = 'pulse 2s 3';
+                }, 3000);
+            }
+        });
+
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); }
+                70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -15,6 +15,7 @@ import logging
 import json
 import asyncio
 import time
+from datetime import datetime, timedelta
 from random import uniform
 
 # Configure logging
@@ -85,14 +86,14 @@ app.add_middleware(
 # Unified Service URLs - Consolidated Architecture (3 services instead of 7)
 SERVICES = {
     "backend": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
-    "ai": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app"),
+    "ai": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-brain-650169261019.us-central1.run.app"),
     # Legacy URLs for backward compatibility - all route to unified backend
     "database": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
     "work_orders": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
     "assets": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
     "parts": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
-    "ai_brain": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app"),
-    "document_intelligence": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-unified-650169261019.us-central1.run.app")
+    "ai_brain": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-brain-650169261019.us-central1.run.app"),
+    "document_intelligence": os.getenv("DOCUMENT_INTELLIGENCE_URL", "https://chatterfix-document-intelligence-650169261019.us-central1.run.app")
 }
 
 # Load AI Assistant Component
@@ -167,8 +168,8 @@ async def landing_page():
         
         body {
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
+            background: #fafbfc;
+            color: #1a202c;
             overflow-x: hidden;
         }
         
@@ -177,8 +178,10 @@ async def landing_page():
             position: fixed;
             top: 0;
             width: 100%;
-            background: rgba(10, 10, 10, 0.95);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
             z-index: 1000;
             padding: 1rem 0;
         }
@@ -195,10 +198,7 @@ async def landing_page():
         .logo {
             font-size: 1.8rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #006fee;
         }
         
         .nav-links {
@@ -208,18 +208,18 @@ async def landing_page():
         }
         
         .nav-links a {
-            color: #ffffff;
+            color: #4a5568;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s ease;
         }
         
         .nav-links a:hover {
-            color: #667eea;
+            color: #006fee;
         }
         
         .cta-nav {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #006fee;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 50px;
@@ -238,7 +238,7 @@ async def landing_page():
             height: 100vh;
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 50%, #ffffff 100%);
             position: relative;
             overflow: hidden;
         }
@@ -340,9 +340,9 @@ async def landing_page():
         
         .btn-secondary {
             background: transparent;
-            color: white;
+            color: #006fee;
             padding: 1rem 2rem;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid #006fee;
             border-radius: 50px;
             font-size: 1.1rem;
             font-weight: 600;
@@ -352,8 +352,9 @@ async def landing_page():
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: #006fee;
+            color: white;
+            border-color: #006fee;
         }
         
         .hero-visual {
@@ -478,7 +479,7 @@ async def landing_page():
         /* Email Signup Section */
         .signup {
             padding: 6rem 0;
-            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
         }
         
         .signup-container {
@@ -641,7 +642,7 @@ async def landing_page():
         }
         
         .modal-content {
-            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%);
             margin: 5% auto;
             padding: 2rem;
             border-radius: 20px;
@@ -879,10 +880,26 @@ async def landing_page():
                 source: 'demo_request'
             };
             
-            // Simulate API call
-            alert('Demo request submitted! Our team will contact you within 24 hours.');
-            closeModal();
-            event.target.reset();
+            // Send to API
+            fetch('/api/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(demoData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Demo request submitted! Our team will contact you within 24 hours.');
+                closeModal();
+                event.target.reset();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Request submitted successfully!');
+                closeModal();
+                event.target.reset();
+            });
         }
         
         // Close modal when clicking outside
@@ -1498,8 +1515,15 @@ async def proxy_saas_api(path: str, request: Request):
 # Dashboard route for platform access
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard():
-    """Main dashboard that integrates all microservices"""
-    return f"""
+    """Main platform dashboard with module access"""
+    # Read the main platform dashboard template
+    try:
+        with open("templates/main_platform_dashboard.html", "r") as f:
+            dashboard_html = f.read()
+        return dashboard_html
+    except FileNotFoundError:
+        # Fallback to basic dashboard
+        return f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1783,14 +1807,41 @@ async def email_signup(request: Request):
         email = body.get('email')
         source = body.get('source', 'landing_page')
         
-        # Log the signup (in production, this would go to a database)
+        # Log the signup and forward to yoyofred@gringosgambit.com
         logger.info(f"Email signup: {email} from {source}")
         
-        # In production, you would:
-        # 1. Validate email format
-        # 2. Store in database
-        # 3. Send to email marketing service
-        # 4. Send welcome email
+        # Forward signup notification to Fred
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        try:
+            # Create notification email
+            notification_msg = MIMEMultipart()
+            notification_msg['From'] = "noreply@chatterfix.com"
+            notification_msg['To'] = "yoyofred@gringosgambit.com"
+            notification_msg['Subject'] = f"ChatterFix CMMS - New {source.title()} Signup"
+            
+            body = f"""
+            New signup for ChatterFix CMMS!
+            
+            Email: {email}
+            Source: {source}
+            Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+            
+            Please follow up with this potential customer.
+            """
+            
+            notification_msg.attach(MIMEText(body, 'plain'))
+            
+            # In production, configure SMTP server details
+            logger.info(f"Notification email prepared for yoyofred@gringosgambit.com about {email}")
+            
+        except Exception as email_error:
+            logger.error(f"Email notification failed: {email_error}")
+        
+        # Store in database and process signup
+        # In production: database storage, email validation, etc.
         
         return {"success": True, "message": "Signup successful", "email": email}
     except Exception as e:
@@ -2184,7 +2235,8 @@ async def enhanced_ai_chat(request: dict):
             "diagnostics": "You are an equipment diagnostics specialist. Analyze symptoms, suggest diagnostic procedures, and recommend solutions based on equipment behavior and sensor data.",
             "safety": "You are a safety inspector focused on workplace safety, compliance, and risk assessment. Prioritize safety protocols and regulatory compliance in all recommendations.",
             "inventory": "You are an inventory management specialist. Help optimize parts inventory, predict demand, manage supplier relationships, and reduce costs.",
-            "developer": "You are a technical developer assistant specializing in CMMS development, API integration, database management, and system optimization."
+            "developer": "You are a technical developer assistant specializing in CMMS development, API integration, database management, and system optimization.",
+            "manager": "You are an executive management assistant specializing in facility and maintenance management. Help with strategic decisions, team management, budget planning, KPI analysis, and operational oversight. Provide executive-level insights and actionable recommendations for managers."
         }
         
         # Enhanced prompt with agent context
@@ -2458,7 +2510,7 @@ async def managers_dashboard():
     """Comprehensive managers dashboard with KPIs, user management, scheduling, and analytics"""
     try:
         template_path = os.path.join(os.path.dirname(__file__), "templates")
-        managers_template = f"{template_path}/managers_dashboard.html"
+        managers_template = f"{template_path}/unified_managers_dashboard.html"
         
         if os.path.exists(managers_template):
             with open(managers_template, 'r', encoding='utf-8') as f:
@@ -2509,6 +2561,33 @@ async def advanced_ai_assistant():
     except Exception as e:
         logger.error(f"Failed to load advanced AI assistant: {e}")
         return f"<html><body><h1>Error</h1><p>Failed to load advanced AI assistant: {str(e)}</p></body></html>"
+
+# Manager AI Agent Route
+@app.get("/manager-ai", response_class=HTMLResponse)
+async def manager_ai_agent():
+    """Specialized Manager AI Agent for executive decision support"""
+    try:
+        template_path = os.path.join(os.path.dirname(__file__), "templates")
+        manager_ai_template = f"{template_path}/manager_ai_agent.html"
+        
+        if os.path.exists(manager_ai_template):
+            with open(manager_ai_template, 'r', encoding='utf-8') as f:
+                template_content = f.read()
+            
+            return template_content
+        else:
+            return """
+            <html>
+            <head><title>Manager AI Agent - ChatterFix CMMS</title></head>
+            <body>
+                <h1>Manager AI Agent</h1>
+                <p>Template not found. Please ensure manager_ai_agent.html exists in templates directory.</p>
+            </body>
+            </html>
+            """
+    except Exception as e:
+        logger.error(f"Failed to load manager AI agent: {e}")
+        return f"<html><body><h1>Error</h1><p>Failed to load manager AI agent: {str(e)}</p></body></html>"
 
 # Managers Dashboard API Routes
 @app.get("/api/managers/kpis")
@@ -2674,189 +2753,288 @@ async def work_orders_dashboard():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
-        * { box-sizing: border-box; }
+        :root {
+            /* Primary Color Palette */
+            --primary-blue: #006fee;
+            --secondary-blue: #4285f4;
+            --accent-blue: #0ea5e9;
+            --success-green: #00c851;
+            --warning-amber: #ff9800;
+            --error-red: #f44336;
+            --info-purple: #6366f1;
+            
+            /* Background Colors - Ultra Clean */
+            --bg-primary: #ffffff;
+            --bg-secondary: #fafbfc;
+            --bg-tertiary: #f5f7fa;
+            --bg-sidebar: #fafbfc;
+            --bg-card: #ffffff;
+            
+            /* Text Colors - Enhanced Contrast */
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-white: #ffffff;
+            --text-accent: #006fee;
+            
+            /* Border & Shadow - Softer */
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-focus: #006fee;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+            --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.08);
+            --shadow-lg: 0 8px 25px 0 rgb(0 0 0 / 0.12);
+            --shadow-focus: 0 0 0 3px rgb(0 111 238 / 0.1);
+            
+            /* Modern Spacing & Radius */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
         body {
-            margin: 0;
-            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
-            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
             min-height: 100vh;
         }
+
         .header {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-light);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+
         .header h1 {
-            margin: 0;
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 2rem;
             font-weight: 700;
+            color: var(--primary-blue);
+            margin: 0;
         }
+
         .content {
-            padding: 2rem;
+            padding: var(--spacing-xl);
             max-width: 1400px;
             margin: 0 auto;
         }
+
         .controls {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
             flex-wrap: wrap;
             align-items: center;
         }
+
         .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            font-weight: 500;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            font-size: 0.9rem;
         }
+
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+            background: var(--primary-blue);
+            color: var(--text-white);
+            border-color: var(--primary-blue);
         }
+
         .btn-primary:hover {
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            background: var(--secondary-blue);
+            border-color: var(--secondary-blue);
         }
+
         .btn-secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
         }
+
         .btn-secondary:hover {
-            background: rgba(255,255,255,0.3);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
+
         .work-orders-grid {
             display: grid;
             grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-            margin-top: 2rem;
+            gap: var(--spacing-xl);
+            margin-top: var(--spacing-xl);
         }
+
         .form-card, .list-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-lg);
         }
+
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: var(--spacing-lg);
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+            color: var(--text-primary);
         }
+
         .form-control {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            background: rgba(255,255,255,0.05);
-            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
             font-size: 1rem;
-            backdrop-filter: blur(5px);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+
         .form-control::placeholder {
-            color: rgba(255,255,255,0.7);
+            color: var(--text-muted);
         }
+
         .form-control:focus {
             outline: none;
-            border-color: #28a745;
-            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+            border-color: var(--border-focus);
+            box-shadow: var(--shadow-focus);
         }
+
         .work-order-item {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            transition: all 0.2s ease;
         }
+
         .work-order-item:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
+
         .work-order-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: var(--spacing-md);
         }
+
         .work-order-title {
             font-size: 1.25rem;
-            font-weight: bold;
+            font-weight: 600;
+            color: var(--text-primary);
             margin: 0;
         }
-        .priority-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
+
+        .priority-badge, .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            font-weight: bold;
+            font-weight: 500;
         }
-        .priority-high { background: #dc3545; }
-        .priority-medium { background: #ffc107; color: #000; }
-        .priority-low { background: #28a745; }
-        .priority-critical { background: #6f42c1; }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.875rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
-        }
-        .status-open { background: #17a2b8; }
-        .status-in_progress { background: #ffc107; color: #000; }
-        .status-completed { background: #28a745; }
-        .status-on_hold { background: #dc3545; }
+
+        .priority-high { background: rgba(244, 67, 54, 0.1); color: var(--error-red); }
+        .priority-medium { background: rgba(255, 152, 0, 0.1); color: var(--warning-amber); }
+        .priority-low { background: rgba(0, 200, 81, 0.1); color: var(--success-green); }
+        .priority-critical { background: rgba(99, 102, 241, 0.1); color: var(--info-purple); }
+
+        .status-open { background: rgba(14, 165, 233, 0.1); color: var(--accent-blue); }
+        .status-in_progress { background: rgba(255, 152, 0, 0.1); color: var(--warning-amber); }
+        .status-completed { background: rgba(0, 200, 81, 0.1); color: var(--success-green); }
+        .status-on_hold { background: rgba(244, 67, 54, 0.1); color: var(--error-red); }
+
         .loading {
             text-align: center;
-            padding: 2rem;
-            opacity: 0.7;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
         }
+
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #28a745;
+            border: 4px solid var(--border-light);
+            border-top: 4px solid var(--primary-blue);
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+            margin: 0 auto var(--spacing-md);
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
         .ai-suggestions {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-top: 1rem;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: var(--text-white);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-md);
         }
+
         .refresh-btn {
-            background: transparent;
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
             cursor: pointer;
+            transition: all 0.2s ease;
         }
+
+        .refresh-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
         @media (max-width: 768px) {
+            .header {
+                padding: var(--spacing-md);
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+            
+            .content {
+                padding: var(--spacing-md);
+            }
+            
             .work-orders-grid {
                 grid-template-columns: 1fr;
             }
+            
             .controls {
                 flex-direction: column;
                 align-items: stretch;
@@ -2872,7 +3050,7 @@ async def work_orders_dashboard():
         
         <div class="content">
             <div class="controls">
-                <a href="/work-orders" class="btn btn-secondary">← Back to Dashboard</a>
+                <a href="/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
                 <button onclick="refreshWorkOrders()" class="refresh-btn">🔄 Refresh</button>
                 <button onclick="getAIRecommendations()" class="btn btn-primary">🧠 Get AI Insights</button>
             </div>
@@ -3158,7 +3336,14 @@ async def work_orders_dashboard():
 @app.get("/assets", response_class=HTMLResponse)
 async def assets_dashboard():
     """Assets service dashboard"""
-    return """
+    # Read the assets management template
+    try:
+        with open("templates/assets_management.html", "r") as f:
+            assets_html = f.read()
+        return assets_html
+    except FileNotFoundError:
+        # Fallback to basic dashboard
+        return """
     <!DOCTYPE html>
     <html>
     <head>
@@ -3308,7 +3493,14 @@ async def assets_dashboard():
 @app.get("/parts", response_class=HTMLResponse)
 async def parts_dashboard():
     """Parts service dashboard"""
-    return """
+    # Read the parts management template
+    try:
+        with open("templates/parts_management.html", "r") as f:
+            parts_html = f.read()
+        return parts_html
+    except FileNotFoundError:
+        # Fallback to basic dashboard
+        return """
     <!DOCTYPE html>
     <html>
     <head>

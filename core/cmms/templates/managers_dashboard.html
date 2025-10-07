@@ -457,26 +457,46 @@
             flex-direction: column;
         }
 
-        .ai-chat-toggle {
+        .ai-toggle-group {
             position: fixed;
             bottom: 20px;
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1001;
+        }
+
+        .ai-chat-toggle, .manager-ai-toggle {
             width: 60px;
             height: 60px;
-            background: var(--primary-color);
             border: none;
             border-radius: 50%;
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
             box-shadow: var(--shadow-lg);
-            z-index: 1001;
             transition: all 0.3s;
+        }
+
+        .ai-chat-toggle {
+            background: var(--primary-color);
+        }
+
+        .manager-ai-toggle {
+            background: var(--warning-color);
+        }
+
+        .ai-chat-toggle:hover, .manager-ai-toggle:hover {
+            transform: scale(1.05);
         }
 
         .ai-chat-toggle:hover {
             background: var(--secondary-color);
-            transform: scale(1.05);
+        }
+
+        .manager-ai-toggle:hover {
+            background: #b45309;
         }
 
         .ai-chat-header {
@@ -930,10 +950,15 @@
         </div>
     </div>
 
-    <!-- AI Chat Widget -->
-    <button class="ai-chat-toggle" onclick="toggleAIChat()">
-        <i class="fas fa-robot"></i>
-    </button>
+    <!-- AI Chat Toggle Buttons -->
+    <div class="ai-toggle-group">
+        <button class="ai-chat-toggle" onclick="toggleAIChat()">
+            <i class="fas fa-robot"></i>
+        </button>
+        <button class="manager-ai-toggle" onclick="openManagerAI()" title="Manager AI Agent">
+            <i class="fas fa-user-tie"></i>
+        </button>
+    </div>
 
     <div id="aiChatWidget" class="ai-chat-widget">
         <div class="ai-chat-header">
@@ -1255,6 +1280,11 @@
             
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ============ MANAGER AI FUNCTIONALITY ============
+        function openManagerAI() {
+            window.open('/manager-ai', '_blank', 'width=800,height=600,resizable=yes,scrollbars=yes');
         }
 
         // ============ INITIALIZATION ============

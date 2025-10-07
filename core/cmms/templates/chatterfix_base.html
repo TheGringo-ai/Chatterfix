@@ -528,5 +528,330 @@
         
         {{custom_scripts}}
     </script>
+
+    <!-- AI Team Consensus #1 Priority: Global Chat Widget -->
+    <div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Toggle Button -->
+        <button id="chat-toggle" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 transform hover:scale-110 group">
+            <svg id="chat-icon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            <span id="chat-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center opacity-0 transition-opacity duration-300">!</span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="hidden absolute bottom-16 right-0 w-80 h-96 bg-gray-900 rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
+            <!-- Chat Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <span class="text-sm">🤖</span>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-semibold text-sm">ChatterFix AI Assistant</h3>
+                        <p class="text-blue-100 text-xs">Online • Ready to help</p>
+                    </div>
+                </div>
+                <button id="chat-close" class="text-white hover:text-gray-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 h-64">
+                <div class="flex items-start space-x-2">
+                    <div class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs">🤖</span>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-3 max-w-64">
+                        <p class="text-gray-100 text-sm">👋 Hi! I'm your ChatterFix AI Assistant. I can help you with work orders, asset management, parts inventory, and answer questions about your CMMS operations. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex space-x-2">
+                    <input id="chat-input" type="text" placeholder="Ask me anything about ChatterFix..." class="flex-1 bg-gray-800 text-white rounded-lg px-3 py-2 text-sm border border-gray-600 focus:border-purple-500 focus:outline-none">
+                    <button id="chat-send" class="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* AI Chat Widget Styles */
+        #ai-chat-widget {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+        }
+
+        #chat-toggle {
+            background: var(--gradient-primary);
+            border: none;
+            padding: 16px;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #chat-toggle:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        #chat-window {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-message {
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #chat-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        #chat-input:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        #chat-send {
+            background: var(--accent-purple);
+        }
+
+        #chat-send:hover {
+            background: var(--accent-purple-dark);
+        }
+    </style>
+
+    <script>
+        // AI Chat Widget Functionality - AI Team Implementation
+        class ChatterFixAIChat {
+            constructor() {
+                this.isOpen = false;
+                this.apiEndpoint = '/api/ai/chat'; // Will auto-route to correct service
+                this.context = this.getPageContext();
+                this.initializeEventListeners();
+                this.showWelcomeMessage();
+            }
+
+            getPageContext() {
+                // Detect current page context for smarter AI responses
+                const path = window.location.pathname;
+                if (path.includes('work-orders')) return 'work_orders';
+                if (path.includes('assets')) return 'assets';
+                if (path.includes('parts')) return 'parts';
+                if (path.includes('dashboard')) return 'dashboard';
+                return 'general';
+            }
+
+            initializeEventListeners() {
+                const toggleBtn = document.getElementById('chat-toggle');
+                const closeBtn = document.getElementById('chat-close');
+                const sendBtn = document.getElementById('chat-send');
+                const input = document.getElementById('chat-input');
+
+                toggleBtn.addEventListener('click', () => this.toggleChat());
+                closeBtn.addEventListener('click', () => this.closeChat());
+                sendBtn.addEventListener('click', () => this.sendMessage());
+                
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+            }
+
+            toggleChat() {
+                const window = document.getElementById('chat-window');
+                const badge = document.getElementById('chat-badge');
+                
+                if (this.isOpen) {
+                    this.closeChat();
+                } else {
+                    window.classList.remove('hidden');
+                    this.isOpen = true;
+                    badge.style.opacity = '0';
+                    document.getElementById('chat-input').focus();
+                }
+            }
+
+            closeChat() {
+                const window = document.getElementById('chat-window');
+                window.classList.add('hidden');
+                this.isOpen = false;
+            }
+
+            showWelcomeMessage() {
+                // Show notification badge to encourage interaction
+                setTimeout(() => {
+                    const badge = document.getElementById('chat-badge');
+                    badge.style.opacity = '1';
+                }, 3000);
+            }
+
+            async sendMessage() {
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // Add user message to chat
+                this.addMessage(message, 'user');
+                input.value = '';
+
+                // Show typing indicator
+                this.showTyping();
+
+                try {
+                    // Smart endpoint routing based on message content and context
+                    const endpoint = this.getSmartEndpoint(message);
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            message: message,
+                            context: this.context,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+
+                    const data = await response.json();
+                    this.hideTyping();
+                    
+                    if (response.ok) {
+                        this.addMessage(data.response || data.message || 'I understand your question. Let me help you with that!', 'ai');
+                    } else {
+                        // Fallback response for development
+                        this.addMessage(this.getSmartFallbackResponse(message), 'ai');
+                    }
+                } catch (error) {
+                    this.hideTyping();
+                    this.addMessage(this.getSmartFallbackResponse(message), 'ai');
+                }
+            }
+
+            getSmartEndpoint(message) {
+                // Route to appropriate microservice based on message content
+                const lower = message.toLowerCase();
+                
+                if (lower.includes('work order') || lower.includes('maintenance') || lower.includes('task')) {
+                    return '/api/work-orders/ai-chat';
+                }
+                if (lower.includes('asset') || lower.includes('equipment') || lower.includes('machine')) {
+                    return '/api/assets/ai-chat';
+                }
+                if (lower.includes('part') || lower.includes('inventory') || lower.includes('stock')) {
+                    return '/api/parts/ai-chat';
+                }
+                
+                // Default to AI brain service
+                return '/api/ai/chat';
+            }
+
+            getSmartFallbackResponse(message) {
+                // Intelligent fallback responses while endpoints are being connected
+                const lower = message.toLowerCase();
+                
+                if (lower.includes('work order')) {
+                    return "I can help you with work orders! Currently, you can create, view, and manage work orders through the Work Orders section. Would you like me to guide you there or help with something specific?";
+                }
+                if (lower.includes('asset') || lower.includes('equipment')) {
+                    return "For asset management, I can help you track equipment, view asset details, and manage maintenance schedules. The Assets section has all your equipment information. What specific asset question do you have?";
+                }
+                if (lower.includes('part') || lower.includes('inventory')) {
+                    return "I can assist with parts inventory! You can check stock levels, add new parts, and track usage in the Parts section. What inventory information do you need?";
+                }
+                if (lower.includes('help') || lower.includes('how')) {
+                    return "I'm here to help! I can assist with:\n• Work order management\n• Asset tracking\n• Parts inventory\n• Navigation and features\n• System status\n\nWhat would you like to know more about?";
+                }
+                
+                return "Thanks for your question! I'm your ChatterFix AI assistant and I'm here to help with your CMMS operations. While I'm connecting to all services, I can guide you through the platform and answer questions about work orders, assets, and inventory management.";
+            }
+
+            addMessage(text, sender) {
+                const messagesContainer = document.getElementById('chat-messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'flex items-start space-x-2 chat-message';
+                
+                if (sender === 'user') {
+                    messageDiv.innerHTML = `
+                        <div class="flex-1 flex justify-end">
+                            <div class="bg-purple-600 rounded-lg p-3 max-w-64">
+                                <p class="text-white text-sm">${text}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-xs">🤖</span>
+                        </div>
+                        <div class="bg-gray-800 rounded-lg p-3 max-w-64">
+                            <p class="text-gray-100 text-sm">${text}</p>
+                        </div>
+                    `;
+                }
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            showTyping() {
+                const messagesContainer = document.getElementById('chat-messages');
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typing-indicator';
+                typingDiv.className = 'flex items-start space-x-2';
+                typingDiv.innerHTML = `
+                    <div class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs">🤖</span>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-3">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            hideTyping() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+        }
+
+        // Initialize AI Chat when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            window.chatterFixAI = new ChatterFixAIChat();
+            console.log('🤖 ChatterFix AI Assistant initialized - AI Team Implementation');
+        });
+    </script>
 </body>
 </html>

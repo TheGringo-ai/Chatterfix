@@ -1,0 +1,106 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - heading " Assets Management" [level=1] [ref=e3]:
+      - generic [ref=e4]: 
+      - text: Assets Management
+    - generic [ref=e5]:
+      - link " Back to Dashboard" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e7] [cursor=pointer]: 
+        - text: Back to Dashboard
+      - button "+ Create Asset" [ref=e8] [cursor=pointer]:
+        - generic [ref=e9] [cursor=pointer]: +
+        - text: Create Asset
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - textbox "Search assets..." [ref=e13]
+        - button " Refresh" [ref=e14] [cursor=pointer]:
+          - generic [ref=e15] [cursor=pointer]: 
+          - text: Refresh
+      - combobox [ref=e17]:
+        - option "All Status" [selected]
+        - option "Operational"
+        - option "Maintenance"
+        - option "Offline"
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: Test Pump
+          - generic [ref=e23]: Equipment • No Serial
+        - generic [ref=e24]: Active
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: "Model:"
+          - generic [ref=e28]: N/A
+        - generic [ref=e29]:
+          - generic [ref=e30]: "Location:"
+          - generic [ref=e31]: Building A
+        - generic [ref=e32]:
+          - generic [ref=e33]: "Purchase Date:"
+          - generic [ref=e34]: N/A
+        - generic [ref=e35]:
+          - generic [ref=e36]: "Cost:"
+          - generic [ref=e37]: N/A
+      - generic [ref=e38]: Industrial water pump
+      - generic [ref=e39]:
+        - button " Edit" [ref=e40] [cursor=pointer]:
+          - generic [ref=e41] [cursor=pointer]: 
+          - text: Edit
+        - button " Work Order" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43] [cursor=pointer]: 
+          - text: Work Order
+        - button " History" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45] [cursor=pointer]: 
+          - text: History
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - heading "Create New Asset" [level=2] [ref=e49]
+      - button "×" [ref=e50] [cursor=pointer]
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - generic [ref=e54]: Asset Name *
+          - textbox [ref=e55]: Test Asset From UI
+        - generic [ref=e56]:
+          - generic [ref=e57]: Asset Type
+          - combobox [ref=e58]:
+            - option "Equipment" [selected]
+            - option "Vehicle"
+            - option "Facility"
+            - option "Tool"
+            - option "System"
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: Serial Number
+          - textbox [ref=e62]
+        - generic [ref=e63]:
+          - generic [ref=e64]: Model
+          - textbox [ref=e65]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]: Location
+          - textbox [active] [ref=e69]: Test Location
+        - generic [ref=e70]:
+          - generic [ref=e71]: Status
+          - combobox [ref=e72]:
+            - option "Operational" [selected]
+            - option "Maintenance"
+            - option "Offline"
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: Purchase Date
+          - textbox [ref=e76]
+        - generic [ref=e77]:
+          - generic [ref=e78]: Purchase Cost
+          - spinbutton [ref=e79]
+      - generic [ref=e80]:
+        - generic [ref=e81]: Description
+        - textbox "Additional details about the asset..." [ref=e82]: Created via UI test
+      - button " Create Asset" [ref=e84] [cursor=pointer]:
+        - generic [ref=e85] [cursor=pointer]: 
+        - text: Create Asset
+```

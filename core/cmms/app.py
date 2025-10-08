@@ -93,7 +93,8 @@ SERVICES = {
     "assets": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
     "parts": os.getenv("BACKEND_SERVICE_URL", "https://chatterfix-backend-unified-650169261019.us-central1.run.app"),
     "ai_brain": os.getenv("AI_SERVICE_URL", "https://chatterfix-ai-brain-650169261019.us-central1.run.app"),
-    "document_intelligence": os.getenv("DOCUMENT_INTELLIGENCE_URL", "https://chatterfix-document-intelligence-650169261019.us-central1.run.app")
+    "document_intelligence": os.getenv("DOCUMENT_INTELLIGENCE_URL", "https://chatterfix-document-intelligence-650169261019.us-central1.run.app"),
+    "fix_it_fred": os.getenv("FIX_IT_FRED_URL", "https://fix-it-fred-psycl7nhha-uc.a.run.app")
 }
 
 # Load AI Assistant Component
@@ -2500,6 +2501,69 @@ async def process_voice_command(command_data: dict):
             
     except Exception as e:
         logger.error(f"Voice command processing error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": time.time()
+        }
+
+# Fix It Fred Integration Models
+class FixItFredRequest(BaseModel):
+    equipment: str
+    issue_description: str
+    technician_id: Optional[str] = None
+
+@app.post("/api/fix-it-fred/troubleshoot")
+async def fix_it_fred_troubleshoot(request: FixItFredRequest):
+    """Integrate with Fix It Fred AI troubleshooting service"""
+    try:
+        async with httpx.AsyncClient() as client:
+            fred_response = await client.post(
+                f"{SERVICES['fix_it_fred']}/api/troubleshoot",
+                json={
+                    "equipment": request.equipment,
+                    "issue_description": request.issue_description,
+                    "technician_id": request.technician_id or "chatterfix_user"
+                },
+                timeout=30.0
+            )
+            
+            if fred_response.status_code == 200:
+                result = fred_response.json()
+                return {
+                    "success": True,
+                    "source": "fix_it_fred",
+                    "data": result,
+                    "message": "Troubleshooting guidance from Fix It Fred AI"
+                }
+            else:
+                # Fallback to AI Brain if Fred is unavailable
+                async with httpx.AsyncClient() as ai_client:
+                    ai_response = await ai_client.post(
+                        f"{SERVICES['ai']}/api/ai/chat",
+                        json={
+                            "prompt": f"Troubleshoot this equipment issue: {request.equipment} - {request.issue_description}",
+                            "context": "maintenance_troubleshooting"
+                        },
+                        timeout=30.0
+                    )
+                    
+                    if ai_response.status_code == 200:
+                        return {
+                            "success": True,
+                            "source": "ai_brain_fallback",
+                            "data": ai_response.json(),
+                            "message": "Troubleshooting guidance from AI Brain (Fred unavailable)"
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": "Both Fix It Fred and AI Brain services unavailable",
+                            "status_codes": {"fred": fred_response.status_code, "ai": ai_response.status_code}
+                        }
+            
+    except Exception as e:
+        logger.error(f"Fix It Fred integration error: {e}")
         return {
             "success": False,
             "error": str(e),

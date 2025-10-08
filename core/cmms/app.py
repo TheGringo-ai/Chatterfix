@@ -126,7 +126,9 @@ async def health_check():
                     await asyncio.sleep(0.5)
                 
                 async def make_request():
-                    return await client.get(f"{url}/health")
+                    # Use correct health endpoint for each service
+                    health_endpoint = "/api/health" if service_name == "fix_it_fred" else "/health"
+                    return await client.get(f"{url}{health_endpoint}")
                 
                 response = await retry_with_backoff(make_request, max_retries=2, base_delay=0.5)
                 

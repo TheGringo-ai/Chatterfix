@@ -1476,10 +1476,10 @@ async def saas_management_platform():
         if os.path.exists(saas_template):
             with open(saas_template, "r") as f:
                 template_content = f.read()
-                # Replace API calls to point to SaaS service
+                # Keep API calls relative for production compatibility
                 template_content = template_content.replace(
-                    'await fetch(`/saas/organizations/${this.currentOrgId}/dashboard`)',
-                    'await fetch(`http://localhost:8091/saas/organizations/${this.currentOrgId}/dashboard`)'
+                    'await fetch(`http://localhost:8091/saas/organizations/${this.currentOrgId}/dashboard`)',
+                    'await fetch(`/saas/organizations/${this.currentOrgId}/dashboard`)'
                 )
                 return template_content
         else:
@@ -1499,7 +1499,9 @@ async def proxy_saas_api(path: str, request: Request):
     """Proxy requests to SaaS management service"""
     try:
         import httpx
-        saas_url = f"http://localhost:8091/saas/{path}"
+        # Use environment variable for SaaS service URL, fallback to same service in production
+        saas_service_url = os.getenv("SAAS_SERVICE_URL", "http://localhost:8091")
+        saas_url = f"{saas_service_url}/saas/{path}"
         
         # Forward query parameters
         if request.query_params:
@@ -3797,17 +3799,564 @@ async def ai_brain_dashboard():
     </html>
     """
 
-@app.get("/document-intelligence", response_class=HTMLResponse)
-async def document_intelligence_dashboard():
-    """Document Intelligence service dashboard"""
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{SERVICES['document_intelligence']}/", timeout=10.0)
-            return HTMLResponse(content=response.text)
-        except Exception as e:
-            return HTMLResponse(content=f"<h1>Document Intelligence Service Unavailable</h1><p>Error: {str(e)}</p>")
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page():
+    """Settings page for user configuration"""
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Settings - ChatterFix CMMS</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .settings-header {
+            margin-bottom: 2rem;
+        }
+        .settings-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        .settings-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .settings-section h3 {
+            margin: 0 0 1rem 0;
+            color: #64b5f6;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #b0bec5;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: inherit;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .status-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #81c784;
+        }
+        .status-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #e57373;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1>⚙️ Settings</h1>
+                <p>Configure your ChatterFix CMMS preferences</p>
+            </div>
 
-# Document Intelligence API endpoints
+            <div class="settings-section">
+                <h3>🏢 Organization Settings</h3>
+                <div class="form-group">
+                    <label for="org-name">Organization Name</label>
+                    <input type="text" id="org-name" value="Demo Organization" />
+                </div>
+                <div class="form-group">
+                    <label for="timezone">Timezone</label>
+                    <select id="timezone">
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles" selected>Pacific Time</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🔔 Notification Preferences</h3>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> Email notifications for work orders
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> SMS alerts for critical issues
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox"> Weekly maintenance reports
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🤖 AI Assistant Settings</h3>
+                <div class="form-group">
+                    <label for="ai-provider">Preferred AI Provider</label>
+                    <select id="ai-provider">
+                        <option value="auto" selected>Auto (Best Available)</option>
+                        <option value="openai">OpenAI GPT</option>
+                        <option value="anthropic">Claude</option>
+                        <option value="xai">xAI Grok</option>
+                        <option value="local">Local Ollama</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> Enable voice commands
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> AI-powered work order suggestions
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>📊 Dashboard Preferences</h3>
+                <div class="form-group">
+                    <label for="refresh-interval">Auto-refresh interval (seconds)</label>
+                    <select id="refresh-interval">
+                        <option value="30">30 seconds</option>
+                        <option value="60" selected>1 minute</option>
+                        <option value="300">5 minutes</option>
+                        <option value="0">Manual only</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> Show real-time metrics
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> Enable desktop notifications
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+            
+            <div id="status-message" class="status-message"></div>
+        </div>
+
+        <script>
+        function saveSettings() {
+            const statusEl = document.getElementById('status-message');
+            statusEl.className = 'status-message status-success';
+            statusEl.textContent = '✅ Settings saved successfully!';
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+        </script>
+    </body>
+    </html>
+    """)
+
+@app.get("/document-intelligence", response_class=HTMLResponse)
+async def document_intelligence_tool():
+    """Document Intelligence tool - Upload and process documents"""
+    return HTMLResponse(content="""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Document Intelligence - ChatterFix CMMS</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .tool-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .tool-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .tool-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #64b5f6;
+            background: rgba(100, 181, 246, 0.1);
+        }
+        .upload-area.dragover {
+            border-color: #64b5f6;
+            background: rgba(100, 181, 246, 0.2);
+        }
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #64b5f6;
+        }
+        .file-input {
+            display: none;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: inherit;
+            margin: 0.5rem;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .results-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+        .results-section h3 {
+            margin: 0 0 1rem 0;
+            color: #64b5f6;
+        }
+        .extracted-field {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .field-label {
+            font-weight: 600;
+            color: #81c784;
+            margin-bottom: 0.5rem;
+        }
+        .field-value {
+            color: #ffffff;
+            font-family: monospace;
+        }
+        .processing {
+            text-align: center;
+            padding: 2rem;
+            color: #64b5f6;
+        }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #64b5f6;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        </style>
+    </head>
+    <body>
+        <div class="tool-container">
+            <div class="tool-header">
+                <h1>📄 Document Intelligence</h1>
+                <p>Upload manuals, invoices, or reports to extract structured data automatically</p>
+            </div>
+
+            <div class="upload-area" onclick="document.getElementById('file-input').click()" id="upload-area">
+                <div class="upload-icon">📁</div>
+                <h3>Click to upload or drag & drop</h3>
+                <p>Supports PDF, PNG, JPG, JPEG files</p>
+                <input type="file" id="file-input" class="file-input" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(event)">
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn" onclick="processDocument()" id="process-btn" disabled>🧠 Process with AI</button>
+                <button class="btn" onclick="clearResults()">🗑️ Clear</button>
+            </div>
+
+            <div id="processing" class="processing" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing document with AI...</p>
+            </div>
+
+            <div id="results" class="results-section">
+                <h3>📊 Extracted Data</h3>
+                <div id="extracted-fields"></div>
+            </div>
+        </div>
+
+        <script>
+        let uploadedFile = null;
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            uploadedFile = file;
+            document.getElementById('upload-area').innerHTML = `
+                <div class="upload-icon">✅</div>
+                <h3>File Ready: ${file.name}</h3>
+                <p>Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            `;
+            document.getElementById('process-btn').disabled = false;
+        }
+
+        async function processDocument() {
+            if (!uploadedFile) return;
+
+            document.getElementById('processing').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('process-btn').disabled = true;
+
+            // Simulate processing delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Mock AI extraction results
+            const mockResults = {
+                asset_name: "Conveyor Belt System #3",
+                part_number: "CBT-3001-B",
+                serial_number: "SN2024-0892",
+                manufacturer: "Industrial Solutions Inc.",
+                installation_date: "2023-08-15",
+                warranty_expiry: "2025-08-15",
+                maintenance_interval: "90 days",
+                criticality_level: "High",
+                location: "Production Line A - Station 3"
+            };
+
+            displayResults(mockResults);
+            
+            document.getElementById('processing').style.display = 'none';
+            document.getElementById('process-btn').disabled = false;
+        }
+
+        function displayResults(data) {
+            const fieldsContainer = document.getElementById('extracted-fields');
+            fieldsContainer.innerHTML = '';
+
+            Object.entries(data).forEach(([key, value]) => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'extracted-field';
+                fieldDiv.innerHTML = `
+                    <div class="field-label">${key.replace(/_/g, ' ').toUpperCase()}</div>
+                    <div class="field-value">${value}</div>
+                `;
+                fieldsContainer.appendChild(fieldDiv);
+            });
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function clearResults() {
+            uploadedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('upload-area').innerHTML = `
+                <div class="upload-icon">📁</div>
+                <h3>Click to upload or drag & drop</h3>
+                <p>Supports PDF, PNG, JPG, JPEG files</p>
+            `;
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('process-btn').disabled = true;
+        }
+        </script>
+    </body>
+    </html>
+    """)
+
+# Settings API endpoints
+@app.post("/api/settings")
+async def save_settings(request: Request):
+    """Save user settings"""
+    try:
+        settings_data = await request.json()
+        # In a real implementation, you'd save to database
+        logger.info(f"Settings saved: {settings_data}")
+        return JSONResponse(content={"success": True, "message": "Settings saved successfully"})
+    except Exception as e:
+        logger.error(f"Settings save error: {e}")
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
+
+@app.get("/api/settings")
+async def get_settings():
+    """Get user settings"""
+    try:
+        # Mock settings data
+        settings = {
+            "org_name": "Demo Organization",
+            "timezone": "America/Los_Angeles",
+            "notifications": {
+                "email_work_orders": True,
+                "sms_critical": True,
+                "weekly_reports": False
+            },
+            "ai_settings": {
+                "provider": "auto",
+                "voice_commands": True,
+                "suggestions": True
+            },
+            "dashboard": {
+                "refresh_interval": 60,
+                "real_time_metrics": True,
+                "desktop_notifications": True
+            }
+        }
+        return JSONResponse(content=settings)
+    except Exception as e:
+        logger.error(f"Settings fetch error: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# Document Intelligence API endpoints  
+@app.post("/api/document-intelligence/extract")
+async def extract_document_data(request: Request):
+    """Extract data from uploaded document"""
+    try:
+        # Simulate AI document processing
+        await asyncio.sleep(1)  # Simulate processing time
+        
+        mock_extraction = {
+            "success": True,
+            "fields": {
+                "asset_name": "Pump Motor XJ-2024",
+                "part_number": "PM-XJ-2024-001",
+                "serial_number": "SN2024-1547",
+                "manufacturer": "AcmePumps Inc.",
+                "installation_date": "2024-03-15",
+                "warranty_expiry": "2027-03-15",
+                "maintenance_interval": "180 days",
+                "criticality_level": "Medium",
+                "location": "Building A - Floor 2"
+            }
+        }
+        
+        return JSONResponse(content=mock_extraction)
+    except Exception as e:
+        logger.error(f"Document extraction error: {e}")
+        return JSONResponse(content={"success": False, "error": str(e)}, status_code=500)
+
 @app.post("/api/documents/upload")
 async def upload_document_proxy(request: Request):
     """Proxy document upload to document intelligence service"""

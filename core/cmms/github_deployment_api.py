@@ -172,31 +172,47 @@ class GitHubDeploymentAPI:
             "pr_url": result["stdout"]
         }
 
-    async def trigger_deployment(self, environment: str = "production") -> Dict[str, Any]:
-        """Trigger GitHub Actions deployment"""
-        if not self.github_token:
+    async def trigger_deployment(self, environment: str = "production", command: str = "") -> Dict[str, Any]:
+        """Trigger GitHub Actions deployment via git push
+
+        Instead of requiring GITHUB_TOKEN, this pushes changes which triggers
+        the workflow automatically via push event.
+        """
+        try:
+            # Ensure we're on a branch
+            branch_result = self.execute_command("git branch --show-current")
+            if not branch_result["success"] or not branch_result["stdout"]:
+                return {
+                    "success": False,
+                    "error": "Not on a valid git branch"
+                }
+
+            current_branch = branch_result["stdout"].strip()
+
+            # Push to trigger deployment
+            push_result = self.execute_command(f"git push origin {current_branch}")
+
+            if not push_result["success"]:
+                return {
+                    "success": False,
+                    "error": f"Push failed: {push_result.get('stderr')}",
+                    "info": "Deployment trigger requires successful git push"
+                }
+
             return {
-                "success": False,
-                "error": "GITHUB_TOKEN not configured"
+                "success": True,
+                "environment": environment,
+                "branch": current_branch,
+                "message": f"Pushed to {current_branch} - GitHub Actions will deploy automatically",
+                "info": "Check GitHub Actions for deployment progress",
+                "timestamp": datetime.now().isoformat()
             }
 
-        # Trigger workflow using GitHub CLI
-        result = self.execute_command(
-            f'gh workflow run deploy-to-gcp.yml -f environment={environment}'
-        )
-
-        if not result["success"]:
+        except Exception as e:
             return {
                 "success": False,
-                "error": f"Deployment trigger failed: {result.get('stderr')}"
+                "error": str(e)
             }
-
-        return {
-            "success": True,
-            "environment": environment,
-            "message": f"Deployment to {environment} triggered",
-            "timestamp": datetime.now().isoformat()
-        }
 
     async def full_deployment_flow(
         self,

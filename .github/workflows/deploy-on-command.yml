@@ -1,0 +1,270 @@
+name: 🤖 Fix It Fred Command Deployment
+
+on:
+  repository_dispatch:
+    types: [deploy-command]
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Deployment command from Fix It Fred'
+        required: true
+        default: 'deploy to production'
+      source:
+        description: 'Source service making the request'
+        required: false
+        default: 'fix-it-fred'
+
+env:
+  GCP_PROJECT_ID: fredfix
+  GCP_ZONE: us-east1-b
+  INSTANCE_NAME: chatterfix-cmms-production
+
+jobs:
+  parse-command:
+    name: 🧠 Parse Natural Language Command
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.parse.outputs.action }}
+      environment: ${{ steps.parse.outputs.environment }}
+      create_pr: ${{ steps.parse.outputs.create_pr }}
+
+    steps:
+    - name: 📋 Parse Command
+      id: parse
+      run: |
+        COMMAND="${{ github.event.client_payload.command || inputs.command }}"
+        echo "Parsing command: $COMMAND"
+
+        # Determine action
+        if echo "$COMMAND" | grep -qi "deploy.*production\|ship.*it\|go.*live"; then
+          echo "action=deploy" >> $GITHUB_OUTPUT
+          echo "environment=production" >> $GITHUB_OUTPUT
+          echo "create_pr=false" >> $GITHUB_OUTPUT
+        elif echo "$COMMAND" | grep -qi "deploy.*staging\|deploy.*dev"; then
+          echo "action=deploy" >> $GITHUB_OUTPUT
+          echo "environment=staging" >> $GITHUB_OUTPUT
+          echo "create_pr=false" >> $GITHUB_OUTPUT
+        elif echo "$COMMAND" | grep -qi "create.*pr\|pull.*request"; then
+          echo "action=create_pr" >> $GITHUB_OUTPUT
+          echo "environment=none" >> $GITHUB_OUTPUT
+          echo "create_pr=true" >> $GITHUB_OUTPUT
+        elif echo "$COMMAND" | grep -qi "status\|check"; then
+          echo "action=status" >> $GITHUB_OUTPUT
+          echo "environment=none" >> $GITHUB_OUTPUT
+          echo "create_pr=false" >> $GITHUB_OUTPUT
+        else
+          echo "action=deploy" >> $GITHUB_OUTPUT
+          echo "environment=production" >> $GITHUB_OUTPUT
+          echo "create_pr=false" >> $GITHUB_OUTPUT
+        fi
+
+        echo "✅ Command parsed successfully"
+
+  deploy:
+    name: 🚀 Deploy to ${{ needs.parse-command.outputs.environment }}
+    needs: parse-command
+    runs-on: ubuntu-latest
+    if: needs.parse-command.outputs.action == 'deploy'
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔐 Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+    - name: ⚙️ Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ env.GCP_PROJECT_ID }}
+
+    - name: 📦 Prepare Deployment Package
+      run: |
+        echo "📦 Packaging ChatterFix CMMS files..."
+        mkdir -p deploy-package
+
+        # Copy core application files
+        cp -r core/cmms/* deploy-package/
+
+        # Create deployment archive
+        cd deploy-package
+        tar czf ../chatterfix-deployment.tar.gz .
+        cd ..
+
+        echo "✅ Package created: $(du -h chatterfix-deployment.tar.gz)"
+
+    - name: 📤 Upload to GCP
+      run: |
+        echo "📤 Uploading deployment package to VM..."
+
+        # Upload via metadata (for small files) or Cloud Storage (for large files)
+        gcloud compute scp chatterfix-deployment.tar.gz \
+          ${{ env.INSTANCE_NAME }}:/tmp/chatterfix-deployment.tar.gz \
+          --zone=${{ env.GCP_ZONE }} || \
+          gcloud compute instances add-metadata ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.GCP_ZONE }} \
+            --metadata deployment-ready=true
+
+    - name: 🔄 Deploy on VM
+      run: |
+        echo "🔄 Triggering deployment on VM..."
+
+        DEPLOY_SCRIPT='#!/bin/bash
+set -e
+export HOME=/root
+
+echo "🚀 Fix It Fred Automated Deployment"
+echo "===================================="
+echo "Environment: ${{ needs.parse-command.outputs.environment }}"
+echo "Triggered by: ${{ github.event.client_payload.source || inputs.source }}"
+echo "Time: $(date)"
+
+# Stop current service
+echo "🛑 Stopping ChatterFix..."
+pkill -f "python3 app.py" || true
+sleep 2
+
+# Extract new version
+if [ -f /tmp/chatterfix-deployment.tar.gz ]; then
+    echo "📦 Extracting deployment package..."
+    cd /home/yoyofred_gringosgambit_com/chatterfix-docker/app
+    tar xzf /tmp/chatterfix-deployment.tar.gz
+    echo "✅ Files extracted"
+else
+    echo "ℹ️  No deployment package, using existing files"
+fi
+
+# Ensure dependencies
+echo "📚 Checking dependencies..."
+pip3 install --quiet fastapi uvicorn jinja2 httpx python-multipart aiofiles pydantic
+
+# Start service
+echo "🚀 Starting ChatterFix..."
+cd /home/yoyofred_gringosgambit_com/chatterfix-docker/app
+export OLLAMA_HOST=http://localhost:11434
+export PORT=8080
+
+# Load environment
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
+
+nohup python3 app.py > /tmp/chatterfix.log 2>&1 &
+CHATTERFIX_PID=$!
+
+echo "⏳ Waiting for service to start..."
+sleep 10
+
+if ps -p $CHATTERFIX_PID > /dev/null; then
+    echo "✅ ChatterFix started successfully (PID: $CHATTERFIX_PID)"
+    tail -15 /tmp/chatterfix.log
+else
+    echo "❌ ChatterFix failed to start"
+    cat /tmp/chatterfix.log
+    exit 1
+fi
+
+echo "🎉 Deployment complete!"
+'
+
+        # Upload and execute deployment script
+        echo "$DEPLOY_SCRIPT" | gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+          --zone=${{ env.GCP_ZONE }} \
+          --command "cat > /tmp/deploy.sh && chmod +x /tmp/deploy.sh && sudo /tmp/deploy.sh"
+
+    - name: 🩺 Health Check
+      run: |
+        echo "🔍 Getting VM external IP..."
+        VM_IP=$(gcloud compute instances describe ${{ env.INSTANCE_NAME }} \
+          --zone=${{ env.GCP_ZONE }} \
+          --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+
+        echo "🌐 VM IP: $VM_IP"
+
+        # Health check with retries
+        for i in {1..10}; do
+          echo "🩺 Health check attempt $i/10..."
+          if curl -s -f "http://$VM_IP:8080/api/ollama/status" > /dev/null; then
+            echo "✅ Deployment successful!"
+            curl -s "http://$VM_IP:8080/api/ollama/status"
+            exit 0
+          else
+            echo "⏳ Service starting... (attempt $i)"
+            sleep 20
+          fi
+        done
+
+        echo "❌ Deployment health check failed"
+        exit 1
+
+    - name: 🎉 Deployment Summary
+      run: |
+        VM_IP=$(gcloud compute instances describe ${{ env.INSTANCE_NAME }} \
+          --zone=${{ env.GCP_ZONE }} \
+          --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+
+        echo "🎉 DEPLOYMENT COMPLETE!"
+        echo "====================="
+        echo "🤖 Deployed by: Fix It Fred"
+        echo "🌐 URL: http://$VM_IP:8080"
+        echo "🔧 Environment: ${{ needs.parse-command.outputs.environment }}"
+        echo "📊 Status: http://$VM_IP:8080/api/ollama/status"
+        echo "🚀 Deployment API: http://$VM_IP:8080/api/fix-it-fred/deploy"
+
+  create-pr:
+    name: 📝 Create Pull Request
+    needs: parse-command
+    runs-on: ubuntu-latest
+    if: needs.parse-command.outputs.create_pr == 'true'
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔀 Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "🤖 Automated update from Fix It Fred"
+        title: "🤖 Fix It Fred Automated Update"
+        body: |
+          ## 🤖 Automated Update from Fix It Fred
+
+          This PR was automatically created by Fix It Fred based on a deployment command.
+
+          **Command**: ${{ github.event.client_payload.command || inputs.command }}
+          **Source**: ${{ github.event.client_payload.source || inputs.source }}
+          **Time**: ${{ github.event.client_payload.timestamp }}
+
+          Please review the changes before merging.
+
+          ---
+          🤖 *Generated by Fix It Fred*
+        branch: fix-it-fred-auto-update
+        labels: automated, fix-it-fred
+
+  status-check:
+    name: 📊 Repository Status Check
+    needs: parse-command
+    runs-on: ubuntu-latest
+    if: needs.parse-command.outputs.action == 'status'
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 📊 Get Status
+      run: |
+        echo "📊 Repository Status"
+        echo "==================="
+        echo "🌿 Branch: $(git branch --show-current)"
+        echo "📝 Latest commit: $(git log -1 --oneline)"
+        echo "📦 Changed files:"
+        git status --short
+
+        echo ""
+        echo "✅ Status check complete"

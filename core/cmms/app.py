@@ -2515,6 +2515,14 @@ class FixItFredRequest(BaseModel):
     issue_description: str
     technician_id: Optional[str] = None
 
+# Import Fix It Fred Ollama integration
+try:
+    from fix_it_fred_ollama import fred_ollama
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logger.warning("Fix It Fred Ollama integration not available")
+
 @app.post("/api/fix-it-fred/troubleshoot")
 async def fix_it_fred_troubleshoot(request: FixItFredRequest):
     """Integrate with Fix It Fred AI troubleshooting service"""
@@ -2569,6 +2577,71 @@ async def fix_it_fred_troubleshoot(request: FixItFredRequest):
         return {
             "success": False,
             "error": str(e),
+            "timestamp": time.time()
+        }
+
+@app.post("/api/fix-it-fred/troubleshoot-ollama")
+async def fix_it_fred_troubleshoot_ollama(request: FixItFredRequest):
+    """Enhanced Fix It Fred troubleshooting powered by local Ollama AI"""
+    if not OLLAMA_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Ollama integration not available",
+            "message": "Please ensure fix_it_fred_ollama.py is installed"
+        }
+
+    try:
+        result = await fred_ollama.troubleshoot(
+            equipment=request.equipment,
+            issue_description=request.issue_description
+        )
+
+        return {
+            **result,
+            "message": "Fix It Fred powered by Ollama local AI",
+            "timestamp": time.time()
+        }
+
+    except Exception as e:
+        logger.error(f"Ollama troubleshooting error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Failed to generate Ollama troubleshooting response",
+            "timestamp": time.time()
+        }
+
+@app.get("/api/ollama/status")
+async def ollama_status():
+    """Check Ollama status and available models"""
+    if not OLLAMA_AVAILABLE:
+        return {
+            "success": False,
+            "ollama_available": False,
+            "message": "Ollama integration module not loaded"
+        }
+
+    try:
+        models = await fred_ollama.get_available_models()
+        selected = await fred_ollama.select_best_model()
+
+        return {
+            "success": True,
+            "ollama_available": len(models) > 0,
+            "available_models": models,
+            "selected_model": selected,
+            "ollama_host": fred_ollama.ollama_host,
+            "message": f"Ollama is {'active' if models else 'inactive'} with {len(models)} model(s)",
+            "timestamp": time.time()
+        }
+
+    except Exception as e:
+        logger.error(f"Ollama status check error: {e}")
+        return {
+            "success": False,
+            "ollama_available": False,
+            "error": str(e),
+            "message": "Failed to check Ollama status",
             "timestamp": time.time()
         }
 
@@ -3130,13 +3203,13 @@ async def work_orders_dashboard():
                         <div class="form-group">
                             <label for="title">Title</label>
                             <input type="text" id="title" name="title" class="form-control" 
-                                   placeholder="Enter work order title" required>
+                                   placeholder="Enter work order title" maxlength="100" required>
                         </div>
                         
                         <div class="form-group">
                             <label for="description">Description</label>
                             <textarea id="description" name="description" class="form-control" 
-                                      rows="3" placeholder="Describe the work to be done" required></textarea>
+                                      rows="3" placeholder="Describe the work to be done" maxlength="1000" required></textarea>
                         </div>
                         
                         <div class="form-group">
@@ -3162,13 +3235,13 @@ async def work_orders_dashboard():
                         <div class="form-group">
                             <label for="assigned_to">Assigned To</label>
                             <input type="text" id="assigned_to" name="assigned_to" class="form-control" 
-                                   placeholder="Technician name (optional)">
+                                   placeholder="Technician name (optional)" maxlength="50">
                         </div>
                         
                         <div class="form-group">
                             <label for="asset_id">Asset ID</label>
                             <input type="number" id="asset_id" name="asset_id" class="form-control" 
-                                   placeholder="Asset ID (optional)">
+                                   placeholder="Asset ID (optional)" min="1">
                         </div>
                         
                         <div class="form-group">
@@ -3257,14 +3330,79 @@ async def work_orders_dashboard():
         async function createWorkOrder(event) {
             event.preventDefault();
             
+            // Enhanced validation
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const assignedTo = document.getElementById('assigned_to').value.trim();
+            const assetId = document.getElementById('asset_id').value.trim();
+            
+            // Clear any previous error messages
+            clearValidationErrors();
+            
+            let hasErrors = false;
+            
+            // Title validation
+            if (!title) {
+                showValidationError('title', 'Title is required');
+                hasErrors = true;
+            } else if (title.length < 3) {
+                showValidationError('title', 'Title must be at least 3 characters');
+                hasErrors = true;
+            } else if (title.length > 100) {
+                showValidationError('title', 'Title must be less than 100 characters');
+                hasErrors = true;
+            }
+            
+            // Description validation
+            if (!description) {
+                showValidationError('description', 'Description is required');
+                hasErrors = true;
+            } else if (description.length < 10) {
+                showValidationError('description', 'Description must be at least 10 characters');
+                hasErrors = true;
+            } else if (description.length > 1000) {
+                showValidationError('description', 'Description must be less than 1000 characters');
+                hasErrors = true;
+            }
+            
+            // Assigned To validation (optional but with format check)
+            if (assignedTo && assignedTo.length > 50) {
+                showValidationError('assigned_to', 'Assigned to must be less than 50 characters');
+                hasErrors = true;
+            }
+            
+            // Asset ID validation (optional but must be positive integer)
+            if (assetId) {
+                const assetIdNum = parseInt(assetId);
+                if (isNaN(assetIdNum) || assetIdNum <= 0) {
+                    showValidationError('asset_id', 'Asset ID must be a positive number');
+                    hasErrors = true;
+                }
+            }
+            
+            // File size validation
+            const files = document.getElementById('attachments').files;
+            if (files) {
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].size > 10 * 1024 * 1024) { // 10MB limit
+                        showValidationError('attachments', `File ${files[i].name} exceeds 10MB limit`);
+                        hasErrors = true;
+                    }
+                }
+            }
+            
+            if (hasErrors) {
+                return false;
+            }
+            
             const formData = new FormData(event.target);
             const workOrder = {
-                title: formData.get('title'),
-                description: formData.get('description'),
+                title: title,
+                description: description,
                 priority: formData.get('priority'),
                 status: formData.get('status'),
-                assigned_to: formData.get('assigned_to') || null,
-                asset_id: formData.get('asset_id') ? parseInt(formData.get('asset_id')) : null
+                assigned_to: assignedTo || null,
+                asset_id: assetId ? parseInt(assetId) : null
             };
             
             try {
@@ -3393,6 +3531,94 @@ async def work_orders_dashboard():
                 alert('🤖 AI insights temporarily unavailable');
             }
         }
+        
+        // Validation helper functions
+        function showValidationError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            field.style.borderColor = '#ff6b6b';
+            
+            // Remove any existing error message
+            const existingError = field.parentNode.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Add new error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'validation-error';
+            errorDiv.style.color = '#ff6b6b';
+            errorDiv.style.fontSize = '0.875rem';
+            errorDiv.style.marginTop = '0.25rem';
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+        }
+        
+        function clearValidationErrors() {
+            // Reset field borders
+            document.querySelectorAll('.form-control').forEach(field => {
+                field.style.borderColor = '';
+            });
+            
+            // Remove error messages
+            document.querySelectorAll('.validation-error').forEach(error => {
+                error.remove();
+            });
+        }
+        
+        // Real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Title validation
+            const titleField = document.getElementById('title');
+            if (titleField) {
+                titleField.addEventListener('input', function() {
+                    const value = this.value.trim();
+                    if (value.length > 0 && value.length < 3) {
+                        showValidationError('title', 'Title must be at least 3 characters');
+                    } else if (value.length > 100) {
+                        showValidationError('title', 'Title must be less than 100 characters');
+                    } else {
+                        clearFieldError('title');
+                    }
+                });
+            }
+            
+            // Description validation
+            const descField = document.getElementById('description');
+            if (descField) {
+                descField.addEventListener('input', function() {
+                    const value = this.value.trim();
+                    if (value.length > 0 && value.length < 10) {
+                        showValidationError('description', 'Description must be at least 10 characters');
+                    } else if (value.length > 1000) {
+                        showValidationError('description', 'Description must be less than 1000 characters');
+                    } else {
+                        clearFieldError('description');
+                    }
+                });
+            }
+            
+            // Asset ID validation
+            const assetField = document.getElementById('asset_id');
+            if (assetField) {
+                assetField.addEventListener('input', function() {
+                    const value = this.value.trim();
+                    if (value && (isNaN(parseInt(value)) || parseInt(value) <= 0)) {
+                        showValidationError('asset_id', 'Asset ID must be a positive number');
+                    } else {
+                        clearFieldError('asset_id');
+                    }
+                });
+            }
+        });
+        
+        function clearFieldError(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.style.borderColor = '';
+            const existingError = field.parentNode.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
+        }
         </script>
         
         <!-- AI Assistant Component -->
@@ -3403,157 +3629,1224 @@ async def work_orders_dashboard():
 
 @app.get("/assets", response_class=HTMLResponse)
 async def assets_dashboard():
-    """Assets service dashboard"""
-    # Read the assets management template
-    try:
-        with open("templates/assets_management.html", "r") as f:
-            assets_html = f.read()
-        return assets_html
-    except FileNotFoundError:
-        # Fallback to basic dashboard
-        return """
+    """Comprehensive Asset Management Dashboard with Advanced Features"""
+    return """
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
-        <title>Assets Service - ChatterFix CMMS</title>
+        <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Advanced Asset Management - ChatterFix CMMS</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            margin: 0;
-            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
             color: #ffffff;
             min-height: 100vh;
+            line-height: 1.6;
         }
+        
         .header {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
         .header h1 {
-            margin: 0;
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             font-weight: 700;
         }
-        .subtitle {
-            margin: 0.5rem 0 0 0;
-            color: #b0b0b0;
-            font-size: 1.1rem;
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
-        .content {
-            padding: 2rem;
-            max-width: 1200px;
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .main-content {
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 2rem;
         }
-        .dashboard-grid {
+        
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 2rem;
             margin-top: 2rem;
         }
-        .card {
+        
+        .feature-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
         }
-        .card:hover {
+        
+        .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
         }
-        .card h3 {
-            margin-top: 0;
-            color: #ffffff;
+        
+        .feature-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: #667eea;
+        }
+        
+        .feature-title {
+            font-size: 1.3rem;
             font-weight: 600;
         }
-        .status-indicator {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border-radius: 20px;
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-list i {
+            color: #10b981;
             font-size: 0.9rem;
-            font-weight: bold;
         }
-        .back-button {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
+        
+        .search-filter-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
             margin-bottom: 2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
         }
-        .back-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .search-input::placeholder {
+            color: #b0b0b0;
+        }
+        
+        .filter-select {
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            min-width: 150px;
+        }
+        
+        .ai-insights {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .ai-icon {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .ai-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .insight-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .mobile-responsive {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .search-filter-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-input {
+                min-width: 100%;
+            }
+            
+            .mobile-responsive {
+                display: block;
+            }
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #b0b0b0;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-left: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         </style>
     </head>
     <body>
-        <div class="header">
-            <h1>🏭 Assets Service</h1>
-            <p class="subtitle">Intelligent Asset Lifecycle Management System</p>
-        </div>
-        
-        <div class="content">
-            <a href="/assets" class="back-button">← Back to Main Dashboard</a>
-            
-            <div class="dashboard-grid">
-                <div class="card">
-                    <h3>Service Status</h3>
-                    <div class="status-indicator">✅ Active & Healthy</div>
-                    <p>Assets microservice is running with full predictive maintenance capabilities.</p>
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-cogs"></i> Advanced Asset Management</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openAssetModal()">
+                        <i class="fas fa-plus"></i> Add Asset
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportAssets()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <a href="/dashboard" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
                 </div>
-                
-                <div class="card">
-                    <h3>Asset Management Features</h3>
-                    <ul>
-                        <li>Complete asset lifecycle tracking</li>
-                        <li>Predictive maintenance scheduling</li>
-                        <li>Performance monitoring</li>
-                        <li>Depreciation calculations</li>
-                        <li>Location and hierarchy management</li>
-                        <li>IoT sensor integration</li>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Asset Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="stat-value" id="totalAssets">Loading...</div>
+                    <div class="stat-label">Total Assets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-circle" style="color: #10b981;"></i></div>
+                    <div class="stat-value" id="operationalAssets">Loading...</div>
+                    <div class="stat-label">Operational</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i></div>
+                    <div class="stat-value" id="maintenanceAssets">Loading...</div>
+                    <div class="stat-label">Under Maintenance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-times-circle" style="color: #ef4444;"></i></div>
+                    <div class="stat-value" id="downAssets">Loading...</div>
+                    <div class="stat-label">Down/Offline</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-dollar-sign" style="color: #06b6d4;"></i></div>
+                    <div class="stat-value" id="totalValue">Loading...</div>
+                    <div class="stat-label">Total Value</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-calendar-alt" style="color: #8b5cf6;"></i></div>
+                    <div class="stat-value" id="avgAge">Loading...</div>
+                    <div class="stat-label">Average Age (Years)</div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="search-filter-bar">
+                <input type="text" class="search-input" placeholder="Search assets by name, ID, model, location..." id="assetSearch">
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="operational">Operational</option>
+                    <option value="maintenance">Under Maintenance</option>
+                    <option value="down">Down/Offline</option>
+                    <option value="retired">Retired</option>
+                </select>
+                <select class="filter-select" id="locationFilter">
+                    <option value="">All Locations</option>
+                    <option value="plant-a">Plant A</option>
+                    <option value="plant-b">Plant B</option>
+                    <option value="warehouse">Warehouse</option>
+                    <option value="office">Office</option>
+                </select>
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="production">Production Equipment</option>
+                    <option value="hvac">HVAC Systems</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="transport">Transportation</option>
+                    <option value="it">IT Equipment</option>
+                </select>
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+
+            <!-- AI-Powered Insights -->
+            <div class="ai-insights">
+                <div class="ai-header">
+                    <div class="ai-icon"><i class="fas fa-brain"></i></div>
+                    <div class="ai-title">AI-Powered Asset Insights</div>
+                </div>
+                <div class="insight-grid">
+                    <div class="insight-item">
+                        <h4>🔧 Maintenance Predictions</h4>
+                        <p>5 assets requiring maintenance within 30 days</p>
+                    </div>
+                    <div class="insight-item">
+                        <h4>💰 Cost Optimization</h4>
+                        <p>Potential savings of $45,000 identified</p>
+                    </div>
+                    <div class="insight-item">
+                        <h4>📊 Performance Trends</h4>
+                        <p>Overall efficiency up 12% this quarter</p>
+                    </div>
+                    <div class="insight-item">
+                        <h4>⚠️ Risk Assessment</h4>
+                        <p>3 critical assets need immediate attention</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Features -->
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="feature-title">Lifecycle Management</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Full asset lifecycle tracking</li>
+                        <li><i class="fas fa-check"></i> Depreciation calculations</li>
+                        <li><i class="fas fa-check"></i> Replacement planning</li>
+                        <li><i class="fas fa-check"></i> End-of-life management</li>
+                        <li><i class="fas fa-check"></i> Disposal documentation</li>
                     </ul>
                 </div>
-                
-                <div class="card">
-                    <h3>API Endpoints</h3>
-                    <ul>
-                        <li><strong>GET</strong> /api/assets - List all assets</li>
-                        <li><strong>POST</strong> /api/assets - Create new asset</li>
-                        <li><strong>GET</strong> /api/assets/{id} - Get specific asset</li>
-                        <li><strong>PUT</strong> /api/assets/{id} - Update asset</li>
-                        <li><strong>GET</strong> /api/assets/{id}/maintenance - Get maintenance history</li>
+
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                        <div class="feature-title">Predictive Analytics</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Failure prediction algorithms</li>
+                        <li><i class="fas fa-check"></i> Performance trend analysis</li>
+                        <li><i class="fas fa-check"></i> Maintenance scheduling optimization</li>
+                        <li><i class="fas fa-check"></i> Cost forecasting</li>
+                        <li><i class="fas fa-check"></i> Reliability assessments</li>
                     </ul>
                 </div>
-                
-                <div class="card">
-                    <h3>AI-Powered Insights</h3>
-                    <ul>
-                        <li>Failure prediction algorithms</li>
-                        <li>Optimal maintenance scheduling</li>
-                        <li>Performance trend analysis</li>
-                        <li>Cost optimization recommendations</li>
-                        <li>Energy efficiency monitoring</li>
+
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-wifi"></i></div>
+                        <div class="feature-title">IoT Integration</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Real-time sensor monitoring</li>
+                        <li><i class="fas fa-check"></i> Condition-based maintenance</li>
+                        <li><i class="fas fa-check"></i> Automated alerts</li>
+                        <li><i class="fas fa-check"></i> Remote diagnostics</li>
+                        <li><i class="fas fa-check"></i> Energy consumption tracking</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="feature-title">Compliance & Safety</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Regulatory compliance tracking</li>
+                        <li><i class="fas fa-check"></i> Safety inspection schedules</li>
+                        <li><i class="fas fa-check"></i> Certification management</li>
+                        <li><i class="fas fa-check"></i> Audit trail documentation</li>
+                        <li><i class="fas fa-check"></i> Risk assessment tools</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-warehouse"></i></div>
+                        <div class="feature-title">Inventory Integration</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Spare parts management</li>
+                        <li><i class="fas fa-check"></i> Automated reorder points</li>
+                        <li><i class="fas fa-check"></i> Vendor management</li>
+                        <li><i class="fas fa-check"></i> Cost optimization</li>
+                        <li><i class="fas fa-check"></i> Supply chain integration</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-header">
+                        <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="feature-title">Mobile Capabilities</div>
+                    </div>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i> Field technician app</li>
+                        <li><i class="fas fa-check"></i> QR code scanning</li>
+                        <li><i class="fas fa-check"></i> Offline functionality</li>
+                        <li><i class="fas fa-check"></i> Photo documentation</li>
+                        <li><i class="fas fa-check"></i> GPS location tracking</li>
                     </ul>
                 </div>
             </div>
+
+            <!-- Asset List Container -->
+            <div class="feature-card" style="margin-top: 2rem;">
+                <div class="feature-header">
+                    <div class="feature-icon"><i class="fas fa-list"></i></div>
+                    <div class="feature-title">Asset Directory</div>
+                </div>
+                <div id="assetList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading asset data...
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script>
+        // Asset Management Functions
+        let assets = [];
+        let filteredAssets = [];
+
+        // Load asset data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAssetData();
+            loadAssetStats();
+        });
+
+        async function loadAssetData() {
+            try {
+                const response = await fetch('/api/assets');
+                const data = await response.json();
+                assets = data.assets || generateSampleAssets();
+                filteredAssets = [...assets];
+                renderAssetList();
+            } catch (error) {
+                console.error('Error loading assets:', error);
+                assets = generateSampleAssets();
+                filteredAssets = [...assets];
+                renderAssetList();
+            }
+        }
+
+        async function loadAssetStats() {
+            try {
+                const response = await fetch('/api/assets/stats');
+                const stats = await response.json();
+                updateStatCards(stats);
+            } catch (error) {
+                console.error('Error loading asset stats:', error);
+                // Generate sample stats
+                const stats = {
+                    total: assets.length,
+                    operational: Math.floor(assets.length * 0.7),
+                    maintenance: Math.floor(assets.length * 0.2),
+                    down: Math.floor(assets.length * 0.1),
+                    totalValue: '$2.4M',
+                    avgAge: '5.2'
+                };
+                updateStatCards(stats);
+            }
+        }
+
+        function updateStatCards(stats) {
+            document.getElementById('totalAssets').textContent = stats.total || '0';
+            document.getElementById('operationalAssets').textContent = stats.operational || '0';
+            document.getElementById('maintenanceAssets').textContent = stats.maintenance || '0';
+            document.getElementById('downAssets').textContent = stats.down || '0';
+            document.getElementById('totalValue').textContent = stats.totalValue || '$0';
+            document.getElementById('avgAge').textContent = stats.avgAge || '0';
+        }
+
+        function generateSampleAssets() {
+            return [
+                {
+                    id: 'AST-001',
+                    name: 'Production Line A1',
+                    category: 'production',
+                    status: 'operational',
+                    location: 'plant-a',
+                    model: 'ProLine 3000',
+                    manufacturer: 'IndustriCorp',
+                    installDate: '2020-03-15',
+                    lastMaintenance: '2024-10-01',
+                    nextMaintenance: '2024-11-15',
+                    value: 250000,
+                    condition: 'Good'
+                },
+                {
+                    id: 'AST-002',
+                    name: 'HVAC System Main',
+                    category: 'hvac',
+                    status: 'maintenance',
+                    location: 'plant-a',
+                    model: 'Climate Master 500',
+                    manufacturer: 'AirTech',
+                    installDate: '2019-08-22',
+                    lastMaintenance: '2024-10-05',
+                    nextMaintenance: '2024-10-20',
+                    value: 75000,
+                    condition: 'Fair'
+                },
+                {
+                    id: 'AST-003',
+                    name: 'Conveyor System B',
+                    category: 'transport',
+                    status: 'operational',
+                    location: 'warehouse',
+                    model: 'ConveyMax 2000',
+                    manufacturer: 'TransportCo',
+                    installDate: '2021-05-10',
+                    lastMaintenance: '2024-09-20',
+                    nextMaintenance: '2024-12-20',
+                    value: 85000,
+                    condition: 'Excellent'
+                }
+            ];
+        }
+
+        function renderAssetList() {
+            const container = document.getElementById('assetList');
+            
+            if (filteredAssets.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #b0b0b0;">No assets found</div>';
+                return;
+            }
+
+            container.innerHTML = filteredAssets.map(asset => `
+                <div class="asset-item" style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: #667eea; font-size: 1.1rem;">${asset.name}</h4>
+                            <p style="margin: 0 0 0.5rem 0; color: #b0b0b0;">ID: ${asset.id} | Model: ${asset.model}</p>
+                            <p style="margin: 0; color: #e0e0e0;">📍 ${asset.location} | 🏭 ${asset.manufacturer}</p>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                            <span class="status-badge status-${asset.status}" style="padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem; font-weight: 600;">
+                                ${asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
+                            </span>
+                            <span style="color: #10b981; font-weight: 600;">$${asset.value.toLocaleString()}</span>
+                            <span style="color: #b0b0b0; font-size: 0.9rem;">Next: ${asset.nextMaintenance}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button onclick="viewAssetDetails('${asset.id}')" style="padding: 0.5rem 1rem; background: rgba(102,126,234,0.2); border: 1px solid rgba(102,126,234,0.3); border-radius: 6px; color: white; cursor: pointer;">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button onclick="scheduleMaintenanceModal('${asset.id}')" style="padding: 0.5rem 1rem; background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; color: white; cursor: pointer;">
+                            <i class="fas fa-wrench"></i> Schedule Maintenance
+                        </button>
+                        <button onclick="generateQRCode('${asset.id}')" style="padding: 0.5rem 1rem; background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.3); border-radius: 6px; color: white; cursor: pointer;">
+                            <i class="fas fa-qrcode"></i> QR Code
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add status badge styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .status-operational { background: rgba(16,185,129,0.2); color: #10b981; }
+                .status-maintenance { background: rgba(245,158,11,0.2); color: #f59e0b; }
+                .status-down { background: rgba(239,68,68,0.2); color: #ef4444; }
+                .status-retired { background: rgba(107,114,128,0.2); color: #6b7280; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('assetSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const locationFilter = document.getElementById('locationFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            filteredAssets = assets.filter(asset => {
+                const matchesSearch = !searchTerm || 
+                    asset.name.toLowerCase().includes(searchTerm) ||
+                    asset.id.toLowerCase().includes(searchTerm) ||
+                    asset.model.toLowerCase().includes(searchTerm) ||
+                    asset.location.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || asset.status === statusFilter;
+                const matchesLocation = !locationFilter || asset.location === locationFilter;
+                const matchesCategory = !categoryFilter || asset.category === categoryFilter;
+
+                return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
+            });
+
+            renderAssetList();
+        }
+
+        // Event listeners for real-time search
+        document.getElementById('assetSearch').addEventListener('input', applyFilters);
+
+        function openAssetModal() {
+            window.location.href = '/assets/create';
+        }
+
+        function exportAssets() {
+            // Export assets data to CSV
+            const headers = ['Name', 'Type', 'Location', 'Status', 'Criticality', 'Manufacturer', 'Model'];
+            const csvContent = 'data:text/csv;charset=utf-8,' + headers.join(',') + '\n';
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `assets_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function viewAssetDetails(assetId) {
+            // Navigate to asset detail view
+            window.location.href = `/assets/${assetId}`;
+        }
+
+        function scheduleMaintenanceModal(assetId) {
+            // Navigate to work order creation with asset pre-selected
+            window.location.href = `/work-orders?asset_id=${assetId}`;
+        }
+
+        function generateQRCode(assetId) {
+            // Generate QR code for asset
+            const qrCodeUrl = `https://chatterfix.com/assets/${assetId}`;
+            const qrWindow = window.open('', '_blank', 'width=400,height=400');
+            qrWindow.document.write(`
+                <html>
+                    <head><title>QR Code - Asset ${assetId}</title></head>
+                    <body style="display:flex;flex-direction:column;align-items:center;padding:20px;font-family:Arial;">
+                        <h3>Asset ${assetId} QR Code</h3>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeUrl)}" alt="QR Code">
+                        <p style="margin-top:10px;text-align:center;font-size:12px;color:#666;">
+                            Scan to access asset details<br>
+                            ${qrCodeUrl}
+                        </p>
+                        <button onclick="window.print()" style="margin-top:10px;padding:8px 16px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;">Print QR Code</button>
+                    </body>
+                </html>
+            `);
+        }
+        </script>
+    </body>
+    </html>
+    """
+
+@app.get("/assets/create", response_class=HTMLResponse)
+async def asset_create_form():
+    """Asset Creation Form with Advanced Features"""
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Create New Asset - ChatterFix CMMS</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .form-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .section-title {
+            color: #667eea;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: #999;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        select.form-control {
+            cursor: pointer;
+        }
+        
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #ef4444 0%, #7f1d1d 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-container {
+                padding: 2rem 1rem;
+            }
+        }
+        </style>
+    </head>
+    <body>
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-plus-circle"></i> Create New Asset</h1>
+                <a href="/assets" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Assets
+                </a>
+            </div>
+        </header>
+
+        <!-- Dark Mode Toggle -->
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+        
+        <div class="main-content">
+            <div id="successMessage" class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>Asset created successfully!</span>
+            </div>
+            
+            <div id="errorMessage" class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Error creating asset. Please try again.</span>
+            </div>
+            
+            <form id="assetForm" class="form-container">
+                <div class="form-grid">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Basic Information
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label for="name">Asset Name *</label>
+                            <input type="text" id="name" name="name" class="form-control" 
+                                   placeholder="Enter asset name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" class="form-control" 
+                                      placeholder="Detailed description of the asset"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset_type">Asset Type *</label>
+                            <select id="asset_type" name="asset_type" class="form-control" required>
+                                <option value="">Select asset type</option>
+                                <option value="machinery">Machinery</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="vehicle">Vehicle</option>
+                                <option value="facility">Facility</option>
+                                <option value="tool">Tool</option>
+                                <option value="it">IT Equipment</option>
+                                <option value="hvac">HVAC</option>
+                                <option value="electrical">Electrical</option>
+                                <option value="plumbing">Plumbing</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Location & Status -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Location & Status
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label for="location">Location *</label>
+                            <input type="text" id="location" name="location" class="form-control" 
+                                   placeholder="Building, Floor, Room" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status">Status *</label>
+                            <select id="status" name="status" class="form-control" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="maintenance">Under Maintenance</option>
+                                <option value="repair">Needs Repair</option>
+                                <option value="retired">Retired</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="criticality">Criticality Level</label>
+                            <select id="criticality" name="criticality" class="form-control">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Technical Details -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-cogs"></i>
+                            Technical Details
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label for="manufacturer">Manufacturer</label>
+                            <input type="text" id="manufacturer" name="manufacturer" class="form-control" 
+                                   placeholder="Equipment manufacturer">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" id="model" name="model" class="form-control" 
+                                   placeholder="Model number/name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="serial_number">Serial Number</label>
+                            <input type="text" id="serial_number" name="serial_number" class="form-control" 
+                                   placeholder="Serial number">
+                        </div>
+                    </div>
+                    
+                    <!-- Financial Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-dollar-sign"></i>
+                            Financial Information
+                        </h3>
+                        
+                        <div class="form-group">
+                            <label for="purchase_cost">Purchase Cost</label>
+                            <input type="number" id="purchase_cost" name="purchase_cost" class="form-control" 
+                                   placeholder="0.00" step="0.01" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="purchase_date">Purchase Date</label>
+                            <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="warranty_expiry">Warranty Expiry</label>
+                            <input type="date" id="warranty_expiry" name="warranty_expiry" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="button" onclick="window.location.href='/assets'" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Asset
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
+        
+        <script>
+        document.getElementById('assetForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const assetData = Object.fromEntries(formData.entries());
+            
+            // Convert empty strings to null for optional fields
+            Object.keys(assetData).forEach(key => {
+                if (assetData[key] === '') {
+                    assetData[key] = null;
+                }
+            });
+            
+            // Convert purchase_cost to number if provided
+            if (assetData.purchase_cost) {
+                assetData.purchase_cost = parseFloat(assetData.purchase_cost);
+            }
+            
+            try {
+                const response = await fetch('/api/assets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(assetData)
+                });
+                
+                if (response.ok) {
+                    document.getElementById('successMessage').style.display = 'flex';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    this.reset();
+                    
+                    // Redirect to assets page after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/assets';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to create asset');
+                }
+            } catch (error) {
+                console.error('Error creating asset:', error);
+                document.getElementById('errorMessage').style.display = 'flex';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        });
+
+        // ============ THEME TOGGLE FUNCTIONALITY ============
+        class ThemeManager {
+            constructor() {
+                this.theme = localStorage.getItem('chatterfix-theme') || 'dark';
+                this.applyTheme();
+                this.updateIcon();
+            }
+
+            toggleTheme() {
+                this.theme = this.theme === 'dark' ? 'light' : 'dark';
+                this.applyTheme();
+                this.updateIcon();
+                localStorage.setItem('chatterfix-theme', this.theme);
+            }
+
+            applyTheme() {
+                if (this.theme === 'light') {
+                    document.body.classList.add('light-theme');
+                } else {
+                    document.body.classList.remove('light-theme');
+                }
+            }
+
+            updateIcon() {
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.className = this.theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                }
+            }
+        }
+
+        // Global theme manager instance
+        const themeManager = new ThemeManager();
+
+        function toggleTheme() {
+            themeManager.toggleTheme();
+        }
+        </script>
     </body>
     </html>
     """

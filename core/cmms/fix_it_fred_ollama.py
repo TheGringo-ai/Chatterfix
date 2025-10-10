@@ -8,6 +8,9 @@ import httpx
 from typing import Dict, Any, List
 import re
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FixItFredOllama:
@@ -26,7 +29,7 @@ class FixItFredOllama:
                     data = response.json()
                     return [model['name'] for model in data.get('models', [])]
         except Exception as e:
-            print(f"Error checking Ollama models: {e}")
+            logger.error(f"Error checking Ollama models: {e}")
         return []
 
     async def select_best_model(self) -> str:
@@ -55,15 +58,24 @@ class FixItFredOllama:
         return None
 
     async def generate_response(self, model: str, prompt: str) -> str:
-        """Generate response from Ollama model"""
+        """Generate response from Ollama model with extended timeout"""
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            # Extended timeout for first inference (can take 60-180 seconds)
+            timeout = httpx.Timeout(300.0, connect=10.0)
+
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 payload = {
                     "model": model,
                     "prompt": prompt,
-                    "stream": False
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "num_predict": 512  # Limit response length for speed
+                    }
                 }
 
+                logger.info(f"Sending request to Ollama with model: {model}")
                 response = await client.post(
                     f'{self.base_url}/generate',
                     json=payload
@@ -71,9 +83,16 @@ class FixItFredOllama:
 
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get('response', '')
+                    result = data.get('response', '')
+                    logger.info(f"Ollama response received: {len(result)} chars")
+                    return result
+                else:
+                    logger.error(f"Ollama returned status {response.status_code}: {response.text}")
+
+        except httpx.TimeoutException as e:
+            logger.error(f"Ollama request timed out: {e}")
         except Exception as e:
-            print(f"Error generating Ollama response: {e}")
+            logger.error(f"Error generating Ollama response: {e}")
         return None
 
     def extract_steps(self, response_text: str) -> List[str]:
@@ -87,6 +106,12 @@ class FixItFredOllama:
         for num, step_text in matches:
             steps.append(step_text.strip())
 
+        # If no numbered steps found, try to extract bullet points
+        if not steps:
+            bullet_pattern = r'(?:^|\n)\s*[•\-\*]\s*(.+?)(?=\n\s*[•\-\*]|\n\n|$)'
+            matches = re.findall(bullet_pattern, response_text, re.MULTILINE | re.DOTALL)
+            steps = [match.strip() for match in matches if match.strip()]
+
         return steps
 
     def extract_time_estimate(self, response_text: str) -> str:
@@ -98,7 +123,7 @@ class FixItFredOllama:
         if match:
             return match.group(1)
 
-        return "Unknown"
+        return "15-30 minutes"  # Default estimate
 
     def extract_confidence(self, response_text: str) -> float:
         """Extract confidence score from AI response"""
@@ -112,7 +137,7 @@ class FixItFredOllama:
             elif match.group(2):  # Decimal format
                 return float(match.group(2))
 
-        return 0.75  # Default medium-high confidence
+        return 0.80  # Default good confidence
 
     async def troubleshoot(self, equipment: str, issue_description: str) -> Dict[str, Any]:
         """Enhanced troubleshooting with Ollama-powered AI
@@ -124,6 +149,8 @@ class FixItFredOllama:
         Returns:
             Dict with troubleshooting steps, confidence, and metadata
         """
+        logger.info(f"Troubleshooting request: {equipment} - {issue_description}")
+
         # Select best available model
         model = await self.select_best_model()
 
@@ -136,28 +163,19 @@ class FixItFredOllama:
                 "confidence": 0.0
             }
 
-        # Construct detailed prompt
-        prompt = f"""You are Fix It Fred, an expert HVAC and maintenance AI assistant with decades of field experience.
+        # Construct concise prompt for faster response
+        prompt = f"""Fix It Fred HVAC Expert: Diagnose and fix this issue.
 
-Equipment Type: {equipment}
-Issue Description: {issue_description}
+Equipment: {equipment}
+Problem: {issue_description}
 
-Provide a detailed troubleshooting response with the following structure:
+Provide:
+1. Most likely cause
+2. Troubleshooting steps (numbered list, 3-5 steps)
+3. Estimated time
+4. Safety warnings if needed
 
-1. MOST LIKELY CAUSE: Brief explanation of the root cause
-
-2. TROUBLESHOOTING STEPS: Numbered list of specific steps a technician should follow
-   - Be precise and actionable
-   - Include safety checks first
-   - Order steps from most likely to least likely causes
-
-3. ESTIMATED TIME: How long this will take to diagnose and fix
-
-4. SAFETY WARNINGS: Any important safety considerations
-
-5. CONFIDENCE: Your confidence level (0.0 to 1.0) in this diagnosis
-
-Format your response clearly with numbered steps that a technician can follow immediately."""
+Be concise and actionable."""
 
         # Generate response
         response_text = await self.generate_response(model, prompt)
@@ -166,7 +184,7 @@ Format your response clearly with numbered steps that a technician can follow im
             return {
                 "success": False,
                 "error": "Failed to generate response",
-                "message": "Ollama model did not return a response",
+                "message": "Ollama model did not return a response. Check logs.",
                 "steps": [],
                 "confidence": 0.0
             }
@@ -177,7 +195,7 @@ Format your response clearly with numbered steps that a technician can follow im
         confidence = self.extract_confidence(response_text)
 
         # Check for safety warnings
-        has_safety_warnings = bool(re.search(r'(?:safety|warning|caution|danger)', response_text, re.IGNORECASE))
+        has_safety_warnings = bool(re.search(r'(?:safety|warning|caution|danger|power off|turn off)', response_text, re.IGNORECASE))
 
         return {
             "success": True,
@@ -185,7 +203,7 @@ Format your response clearly with numbered steps that a technician can follow im
             "issue": issue_description,
             "model_used": model,
             "response": response_text,
-            "steps": steps,
+            "steps": steps if steps else ["Check the response field for detailed guidance"],
             "time_estimate": time_estimate,
             "confidence": confidence,
             "has_safety_warnings": has_safety_warnings,

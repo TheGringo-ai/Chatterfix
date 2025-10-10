@@ -2523,6 +2523,16 @@ except ImportError:
     OLLAMA_AVAILABLE = False
     logger.warning("Fix It Fred Ollama integration not available")
 
+# Import GitHub Deployment API
+try:
+    from github_deployment_api import github_api
+    from fix_it_fred_gateway import create_gateway
+    fred_gateway = create_gateway(github_api, fred_ollama)
+    DEPLOYMENT_API_AVAILABLE = True
+except ImportError as e:
+    DEPLOYMENT_API_AVAILABLE = False
+    logger.warning(f"Deployment API not available: {e}")
+
 @app.post("/api/fix-it-fred/troubleshoot")
 async def fix_it_fred_troubleshoot(request: FixItFredRequest):
     """Integrate with Fix It Fred AI troubleshooting service"""
@@ -2643,6 +2653,188 @@ async def ollama_status():
             "error": str(e),
             "message": "Failed to check Ollama status",
             "timestamp": time.time()
+        }
+
+# ============================================================================
+# FIX IT FRED DEPLOYMENT API - Natural Language CI/CD
+# ============================================================================
+
+class DeploymentRequest(BaseModel):
+    command: str
+    api_key: Optional[str] = None
+
+@app.post("/api/fix-it-fred/deploy")
+async def fix_it_fred_deploy(request: DeploymentRequest):
+    """Natural language deployment endpoint - ask Fred to deploy!
+
+    Examples:
+    - "deploy to production"
+    - "commit and push changes"
+    - "ship it"
+    - "create a pull request"
+    """
+    if not DEPLOYMENT_API_AVAILABLE:
+        return {
+            "success": False,
+            "error": "Deployment API not available",
+            "message": "GitHub deployment features are not configured"
+        }
+
+    # Verify API key if provided
+    if request.api_key:
+        if not github_api.verify_api_key(request.api_key):
+            return {
+                "success": False,
+                "error": "Invalid API key"
+            }
+
+    try:
+        result = await fred_gateway.process_natural_language_request(request.command)
+        return result
+
+    except Exception as e:
+        logger.error(f"Deployment error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": time.time()
+        }
+
+@app.get("/api/github/status")
+async def github_status():
+    """Get current GitHub repository status"""
+    if not DEPLOYMENT_API_AVAILABLE:
+        return {
+            "success": False,
+            "error": "GitHub API not available"
+        }
+
+    try:
+        status = await github_api.git_status()
+        return status
+
+    except Exception as e:
+        logger.error(f"GitHub status error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/api/github/commit")
+async def github_commit(request: Request):
+    """Commit changes to repository"""
+    if not DEPLOYMENT_API_AVAILABLE:
+        return {
+            "success": False,
+            "error": "GitHub API not available"
+        }
+
+    try:
+        data = await request.json()
+        message = data.get("message")
+        files = data.get("files")
+        api_key = data.get("api_key")
+
+        # Verify API key
+        if api_key and not github_api.verify_api_key(api_key):
+            return {
+                "success": False,
+                "error": "Invalid API key"
+            }
+
+        if not message:
+            # Generate message using AI
+            message = await fred_gateway.generate_commit_message()
+
+        result = await github_api.git_commit(message, files)
+        return result
+
+    except Exception as e:
+        logger.error(f"GitHub commit error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/api/github/deploy")
+async def github_deploy_trigger(request: Request):
+    """Trigger GitHub Actions deployment"""
+    if not DEPLOYMENT_API_AVAILABLE:
+        return {
+            "success": False,
+            "error": "GitHub API not available"
+        }
+
+    try:
+        data = await request.json()
+        environment = data.get("environment", "production")
+        api_key = data.get("api_key")
+
+        # Verify API key
+        if api_key and not github_api.verify_api_key(api_key):
+            return {
+                "success": False,
+                "error": "Invalid API key"
+            }
+
+        result = await github_api.trigger_deployment(environment)
+        return result
+
+    except Exception as e:
+        logger.error(f"Deployment trigger error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.post("/api/services/communicate")
+async def service_communication(request: Request):
+    """Inter-service communication endpoint for AI Brain, Parts, Assets, etc."""
+    try:
+        data = await request.json()
+        source_service = data.get("source")
+        target_service = data.get("target")
+        action = data.get("action")
+        payload = data.get("payload", {})
+
+        logger.info(f"Service communication: {source_service} -> {target_service}: {action}")
+
+        # Route to appropriate handler
+        if target_service == "fix_it_fred" or target_service == "deployment":
+            # Handle deployment requests
+            if action == "deploy":
+                command = payload.get("command", "deploy to production")
+                result = await fred_gateway.process_natural_language_request(command)
+                return result
+
+            elif action == "troubleshoot":
+                # Handle troubleshooting via Ollama
+                if OLLAMA_AVAILABLE:
+                    equipment = payload.get("equipment", "")
+                    issue = payload.get("issue_description", "")
+                    result = await fred_ollama.troubleshoot(equipment, issue)
+                    return result
+                else:
+                    return {
+                        "success": False,
+                        "error": "Ollama not available"
+                    }
+
+        # Default response
+        return {
+            "success": True,
+            "message": "Communication received",
+            "source": source_service,
+            "target": target_service,
+            "action": action,
+            "timestamp": time.time()
+        }
+
+    except Exception as e:
+        logger.error(f"Service communication error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
         }
 
 # Managers Dashboard Route

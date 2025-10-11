@@ -4989,6 +4989,19 @@ ai_client = ChatterFixAIClient()
 # Add universal AI endpoints to make AI assistant available on ALL pages
 add_universal_ai_endpoints(app)
 
+# Fix It Fred Hot Reload Test Endpoint
+@app.get("/api/fix-it-fred-hot-reload-test")
+async def fix_it_fred_hot_reload_test():
+    """Test endpoint to verify Fix It Fred hot reload system works"""
+    return {
+        "message": "🔥 Fix It Fred hot reload is working perfectly!",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "status": "success", 
+        "deployment": "hot_reload_system",
+        "version": "fix-it-fred-hot-reload-1.0.0",
+        "features": ["zero_downtime", "instant_updates", "automatic_backup"]
+    }
+
 logger.info("ChatterFix CMMS initialized successfully with ChatterFix AI assistant")
 
 if __name__ == "__main__":

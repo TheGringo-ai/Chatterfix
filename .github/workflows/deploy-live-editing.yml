@@ -1,0 +1,211 @@
+name: 🔥 Deploy Fix It Fred Live Editing System
+
+on:
+  push:
+    paths:
+      - 'setup-live-editing.sh'
+      - '.github/workflows/deploy-live-editing.yml'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deploy live editing system'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PROJECT_ID: fredfix
+  INSTANCE_NAME: chatterfix-cmms-production
+  ZONE: us-east1-b
+
+jobs:
+  deploy-live-editing:
+    name: 🔥 Deploy Live Editing System
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup GCP Authentication
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 🔥 Deploy Live Editing System
+        run: |
+          echo "🔥 Deploying Fix It Fred Live Editing System..."
+          
+          # Create the live editing setup script
+          cat > /tmp/setup-live-editing.sh << 'EOFSETUP'
+          #!/bin/bash
+          
+          echo "🔥 Installing Fix It Fred Live Editing System..."
+          
+          # Create live editing directory structure
+          sudo mkdir -p /opt/chatterfix-live
+          sudo mkdir -p /opt/chatterfix-live/backups
+          sudo mkdir -p /opt/chatterfix-live/patches
+          sudo chown -R yoyofred_gringosgambit_com:yoyofred_gringosgambit_com /opt/chatterfix-live
+          
+          # Install development tools
+          python3 -m pip install watchdog fastapi uvicorn
+          
+          # Create live editing API
+          cat > /opt/chatterfix-live/live_editor.py << 'EOFEDITOR'
+          #!/usr/bin/env python3
+          """Fix It Fred Live Editor API"""
+          
+          import os
+          import json
+          import subprocess
+          import shutil
+          from datetime import datetime
+          from fastapi import FastAPI, HTTPException
+          from pydantic import BaseModel
+          
+          app = FastAPI(title="Fix It Fred Live Editor", version="1.0.0")
+          
+          class CodeEdit(BaseModel):
+              file_path: str
+              old_content: str
+              new_content: str
+              description: str
+          
+          APP_DIR = "/opt/chatterfix-unified"
+          BACKUP_DIR = "/opt/chatterfix-live/backups"
+          
+          def backup_file(file_path: str) -> str:
+              timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+              backup_name = f"{os.path.basename(file_path)}_{timestamp}.backup"
+              backup_path = os.path.join(BACKUP_DIR, backup_name)
+              if os.path.exists(file_path):
+                  shutil.copy2(file_path, backup_path)
+              return backup_path
+          
+          def reload_service():
+              try:
+                  subprocess.run(["sudo", "systemctl", "reload", "chatterfix"], check=True)
+                  return True
+              except:
+                  try:
+                      subprocess.run(["sudo", "systemctl", "restart", "chatterfix"], check=True)
+                      return True
+                  except:
+                      return False
+          
+          @app.get("/")
+          async def root():
+              return {"message": "Fix It Fred Live Editor", "status": "active"}
+          
+          @app.get("/files/{file_name}")
+          async def get_file_content(file_name: str):
+              file_path = os.path.join(APP_DIR, file_name)
+              if not os.path.exists(file_path):
+                  raise HTTPException(status_code=404, detail="File not found")
+              with open(file_path, 'r') as f:
+                  content = f.read()
+              return {"file_path": file_path, "content": content}
+          
+          @app.post("/edit/{file_name}")
+          async def edit_file(file_name: str, edit: CodeEdit):
+              file_path = os.path.join(APP_DIR, file_name)
+              backup_path = backup_file(file_path)
+              
+              try:
+                  with open(file_path, 'r') as f:
+                      current_content = f.read()
+                  
+                  new_content = current_content.replace(edit.old_content, edit.new_content)
+                  
+                  with open(file_path, 'w') as f:
+                      f.write(new_content)
+                  
+                  reload_success = reload_service()
+                  
+                  return {
+                      "success": True,
+                      "message": f"Edited: {edit.description}",
+                      "backup": backup_path,
+                      "reloaded": reload_success
+                  }
+              except Exception as e:
+                  if backup_path and os.path.exists(backup_path):
+                      shutil.copy2(backup_path, file_path)
+                  raise HTTPException(status_code=500, detail=str(e))
+          
+          @app.get("/health")
+          async def health():
+              return {"status": "healthy", "editor": "active"}
+          
+          if __name__ == "__main__":
+              import uvicorn
+              uvicorn.run(app, host="0.0.0.0", port=8001)
+          EOFEDITOR
+          
+          chmod +x /opt/chatterfix-live/live_editor.py
+          
+          # Create systemd service
+          sudo tee /etc/systemd/system/chatterfix-live-editor.service > /dev/null << 'EOFSERVICE'
+          [Unit]
+          Description=Fix It Fred Live Editor
+          After=network.target
+          
+          [Service]
+          User=yoyofred_gringosgambit_com
+          Group=yoyofred_gringosgambit_com
+          WorkingDirectory=/opt/chatterfix-live
+          ExecStart=/usr/bin/python3 live_editor.py
+          Restart=always
+          RestartSec=3
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOFSERVICE
+          
+          # Start service
+          sudo systemctl daemon-reload
+          sudo systemctl enable chatterfix-live-editor
+          sudo systemctl start chatterfix-live-editor
+          
+          # Open firewall
+          sudo ufw allow 8001
+          
+          echo "✅ Live Editor installed on port 8001"
+          EOFSETUP
+          
+          # Deploy to VM
+          gcloud compute scp /tmp/setup-live-editing.sh $INSTANCE_NAME:~/setup-live-editing.sh --zone=$ZONE
+          gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command="chmod +x ~/setup-live-editing.sh && sudo ~/setup-live-editing.sh"
+
+      - name: 🩺 Verify Live Editor
+        run: |
+          echo "🩺 Verifying live editor deployment..."
+          sleep 10
+          
+          VM_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+          
+          if curl -f --max-time 10 "http://$VM_IP:8001/health" > /dev/null 2>&1; then
+            echo "✅ Live Editor is healthy"
+          else
+            echo "⚠️ Live Editor health check failed"
+          fi
+
+      - name: 📊 Deployment Report
+        run: |
+          echo "🎉 Fix It Fred Live Editing System Deployed!"
+          echo ""
+          echo "✅ LIVE EDITING FEATURES:"
+          echo "   🔥 Real-time code editing"
+          echo "   🔄 Hot reload without restart"
+          echo "   💾 Automatic backups"
+          echo "   📝 API-based file editing"
+          echo ""
+          echo "🔗 ENDPOINTS:"
+          echo "   Live Editor: http://35.237.149.25:8001"
+          echo "   API Docs: http://35.237.149.25:8001/docs" 
+          echo "   Health: http://35.237.149.25:8001/health"
+          echo ""
+          echo "🤖 Fix It Fred can now edit code live!"

@@ -69,9 +69,9 @@ jobs:
         # Health check with retries
         for i in {1..10}; do
           echo "🩺 Health check attempt $i/10..."
-          if curl -s -f "http://$VM_IP:8000/health" > /dev/null; then
+          if curl -s -f "http://$VM_IP:8080/health" > /dev/null; then
             echo "✅ Deployment successful!"
-            curl -s "http://$VM_IP:8000/health" | jq '.'
+            curl -s "http://$VM_IP:8080/health" | jq '.'
             break
           else
             echo "⏳ Service starting... (attempt $i)"
@@ -94,7 +94,7 @@ jobs:
         echo "====================="
         echo "🌐 URL: http://$VM_IP"
         echo "🔐 Login: admin / admin123"
-        echo "📊 Health: http://$VM_IP:8000/health"
+        echo "📊 Health: http://$VM_IP:8080/health"
         echo "🤖 AI Assistant: Enabled"
         echo "🧹 Status: Clean deployment"
         

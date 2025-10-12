@@ -723,32 +723,80 @@
                 // Show typing indicator
                 this.showTyping();
 
+                // 🔧 FIXED: Use working Fix It Fred endpoint instead of broken /api/ai/chat
                 try {
-                    // Smart endpoint routing based on message content and context
-                    const endpoint = this.getSmartEndpoint(message);
-                    
-                    const response = await fetch(endpoint, {
+                    const response = await fetch('/api/fix-it-fred/troubleshoot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            message: message,
-                            context: this.context,
-                            timestamp: new Date().toISOString()
+                        body: JSON.stringify({
+                            equipment: 'ChatterFix CMMS Platform',
+                            issue_description: `User question about ChatterFix CMMS: "${message}". Please provide helpful, detailed information about ChatterFix features, capabilities, and how it can help with maintenance management.`
                         })
                     });
 
                     const data = await response.json();
                     this.hideTyping();
                     
-                    if (response.ok) {
-                        this.addMessage(data.response || data.message || 'I understand your question. Let me help you with that!', 'ai');
+                    if (data.success && data.data && data.data.response) {
+                        // Transform Fred's response for chat context
+                        let aiResponse = data.data.response
+                            .replace(/🔧 Hi there! Fred here\./g, '👋 Hi! I\'m Fix It Fred, your ChatterFix AI assistant.')
+                            .replace(/I can help troubleshoot your ChatterFix CMMS Platform issue!/g, 'I\'m here to help you with ChatterFix CMMS!')
+                            .replace(/For detailed step-by-step guidance.*?upgrade to Fix It Fred Pro\./g, 'ChatterFix CMMS includes comprehensive AI-powered maintenance management features.')
+                            .replace(/Basic troubleshooting:/g, 'Here\'s how ChatterFix can help:')
+                            .replace(/- Fred$/g, '');
+                        
+                        // Add ChatterFix context if generic response
+                        if (aiResponse.includes('Check power, connections, settings')) {
+                            aiResponse += `<br><br><div style="background: rgba(0, 111, 238, 0.1); padding: 12px; border-radius: 8px; margin: 10px 0;">
+                                <strong>💡 ChatterFix CMMS Features:</strong>
+                                <ul style="margin: 8px 0; padding-left: 20px;">
+                                    <li><strong>🛠️ Smart Work Orders:</strong> AI-optimized scheduling</li>
+                                    <li><strong>🏭 Predictive Analytics:</strong> Prevent equipment failures</li>
+                                    <li><strong>🔧 Parts Intelligence:</strong> Automated inventory</li>
+                                    <li><strong>📱 Mobile Ready:</strong> Field technician access</li>
+                                    <li><strong>🤖 AI Integration:</strong> Powered by Ollama + Fix It Fred</li>
+                                </ul>
+                            </div>`;
+                        }
+                        
+                        // Add troubleshooting steps if available
+                        if (data.data.troubleshooting_steps && data.data.troubleshooting_steps.length > 0) {
+                            aiResponse += `<div style="background: rgba(102, 126, 234, 0.1); padding: 10px; border-radius: 6px; margin: 10px 0;">
+                                <strong>🔧 Recommended Steps:</strong>
+                                <ol style="margin: 5px 0; padding-left: 20px;">
+                                    ${data.data.troubleshooting_steps.map(step => `<li style="margin: 3px 0;">${step}</li>`).join('')}
+                                </ol>
+                            </div>`;
+                        }
+                        
+                        // Add quick actions
+                        aiResponse += `<div style="margin: 15px 0;">
+                            <strong>🚀 Try These:</strong><br>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                <button onclick="sendQuickMessage('Show me a demo')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;">🎥 Demo</button>
+                                <button onclick="sendQuickMessage('How do I create work orders?')" style="background: linear-gradient(135deg, #006fee, #4285f4); color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;">📋 Work Orders</button>
+                                <button onclick="window.open('/dashboard', '_blank')" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 12px; cursor: pointer;">🚀 Try Platform</button>
+                            </div>
+                        </div>`;
+                        
+                        this.addMessage(aiResponse, 'ai');
                     } else {
-                        // Fallback response for development
-                        this.addMessage(this.getSmartFallbackResponse(message), 'ai');
+                        this.addMessage('👋 Hi! I\'m Fix It Fred, your ChatterFix AI assistant. I\'m here to help you with ChatterFix CMMS - our AI-powered maintenance management platform. What would you like to know?', 'ai');
                     }
                 } catch (error) {
                     this.hideTyping();
-                    this.addMessage(this.getSmartFallbackResponse(message), 'ai');
+                    console.error('Chat Error:', error);
+                    this.addMessage(`👋 Hi! I'm Fix It Fred, your ChatterFix AI assistant!<br><br>
+                        <strong>ChatterFix CMMS Features:</strong>
+                        <ul>
+                            <li>🛠️ <strong>AI Work Orders:</strong> Reduce downtime by 50%</li>
+                            <li>🏭 <strong>Predictive Analytics:</strong> Prevent failures before they happen</li>
+                            <li>🔧 <strong>Smart Inventory:</strong> Never run out of critical parts</li>
+                            <li>📱 <strong>Mobile Access:</strong> Field technician ready</li>
+                            <li>🤖 <strong>AI Integration:</strong> Powered by advanced AI models</li>
+                        </ul>
+                        <br>Ask me anything about our maintenance management platform!`, 'ai');
                 }
             }
 

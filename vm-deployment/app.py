@@ -689,8 +689,46 @@ class AssetUpdate(BaseModel):
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FastAPI app
-app = FastAPI(title="ChatterFix CMMS", description="Complete Maintenance Management System")
+# FastAPI app with security enhancements
+app = FastAPI(
+    title="ChatterFix CMMS", 
+    description="Complete Maintenance Management System",
+    docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
+    redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None
+)
+
+# Fix It Fred Critical Security Fixes
+from contextlib import contextmanager
+import secrets
+import hashlib
+
+# Secure configuration
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") 
+if not JWT_SECRET_KEY:
+    if os.getenv("ENVIRONMENT") == "production":
+        raise ValueError("JWT_SECRET_KEY must be set in production!")
+    JWT_SECRET_KEY = secrets.token_urlsafe(32)
+    logger.warning("Using generated JWT secret for development")
+
+@contextmanager
+def get_db_transaction():
+    """Safe database transaction manager - Fix It Fred Security Fix"""
+    conn = get_database_connection()
+    try:
+        cursor = conn.cursor()
+        yield cursor
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Database transaction failed: {e}")
+        raise
+    finally:
+        conn.close()
+
+def secure_hash(password: str) -> str:
+    """Secure password hashing - Fix It Fred Security Enhancement"""
+    salt = secrets.token_hex(16)
+    return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex() + ':' + salt
 
 # Database configuration - Enterprise ready
 try:
@@ -4988,6 +5026,19 @@ ai_client = ChatterFixAIClient()
 
 # Add universal AI endpoints to make AI assistant available on ALL pages
 add_universal_ai_endpoints(app)
+
+# Fix It Fred Hot Reload Test Endpoint
+@app.get("/api/fix-it-fred-hot-reload-test")
+async def fix_it_fred_hot_reload_test():
+    """Test endpoint to verify Fix It Fred hot reload system works"""
+    return {
+        "message": "🔥 Fix It Fred hot reload is working perfectly!",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "status": "success", 
+        "deployment": "hot_reload_system",
+        "version": "fix-it-fred-hot-reload-1.0.0",
+        "features": ["zero_downtime", "instant_updates", "automatic_backup"]
+    }
 
 logger.info("ChatterFix CMMS initialized successfully with ChatterFix AI assistant")
 

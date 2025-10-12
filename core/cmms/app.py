@@ -2004,36 +2004,79 @@ def get_ai_response(message):
         return f"Thanks for asking about ChatterFix CMMS! We're an AI-powered maintenance management platform that helps reduce downtime by 50% and increase efficiency by 300%. How can I help you learn more?"
 
 @app.post("/api/ai/chat")
-async def ai_chat_emergency(request: Dict[str, Any]):
-    """EMERGENCY AI Chat - Local Processing (No External Dependencies)"""
+async def ai_chat_with_fix_it_fred(request: Dict[str, Any]):
+    """AI Chat powered by Fix It Fred - The AI Brain Behind ChatterFix"""
     try:
         message = request.get("message", "")
+        context = request.get("context", "general")
+        
         if not message:
             return {
                 "success": False,
-                "message": "Please provide a message to chat with our AI assistant.",
+                "message": "Please provide a message to chat with Fix It Fred.",
                 "timestamp": datetime.now().isoformat()
             }
         
+        # Connect to Fix It Fred for AI-powered responses
+        try:
+            # Use Fix It Fred's troubleshooting endpoint as the AI brain
+            async with httpx.AsyncClient() as client:
+                fred_response = await client.post(
+                    f"{SERVICES['fix_it_fred']}/api/troubleshoot",
+                    json={
+                        "equipment": "ChatterFix CMMS Question",
+                        "issue_description": f"Customer question: {message}. Provide helpful guidance about ChatterFix CMMS features, maintenance management, project planning, or technical assistance.",
+                        "technician_id": "chatterfix_customer"
+                    },
+                    timeout=10.0
+                )
+                
+                if fred_response.status_code == 200:
+                    fred_data = fred_response.json()
+                    if fred_data.get("success", True):
+                        fred_answer = fred_data.get("response", "")
+                        
+                        # Clean up Fred's response for customer chat
+                        if "Fix It Fred Pro" in fred_answer:
+                            fred_answer = fred_answer.replace("Fix It Fred Pro", "ChatterFix CMMS premium features")
+                        
+                        logger.info(f"Fix It Fred AI response: {fred_answer[:100]}...")
+                        
+                        return {
+                            "success": True,
+                            "response": fred_answer,
+                            "message": fred_answer,
+                            "timestamp": datetime.now().isoformat(),
+                            "model": "fix_it_fred_ai",
+                            "fallback": False,
+                            "provider": "fix_it_fred"
+                        }
+                        
+        except Exception as fred_error:
+            logger.warning(f"Fix It Fred connection failed: {fred_error}")
+        
+        # Smart fallback if Fix It Fred is unavailable
         response = get_ai_response(message)
         return {
             "success": True,
             "response": response,
-            "message": response,  # Some frontends expect 'message' field
+            "message": response,
             "timestamp": datetime.now().isoformat(),
-            "model": "chatterfix_emergency_local",
-            "fallback": False
+            "model": "chatterfix_smart_fallback",
+            "fallback": True,
+            "provider": "emergency"
         }
         
     except Exception as e:
-        logger.error(f"Emergency AI chat error: {e}")
+        logger.error(f"AI chat error: {e}")
         return {
             "success": True,
-            "response": "I'm here to help with ChatterFix CMMS questions! Try asking about our features, demos, or how we reduce downtime.",
-            "message": "I'm here to help with ChatterFix CMMS questions! Try asking about our features, demos, or how we reduce downtime.",
+            "response": "Hi! I'm here to help with ChatterFix CMMS questions. Try asking about our features, how we reduce downtime, or maintenance solutions!",
+            "message": "Hi! I'm here to help with ChatterFix CMMS questions. Try asking about our features, how we reduce downtime, or maintenance solutions!",
             "timestamp": datetime.now().isoformat(),
-            "model": "chatterfix_emergency_fallback",
-            "fallback": True
+            "model": "chatterfix_emergency",
+            "fallback": True,
+            "provider": "emergency"
         }
 
 @app.post("/api/ai/context")

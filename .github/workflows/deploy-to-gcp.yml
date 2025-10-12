@@ -45,17 +45,46 @@ jobs:
         
     - name: 🚀 Deploy to GCP Instance
       run: |
-        echo "🔄 Updating startup script on VM..."
+        echo "🧹 Step 1: VM Cleanup with startup script..."
         gcloud compute instances add-metadata ${{ env.INSTANCE_NAME }} \
           --zone=${{ env.GCP_ZONE }} \
           --metadata-from-file startup-script=clean-deploy-vm.sh
           
-        echo "🔄 Triggering deployment..."
+        echo "🔄 Triggering VM reset and cleanup..."
         gcloud compute instances reset ${{ env.INSTANCE_NAME }} \
           --zone=${{ env.GCP_ZONE }}
           
-        echo "⏳ Waiting for deployment to complete..."
-        sleep 180  # 3 minutes for deployment
+        echo "⏳ Waiting for VM restart and cleanup..."
+        sleep 120  # 2 minutes for restart
+        
+        echo "🚀 Step 2: Deploy working backend scripts..."
+        
+        # Deploy working backend on port 8081
+        if [ -f deploy-working-backend.sh ]; then
+          echo "📤 Copying working backend script..."
+          gcloud compute scp deploy-working-backend.sh ${{ env.INSTANCE_NAME }}:/tmp/deploy-working-backend.sh \
+            --zone=${{ env.GCP_ZONE }}
+          
+          echo "🚀 Executing working backend deployment..."
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.GCP_ZONE }} \
+            --command="chmod +x /tmp/deploy-working-backend.sh && /tmp/deploy-working-backend.sh"
+        fi
+        
+        # Deploy emergency backend as fallback
+        if [ -f deploy-emergency-backend.sh ]; then
+          echo "📤 Copying emergency backend script..."
+          gcloud compute scp deploy-emergency-backend.sh ${{ env.INSTANCE_NAME }}:/tmp/deploy-emergency-backend.sh \
+            --zone=${{ env.GCP_ZONE }}
+          
+          echo "🚨 Executing emergency backend deployment..."
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} \
+            --zone=${{ env.GCP_ZONE }} \
+            --command="chmod +x /tmp/deploy-emergency-backend.sh && /tmp/deploy-emergency-backend.sh"
+        fi
+        
+        echo "⏳ Waiting for backend services to start..."
+        sleep 60  # 1 minute for backend startup
         
     - name: 🩺 Health Check
       run: |

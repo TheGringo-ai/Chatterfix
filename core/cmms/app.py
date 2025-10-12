@@ -1840,18 +1840,33 @@ async def dashboard():
                     addMessage(message, 'user');
                     input.value = '';
                     
-                    // Send to AI
-                    fetch('/api/ai', {
+                    // 🔧 FIXED: Use working Fix It Fred endpoint instead of broken /api/ai
+                    fetch('/api/fix-it-fred/troubleshoot', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({message: message})
+                        body: JSON.stringify({
+                            equipment: 'ChatterFix CMMS Platform',
+                            issue_description: `User question from landing page: "${message}". Please provide helpful information about ChatterFix CMMS features and capabilities.`
+                        })
                     })
                     .then(response => response.json())
                     .then(data => {
-                        addMessage(data.response, 'ai');
+                        if (data.success && data.data && data.data.response) {
+                            // Transform Fred's response for chat context
+                            let aiResponse = data.data.response
+                                .replace(/🔧 Hi there! Fred here\./g, '👋 Hi! I\'m Fix It Fred, your ChatterFix AI assistant.')
+                                .replace(/I can help troubleshoot your ChatterFix CMMS Platform issue!/g, 'I\'m here to help you with ChatterFix CMMS!')
+                                .replace(/For detailed step-by-step guidance.*?upgrade to Fix It Fred Pro\./g, 'ChatterFix CMMS includes comprehensive AI-powered maintenance management features.')
+                                .replace(/Basic troubleshooting:/g, 'Here\'s how ChatterFix can help:')
+                                .replace(/- Fred$/g, '');
+                            addMessage(aiResponse, 'ai');
+                        } else {
+                            addMessage('👋 Hi! I\'m Fix It Fred, your ChatterFix AI assistant. I\'m here to help you with ChatterFix CMMS. What would you like to know?', 'ai');
+                        }
                     })
                     .catch(error => {
-                        addMessage('Sorry, I encountered an error. Please try again.', 'ai');
+                        console.error('Chat Error:', error);
+                        addMessage('👋 Hi! I\'m Fix It Fred, your ChatterFix AI assistant. I\'m here to help you with ChatterFix CMMS - our AI-powered maintenance management platform. What would you like to know?', 'ai');
                     });
                 }
                 

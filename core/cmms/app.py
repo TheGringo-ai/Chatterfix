@@ -33,25 +33,33 @@ except ImportError:
     from typing import Literal
 
     def get_unified_styles() -> Literal["""
+        /* Fix It Fred's Enterprise Blue Theme - Applied to All CMMS Dashboards */
         :root {
-            --primary-blue: #1e3a8a;
-            --secondary-blue: #3b82f6;
+            --primary-blue: #032B44;
+            --secondary-blue: #1A3C55;
+            --accent-blue: #3498db;
+            --light-blue: #4a90e2;
             --technician-gray: #374151;
             --light-gray: #f3f4f6;
             --dark-gray: #111827;
             --orange-alert: #f97316;
             --orange-warning: #fb923c;
             --background-white: #ffffff;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
+            --text-dark: #333333;
+            --text-light: #FFFFFF;
+            --text-gray: #e1e5e9;
             --border-light: #e5e7eb;
-            --sidebar-bg: #f9fafb;
+            --sidebar-bg: rgba(255, 255, 255, 0.1);
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --info: #06b6d4;
+            --info: #3498db;
             --tool-blue: #0ea5e9;
             --steel-gray: #64748b;
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
         
         * {
@@ -61,10 +69,11 @@ except ImportError:
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--background-white);
-            color: var(--text-dark);
+            font-family: 'Open Sans', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--text-light);
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .header {
@@ -87,7 +96,7 @@ except ImportError:
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
-            background: var(--background-white);
+            background: transparent;
         }
         
         .nav-pills {
@@ -95,26 +104,31 @@ except ImportError:
             gap: 1rem;
             margin-bottom: 2rem;
             padding: 1rem;
-            background: var(--sidebar-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-lg);
         }
         
         .nav-link {
             padding: 0.75rem 1.5rem;
-            background: white;
-            color: var(--text-dark);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
             text-decoration: none;
-            border-radius: 6px;
-            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         
         .nav-link:hover {
-            background: var(--primary-blue);
-            color: white;
-            border-color: var(--primary-blue);
+            background: var(--accent-blue);
+            color: var(--primary-blue);
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         }
         
         .btn {
@@ -427,10 +441,11 @@ except ImportError:
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--background-white);
-            color: var(--text-dark);
+            font-family: 'Open Sans', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--text-light);
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .header {
@@ -453,7 +468,7 @@ except ImportError:
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
-            background: var(--background-white);
+            background: transparent;
         }
         
         .nav-pills {
@@ -461,26 +476,31 @@ except ImportError:
             gap: 1rem;
             margin-bottom: 2rem;
             padding: 1rem;
-            background: var(--sidebar-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow-lg);
         }
         
         .nav-link {
             padding: 0.75rem 1.5rem;
-            background: white;
-            color: var(--text-dark);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
             text-decoration: none;
-            border-radius: 6px;
-            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         
         .nav-link:hover {
-            background: var(--primary-blue);
-            color: white;
-            border-color: var(--primary-blue);
+            background: var(--accent-blue);
+            color: var(--primary-blue);
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         }
         
         .btn {
@@ -5629,7 +5649,7 @@ async def work_orders_dashboard():
             --border-light: #e2e8f0;
             --border-medium: #cbd5e1;
             --border-focus: #006fee;
-            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
             --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.08);
             --shadow-lg: 0 8px 25px 0 rgb(0 0 0 / 0.12);
             --shadow-focus: 0 0 0 3px rgb(0 111 238 / 0.1);

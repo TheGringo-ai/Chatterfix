@@ -333,94 +333,10 @@ class PlatformGateway:
             <head>
                 <title>ChatterFix AI Development Platform</title>
                 <style>
-                    :root {
-                        --primary-blue: #032B44;
-                        --secondary-blue: #1A3C55;
-                        --accent-blue: #3498db;
-                        --text-light: #FFFFFF;
-                        --text-gray: #e1e5e9;
-                        --border-blue: #4a90e2;
-                    }
-                    
-                    body { 
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
-                        color: var(--text-light);
-                        margin: 0;
-                        padding: 40px;
-                        min-height: 100vh;
-                        box-sizing: border-box;
-                    }
-                    
-                    .header { 
-                        color: var(--text-light);
-                        text-align: center;
-                        margin-bottom: 30px;
-                        font-size: 2.5em;
-                        font-weight: 300;
-                        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                    }
-                    
-                    .status { 
-                        background: rgba(255, 255, 255, 0.1);
-                        backdrop-filter: blur(10px);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        padding: 30px;
-                        border-radius: 15px;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-                        margin: 20px auto;
-                        max-width: 800px;
-                    }
-                    
-                    .status h3 {
-                        color: var(--text-light);
-                        font-size: 1.8em;
-                        margin-bottom: 15px;
-                        font-weight: 400;
-                    }
-                    
-                    .status p {
-                        color: var(--text-gray);
-                        font-size: 1.1em;
-                        margin-bottom: 25px;
-                    }
-                    
-                    .status ul {
-                        list-style: none;
-                        padding: 0;
-                        margin: 0;
-                    }
-                    
-                    .status li {
-                        margin: 12px 0;
-                    }
-                    
-                    .link { 
-                        color: var(--accent-blue);
-                        text-decoration: none;
-                        font-weight: 500;
-                        font-size: 1.1em;
-                        padding: 10px 15px;
-                        border-radius: 8px;
-                        border: 1px solid var(--accent-blue);
-                        display: inline-block;
-                        transition: all 0.3s ease;
-                        background: rgba(52, 152, 219, 0.1);
-                    }
-                    
-                    .link:hover {
-                        background: var(--accent-blue);
-                        color: var(--primary-blue);
-                        transform: translateY(-2px);
-                        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-                    }
-                    
-                    .powered-by {
-                        text-align: center;
-                        margin-top: 40px;
-                        color: var(--text-gray);
-                        font-size: 0.9em;
-                    }
+                    body { font-family: Arial, sans-serif; margin: 40px; }
+                    .header { color: #2c3e50; }
+                    .status { background: #ecf0f1; padding: 20px; border-radius: 5px; }
+                    .link { color: #3498db; text-decoration: none; }
                 </style>
             </head>
             <body>
@@ -434,10 +350,6 @@ class PlatformGateway:
                         <li><a href="/platform/plugins" class="link">Plugins</a></li>
                         <li><a href="/platform/routes" class="link">Routes</a></li>
                     </ul>
-                </div>
-                
-                <div class="powered-by">
-                    <p>🤖 Powered by Fix It Fred AI • Enterprise-Grade CMMS Platform</p>
                 </div>
             </body>
             </html>

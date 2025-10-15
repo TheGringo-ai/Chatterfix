@@ -36,6 +36,7 @@ env:
   INSTANCE_NAME: chatterfix-cmms-production
   ZONE: us-east1-b
   DEPLOY_USER: yoyofred
+  PRODUCTION_IP: 35.237.149.25
 
 jobs:
   # Pre-deployment checks

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ChatterFix CMMS - AI-Powered Maintenance Management System">
+    <meta name="theme-color" content="#667eea">
+    <title>{% block title %}ChatterFix CMMS{% endblock %}</title>
+    
+    <!-- ChatterFix Core CSS -->
+    <style>
+        :root {
+            /* ChatterFix Professional Brand Colors */
+            --primary-blue: #2c3e50;
+            --secondary-blue: #34495e;
+            --accent-blue: #3498db;
+            --success-green: #27ae60;
+            --warning-amber: #f39c12;
+            --error-red: #e74c3c;
+            --info-purple: #9b59b6;
+            
+            /* Fix It Fred AI Colors */
+            --fred-primary: #2c3e50;
+            --fred-secondary: #34495e;
+            --fred-accent: #3498db;
+            --fred-success: #27ae60;
+            
+            /* Background Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --bg-dark: #1a252f;
+            --bg-card: #ffffff;
+            
+            /* Text Colors */
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --text-light: #ffffff;
+            --text-muted: #8e9ba7;
+            
+            /* Shadows and Borders */
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --border-radius: 8px;
+            --border-color: #dee2e6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        /* ChatterFix Navigation */
+        .chatterfix-nav {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: var(--text-light);
+            padding: 1rem 0;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+        
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: var(--text-light);
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        .nav-item a {
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: background 0.3s ease;
+        }
+        
+        .nav-item a:hover, .nav-item a.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* ChatterFix Cards */
+        .chatterfix-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+        
+        .chatterfix-grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .grid-cols-2 { grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        
+        /* Summary Stats */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: var(--text-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .summary-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-card .subtitle {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .summary-card .ai-insight {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn-primary { background: var(--primary-blue); color: var(--text-light); }
+        .btn-success { background: var(--success-green); color: var(--text-light); }
+        .btn-warning { background: var(--warning-amber); color: var(--text-light); }
+        .btn-info { background: var(--info-purple); color: var(--text-light); }
+        .btn-secondary { background: var(--text-secondary); color: var(--text-light); }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: var(--warning-amber); color: var(--text-light); }
+        .status-assigned { background: var(--info-purple); color: var(--text-light); }
+        .status-in-progress { background: var(--primary-blue); color: var(--text-light); }
+        .status-completed { background: var(--success-green); color: var(--text-light); }
+        .status-maintenance { background: var(--warning-amber); color: var(--text-light); }
+        .status-operational { background: var(--success-green); color: var(--text-light); }
+        
+        /* Progress Bars */
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-green), var(--accent-blue));
+            transition: width 0.3s ease;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Header Section */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .page-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .action-buttons {
+            margin: 1rem 0;
+        }
+        
+        /* AI Chat Bubble */
+        .ai-chat-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .ai-chat-bubble:hover {
+            transform: scale(1.1);
+        }
+        
+        .ai-chat-bubble .icon {
+            color: var(--text-light);
+            font-size: 24px;
+        }
+        
+        /* Chat Interface Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .chat-typing {
+            animation: pulse 1.5s infinite;
+        }
+        
+        .chat-message {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* File Upload Styles */
+        .file-upload-area {
+            transition: all 0.3s ease;
+            border: 2px dashed rgba(255,255,255,0.3);
+        }
+        
+        .file-upload-area:hover {
+            border-color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .file-upload-area.dragover {
+            border-color: var(--accent-blue);
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-menu {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .summary-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .chatterfix-grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- ChatterFix Navigation -->
+    <nav class="chatterfix-nav">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">🔧 ChatterFix CMMS</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">📊 Dashboard</a></li>
+                <li class="nav-item"><a href="/work-orders" class="{% if 'work-orders' in request.url.path %}active{% endif %}">📋 Work Orders</a></li>
+                <li class="nav-item"><a href="/assets" class="{% if 'assets' in request.url.path %}active{% endif %}">🏭 Assets</a></li>
+                <li class="nav-item"><a href="/parts" class="{% if 'parts' in request.url.path %}active{% endif %}">🔧 Parts</a></li>
+                <li class="nav-item"><a href="/technician" class="{% if 'technician' in request.url.path %}active{% endif %}">👷 Technician</a></li>
+                <li class="nav-item"><a href="/manager" class="{% if 'manager' in request.url.path %}active{% endif %}">👔 Manager</a></li>
+                <li class="nav-item"><a href="/scheduler" class="{% if 'scheduler' in request.url.path %}active{% endif %}">📅 Scheduler</a></li>
+                <li class="nav-item"><a href="/parts-staff" class="{% if 'parts-staff' in request.url.path %}active{% endif %}">📦 Parts Staff</a></li>
+                <li class="nav-item"><a href="/ai-settings" class="{% if 'ai-settings' in request.url.path %}active{% endif %}">🤖 AI Settings</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>{% block page_icon %}📊{% endblock %} {% block page_title %}ChatterFix CMMS{% endblock %}</h1>
+            <p class="subtitle">{% block page_subtitle %}AI-Powered Maintenance Management{% endblock %}</p>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                {% block action_buttons %}
+                <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+                <button class="btn btn-info" onclick="openAIChat()">🤖 AI Assistant</button>
+                {% endblock %}
+            </div>
+        </div>
+        
+        <!-- Summary Stats -->
+        {% block summary_stats %}{% endblock %}
+        
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- AI Chat Bubble -->
+    <div class="ai-chat-bubble" onclick="toggleAIChat()">
+        <div class="icon">🤖</div>
+    </div>
+    
+    <!-- AI Chat Window (initially hidden) -->
+    <div id="aiChatWindow" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 1001; flex-direction: column;">
+        <div style="background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue)); color: white; padding: 1rem; border-radius: 12px 12px 0 0; font-weight: 600;">
+            🤖 ChatterFix AI Assistant
+            <span style="float: right; cursor: pointer;" onclick="toggleAIChat()">×</span>
+        </div>
+        <div id="chatMessages" style="flex: 1; padding: 1rem; overflow-y: auto;">
+            <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 8px; margin-bottom: 1rem;">
+                Hi! I'm your ChatterFix AI assistant. I can help with work orders, asset management, parts inventory, and maintenance planning. What can I help you with?
+            </div>
+        </div>
+        <div style="padding: 1rem; border-top: 1px solid #eee;">
+            <input type="text" id="chatInput" placeholder="Ask about maintenance, assets, parts..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;" onkeypress="handleChatKeyPress(event)">
+        </div>
+    </div>
+    
+    <!-- ChatterFix JavaScript -->
+    <script>
+        // AI Chat Functionality
+        function toggleAIChat() {
+            const chatWindow = document.getElementById('aiChatWindow');
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+        }
+        
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+        
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            addChatMessage(message, 'user');
+            input.value = '';
+            
+            try {
+                // Determine user role based on current page
+                const userRole = getCurrentUserRole();
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        user_role: userRole,
+                        context: document.title
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addChatMessage(data.response, 'ai');
+                } else {
+                    addChatMessage('Sorry, I encountered an issue. Please try again.', 'ai');
+                }
+            } catch (error) {
+                addChatMessage('Connection error. Please try again later.', 'ai');
+            }
+        }
+        
+        function addChatMessage(content, type) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.marginBottom = '1rem';
+            messageDiv.style.textAlign = type === 'user' ? 'right' : 'left';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.style.display = 'inline-block';
+            bubbleDiv.style.padding = '8px 12px';
+            bubbleDiv.style.borderRadius = '8px';
+            bubbleDiv.style.maxWidth = '80%';
+            
+            if (type === 'user') {
+                bubbleDiv.style.background = 'var(--primary-blue)';
+                bubbleDiv.style.color = 'white';
+            } else {
+                bubbleDiv.style.background = '#f8f9fa';
+                bubbleDiv.style.color = 'var(--text-primary)';
+            }
+            
+            bubbleDiv.textContent = content;
+            messageDiv.appendChild(bubbleDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function getCurrentUserRole() {
+            const path = window.location.pathname;
+            if (path.includes('technician')) return 'technician';
+            if (path.includes('manager')) return 'manager';
+            if (path.includes('scheduler')) return 'scheduler';
+            if (path.includes('parts')) return 'parts';
+            return 'technician'; // default
+        }
+        
+        // General Functions
+        function refreshData() {
+            location.reload();
+        }
+        
+        function openAIChat() {
+            toggleAIChat();
+        }
+        
+        {% block extra_js %}{% endblock %}
+    </script>
+</body>
+</html>

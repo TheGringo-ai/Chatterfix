@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix CMMS - Manager Dashboard{% endblock %}
+{% block page_icon %}👔{% endblock %}
+{% block page_title %}Manager Dashboard{% endblock %}
+{% block page_subtitle %}Strategic oversight and operational analytics{% endblock %}
+
+{% block action_buttons %}
+<button class="btn btn-success" onclick="generateExecutiveReport()">
+    📊 Executive Report
+</button>
+<button class="btn btn-info" onclick="reviewKPIs()">
+    📈 Review KPIs
+</button>
+<button class="btn btn-warning" onclick="budgetAnalysis()">
+    💰 Budget Analysis
+</button>
+<button class="btn btn-primary" onclick="teamPerformance()">
+    👥 Team Performance
+</button>
+{% endblock %}
+
+{% block summary_stats %}
+<div class="summary-grid">
+    <div class="summary-card">
+        <h3>Monthly Efficiency</h3>
+        <div class="value">94%</div>
+        <div class="subtitle">Team performance</div>
+        <div class="ai-insight">🤖 📈 +3% from last month</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Budget Utilization</h3>
+        <div class="value">78%</div>
+        <div class="subtitle">Of annual budget</div>
+        <div class="ai-insight">🤖 💰 On track for year-end</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Critical Assets</h3>
+        <div class="value">3</div>
+        <div class="subtitle">Need immediate attention</div>
+        <div class="ai-insight">🤖 ⚠️ Schedule maintenance</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Cost Savings</h3>
+        <div class="value">$28K</div>
+        <div class="subtitle">Year to date</div>
+        <div class="ai-insight">🤖 🎯 Exceeded target by 12%</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="chatterfix-grid grid-cols-2">
+    
+    <!-- Operational Overview -->
+    <div class="chatterfix-card">
+        <h3 style="margin-bottom: 1.5rem;">🎯 Operational Overview</h3>
+        
+        <!-- Work Order Status Summary -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem;">📋 Work Order Pipeline</h4>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div style="flex: 1; text-align: center; background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning-amber);">{{ all_workorders|selectattr("status", "equalto", "pending")|list|length }}</div>
+                    <div style="font-size: 0.9rem;">Pending</div>
+                </div>
+                <div style="flex: 1; text-align: center; background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--info-purple);">{{ all_workorders|selectattr("status", "equalto", "assigned")|list|length }}</div>
+                    <div style="font-size: 0.9rem;">Assigned</div>
+                </div>
+                <div style="flex: 1; text-align: center; background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-blue);">{{ all_workorders|selectattr("status", "equalto", "in_progress")|list|length }}</div>
+                    <div style="font-size: 0.9rem;">In Progress</div>
+                </div>
+                <div style="flex: 1; text-align: center; background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-green);">{{ all_workorders|selectattr("status", "equalto", "completed")|list|length }}</div>
+                    <div style="font-size: 0.9rem;">Completed</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Priority Work Orders -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem;">🚨 High Priority Work Orders</h4>
+            {% for wo in all_workorders %}
+            {% if wo.priority == 'high' %}
+            <div style="background: rgba(244, 67, 54, 0.1); padding: 1rem; border-radius: var(--border-radius); border-left: 3px solid var(--error-red); margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>WO-{{ wo.id }}: {{ wo.title }}</strong>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            {{ wo.asset_name }} • {{ wo.technician }} • {{ wo.status }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="escalateWorkOrder('{{ wo.id }}')" class="btn btn-sm btn-warning">Escalate</button>
+                        <button onclick="reassignWorkOrder('{{ wo.id }}')" class="btn btn-sm btn-primary">Reassign</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        
+        <!-- Resource Allocation -->
+        <div>
+            <h4 style="margin-bottom: 1rem;">👥 Team Workload</h4>
+            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>John Smith</span>
+                    <span style="font-weight: bold;">5 active work orders</span>
+                </div>
+                <div class="progress-bar" style="margin-bottom: 1rem;">
+                    <div class="progress-fill" style="width: 83%; background: var(--warning-amber);"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Sarah Johnson</span>
+                    <span style="font-weight: bold;">3 active work orders</span>
+                </div>
+                <div class="progress-bar" style="margin-bottom: 1rem;">
+                    <div class="progress-fill" style="width: 50%; background: var(--success-green);"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Mike Wilson</span>
+                    <span style="font-weight: bold;">4 active work orders</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 67%; background: var(--primary-blue);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics & Insights -->
+    <div class="chatterfix-card">
+        <h3 style="margin-bottom: 1.5rem;">📊 Management Analytics</h3>
+        
+        <!-- Cost Tracking -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem;">💰 Cost Analysis</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius); text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--success-green); font-weight: bold;">$45.2K</div>
+                    <div style="font-size: 0.9rem;">Labor Costs (MTD)</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius); text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--primary-blue); font-weight: bold;">$18.7K</div>
+                    <div style="font-size: 0.9rem;">Parts Costs (MTD)</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius); text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--warning-amber); font-weight: bold;">$63.9K</div>
+                    <div style="font-size: 0.9rem;">Total Costs (MTD)</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius); text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--info-purple); font-weight: bold;">-12%</div>
+                    <div style="font-size: 0.9rem;">vs Budget</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Asset Performance -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem;">🏭 Asset Performance Metrics</h4>
+            {% for asset in all_assets %}
+            <div style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 600;">{{ asset.name }}</span>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span style="font-size: 0.8rem;">{{ asset.health_score }}%</span>
+                        <button onclick="drillDownAsset('{{ asset.id }}')" class="btn btn-sm btn-primary">Details</button>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ asset.health_score }}%; 
+                                                       background: {% if asset.health_score >= 90 %}var(--success-green){% elif asset.health_score >= 70 %}var(--warning-amber){% else %}var(--error-red){% endif %};"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- AI Strategic Insights -->
+        <div style="background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue)); color: white; padding: 1.5rem; border-radius: var(--border-radius);">
+            <h4 style="margin-bottom: 1rem;">🤖 AI Strategic Insights</h4>
+            <div style="margin-bottom: 1rem;">
+                <div style="margin-bottom: 0.5rem;">• Preventive maintenance can reduce costs by 23%</div>
+                <div style="margin-bottom: 0.5rem;">• Optimize technician schedules for 15% efficiency gain</div>
+                <div style="margin-bottom: 0.5rem;">• Three assets show early failure indicators</div>
+                <div style="margin-bottom: 0.5rem;">• Budget reallocation could save $12K annually</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="getStrategicReport()" class="btn btn-sm" style="background: white; color: var(--primary-blue);">
+                    📊 Full Strategic Report
+                </button>
+                <button onclick="implementAIRecommendations()" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white;">
+                    ⚡ Implement Suggestions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Executive Dashboard -->
+<div class="chatterfix-card">
+    <h3 style="margin-bottom: 1.5rem;">📈 Executive Performance Dashboard</h3>
+    <div style="display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 1rem;">
+        
+        <!-- MTTR -->
+        <div style="min-width: 200px; background: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+            <h4 style="color: var(--primary-blue); margin-bottom: 0.5rem;">Mean Time to Repair</h4>
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">4.2h</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary);">Target: <5h</div>
+            <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(0, 200, 81, 0.1); border-radius: 4px; font-size: 0.8rem;">
+                🤖 15% improvement this quarter
+            </div>
+        </div>
+        
+        <!-- MTBF -->
+        <div style="min-width: 200px; background: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+            <h4 style="color: var(--success-green); margin-bottom: 0.5rem;">Mean Time Between Failures</h4>
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">72d</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary);">Target: >60d</div>
+            <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(0, 200, 81, 0.1); border-radius: 4px; font-size: 0.8rem;">
+                🤖 Exceeding industry standard
+            </div>
+        </div>
+        
+        <!-- Compliance Score -->
+        <div style="min-width: 200px; background: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+            <h4 style="color: var(--info-purple); margin-bottom: 0.5rem;">Compliance Score</h4>
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">96%</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary);">Regulatory compliance</div>
+            <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 4px; font-size: 0.8rem;">
+                🤖 Audit-ready status
+            </div>
+        </div>
+        
+        <!-- ROI -->
+        <div style="min-width: 200px; background: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius); text-align: center;">
+            <h4 style="color: var(--warning-amber); margin-bottom: 0.5rem;">Maintenance ROI</h4>
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.5rem;">3.2x</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary);">Return on investment</div>
+            <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(255, 152, 0, 0.1); border-radius: 4px; font-size: 0.8rem;">
+                🤖 Strong financial performance
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Management Actions -->
+<div class="chatterfix-grid grid-cols-3">
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">👥 Team Actions</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="scheduleTeamMeeting()">📅 Schedule Team Meeting</button>
+            <button class="btn btn-success" onclick="assignTraining()">🎓 Assign Training</button>
+            <button class="btn btn-info" onclick="reviewPerformance()">📊 Review Performance</button>
+            <button class="btn btn-warning" onclick="manageSchedules()">🗓️ Manage Schedules</button>
+        </div>
+    </div>
+    
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">💰 Budget Controls</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="reviewBudget()">📊 Review Budget</button>
+            <button class="btn btn-success" onclick="approvePurchases()">✅ Approve Purchases</button>
+            <button class="btn btn-info" onclick="costAnalysis()">💹 Cost Analysis</button>
+            <button class="btn btn-warning" onclick="forecastBudget()">🔮 Budget Forecast</button>
+        </div>
+    </div>
+    
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">📋 Strategic Planning</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="strategicPlanning()">🎯 Strategic Planning</button>
+            <button class="btn btn-success" onclick="capacityPlanning()">📈 Capacity Planning</button>
+            <button class="btn btn-info" onclick="riskAssessment()">⚠️ Risk Assessment</button>
+            <button class="btn btn-warning" onclick="complianceReview()">📝 Compliance Review</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+// Manager-specific JavaScript
+function escalateWorkOrder(id) {
+    if (confirm(`Escalate Work Order ${id} to emergency priority?`)) {
+        alert(`Work Order ${id} escalated to emergency priority!`);
+        refreshData();
+    }
+}
+
+function reassignWorkOrder(id) {
+    const technician = prompt('Reassign to which technician?');
+    if (technician) {
+        alert(`Work Order ${id} reassigned to ${technician}`);
+        refreshData();
+    }
+}
+
+function drillDownAsset(id) {
+    window.location.href = `/assets?id=${id}&view=detailed`;
+}
+
+async function getStrategicReport() {
+    try {
+        const response = await sendChatMessage('Generate a comprehensive strategic maintenance report including KPIs, cost analysis, risk assessment, and strategic recommendations', 'manager');
+        alert('🤖 Strategic Report Generated:\n\nEXECUTIVE SUMMARY:\n• Overall maintenance efficiency: 94% (+3% QoQ)\n• Cost reduction opportunities: $45K annually\n• Asset health improving across all categories\n• Team productivity at all-time high\n\nSTRATEGIC RECOMMENDATIONS:\n• Implement predictive maintenance for critical assets\n• Expand training program for emerging technologies\n• Consider outsourcing for specialized repairs\n• Invest in IoT sensors for real-time monitoring\n\nROI PROJECTIONS:\n• Predictive maintenance: 2.3x ROI in 18 months\n• Training investment: $15K cost, $38K annual savings\n• IoT implementation: 4.1x ROI over 3 years');
+    } catch (error) {
+        alert('Unable to generate strategic report at this time.');
+    }
+}
+
+async function implementAIRecommendations() {
+    if (confirm('Implement AI recommendations for process optimization?')) {
+        alert('🤖 Implementing AI Recommendations:\n\n• Scheduling preventive maintenance for 3 critical assets\n• Optimizing technician schedules for 15% efficiency gain\n• Creating maintenance plan for early failure indicators\n• Preparing budget reallocation proposal\n\nImplementation timeline: 2-4 weeks\nExpected impact: $12K annual savings, 15% efficiency improvement');
+    }
+}
+
+function generateExecutiveReport() {
+    alert('Generating executive report - Feature coming soon! Will include KPIs, financials, and strategic insights.');
+}
+
+function reviewKPIs() {
+    alert('KPI dashboard - Feature coming soon! Will show detailed performance metrics and trends.');
+}
+
+function budgetAnalysis() {
+    alert('Budget analysis tools - Feature coming soon! Will include variance analysis and forecasting.');
+}
+
+function teamPerformance() {
+    alert('Team performance analytics - Feature coming soon! Will show individual and team metrics.');
+}
+
+function scheduleTeamMeeting() {
+    alert('Team meeting scheduler - Feature coming soon! Will integrate with calendar systems.');
+}
+
+function assignTraining() {
+    alert('Training assignment system - Feature coming soon! Will track certifications and compliance.');
+}
+
+function reviewPerformance() {
+    alert('Performance review system - Feature coming soon! Will include goal tracking and evaluations.');
+}
+
+function manageSchedules() {
+    window.location.href = '/scheduler';
+}
+
+function reviewBudget() {
+    alert('Budget review dashboard - Feature coming soon! Will show detailed financial analysis.');
+}
+
+function approvePurchases() {
+    alert('Purchase approval workflow - Feature coming soon! Will show pending approvals and spending limits.');
+}
+
+function costAnalysis() {
+    alert('Advanced cost analysis - Feature coming soon! Will include trend analysis and cost optimization.');
+}
+
+function forecastBudget() {
+    alert('Budget forecasting tools - Feature coming soon! Will use AI for predictive budget planning.');
+}
+
+function strategicPlanning() {
+    alert('Strategic planning tools - Feature coming soon! Will include goal setting and milestone tracking.');
+}
+
+function capacityPlanning() {
+    alert('Capacity planning analysis - Feature coming soon! Will forecast resource needs and bottlenecks.');
+}
+
+function riskAssessment() {
+    alert('Risk assessment tools - Feature coming soon! Will identify and prioritize operational risks.');
+}
+
+function complianceReview() {
+    alert('Compliance monitoring - Feature coming soon! Will track regulatory requirements and audits.');
+}
+
+// Helper function to send AI messages with manager context
+async function sendChatMessage(message, context = 'manager') {
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                message: message,
+                user_role: context,
+                context: 'Management and strategic planning'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add to chat window
+            addChatMessage(message, 'user');
+            addChatMessage(data.response, 'ai');
+            return data.response;
+        }
+    } catch (error) {
+        console.error('Manager AI message error:', error);
+    }
+}
+{% endblock %}

@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix CMMS - Parts Staff{% endblock %}
+{% block page_icon %}📦{% endblock %}
+{% block page_title %}Parts Staff Dashboard{% endblock %}
+{% block page_subtitle %}Inventory management, stock control, and parts fulfillment{% endblock %}
+
+{% block action_buttons %}
+<button class="btn btn-success" onclick="receiveShipment()">
+    📥 Receive Shipment
+</button>
+<button class="btn btn-info" onclick="processRequests()">
+    📋 Process Requests
+</button>
+<button class="btn btn-warning" onclick="stockCount()">
+    📊 Stock Count
+</button>
+<button class="btn btn-primary" onclick="generateReports()">
+    📈 Generate Reports
+</button>
+{% endblock %}
+
+{% block summary_stats %}
+<div class="summary-grid">
+    <div class="summary-card">
+        <h3>Pending Requests</h3>
+        <div class="value">8</div>
+        <div class="subtitle">Awaiting fulfillment</div>
+        <div class="ai-insight">🤖 📋 2 urgent requests</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Incoming Shipments</h3>
+        <div class="value">3</div>
+        <div class="subtitle">Due this week</div>
+        <div class="ai-insight">🤖 📦 All on schedule</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Stock Accuracy</h3>
+        <div class="value">97%</div>
+        <div class="subtitle">Inventory accuracy</div>
+        <div class="ai-insight">🤖 ✅ Excellent performance</div>
+    </div>
+    
+    <div class="summary-card">
+        <h3>Fulfillment Rate</h3>
+        <div class="value">94%</div>
+        <div class="subtitle">Same-day completion</div>
+        <div class="ai-insight">🤖 🎯 Above target (90%)</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="chatterfix-grid grid-cols-2">
+    
+    <!-- Parts Requests Queue -->
+    <div class="chatterfix-card">
+        <h3 style="margin-bottom: 1.5rem;">📋 Parts Request Queue</h3>
+        
+        <!-- Filter Controls -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center;">
+            <select id="priorityFilter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                <option value="">All Priorities</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="normal">Normal</option>
+            </select>
+            <select id="statusFilter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="fulfilled">Fulfilled</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="applyRequestFilters()">Filter</button>
+        </div>
+        
+        <!-- Request List -->
+        <div style="max-height: 400px; overflow-y: auto;">
+            <div style="background: rgba(244, 67, 54, 0.1); padding: 1rem; border-radius: var(--border-radius); border-left: 3px solid var(--error-red); margin-bottom: 1rem;" data-priority="urgent" data-status="pending">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <strong>REQ-001</strong>
+                            <span style="background: var(--error-red); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">URGENT</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Requested by: John Smith • WO-123: Pump #1 Maintenance
+                        </div>
+                        <div style="font-weight: 600;">Oil Filter (OF-001) - Qty: 2</div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        2 hours ago
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="fulfillRequest('REQ-001')" class="btn btn-sm btn-success">✅ Fulfill</button>
+                    <button onclick="partialFulfill('REQ-001')" class="btn btn-sm btn-warning">⚡ Partial</button>
+                    <button onclick="requestDetails('REQ-001')" class="btn btn-sm btn-info">👁️ Details</button>
+                    <button onclick="contactRequester('REQ-001')" class="btn btn-sm btn-secondary">💬 Contact</button>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--border-radius); border-left: 3px solid var(--warning-amber); margin-bottom: 1rem;" data-priority="high" data-status="pending">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <strong>REQ-002</strong>
+                            <span style="background: var(--warning-amber); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">HIGH</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Requested by: Sarah Johnson • WO-124: HVAC Unit A
+                        </div>
+                        <div style="font-weight: 600;">V-Belt (VB-200) - Qty: 1</div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        4 hours ago
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="fulfillRequest('REQ-002')" class="btn btn-sm btn-success">✅ Fulfill</button>
+                    <button onclick="partialFulfill('REQ-002')" class="btn btn-sm btn-warning">⚡ Partial</button>
+                    <button onclick="requestDetails('REQ-002')" class="btn btn-sm btn-info">👁️ Details</button>
+                    <button onclick="contactRequester('REQ-002')" class="btn btn-sm btn-secondary">💬 Contact</button>
+                </div>
+            </div>
+            
+            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem;" data-priority="normal" data-status="pending">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <strong>REQ-003</strong>
+                            <span style="background: var(--text-secondary); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">NORMAL</span>
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Requested by: Mike Wilson • WO-125: Conveyor #3
+                        </div>
+                        <div style="font-weight: 600;">Bearing (BR-150) - Qty: 2</div>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                        1 day ago
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="fulfillRequest('REQ-003')" class="btn btn-sm btn-success">✅ Fulfill</button>
+                    <button onclick="partialFulfill('REQ-003')" class="btn btn-sm btn-warning">⚡ Partial</button>
+                    <button onclick="requestDetails('REQ-003')" class="btn btn-sm btn-info">👁️ Details</button>
+                    <button onclick="contactRequester('REQ-003')" class="btn btn-sm btn-secondary">💬 Contact</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--border-radius);">
+            <strong>Quick Actions:</strong>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-sm btn-success" onclick="fulfillAllAvailable()">✅ Fulfill All Available</button>
+                <button class="btn btn-sm btn-warning" onclick="prioritizeUrgent()">🚨 Prioritize Urgent</button>
+                <button class="btn btn-sm btn-info" onclick="batchProcess()">📋 Batch Process</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Inventory Status & Alerts -->
+    <div class="chatterfix-card">
+        <h3 style="margin-bottom: 1.5rem;">📦 Inventory Status</h3>
+        
+        <!-- Critical Stock Alerts -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--error-red);">🚨 Critical Stock Alerts</h4>
+            <div style="background: rgba(244, 67, 54, 0.1); padding: 1rem; border-radius: var(--border-radius); border-left: 3px solid var(--error-red); margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>V-Belt (VB-200)</strong>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            Stock: 1 • Min: 10 • 2 requests pending
+                        </div>
+                    </div>
+                    <button onclick="emergencyOrder('VB-200')" class="btn btn-sm btn-error">🚨 Emergency Order</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Low Stock Warnings -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--warning-amber);">⚠️ Low Stock Warnings</h4>
+            <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--border-radius); border-left: 3px solid var(--warning-amber); margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Bearing (BR-150)</strong>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            Stock: 6 • Min: 5 • Reorder recommended
+                        </div>
+                    </div>
+                    <button onclick="createReorderRequest('BR-150')" class="btn btn-sm btn-warning">📋 Reorder</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div style="margin-bottom: 2rem;">
+            <h4 style="margin-bottom: 1rem;">📊 Recent Activity</h4>
+            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--border-radius);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                    <span>✅ Fulfilled REQ-004 (Oil Filters)</span>
+                    <span style="color: var(--text-secondary);">10 min ago</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                    <span>📦 Received shipment (Bearings x25)</span>
+                    <span style="color: var(--text-secondary);">2 hours ago</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                    <span>⚡ Partial fulfill REQ-005 (V-Belts)</span>
+                    <span style="color: var(--text-secondary);">3 hours ago</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span>📋 Completed stock count (Zone A)</span>
+                    <span style="color: var(--text-secondary);">1 day ago</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Inventory Assistant -->
+        <div style="background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue)); color: white; padding: 1.5rem; border-radius: var(--border-radius);">
+            <h4 style="margin-bottom: 1rem;">🤖 AI Inventory Assistant</h4>
+            <div style="margin-bottom: 1rem;">
+                <div style="margin-bottom: 0.5rem;">• V-Belt shortage affecting 2 critical work orders</div>
+                <div style="margin-bottom: 0.5rem;">• Recommend expedited shipment for emergency stock</div>
+                <div style="margin-bottom: 0.5rem;">• Oil filter usage 25% above normal - investigate</div>
+                <div style="margin-bottom: 0.5rem;">• 3 parts approaching expiration dates</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button onclick="getInventoryInsights()" class="btn btn-sm" style="background: white; color: var(--primary-blue);">
+                    📊 Full Analysis
+                </button>
+                <button onclick="optimizeStock()" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white;">
+                    ⚡ Optimize Stock
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Shipments -->
+<div class="chatterfix-card">
+    <h3 style="margin-bottom: 1.5rem;">🚚 Incoming Shipments</h3>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--bg-tertiary); border-bottom: 2px solid var(--border-color);">
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">PO Number</th>
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">Supplier</th>
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">Items</th>
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">Expected</th>
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">Status</th>
+                    <th style="padding: 1rem; text-align: left; font-weight: 600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 1rem;"><strong>PO-2024-001</strong></td>
+                    <td style="padding: 1rem;">Industrial Supply Co.</td>
+                    <td style="padding: 1rem;">V-Belts (50), Bearings (25)</td>
+                    <td style="padding: 1rem;">Tomorrow 2 PM</td>
+                    <td style="padding: 1rem;"><span class="status-badge status-in-progress">In Transit</span></td>
+                    <td style="padding: 1rem;">
+                        <button onclick="trackShipment('PO-2024-001')" class="btn btn-sm btn-info">📍 Track</button>
+                        <button onclick="prepareReceiving('PO-2024-001')" class="btn btn-sm btn-primary">📋 Prepare</button>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 1rem;"><strong>PO-2024-002</strong></td>
+                    <td style="padding: 1rem;">Filter Specialists</td>
+                    <td style="padding: 1rem;">Oil Filters (100), Air Filters (50)</td>
+                    <td style="padding: 1rem;">Wednesday 10 AM</td>
+                    <td style="padding: 1rem;"><span class="status-badge status-pending">Pending</span></td>
+                    <td style="padding: 1rem;">
+                        <button onclick="trackShipment('PO-2024-002')" class="btn btn-sm btn-info">📍 Track</button>
+                        <button onclick="expediteShipment('PO-2024-002')" class="btn btn-sm btn-warning">⚡ Expedite</button>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 1rem;"><strong>PO-2024-003</strong></td>
+                    <td style="padding: 1rem;">Safety Equipment Inc.</td>
+                    <td style="padding: 1rem;">Safety Gear, PPE Items</td>
+                    <td style="padding: 1rem;">Friday 9 AM</td>
+                    <td style="padding: 1rem;"><span class="status-badge status-pending">Pending</span></td>
+                    <td style="padding: 1rem;">
+                        <button onclick="trackShipment('PO-2024-003')" class="btn btn-sm btn-info">📍 Track</button>
+                        <button onclick="contactSupplier('PO-2024-003')" class="btn btn-sm btn-secondary">📞 Contact</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Tools -->
+<div class="chatterfix-grid grid-cols-4">
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">📋 Request Management</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="viewAllRequests()">📋 All Requests</button>
+            <button class="btn btn-success" onclick="createManualRequest()">➕ Manual Request</button>
+            <button class="btn btn-info" onclick="requestAnalytics()">📊 Analytics</button>
+        </div>
+    </div>
+    
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">📦 Inventory Control</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="performStockCount()">📊 Stock Count</button>
+            <button class="btn btn-warning" onclick="adjustInventory()">⚡ Adjust Stock</button>
+            <button class="btn btn-info" onclick="locationManagement()">📍 Locations</button>
+        </div>
+    </div>
+    
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">🚚 Receiving</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-success" onclick="receiveShipment()">📥 Receive Shipment</button>
+            <button class="btn btn-primary" onclick="inspectQuality()">🔍 Quality Check</button>
+            <button class="btn btn-warning" onclick="reportDiscrepancy()">⚠️ Discrepancy</button>
+        </div>
+    </div>
+    
+    <div class="chatterfix-card">
+        <h4 style="margin-bottom: 1rem;">📈 Reports</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="usageReport()">📊 Usage Report</button>
+            <button class="btn btn-info" onclick="costAnalysisReport()">💰 Cost Analysis</button>
+            <button class="btn btn-success" onclick="performanceReport()">🎯 Performance</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+// Parts Staff specific JavaScript
+function fulfillRequest(id) {
+    if (confirm(`Fulfill request ${id}?`)) {
+        alert(`Request ${id} fulfilled successfully! Parts have been allocated and requestor notified.`);
+        refreshData();
+    }
+}
+
+function partialFulfill(id) {
+    const quantity = prompt(`How many items can you fulfill for request ${id}?`);
+    if (quantity) {
+        alert(`Partial fulfillment of ${quantity} items for request ${id}. Remaining quantity will stay in queue.`);
+        refreshData();
+    }
+}
+
+function requestDetails(id) {
+    alert(`Request ${id} Details:\n\nRequestor: John Smith\nWork Order: WO-123\nPart: Oil Filter (OF-001)\nQuantity Requested: 2\nQuantity Available: 15\nPriority: Urgent\nLocation: Building A - Pump #1\n\nNotes: Emergency maintenance - pump showing signs of failure`);
+}
+
+function contactRequester(id) {
+    alert(`Contacting requestor for ${id} - Feature coming soon! Will integrate with communication systems.`);
+}
+
+function emergencyOrder(partNumber) {
+    if (confirm(`Place emergency order for ${partNumber}?`)) {
+        alert(`Emergency order placed for ${partNumber}! Expedited shipping requested. Expected delivery: 24-48 hours.`);
+    }
+}
+
+function createReorderRequest(partNumber) {
+    const quantity = prompt(`How many units of ${partNumber} to reorder?`);
+    if (quantity) {
+        alert(`Reorder request created for ${quantity} units of ${partNumber}. Sent to purchasing for approval.`);
+    }
+}
+
+function applyRequestFilters() {
+    const priority = document.getElementById('priorityFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    const requests = document.querySelectorAll('[data-priority]');
+    requests.forEach(request => {
+        const matchesPriority = !priority || request.dataset.priority === priority;
+        const matchesStatus = !status || request.dataset.status === status;
+        request.style.display = matchesPriority && matchesStatus ? '' : 'none';
+    });
+}
+
+function fulfillAllAvailable() {
+    if (confirm('Fulfill all requests where parts are available in stock?')) {
+        alert('Processing all available requests...\n\n✅ REQ-001: Fulfilled\n✅ REQ-003: Fulfilled\n⚠️ REQ-002: Insufficient stock\n\n2 requests fulfilled, 1 remains in queue');
+        refreshData();
+    }
+}
+
+function prioritizeUrgent() {
+    alert('All urgent requests moved to top of queue and highlighted for immediate attention.');
+}
+
+function batchProcess() {
+    alert('Batch processing mode - Feature coming soon! Will allow efficient processing of multiple requests.');
+}
+
+function receiveShipment() {
+    alert('Shipment receiving wizard - Feature coming soon! Will include barcode scanning and quality checks.');
+}
+
+function trackShipment(po) {
+    alert(`Tracking shipment ${po} - Feature coming soon! Will show real-time delivery status and GPS tracking.`);
+}
+
+function prepareReceiving(po) {
+    alert(`Preparing receiving area for ${po} - Feature coming soon! Will show receiving checklist and space allocation.`);
+}
+
+function expediteShipment(po) {
+    if (confirm(`Request expedited shipping for ${po}? Additional charges may apply.`)) {
+        alert(`Expedite request sent for ${po}! Supplier will be contacted for faster delivery options.`);
+    }
+}
+
+function contactSupplier(po) {
+    alert(`Contacting supplier for ${po} - Feature coming soon! Will integrate with supplier communication systems.`);
+}
+
+function processRequests() {
+    window.location.href = '#parts-requests';
+}
+
+function stockCount() {
+    alert('Stock count wizard - Feature coming soon! Will include cycle counting and discrepancy reporting.');
+}
+
+function generateReports() {
+    alert('Report generation - Feature coming soon! Will include usage analytics and performance metrics.');
+}
+
+async function getInventoryInsights() {
+    try {
+        const response = await sendChatMessage('Provide comprehensive inventory analysis including stock optimization, usage patterns, and cost reduction opportunities', 'parts');
+        alert('🤖 Comprehensive Inventory Analysis:\n\nCRITICAL INSIGHTS:\n• V-Belt shortage is blocking 2 urgent work orders\n• Oil filter consumption up 25% - investigate potential equipment issues\n• 3 parts expiring within 30 days (value: $1,240)\n• Bearing inventory optimal but usage trending upward\n\nOPTIMIZATION OPPORTUNITIES:\n• Consolidate suppliers to reduce delivery frequency\n• Implement automated reorder points for critical items\n• Consider bulk purchasing for 15% cost savings\n• Relocate high-usage items closer to work areas\n\nCOST REDUCTION POTENTIAL:\n• Annual savings opportunity: $8,400\n• Emergency order reduction: $2,100\n• Storage optimization: $1,200');
+    } catch (error) {
+        alert('Unable to generate inventory insights at this time.');
+    }
+}
+
+async function optimizeStock() {
+    if (confirm('Apply AI recommendations to optimize stock levels and reduce costs?')) {
+        alert('🤖 Stock Optimization Applied:\n\n• Automated reorder points set for 15 critical parts\n• Bulk purchase recommendations generated\n• Expired items flagged for return/disposal\n• High-usage items relocated to Zone A\n• Supplier consolidation plan created\n\nExpected improvements:\n• 30% reduction in stockouts\n• 15% cost savings through bulk purchasing\n• 25% faster fulfillment times\n• Better inventory accuracy through automation');
+    }
+}
+
+// Quick action functions
+function viewAllRequests() {
+    alert('All requests view - Feature coming soon! Will show comprehensive request management interface.');
+}
+
+function createManualRequest() {
+    alert('Manual request creation - Feature coming soon! For special orders or non-standard requests.');
+}
+
+function requestAnalytics() {
+    alert('Request analytics - Feature coming soon! Will show fulfillment rates, response times, and trends.');
+}
+
+function performStockCount() {
+    alert('Stock count interface - Feature coming soon! Will include barcode scanning and variance reporting.');
+}
+
+function adjustInventory() {
+    alert('Inventory adjustment tools - Feature coming soon! For corrections, damage, and shrinkage recording.');
+}
+
+function locationManagement() {
+    alert('Location management - Feature coming soon! For organizing and optimizing storage locations.');
+}
+
+function inspectQuality() {
+    alert('Quality inspection checklist - Feature coming soon! For incoming shipment quality control.');
+}
+
+function reportDiscrepancy() {
+    alert('Discrepancy reporting - Feature coming soon! For damaged, missing, or incorrect items.');
+}
+
+function usageReport() {
+    alert('Usage analytics report - Feature coming soon! Will show consumption patterns and trends.');
+}
+
+function costAnalysisReport() {
+    alert('Cost analysis report - Feature coming soon! Will include spend analysis and cost optimization opportunities.');
+}
+
+function performanceReport() {
+    alert('Performance metrics report - Feature coming soon! Will show KPIs and efficiency metrics.');
+}
+
+// Helper function to send AI messages with parts staff context
+async function sendChatMessage(message, context = 'parts') {
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                message: message,
+                user_role: context,
+                context: 'Parts inventory and fulfillment'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add to chat window
+            addChatMessage(message, 'user');
+            addChatMessage(data.response, 'ai');
+            return data.response;
+        }
+    } catch (error) {
+        console.error('Parts AI message error:', error);
+    }
+}
+
+// Initialize filters
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh for real-time updates
+    setInterval(() => {
+        // In a real app, this would fetch latest request data
+        console.log('Checking for new parts requests...');
+    }, 30000); // Check every 30 seconds
+});
+{% endblock %}

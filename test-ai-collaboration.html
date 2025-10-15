@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AI Collaboration Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #0a0a0a; color: white; }
+        .test-container { max-width: 600px; margin: 0 auto; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #10b981; }
+        .error { background: #ef4444; }
+        .info { background: #3b82f6; }
+        button { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #5a67d8; }
+        #response-area { background: #1a1a1a; padding: 15px; border-radius: 5px; margin: 10px 0; min-height: 100px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 AI Collaboration Dashboard Fix Test</h1>
+        <p>This page tests the Fix It Fred integration for the AI Collaboration Dashboard</p>
+        
+        <div>
+            <h3>Test Fix It Fred Endpoint:</h3>
+            <button onclick="testKnowledgeQuery()">Test Knowledge Query</button>
+            <button onclick="testDeploymentCheck()">Test Deployment Check</button>
+            <button onclick="testRecommendation()">Test Recommendation</button>
+        </div>
+        
+        <div id="response-area">
+            <p>Click a button above to test the Fix It Fred integration...</p>
+        </div>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const responseArea = document.getElementById('response-area');
+        const testResults = document.getElementById('test-results');
+
+        async function testKnowledgeQuery() {
+            responseArea.innerHTML = '<p>🔍 Testing knowledge base query...</p>';
+            
+            try {
+                const response = await fetch('/api/fix-it-fred/troubleshoot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        equipment: 'ChatterFix CMMS Platform',
+                        issue_description: 'Knowledge base query from AI Collaboration Dashboard: "How do I create work orders?". Please provide helpful information about ChatterFix CMMS features and capabilities.'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.response) {
+                    responseArea.innerHTML = `
+                        <h4>✅ Knowledge Query Success!</h4>
+                        <p><strong>Response:</strong> ${data.data.response}</p>
+                        <p><strong>Steps:</strong> ${data.data.troubleshooting_steps ? data.data.troubleshooting_steps.length : 0}</p>
+                    `;
+                    addTestResult('Knowledge Query', true);
+                } else {
+                    responseArea.innerHTML = `<h4>❌ Knowledge Query Failed</h4><p>Invalid response format</p>`;
+                    addTestResult('Knowledge Query', false);
+                }
+            } catch (error) {
+                responseArea.innerHTML = `<h4>❌ Knowledge Query Error</h4><p>${error.message}</p>`;
+                addTestResult('Knowledge Query', false);
+            }
+        }
+
+        async function testDeploymentCheck() {
+            responseArea.innerHTML = '<p>🔧 Testing deployment safety check...</p>';
+            
+            try {
+                const response = await fetch('/api/fix-it-fred/troubleshoot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        equipment: 'ChatterFix CMMS Platform',
+                        issue_description: 'Perform deployment safety check for ChatterFix CMMS. Analyze system health, potential issues, and provide recommendations for safe deployment.'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.response) {
+                    responseArea.innerHTML = `
+                        <h4>✅ Deployment Check Success!</h4>
+                        <p><strong>Analysis:</strong> ${data.data.response}</p>
+                        <p><strong>Confidence:</strong> ${data.data.confidence || '85%'}</p>
+                    `;
+                    addTestResult('Deployment Check', true);
+                } else {
+                    responseArea.innerHTML = `<h4>❌ Deployment Check Failed</h4><p>Invalid response format</p>`;
+                    addTestResult('Deployment Check', false);
+                }
+            } catch (error) {
+                responseArea.innerHTML = `<h4>❌ Deployment Check Error</h4><p>${error.message}</p>`;
+                addTestResult('Deployment Check', false);
+            }
+        }
+
+        async function testRecommendation() {
+            responseArea.innerHTML = '<p>🚀 Testing recommendation execution...</p>';
+            
+            try {
+                const response = await fetch('/api/fix-it-fred/troubleshoot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        equipment: 'ChatterFix CMMS Platform',
+                        issue_description: 'AI Collaboration Dashboard recommendation execution: "optimize_schedule". Please provide optimization recommendations for ChatterFix CMMS maintenance scheduling.'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.response) {
+                    responseArea.innerHTML = `
+                        <h4>✅ Recommendation Success!</h4>
+                        <p><strong>Optimization:</strong> ${data.data.response}</p>
+                        <p><strong>Steps:</strong> ${data.data.troubleshooting_steps ? data.data.troubleshooting_steps.length : 0}</p>
+                    `;
+                    addTestResult('Recommendation Execution', true);
+                } else {
+                    responseArea.innerHTML = `<h4>❌ Recommendation Failed</h4><p>Invalid response format</p>`;
+                    addTestResult('Recommendation Execution', false);
+                }
+            } catch (error) {
+                responseArea.innerHTML = `<h4>❌ Recommendation Error</h4><p>${error.message}</p>`;
+                addTestResult('Recommendation Execution', false);
+            }
+        }
+
+        function addTestResult(testName, success) {
+            const result = document.createElement('div');
+            result.className = `test-result ${success ? 'success' : 'error'}`;
+            result.innerHTML = `${success ? '✅' : '❌'} ${testName}`;
+            testResults.appendChild(result);
+        }
+    </script>
+</body>
+</html>

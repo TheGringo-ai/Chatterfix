@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Fix It Fred - Your AI Assistant for DIY, Car Maintenance, Home Projects & More">
+    <meta name="theme-color" content="#ff6b35">
+    <title>Fix It Fred - Your AI Assistant</title>
+    
+    <!-- Fix It Fred Core CSS -->
+    <style>
+        :root {
+            /* Fix It Fred Brand Colors */
+            --fred-orange: #ff6b35;
+            --fred-blue: #004e89;
+            --fred-green: #00a86b;
+            --fred-yellow: #ffd23f;
+            --fred-red: #e63946;
+            --fred-purple: #7209b7;
+            
+            /* Background Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --bg-dark: #2c3e50;
+            --bg-card: #ffffff;
+            
+            /* Text Colors */
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --text-light: #ffffff;
+            --text-muted: #8e9ba7;
+            
+            /* Shadows and Borders */
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --border-radius: 12px;
+            --border-color: #dee2e6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--fred-orange) 0%, var(--fred-blue) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        /* Fix It Fred Header */
+        .fred-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            padding: 1rem 0;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+        
+        .fred-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--fred-orange);
+            text-decoration: none;
+        }
+        
+        .fred-logo .avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--fred-orange), var(--fred-yellow));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        .nav-item a {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-item a:hover, .nav-item a.active {
+            background: var(--fred-orange);
+            color: var(--text-light);
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Hero Section */
+        .hero-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--fred-orange), var(--fred-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        /* Cards */
+        .fred-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .fred-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .fred-grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .grid-cols-2 { grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--fred-orange), var(--fred-yellow));
+            color: var(--text-light);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .subtitle {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        
+        .btn-primary { background: var(--fred-orange); color: var(--text-light); }
+        .btn-secondary { background: var(--fred-blue); color: var(--text-light); }
+        .btn-success { background: var(--fred-green); color: var(--text-light); }
+        .btn-warning { background: var(--fred-yellow); color: var(--text-primary); }
+        .btn-info { background: var(--fred-purple); color: var(--text-light); }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-lg {
+            padding: 1.5rem 3rem;
+            font-size: 1.2rem;
+        }
+        
+        /* Category Icons */
+        .category-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        /* Fix It Fred Chat */
+        .fred-chat-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--fred-orange), var(--fred-yellow));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        .fred-chat-bubble:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 107, 53, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+        }
+        
+        .fred-chat-bubble .icon {
+            color: var(--text-light);
+            font-size: 28px;
+        }
+        
+        /* Chat Window */
+        .fred-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            border: 2px solid var(--fred-orange);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-menu {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .fred-grid.grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .fred-chat-window {
+                width: 95%;
+                height: 70vh;
+                right: 2.5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fix It Fred Header -->
+    <header class="fred-header">
+        <div class="header-container">
+            <a href="/" class="fred-logo">
+                <div class="avatar">🔧</div>
+                Fix It Fred
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/" class="active">🏠 Home</a></li>
+                <li class="nav-item"><a href="/car">🚗 Car</a></li>
+                <li class="nav-item"><a href="/home">🏡 Home Projects</a></li>
+                <li class="nav-item"><a href="/workshop">🔨 Workshop</a></li>
+                <li class="nav-item"><a href="/diy">🎨 DIY</a></li>
+                <li class="nav-item"><a href="/pro">👔 Pro Tools</a></li>
+            </ul>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">👋 Hey, I'm Fix It Fred!</h1>
+            <p class="hero-subtitle">Your AI assistant for everything that needs fixing, building, or maintaining</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary btn-lg" onclick="startChat()">
+                    💬 Chat with Fred
+                </button>
+                <button class="btn btn-secondary btn-lg" onclick="exploreCategories()">
+                    🎯 Explore Categories
+                </button>
+                <button class="btn btn-success btn-lg" onclick="startProject()">
+                    🚀 Start a Project
+                </button>
+            </div>
+        </div>
+        
+        <!-- Your Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Projects Completed</h3>
+                <div class="value">{{ stats.projects_completed }}</div>
+                <div class="subtitle">Personal achievements</div>
+            </div>
+            
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--fred-green), var(--fred-blue));">
+                <h3>Money Saved</h3>
+                <div class="value">${{ stats.money_saved }}</div>
+                <div class="subtitle">DIY vs professional costs</div>
+            </div>
+            
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--fred-purple), var(--fred-blue));">
+                <h3>Skills Learned</h3>
+                <div class="value">{{ stats.skills_learned }}</div>
+                <div class="subtitle">New abilities gained</div>
+            </div>
+            
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--fred-yellow), var(--fred-orange));">
+                <h3>Hours Invested</h3>
+                <div class="value">{{ stats.time_invested }}</div>
+                <div class="subtitle">Time well spent</div>
+            </div>
+        </div>
+        
+        <!-- Categories -->
+        <div class="fred-grid grid-cols-3">
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/car'">
+                <div class="category-icon">🚗</div>
+                <h3>Car Maintenance</h3>
+                <p>Oil changes, brake repairs, diagnostics, and automotive care</p>
+                <button class="btn btn-primary">Explore Car Help</button>
+            </div>
+            
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/home'">
+                <div class="category-icon">🏡</div>
+                <h3>Home Projects</h3>
+                <p>Plumbing, electrical, HVAC, and home improvement projects</p>
+                <button class="btn btn-secondary">Explore Home Help</button>
+            </div>
+            
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/workshop'">
+                <div class="category-icon">🔨</div>
+                <h3>Workshop & Tools</h3>
+                <p>Tool organization, workshop setup, and equipment maintenance</p>
+                <button class="btn btn-success">Explore Workshop</button>
+            </div>
+            
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/diy'">
+                <div class="category-icon">🎨</div>
+                <h3>DIY Projects</h3>
+                <p>Creative projects, crafts, electronics, and maker activities</p>
+                <button class="btn btn-warning">Explore DIY</button>
+            </div>
+            
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/pro'">
+                <div class="category-icon">👔</div>
+                <h3>Professional Tools</h3>
+                <p>Advanced features for technicians and maintenance professionals</p>
+                <button class="btn btn-info">Explore Pro Tools</button>
+            </div>
+            
+            <div class="fred-card" style="text-align: center; cursor: pointer;" onclick="startGeneralChat()">
+                <div class="category-icon">💡</div>
+                <h3>Ask Anything</h3>
+                <p>General questions, troubleshooting, and expert advice</p>
+                <button class="btn btn-primary">Chat with Fred</button>
+            </div>
+        </div>
+        
+        <!-- Recent Projects & Reminders -->
+        <div class="fred-grid grid-cols-2">
+            <div class="fred-card">
+                <h3 style="margin-bottom: 1.5rem;">📋 Recent Projects</h3>
+                {% for project in projects %}
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {% if project.difficulty == 'easy' %}var(--fred-green){% elif project.difficulty == 'medium' %}var(--fred-yellow){% else %}var(--fred-red){% endif %};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ project.title }}</strong>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                {{ project.category|title }} • {{ project.difficulty|title }} • {{ project.estimated_time }}
+                            </div>
+                        </div>
+                        <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: {% if project.status == 'completed' %}var(--fred-green){% elif project.status == 'in_progress' %}var(--fred-orange){% else %}var(--fred-blue){% endif %}; color: white;">
+                            {{ project.status|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                <button class="btn btn-primary" onclick="viewAllProjects()">View All Projects</button>
+            </div>
+            
+            <div class="fred-card">
+                <h3 style="margin-bottom: 1.5rem;">⏰ Reminders & Tasks</h3>
+                {% for reminder in reminders %}
+                <div style="background: {% if reminder.priority == 'high' %}rgba(230, 57, 70, 0.1){% elif reminder.priority == 'medium' %}rgba(255, 210, 63, 0.1){% else %}rgba(0, 168, 107, 0.1){% endif %}; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid {% if reminder.priority == 'high' %}var(--fred-red){% elif reminder.priority == 'medium' %}var(--fred-yellow){% else %}var(--fred-green){% endif %};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ reminder.task }}</strong>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                {{ reminder.type|title }} • Due: {{ reminder.due }}
+                            </div>
+                        </div>
+                        <button onclick="handleReminder('{{ reminder.task }}')" class="btn btn-sm btn-primary">Handle</button>
+                    </div>
+                </div>
+                {% endfor %}
+                <button class="btn btn-secondary" onclick="addReminder()">Add Reminder</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fix It Fred Chat Bubble -->
+    <div class="fred-chat-bubble" onclick="toggleFredChat()">
+        <div class="icon">🔧</div>
+    </div>
+    
+    <!-- Fix It Fred Chat Window -->
+    <div id="fredChatWindow" class="fred-chat-window">
+        <div style="background: linear-gradient(135deg, var(--fred-orange), var(--fred-yellow)); color: white; padding: 1rem; border-radius: var(--border-radius) var(--border-radius) 0 0; font-weight: 600;">
+            🔧 Fix It Fred - Your AI Assistant
+            <span style="float: right; cursor: pointer;" onclick="toggleFredChat()">×</span>
+        </div>
+        <div id="fredChatMessages" style="flex: 1; padding: 1rem; overflow-y: auto;">
+            <div style="background: #f8f9fa; padding: 12px 16px; border-radius: 12px; margin-bottom: 1rem;">
+                Hey there! I'm Fix It Fred, your AI assistant for all things DIY, car maintenance, home projects, and more! 
+                <br><br>
+                What can I help you fix, build, or maintain today? 🛠️
+            </div>
+        </div>
+        <div style="padding: 1rem; border-top: 1px solid #eee;">
+            <input type="text" id="fredChatInput" placeholder="Ask about any project, repair, or maintenance..." style="width: 100%; padding: 12px; border: 2px solid var(--fred-orange); border-radius: 8px;" onkeypress="handleFredChatKeyPress(event)">
+        </div>
+    </div>
+    
+    <!-- Fix It Fred JavaScript -->
+    <script>
+        function toggleFredChat() {
+            const chatWindow = document.getElementById('fredChatWindow');
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+        }
+        
+        function handleFredChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendFredMessage();
+            }
+        }
+        
+        async function sendFredMessage() {
+            const input = document.getElementById('fredChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message to chat
+            addFredMessage(message, 'user');
+            input.value = '';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: message,
+                        user_type: 'diy',
+                        context: 'Fix It Fred general assistance'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addFredMessage(data.response, 'fred');
+                    
+                    // Show additional info if available
+                    if (data.tools_needed && data.tools_needed.length > 0) {
+                        addFredMessage(`🔧 Tools needed: ${data.tools_needed.join(', ')}`, 'info');
+                    }
+                    if (data.estimated_time) {
+                        addFredMessage(`⏱️ Estimated time: ${data.estimated_time}`, 'info');
+                    }
+                    if (data.safety_tips && data.safety_tips.length > 0) {
+                        addFredMessage(`⚠️ Safety tip: ${data.safety_tips[0]}`, 'safety');
+                    }
+                } else {
+                    addFredMessage('Sorry, I had a hiccup there. Can you try asking again?', 'fred');
+                }
+            } catch (error) {
+                addFredMessage('Oops! Looks like I\'m having connection issues. Try again in a moment!', 'fred');
+            }
+        }
+        
+        function addFredMessage(content, type) {
+            const messagesDiv = document.getElementById('fredChatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.marginBottom = '1rem';
+            messageDiv.style.textAlign = type === 'user' ? 'right' : 'left';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.style.display = 'inline-block';
+            bubbleDiv.style.padding = '12px 16px';
+            bubbleDiv.style.borderRadius = '12px';
+            bubbleDiv.style.maxWidth = '85%';
+            bubbleDiv.style.fontSize = '0.95rem';
+            bubbleDiv.style.lineHeight = '1.4';
+            
+            if (type === 'user') {
+                bubbleDiv.style.background = 'var(--fred-orange)';
+                bubbleDiv.style.color = 'white';
+            } else if (type === 'safety') {
+                bubbleDiv.style.background = 'var(--fred-red)';
+                bubbleDiv.style.color = 'white';
+            } else if (type === 'info') {
+                bubbleDiv.style.background = 'var(--fred-blue)';
+                bubbleDiv.style.color = 'white';
+            } else {
+                bubbleDiv.style.background = '#f8f9fa';
+                bubbleDiv.style.color = 'var(--text-primary)';
+                bubbleDiv.style.border = '2px solid var(--fred-orange)';
+            }
+            
+            bubbleDiv.textContent = content;
+            messageDiv.appendChild(bubbleDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function startChat() {
+            toggleFredChat();
+        }
+        
+        function startGeneralChat() {
+            toggleFredChat();
+            document.getElementById('fredChatInput').focus();
+        }
+        
+        function exploreCategories() {
+            alert('👀 Choose a category above to explore specific areas where I can help!');
+        }
+        
+        function startProject() {
+            const projectType = prompt('What type of project are you thinking about? (car, home, workshop, diy, etc.)');
+            if (projectType) {
+                toggleFredChat();
+                setTimeout(() => {
+                    document.getElementById('fredChatInput').value = `I want to start a ${projectType} project. Can you help me plan it?`;
+                    sendFredMessage();
+                }, 500);
+            }
+        }
+        
+        function viewAllProjects() {
+            alert('📋 Project management coming soon! This will show all your projects with progress tracking.');
+        }
+        
+        function handleReminder(task) {
+            toggleFredChat();
+            setTimeout(() => {
+                document.getElementById('fredChatInput').value = `Help me with: ${task}`;
+                sendFredMessage();
+            }, 500);
+        }
+        
+        function addReminder() {
+            const reminder = prompt('What would you like to be reminded about?');
+            if (reminder) {
+                alert(`⏰ Reminder set: "${reminder}"\nI'll help you track this and remind you when it's time!`);
+            }
+        }
+        
+        // Welcome message on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Fix It Fred is ready to help!');
+        });
+    </script>
+</body>
+</html>

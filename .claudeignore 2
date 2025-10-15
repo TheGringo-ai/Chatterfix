@@ -1,0 +1,22 @@
+# common hogs
+node_modules/
+.git/
+dist/
+build/
+.cache/
+.vscode/
+.venv/
+.env*
+*.log
+
+# giant assets / bundles
+**/*.min.js
+**/*bundle*.js
+**/*.map
+**/*.png
+**/*.jpg
+**/*.pdf
+**/*.csv
+**/*.parquet
+**/*.sqlite
+**/*.ipynb

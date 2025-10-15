@@ -76,7 +76,8 @@
       "Bash(gcloud compute project-info:*)",
       "Bash(gcloud alpha run jobs list:*)",
       "Bash(gcloud alpha run services list:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(gcloud compute scp:*)"
     ],
     "deny": [],
     "ask": []

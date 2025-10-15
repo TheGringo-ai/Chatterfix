@@ -1095,13 +1095,13 @@ class PatternRecognitionSystem:
         }
 
 class ChatterFixAIClient:
-    """Advanced ChatterFix CMMS AI Assistant with OpenAI API integration and cutting-edge features"""
+    """Advanced ChatterFix CMMS AI Assistant with Fix It Fred AI Service integration and Ollama backend"""
     
     def __init__(self):
-        """Initialize ChatterFix AI with API-based intelligence and advanced capabilities"""
+        """Initialize ChatterFix AI with Fix It Fred AI service and Ollama backend"""
         self.system_name = "ChatterFix CMMS AI Assistant"
-        self.api_key = os.getenv('OPENAI_API_KEY')
-        self.use_api = bool(self.api_key)
+        self.fix_it_fred_url = os.getenv('FIX_IT_FRED_URL', 'http://localhost:9000')
+        self.use_fix_it_fred = True
         
         # Advanced AI capabilities
         self.prediction_engine = PredictiveMaintenanceEngine()
@@ -1109,28 +1109,25 @@ class ChatterFixAIClient:
         self.optimization_engine = ResourceOptimizationEngine()
         self.pattern_analyzer = PatternRecognitionSystem()
         
-        if self.use_api:
-            logger.info("ChatterFix AI initialized with OpenAI API integration and advanced features")
-        else:
-            logger.info("ChatterFix AI initialized with built-in CMMS intelligence (no API key)")
+        logger.info(f"ChatterFix AI initialized with Fix It Fred AI service at {self.fix_it_fred_url} (Ollama backend)")
     
     async def query(self, prompt: str, context: str = "") -> str:
-        """Generate ChatterFix CMMS-specific responses using AI API or fallback"""
+        """Generate ChatterFix CMMS-specific responses using Fix It Fred AI service with Ollama"""
         try:
-            if self.use_api:
-                return await self.get_api_response(prompt, context)
+            if self.use_fix_it_fred:
+                return await self.get_fix_it_fred_response(prompt, context)
             else:
                 return self.get_chatterfix_response(prompt, context)
         except Exception as e:
             logger.error(f"ChatterFix AI error: {e}")
-            return "I'm here to help with your ChatterFix CMMS operations. Please try rephrasing your question."
+            return self.get_chatterfix_response(prompt, context)
     
-    async def get_api_response(self, prompt: str, context: str = "") -> str:
-        """Get AI response from OpenAI API with CMMS expertise"""
+    async def get_fix_it_fred_response(self, prompt: str, context: str = "") -> str:
+        """Get AI response from Fix It Fred AI service with Ollama backend"""
         try:
             import aiohttp
             
-            system_prompt = """You are an expert ChatterFix CMMS (Computerized Maintenance Management System) AI assistant. 
+            system_prompt = f"""You are an expert ChatterFix CMMS (Computerized Maintenance Management System) AI assistant. 
             You specialize in:
             - Work order management and tracking
             - Asset maintenance and health monitoring  
@@ -1142,38 +1139,41 @@ class ChatterFixAIClient:
             
             Always provide practical, actionable advice for maintenance teams. 
             Use clear formatting with bullet points and step-by-step instructions.
-            Include relevant emojis to make responses more engaging.
             Keep responses concise but comprehensive.
             
-            Context: """ + context
+            Context: {context}
             
-            headers = {
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json'
-            }
+            User question: {prompt}"""
             
             payload = {
-                'model': 'gpt-3.5-turbo',  # Using GPT-3.5 for cost efficiency
-                'messages': [
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': prompt}
-                ],
-                'max_tokens': 500,
-                'temperature': 0.7
+                "message": system_prompt,
+                "provider": "ollama",
+                "model": "llama3.2:1b",
+                "context": context or "cmms_assistant"
             }
             
             async with aiohttp.ClientSession() as session:
-                async with session.post('https://api.openai.com/v1/chat/completions', 
-                                      json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                async with session.post(f'{self.fix_it_fred_url}/api/chat', 
+                                      json=payload, 
+                                      timeout=aiohttp.ClientTimeout(total=30)) as response:
                     if response.status == 200:
                         data = await response.json()
-                        return data['choices'][0]['message']['content'].strip()
+                        fix_it_fred_response = data.get("response", "").strip()
+                        
+                        if fix_it_fred_response:
+                            logger.info(f"Fix It Fred AI response received: {len(fix_it_fred_response)} chars")
+                            return fix_it_fred_response
+                        else:
+                            logger.warning("Empty response from Fix It Fred AI service")
+                            return self.get_chatterfix_response(prompt, context)
                     else:
-                        logger.error(f"OpenAI API error: {response.status}")
+                        logger.error(f"Fix It Fred AI service error: {response.status}")
+                        error_text = await response.text()
+                        logger.error(f"Error details: {error_text}")
                         return self.get_chatterfix_response(prompt, context)
                         
         except Exception as e:
-            logger.error(f"API request failed: {e}")
+            logger.error(f"Fix It Fred AI service connection failed: {e}")
             return self.get_chatterfix_response(prompt, context)
     
     def get_chatterfix_response(self, message: str, context: str = "") -> str:

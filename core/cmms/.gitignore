@@ -206,3 +206,19 @@ config_local.py
 !.env.template
 !.env.example
 !example.env
+# Fix It Fred Cleanup Rules
+*.db-shm
+*.db-wal
+*~ 
+* 2*
+* 3*
+* 4*
+* 5*
+*.pyc
+__pycache__/
+.DS_Store
+*.log
+node_modules/
+.env
+*.tmp
+*.temp

@@ -1,0 +1,85 @@
+name: Emergency Deploy ChatterFix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main-clean ]
+
+env:
+  PROJECT_ID: fredfix
+  INSTANCE_NAME: chatterfix-cmms-production
+  ZONE: us-east1-b
+  VM_IP: 35.237.149.25
+
+jobs:
+  emergency-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Google Auth
+      uses: 'google-github-actions/auth@v1'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: Emergency Deploy to VM
+      run: |
+        echo "🚨 Emergency Deployment Starting..."
+        
+        # Upload emergency app
+        gcloud compute scp emergency_app.py $INSTANCE_NAME:/tmp/emergency_app_new.py --zone=$ZONE
+        
+        # Deploy emergency script
+        DEPLOY_SCRIPT='#!/bin/bash
+        echo "🚨 Emergency deployment in progress..."
+        
+        # Stop any existing app
+        sudo pkill -f "python3.*app.py" || true
+        sudo pkill -f "python3.*emergency_app" || true
+        
+        # Start emergency app
+        cd /home/yoyofred_gringosgambit_com/chatterfix-docker/app
+        PORT=8080 nohup python3 /tmp/emergency_app_new.py > /tmp/emergency.log 2>&1 &
+        
+        echo "✅ Emergency app started"
+        sleep 5
+        
+        # Test deployment
+        if curl -s http://localhost:8080/health | grep -q "ok"; then
+          echo "✅ Emergency deployment successful"
+        else
+          echo "❌ Emergency deployment failed"
+          exit 1
+        fi
+        '
+        
+        # Execute emergency deployment
+        echo "$DEPLOY_SCRIPT" | gcloud compute ssh $INSTANCE_NAME \
+          --zone=$ZONE \
+          --command "cat > /tmp/emergency-deploy.sh && chmod +x /tmp/emergency-deploy.sh && /tmp/emergency-deploy.sh"
+
+    - name: Test Deployment
+      run: |
+        echo "🧪 Testing emergency deployment..."
+        sleep 10
+        
+        # Test HTTPS
+        if curl -s -f "https://www.chatterfix.com/health" | grep -q "ok"; then
+          echo "✅ HTTPS health check passed"
+        else
+          echo "⚠️ HTTPS health check failed"
+        fi
+        
+        # Test Assets API
+        if curl -s -f "https://www.chatterfix.com/api/assets" | grep -q "assets"; then
+          echo "✅ Assets API working"
+        else
+          echo "⚠️ Assets API check failed"
+        fi
+        
+        echo "🎉 Emergency deployment complete!"
+        echo "🔗 Site: https://www.chatterfix.com"

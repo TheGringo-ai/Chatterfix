@@ -2,7 +2,7 @@ name: 🚀 Deploy to Production
 
 on:
   push:
-    branches: [main]
+    branches: [main, main-clean]
     paths-ignore:
       - "README.md"
       - "docs/**"
@@ -141,6 +141,13 @@ jobs:
             # Copy new application files to production (correct location for systemd service)
             gcloud compute scp core/cmms/app.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/app.py --zone=${{ env.ZONE }}
             
+            # Deploy Fix It Fred's Assets API fix
+            echo "🤖 Deploying Fix It Fred's Assets API fix..."
+            if [ -f core/cmms/fixed_assets_api.py ]; then
+              gcloud compute scp core/cmms/fixed_assets_api.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/fixed_assets_api.py --zone=${{ env.ZONE }}
+              echo "✅ Fix It Fred's Assets API deployed"
+            fi
+            
             # Copy voice workorder processor
             if [ -f core/cmms/voice_workorder_enhanced.py ]; then
               gcloud compute scp core/cmms/voice_workorder_enhanced.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/voice_workorder_enhanced.py --zone=${{ env.ZONE }}
@@ -160,6 +167,26 @@ jobs:
               gcloud compute scp cleanup-and-restart-vm.sh ${{ env.INSTANCE_NAME }}:/tmp/cleanup-and-restart-vm.sh --zone=${{ env.ZONE }}
               echo "🧹 Running VM cleanup..."
               gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="chmod +x /tmp/cleanup-and-restart-vm.sh && sudo /tmp/cleanup-and-restart-vm.sh"
+            fi
+            
+            # Deploy Fix It Fred Git Integration if files exist
+            echo "🤖 Deploying Fix It Fred Git Integration..."
+            if [ -f fix_it_fred_git_integration_service.py ]; then
+              # Copy Git integration files
+              gcloud compute scp fix_it_fred_git_integration_service.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              gcloud compute scp fix_it_fred_git_security.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              gcloud compute scp fix_it_fred_git_ai_enhancement.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              
+              # Install Git integration dependencies and start service
+              gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+                cd /home/yoyofred_gringosgambit_com/chatterfix-docker &&
+                pip3 install --user watchdog cryptography fastapi uvicorn &&
+                pkill -f 'fix_it_fred_git_integration_service.py' || true &&
+                nohup python3 fix_it_fred_git_integration_service.py > /tmp/git_integration.log 2>&1 &
+                echo '✅ Git Integration Service deployed on port 9002'
+              "
+            else
+              echo "⚠️ Git integration files not found, skipping..."
             fi
             
             # Copy and run working backend deployment
@@ -227,6 +254,20 @@ jobs:
             echo "✅ Working backend on port 8081 is healthy"
           else
             echo "⚠️ Working backend on port 8081 not responding"
+          fi
+          
+          # Check Fix It Fred Git Integration on port 9002
+          echo "🤖 Testing Fix It Fred Git Integration..."
+          if curl -f --max-time 10 http://35.237.149.25:9002/health > /dev/null 2>&1; then
+            echo "✅ Git Integration Service on port 9002 is healthy"
+            # Test git status endpoint
+            if curl -f --max-time 10 http://35.237.149.25:9002/api/git/status > /dev/null 2>&1; then
+              echo "✅ Git Status API is working"
+            else
+              echo "⚠️ Git Status API needs attention"
+            fi
+          else
+            echo "⚠️ Git Integration Service on port 9002 not responding"
           fi
           
           # Test LLaMA integration if credentials available

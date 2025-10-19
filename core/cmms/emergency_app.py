@@ -4,11 +4,17 @@ Emergency ChatterFix CMMS App - Minimal Working Version
 """
 
 from flask import Flask, render_template_string, jsonify, request, send_from_directory
+from flask_cors import CORS
 import os
 import uuid
+import requests
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for ChatGPT access
+
+# Fix It Fred AI Service URL
+FRED_AI_URL = "http://localhost:9000"
 
 # Sample data
 assets_data = [
@@ -293,6 +299,67 @@ def create_asset():
 def get_work_orders():
     return jsonify(work_orders_data)
 
+# Fix It Fred AI Integration for ChatGPT
+@app.route('/api/ai/health', methods=['GET'])
+def ai_health():
+    """Fix It Fred AI health check for ChatGPT"""
+    try:
+        response = requests.get(f"{FRED_AI_URL}/health", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({
+                "service": "Fix It Fred AI",
+                "status": "healthy",
+                "fred_status": data.get("status"),
+                "providers": data.get("providers", {}),
+                "chatgpt_ready": True
+            })
+        else:
+            return jsonify({"service": "Fix It Fred AI", "status": "unhealthy"}), 503
+    except Exception as e:
+        return jsonify({"service": "Fix It Fred AI", "status": "error", "message": str(e)}), 503
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    """Chat endpoint for ChatGPT to talk to Fix It Fred"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({"error": "No message provided"}), 400
+        
+        # Forward to Fix It Fred AI Service
+        response = requests.post(
+            f"{FRED_AI_URL}/api/chat",
+            json={"message": message},
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            fred_response = response.json()
+            return jsonify({
+                "success": True,
+                "fred_response": fred_response.get("response", ""),
+                "provider": fred_response.get("provider", "unknown"),
+                "model": fred_response.get("model", "unknown"),
+                "timestamp": fred_response.get("timestamp"),
+                "chatgpt_integration": True
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"Fix It Fred returned status {response.status_code}"
+            }), response.status_code
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": "Connection to Fix It Fred failed",
+            "message": str(e)
+        }), 503
+
 @app.route('/health')
 def health():
     return jsonify({
@@ -301,7 +368,8 @@ def health():
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
         "assets_count": len(assets_data),
-        "work_orders_count": len(work_orders_data)
+        "work_orders_count": len(work_orders_data),
+        "fix_it_fred_integration": "enabled"
     })
 
 if __name__ == '__main__':

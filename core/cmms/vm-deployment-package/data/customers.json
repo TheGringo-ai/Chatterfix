@@ -1,0 +1,23 @@
+{
+  "customer-965ba328": {
+    "id": "customer-965ba328",
+    "company_name": "Test Company",
+    "contact_name": "John Doe",
+    "email": "john@test.com",
+    "phone": "",
+    "industry": "",
+    "cloud_preferences": [],
+    "monthly_budget": 500.0,
+    "use_cases": "",
+    "team_size": 0,
+    "integrations": "",
+    "subscription_tier": "professional",
+    "addons": [],
+    "billing_frequency": "monthly",
+    "implementation_timeline": "",
+    "status": "active",
+    "created_date": "2025-10-02T15:06:37.835378",
+    "last_updated": "2025-10-02T15:06:37.835383",
+    "configured_services": []
+  }
+}

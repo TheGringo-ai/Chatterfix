@@ -25,16 +25,16 @@ app.add_middleware(
 )
 
 # Database service URL
-DATABASE_SERVICE_URL = "http://localhost:8001"
+DATABASE_SERVICE_URL = "http://localhost:8012"
 
 # Pydantic models
 class WorkOrder(BaseModel):
     title: str
     description: Optional[str] = ""
-    status: Optional[str] = "pending"
+    status: Optional[str] = "open"
     priority: Optional[str] = "medium"
     asset_id: Optional[int] = None
-    assigned_to: Optional[str] = None
+    technician: Optional[str] = None
     due_date: Optional[str] = None
     estimated_hours: Optional[float] = None
 
@@ -44,7 +44,7 @@ class WorkOrderUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     asset_id: Optional[int] = None
-    assigned_to: Optional[str] = None
+    technician: Optional[str] = None
     due_date: Optional[str] = None
     estimated_hours: Optional[float] = None
     actual_hours: Optional[float] = None
@@ -108,7 +108,7 @@ async def get_work_orders(
             params["priority"] = priority
         
         if assigned_to:
-            conditions.append("assigned_to = :assigned_to")
+            conditions.append("technician = :assigned_to")
             params["assigned_to"] = assigned_to
         
         if conditions:
@@ -178,7 +178,7 @@ async def create_work_order(work_order: WorkOrder):
             "status": work_order.status,
             "priority": work_order.priority,
             "asset_id": work_order.asset_id,
-            "assigned_to": work_order.assigned_to,
+            "assigned_to": work_order.technician,
             "due_date": work_order.due_date,
             "estimated_hours": work_order.estimated_hours,
             "created_at": datetime.now().isoformat()

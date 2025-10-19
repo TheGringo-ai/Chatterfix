@@ -26,7 +26,9 @@ app = FastAPI(
 )
 
 # Enhanced service URLs
-ENHANCED_WORK_ORDERS_URL = "http://localhost:8015"
+WORK_ORDERS_SERVICE_URL = "http://localhost:8002"
+ASSETS_SERVICE_URL = "http://localhost:8003"
+PARTS_SERVICE_URL = "http://localhost:8004"
 DATABASE_SERVICE_URL = "http://localhost:8001"
 FIX_IT_FRED_URL = "http://localhost:8005"
 GROK_CONNECTOR_URL = "http://localhost:8006"
@@ -279,7 +281,7 @@ async def work_orders_dashboard():
 
             async function loadWorkOrders() {
                 try {
-                    const response = await fetch('/api/work-orders');
+                    const response = await fetch('/api/work_orders');
                     const data = await response.json();
                     workOrders = data.work_orders || [];
                     renderWorkOrders();
@@ -327,7 +329,7 @@ async def work_orders_dashboard():
                 const technician = document.getElementById('technician').value;
 
                 try {
-                    const response = await fetch('/api/work-orders', {
+                    const response = await fetch('/api/work_orders', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -356,7 +358,7 @@ async def work_orders_dashboard():
 
             async function getAIInsights(workOrderId) {
                 try {
-                    const response = await fetch(`/api/work-orders/${workOrderId}/ai-analyze`);
+                    const response = await fetch(`/api/work_orders/${workOrderId}/ai-analyze`);
                     const data = await response.json();
                     
                     alert(`🤖 AI Insights for: ${data.title}\\n\\n` +
@@ -389,12 +391,12 @@ async def work_orders_dashboard():
 
 # ===== ENHANCED API ENDPOINTS - Route to microservices =====
 
-@app.get("/api/work-orders")
+@app.get("/api/work_orders")
 async def get_work_orders():
     """Get all work orders via enhanced AI-powered API service"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders", timeout=10.0)
+            response = await client.get(f"{WORK_ORDERS_SERVICE_URL}/api/work_orders", timeout=10.0)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -403,12 +405,12 @@ async def get_work_orders():
         logger.error(f"Error getting work orders: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/work-orders/{work_order_id}")
+@app.get("/api/work_orders/{work_order_id}")
 async def get_work_order(work_order_id: int):
     """Get a specific work order with AI insights"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders/{work_order_id}", timeout=10.0)
+            response = await client.get(f"{WORK_ORDERS_SERVICE_URL}/api/work_orders/{work_order_id}", timeout=10.0)
             if response.status_code == 200:
                 return response.json()
             elif response.status_code == 404:
@@ -421,13 +423,13 @@ async def get_work_order(work_order_id: int):
         logger.error(f"Error getting work order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/work-orders")
+@app.post("/api/work_orders")
 async def create_work_order(work_order: WorkOrderCreate):
     """Create a new work order with AI enhancement"""
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders", 
+                f"{WORK_ORDERS_SERVICE_URL}/api/work_orders", 
                 json=work_order.dict(), 
                 timeout=10.0
             )
@@ -441,14 +443,14 @@ async def create_work_order(work_order: WorkOrderCreate):
         logger.error(f"Error creating work order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/api/work-orders/{work_order_id}")
+@app.put("/api/work_orders/{work_order_id}")
 async def update_work_order(work_order_id: int, updates: WorkOrderUpdate):
     """Update an existing work order"""
     try:
         async with httpx.AsyncClient() as client:
             update_data = {k: v for k, v in updates.dict().items() if v is not None}
             response = await client.put(
-                f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders/{work_order_id}", 
+                f"{WORK_ORDERS_SERVICE_URL}/api/work_orders/{work_order_id}", 
                 json=update_data, 
                 timeout=10.0
             )
@@ -464,12 +466,12 @@ async def update_work_order(work_order_id: int, updates: WorkOrderUpdate):
         logger.error(f"Error updating work order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/work-orders/{work_order_id}")
+@app.delete("/api/work_orders/{work_order_id}")
 async def delete_work_order(work_order_id: int):
     """Delete (cancel) a work order"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.delete(f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders/{work_order_id}", timeout=10.0)
+            response = await client.delete(f"{WORK_ORDERS_SERVICE_URL}/api/work_orders/{work_order_id}", timeout=10.0)
             if response.status_code == 200:
                 return response.json()
             elif response.status_code == 404:
@@ -482,12 +484,12 @@ async def delete_work_order(work_order_id: int):
         logger.error(f"Error deleting work order: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/work-orders/analytics/summary")
+@app.get("/api/work_orders/analytics/summary")
 async def get_work_order_analytics():
     """Get work order analytics dashboard"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders/analytics/summary", timeout=10.0)
+            response = await client.get(f"{WORK_ORDERS_SERVICE_URL}/api/work_orders/analytics/summary", timeout=10.0)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -496,12 +498,12 @@ async def get_work_order_analytics():
         logger.error(f"Error getting analytics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/work-orders/{work_order_id}/ai-analyze")
+@app.post("/api/work_orders/{work_order_id}/ai-analyze")
 async def analyze_work_order_with_ai(work_order_id: int):
     """Get comprehensive AI analysis for work order"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(f"{ENHANCED_WORK_ORDERS_URL}/api/work-orders/{work_order_id}/ai-analyze", timeout=15.0)
+            response = await client.post(f"{WORK_ORDERS_SERVICE_URL}/api/work_orders/{work_order_id}/ai-analyze", timeout=15.0)
             if response.status_code == 200:
                 return response.json()
             else:

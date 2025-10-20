@@ -79,7 +79,8 @@
       "Bash(pip3 install:*)",
       "Bash(gcloud compute scp:*)",
       "Bash(gcloud compute ssh:*)",
-      "Bash(unset:*)"
+      "Bash(unset:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

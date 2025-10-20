@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Managers Dashboard - ChatterFix CMMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ============ CSS VARIABLES ============ */
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #3730a3;
+            --accent-color: #06b6d4;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+            --info-color: #2563eb;
+            
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-accent: #9ca3af;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-dark: #1f2937;
+            
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ============ GLOBAL STYLES ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ============ LAYOUT ============ */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--bg-dark);
+            color: white;
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            padding: var(--space-xl);
+            overflow-y: auto;
+        }
+
+        /* ============ SIDEBAR ============ */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-xl);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: var(--space-sm);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            color: #d1d5db;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* ============ HEADER ============ */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            background: var(--bg-card);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--space-md);
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-hover);
+        }
+
+        /* ============ KPI GRID ============ */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .kpi-change {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .kpi-change.positive {
+            color: var(--success-color);
+        }
+
+        .kpi-change.negative {
+            color: var(--error-color);
+        }
+
+        /* ============ CONTENT GRID ============ */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        .content-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: var(--space-lg);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ============ TABLES ============ */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--space-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* ============ CHARTS ============ */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: var(--space-lg);
+        }
+
+        /* ============ CALENDAR ============ */
+        .calendar-container {
+            grid-column: 1 / -1;
+        }
+
+        #calendar {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ============ STATUS BADGES ============ */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-pending {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-offline {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error-color);
+        }
+
+        /* ============ USER MANAGEMENT ============ */
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-md);
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-info h4 {
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+        }
+
+        .user-info p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============ MODAL STYLES ============ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--space-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        /* ============ AI CHAT WIDGET ============ */
+        .ai-chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .ai-toggle-group {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1001;
+        }
+
+        .ai-chat-toggle, .manager-ai-toggle {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s;
+        }
+
+        .ai-chat-toggle {
+            background: var(--primary-color);
+        }
+
+        .manager-ai-toggle {
+            background: var(--warning-color);
+        }
+
+        .ai-chat-toggle:hover, .manager-ai-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .ai-chat-toggle:hover {
+            background: var(--secondary-color);
+        }
+
+        .manager-ai-toggle:hover {
+            background: #b45309;
+        }
+
+        .ai-chat-header {
+            background: var(--primary-color);
+            color: white;
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chat-body {
+            flex: 1;
+            padding: var(--space-lg);
+            overflow-y: auto;
+            max-height: 350px;
+        }
+
+        .ai-chat-footer {
+            padding: var(--space-lg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .ai-chat-input {
+            width: 100%;
+            padding: var(--space-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .chat-message {
+            margin-bottom: var(--space-md);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            max-width: 80%;
+        }
+
+        .chat-message.user {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .chat-message.ai {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: var(--space-md);
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-cogs"></i>
+                <span>ChatterFix CMMS</span>
+            </div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#overview" class="nav-link active" data-section="overview">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#users" class="nav-link" data-section="users">
+                            <i class="fas fa-users"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#schedules" class="nav-link" data-section="schedules">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Schedules</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#analytics" class="nav-link" data-section="analytics">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#reports" class="nav-link" data-section="reports">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#settings" class="nav-link" data-section="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <h1 class="header-title">Managers Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-download"></i>
+                        Export Data
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal('addUserModal')">
+                        <i class="fas fa-plus"></i>
+                        Add User
+                    </button>
+                </div>
+            </header>
+
+            <!-- Overview Section -->
+            <section id="overview-section" class="dashboard-section">
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Total Users</span>
+                            <div class="kpi-icon" style="background: rgba(30, 64, 175, 0.1); color: var(--primary-color);">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="total-users">142</div>
+                        <div class="kpi-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12% from last month</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Active Work Orders</span>
+                            <div class="kpi-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success-color);">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="active-work-orders">89</div>
+                        <div class="kpi-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+8% this week</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">System Uptime</span>
+                            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.1); color: var(--accent-color);">
+                                <i class="fas fa-server"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="system-uptime">99.8%</div>
+                        <div class="kpi-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+0.2% improvement</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Average Response Time</span>
+                            <div class="kpi-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning-color);">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-value" id="response-time">2.3hrs</div>
+                        <div class="kpi-change negative">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-15% faster</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Grid -->
+                <div class="content-grid">
+                    <!-- Recent Activity -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Activity</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-activity">
+                                    <tr>
+                                        <td>John Smith</td>
+                                        <td>Created Work Order #1234</td>
+                                        <td><span class="status-badge status-online">Completed</span></td>
+                                        <td>2 mins ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sarah Johnson</td>
+                                        <td>Updated Asset #567</td>
+                                        <td><span class="status-badge status-pending">In Progress</span></td>
+                                        <td>15 mins ago</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mike Wilson</td>
+                                        <td>Completed PM Task</td>
+                                        <td><span class="status-badge status-online">Completed</span></td>
+                                        <td>1 hour ago</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Microservices Status</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Status</th>
+                                        <th>Response Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="service-status">
+                                    <tr>
+                                        <td>AI Brain Service</td>
+                                        <td><span class="status-badge status-online">Online</span></td>
+                                        <td>125ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Work Orders Service</td>
+                                        <td><span class="status-badge status-online">Online</span></td>
+                                        <td>89ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Assets Service</td>
+                                        <td><span class="status-badge status-online">Online</span></td>
+                                        <td>156ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Parts Service</td>
+                                        <td><span class="status-badge status-online">Online</span></td>
+                                        <td>201ms</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section id="users-section" class="dashboard-section" style="display: none;">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">User Management</h3>
+                        <button class="btn btn-primary" onclick="openModal('addUserModal')">
+                            <i class="fas fa-user-plus"></i>
+                            Add New User
+                        </button>
+                    </div>
+                    
+                    <div id="users-list">
+                        <div class="user-card">
+                            <div class="user-avatar">JS</div>
+                            <div class="user-info">
+                                <h4>John Smith</h4>
+                                <p>Maintenance Manager • john.smith@company.com • Active</p>
+                            </div>
+                            <div style="margin-left: auto;">
+                                <button class="btn btn-secondary" onclick="editUser('john.smith')">Edit</button>
+                            </div>
+                        </div>
+                        
+                        <div class="user-card">
+                            <div class="user-avatar">SJ</div>
+                            <div class="user-info">
+                                <h4>Sarah Johnson</h4>
+                                <p>Technician • sarah.johnson@company.com • Active</p>
+                            </div>
+                            <div style="margin-left: auto;">
+                                <button class="btn btn-secondary" onclick="editUser('sarah.johnson')">Edit</button>
+                            </div>
+                        </div>
+                        
+                        <div class="user-card">
+                            <div class="user-avatar">MW</div>
+                            <div class="user-info">
+                                <h4>Mike Wilson</h4>
+                                <p>Supervisor • mike.wilson@company.com • Active</p>
+                            </div>
+                            <div style="margin-left: auto;">
+                                <button class="btn btn-secondary" onclick="editUser('mike.wilson')">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schedules Section -->
+            <section id="schedules-section" class="dashboard-section" style="display: none;">
+                <div class="content-card calendar-container">
+                    <div class="card-header">
+                        <h3 class="card-title">Maintenance Schedule</h3>
+                        <button class="btn btn-primary" onclick="addEvent()">
+                            <i class="fas fa-plus"></i>
+                            Add Event
+                        </button>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="dashboard-section" style="display: none;">
+                <div class="content-grid">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Work Order Trends</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="workOrderChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Asset Performance</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="assetChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports-section" class="dashboard-section" style="display: none;">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Generate Reports</h3>
+                    </div>
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <h4>Work Order Report</h4>
+                            <p>Comprehensive work order analysis and metrics</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;">Generate</button>
+                        </div>
+                        <div class="kpi-card">
+                            <h4>Asset Performance Report</h4>
+                            <p>Asset utilization and maintenance history</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;">Generate</button>
+                        </div>
+                        <div class="kpi-card">
+                            <h4>User Activity Report</h4>
+                            <p>User engagement and productivity metrics</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;">Generate</button>
+                        </div>
+                        <div class="kpi-card">
+                            <h4>System Health Report</h4>
+                            <p>Infrastructure performance and uptime analysis</p>
+                            <button class="btn btn-primary" style="margin-top: 1rem;">Generate</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="dashboard-section" style="display: none;">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Settings</h3>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-input" value="Your Company Name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Default Time Zone</label>
+                        <select class="form-input">
+                            <option>UTC-5 (Eastern)</option>
+                            <option>UTC-6 (Central)</option>
+                            <option>UTC-7 (Mountain)</option>
+                            <option>UTC-8 (Pacific)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notification Settings</label>
+                        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked> Email Notifications
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" checked> SMS Alerts
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary">Save Settings</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Add New User</h2>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="userName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="userEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select class="form-input" id="userRole" required>
+                        <option value="">Select Role</option>
+                        <option value="admin">Administrator</option>
+                        <option value="manager">Manager</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="technician">Technician</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Chat Toggle Buttons -->
+    <div class="ai-toggle-group">
+        <button class="ai-chat-toggle" onclick="toggleAIChat()">
+            <i class="fas fa-robot"></i>
+        </button>
+        <button class="manager-ai-toggle" onclick="openManagerAI()" title="Manager AI Agent">
+            <i class="fas fa-user-tie"></i>
+        </button>
+    </div>
+
+    <div id="aiChatWidget" class="ai-chat-widget">
+        <div class="ai-chat-header">
+            <div>
+                <h4 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-robot"></i>
+                    AI Assistant
+                </h4>
+                <p style="margin: 0; font-size: 0.75rem; opacity: 0.8;">Ask me about your CMMS</p>
+            </div>
+            <button onclick="toggleAIChat()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="ai-chat-body" id="chatMessages">
+            <div class="chat-message ai">
+                <div style="font-weight: 500; margin-bottom: 0.25rem;">ChatterFix AI</div>
+                Hello! I'm your AI assistant for ChatterFix CMMS. I can help you with:
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                    <li>Managing work orders and assets</li>
+                    <li>Analyzing performance metrics</li>
+                    <li>User management questions</li>
+                    <li>Scheduling and maintenance planning</li>
+                    <li>System status and troubleshooting</li>
+                </ul>
+                How can I assist you today?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator">
+            AI is thinking...
+        </div>
+        
+        <div class="ai-chat-footer">
+            <div style="display: flex; gap: 0.5rem;">
+                <input 
+                    type="text" 
+                    class="ai-chat-input" 
+                    id="chatInput" 
+                    placeholder="Ask me anything about your CMMS..."
+                    onkeypress="handleChatInput(event)"
+                >
+                <button 
+                    onclick="sendChatMessage()" 
+                    class="btn btn-primary" 
+                    style="padding: 0.5rem; min-width: auto;"
+                >
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ NAVIGATION ============
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').style.display = 'block';
+            
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
+        }
+
+        // Navigation event listeners
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = link.getAttribute('data-section');
+                showSection(section);
+                
+                // Initialize section-specific components
+                if (section === 'schedules') {
+                    initializeCalendar();
+                } else if (section === 'analytics') {
+                    initializeCharts();
+                }
+            });
+        });
+
+        // ============ MODAL FUNCTIONS ============
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // ============ USER MANAGEMENT ============
+        document.getElementById('addUserForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const role = document.getElementById('userRole').value;
+            
+            // Add user logic here
+            console.log('Adding user:', { name, email, role });
+            
+            // Reset form and close modal
+            e.target.reset();
+            closeModal('addUserModal');
+            
+            // Show success message
+            alert('User added successfully!');
+        });
+
+        function editUser(userId) {
+            console.log('Editing user:', userId);
+            // Implement edit user functionality
+        }
+
+        // ============ CALENDAR ============
+        let calendar;
+
+        function initializeCalendar() {
+            if (!calendar) {
+                const calendarEl = document.getElementById('calendar');
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    height: 'auto',
+                    events: [
+                        {
+                            title: 'PM - Pump Maintenance',
+                            date: '2025-10-08',
+                            color: '#1e40af'
+                        },
+                        {
+                            title: 'Inspection - HVAC System',
+                            date: '2025-10-10',
+                            color: '#059669'
+                        },
+                        {
+                            title: 'Repair - Conveyor Belt',
+                            date: '2025-10-12',
+                            color: '#d97706'
+                        }
+                    ],
+                    eventClick: function(info) {
+                        alert('Event: ' + info.event.title);
+                    }
+                });
+                calendar.render();
+            }
+        }
+
+        function addEvent() {
+            const title = prompt('Event title:');
+            const date = prompt('Event date (YYYY-MM-DD):');
+            
+            if (title && date) {
+                calendar.addEvent({
+                    title: title,
+                    date: date,
+                    color: '#1e40af'
+                });
+            }
+        }
+
+        // ============ CHARTS ============
+        function initializeCharts() {
+            // Work Order Trends Chart
+            const workOrderCtx = document.getElementById('workOrderChart');
+            if (workOrderCtx && !workOrderCtx.chart) {
+                workOrderCtx.chart = new Chart(workOrderCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Work Orders',
+                            data: [65, 78, 82, 89, 95, 102],
+                            borderColor: '#1e40af',
+                            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Asset Performance Chart
+            const assetCtx = document.getElementById('assetChart');
+            if (assetCtx && !assetCtx.chart) {
+                assetCtx.chart = new Chart(assetCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Operational', 'Maintenance', 'Offline'],
+                        datasets: [{
+                            data: [75, 20, 5],
+                            backgroundColor: ['#059669', '#d97706', '#dc2626']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+
+        // ============ REAL-TIME UPDATES ============
+        function updateKPIs() {
+            // Simulate real-time KPI updates
+            const totalUsers = document.getElementById('total-users');
+            const activeOrders = document.getElementById('active-work-orders');
+            const uptime = document.getElementById('system-uptime');
+            const responseTime = document.getElementById('response-time');
+            
+            // Add small random variations
+            if (totalUsers) {
+                const current = parseInt(totalUsers.textContent);
+                totalUsers.textContent = current + Math.floor(Math.random() * 3 - 1);
+            }
+        }
+
+        // ============ AI CHAT FUNCTIONALITY ============
+        function toggleAIChat() {
+            const widget = document.getElementById('aiChatWidget');
+            const toggle = document.querySelector('.ai-chat-toggle');
+            
+            if (widget.style.display === 'flex') {
+                widget.style.display = 'none';
+                toggle.innerHTML = '<i class="fas fa-robot"></i>';
+            } else {
+                widget.style.display = 'flex';
+                toggle.innerHTML = '<i class="fas fa-times"></i>';
+            }
+        }
+
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addChatMessage('user', message);
+            input.value = '';
+            
+            // Show typing indicator
+            const typingIndicator = document.getElementById('typingIndicator');
+            typingIndicator.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        context: 'managers_dashboard'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                if (data.success !== false) {
+                    addChatMessage('ai', data.response || data.message || 'I received your message!');
+                } else {
+                    addChatMessage('ai', data.message || 'Sorry, I encountered an error. Please try again.');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                typingIndicator.style.display = 'none';
+                addChatMessage('ai', 'Sorry, I\'m having trouble connecting right now. Please try again in a moment.');
+            }
+        }
+
+        function addChatMessage(sender, message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            if (sender === 'ai') {
+                messageDiv.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 0.25rem;">ChatterFix AI</div>
+                    ${message}
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 0.25rem;">You</div>
+                    ${message}
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // ============ MANAGER AI FUNCTIONALITY ============
+        function openManagerAI() {
+            window.open('/manager-ai', '_blank', 'width=800,height=600,resizable=yes,scrollbars=yes');
+        }
+
+        // ============ INITIALIZATION ============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update KPIs every 30 seconds
+            setInterval(updateKPIs, 30000);
+            
+            // Initialize with overview section
+            showSection('overview');
+        });
+    </script>
+</body>
+</html>

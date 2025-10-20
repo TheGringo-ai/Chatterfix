@@ -1,0 +1,83 @@
+{
+  "deployment_name": "ChatterFix Enterprise CMMS",
+  "version": "1.0.0-enterprise",
+  "deployment_type": "kubernetes_microservices",
+  "environment": "production",
+  "infrastructure": {
+    "orchestration": "Kubernetes 1.28+",
+    "service_mesh": "Istio",
+    "ingress": "NGINX Ingress Controller",
+    "database": "PostgreSQL 15 with TimescaleDB",
+    "cache": "Redis Cluster",
+    "monitoring": "Prometheus + Grafana",
+    "logging": "ELK Stack (Elasticsearch, Logstash, Kibana)"
+  },
+  "services": {
+    "frontend": {
+      "name": "chatterfix-ui",
+      "port": 3000,
+      "replicas": 3,
+      "technology": "React 18 + TypeScript",
+      "build_tool": "Vite"
+    },
+    "api_gateway": {
+      "name": "chatterfix-gateway",
+      "port": 8080,
+      "replicas": 2,
+      "technology": "Kong API Gateway"
+    },
+    "auth_service": {
+      "name": "chatterfix-auth",
+      "port": 8000,
+      "replicas": 2,
+      "technology": "FastAPI + OAuth2"
+    },
+    "work_orders_service": {
+      "name": "chatterfix-work-orders",
+      "port": 8002,
+      "replicas": 3,
+      "technology": "FastAPI + PostgreSQL"
+    },
+    "assets_service": {
+      "name": "chatterfix-assets",
+      "port": 8003,
+      "replicas": 2,
+      "technology": "FastAPI + PostgreSQL"
+    },
+    "parts_service": {
+      "name": "chatterfix-parts",
+      "port": 8004,
+      "replicas": 2,
+      "technology": "FastAPI + PostgreSQL"
+    },
+    "analytics_service": {
+      "name": "chatterfix-analytics",
+      "port": 8005,
+      "replicas": 2,
+      "technology": "FastAPI + TimescaleDB"
+    },
+    "notification_service": {
+      "name": "chatterfix-notifications",
+      "port": 8006,
+      "replicas": 2,
+      "technology": "FastAPI + WebSockets"
+    },
+    "ai_service": {
+      "name": "chatterfix-ai",
+      "port": 9001,
+      "replicas": 2,
+      "technology": "Fix It Fred Multi-AI Service"
+    }
+  },
+  "security": {
+    "tls_termination": "At ingress level",
+    "inter_service_encryption": "mTLS via service mesh",
+    "secrets_management": "Kubernetes Secrets + Vault",
+    "rbac": "Kubernetes RBAC + custom authorization"
+  },
+  "scalability": {
+    "horizontal_pod_autoscaler": "CPU and memory based",
+    "vertical_pod_autoscaler": "Enabled for optimization",
+    "cluster_autoscaler": "Node scaling based on demand"
+  }
+}

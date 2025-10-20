@@ -1,0 +1,46 @@
+[Unit]
+Description=Fix It Fred DevOps API - ChatGPT Integration
+Documentation=https://github.com/TheGringo-ai/Chatterfix
+After=network.target network-online.target fix-it-fred-devops.service
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=yoyofred_gringosgambit_com
+Group=yoyofred_gringosgambit_com
+WorkingDirectory=/home/yoyofred_gringosgambit_com/chatterfix-docker
+Environment=PYTHONPATH=/home/yoyofred_gringosgambit_com/chatterfix-docker
+Environment=PYTHONUNBUFFERED=1
+Environment=FRED_API_PORT=9004
+Environment=FRED_API_HOST=0.0.0.0
+Environment=FRED_API_KEY=${FRED_API_KEY}
+
+# Main API process
+ExecStart=/usr/bin/python3 /home/yoyofred_gringosgambit_com/chatterfix-docker/fix_it_fred_devops_api.py
+
+# Health check and restart logic
+Restart=always
+RestartSec=10
+TimeoutStartSec=30
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Process management
+OOMScoreAdjust=-50
+Nice=0
+
+# Security settings (relaxed for API access)
+PrivateTmp=false
+ProtectSystem=false
+ProtectHome=false
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fix-it-fred-devops-api
+
+[Install]
+WantedBy=multi-user.target

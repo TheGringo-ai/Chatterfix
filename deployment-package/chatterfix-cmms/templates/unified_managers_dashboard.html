@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterFix CMMS - Unified Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* 2025 Modern CMMS Color Palette - AI Team Optimized */
+            --primary-blue: #006fee;
+            --secondary-blue: #4285f4;
+            --accent-blue: #0ea5e9;
+            --success-green: #00c851;
+            --warning-amber: #ff9800;
+            --error-red: #f44336;
+            --info-purple: #6366f1;
+            
+            /* Background Colors - Ultra Clean */
+            --bg-primary: #ffffff;
+            --bg-secondary: #fafbfc;
+            --bg-tertiary: #f5f7fa;
+            --bg-sidebar: #fafbfc;
+            --bg-card: #ffffff;
+            
+            /* Text Colors - Enhanced Contrast */
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-white: #ffffff;
+            --text-accent: #006fee;
+            
+            /* Border & Shadow - Softer */
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-focus: #006fee;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+            --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.08);
+            --shadow-lg: 0 8px 25px 0 rgb(0 0 0 / 0.12);
+            --shadow-focus: 0 0 0 3px rgb(0 111 238 / 0.1);
+            
+            /* Modern Spacing & Radius */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Layout Structure */
+        .dashboard-layout {
+            display: grid;
+            grid-template-areas: 
+                "sidebar header"
+                "sidebar main";
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: 80px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-light);
+            padding: 2rem 0;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+        }
+
+        .logo {
+            padding: 0 2rem 2rem 2rem;
+            text-align: center;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .logo p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            border-radius: 0 25px 25px 0;
+            margin-right: 1rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-blue);
+            background: var(--bg-tertiary);
+            border-left-color: var(--primary-blue);
+            font-weight: 500;
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .service-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+
+        .status-online { background: var(--success-green); }
+        .status-offline { background: var(--error-red); }
+        .status-warning { background: var(--warning-amber); }
+
+        /* Header */
+        .header {
+            grid-area: header;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb .current {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-badge::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            grid-area: main;
+            padding: 2rem;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+        }
+
+        .service-frame {
+            width: 100%;
+            height: calc(100vh - 160px);
+            border: none;
+            border-radius: 12px;
+            background: var(--bg-primary);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Dashboard Overview */
+        .dashboard-overview {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-blue);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            background: var(--primary-blue);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-white);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .recent-activity {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+        }
+
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .activity-time {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-areas: 
+                    "header"
+                    "main";
+                grid-template-columns: 1fr;
+                grid-template-rows: 80px 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <h1><i class="fas fa-cogs"></i> ChatterFix</h1>
+                <p>CMMS Platform</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" onclick="loadService('overview')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard Overview</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('work-orders')">
+                        <i class="fas fa-tasks"></i>
+                        <span>Work Orders</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('assets')">
+                        <i class="fas fa-cogs"></i>
+                        <span>Asset Management</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('parts')">
+                        <i class="fas fa-boxes"></i>
+                        <span>Parts Inventory</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('ai-brain')">
+                        <i class="fas fa-brain"></i>
+                        <span>AI Assistant</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('document-intelligence')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Document Intelligence</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('reports')">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports & Analytics</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadService('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
+                        <span class="service-status status-online"></span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="breadcrumb">
+                <i class="fas fa-home"></i>
+                <span>/</span>
+                <span class="current" id="currentService">Dashboard Overview</span>
+            </div>
+            
+            <div class="header-actions">
+                <div class="notification-badge">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="user-profile">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Admin User</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="contentArea">
+                <!-- Dashboard Overview (Default) -->
+                <div id="overview-content" class="dashboard-overview">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <span class="stat-icon"><i class="fas fa-tasks"></i></span>
+                                <span class="activity-time">Live</span>
+                            </div>
+                            <span class="stat-number" id="activeWorkOrders">0</span>
+                            <span class="stat-label">Active Work Orders</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <span class="stat-icon"><i class="fas fa-cogs"></i></span>
+                                <span class="activity-time">Live</span>
+                            </div>
+                            <span class="stat-number" id="totalAssets">0</span>
+                            <span class="stat-label">Total Assets</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <span class="stat-icon"><i class="fas fa-boxes"></i></span>
+                                <span class="activity-time">Live</span>
+                            </div>
+                            <span class="stat-number" id="partsInventory">0</span>
+                            <span class="stat-label">Parts in Inventory</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <span class="stat-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                                <span class="activity-time">Live</span>
+                            </div>
+                            <span class="stat-number" id="lowStockItems">0</span>
+                            <span class="stat-label">Low Stock Items</span>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <div class="activity-header">
+                            <h3>Recent Activity</h3>
+                            <button class="btn btn-secondary btn-sm">View All</button>
+                        </div>
+                        <ul class="activity-list" id="activityList">
+                            <!-- Activity items will be loaded here -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Service Content Area (Hidden by default) -->
+                <div id="service-content" style="display: none;">
+                    <iframe id="serviceFrame" class="service-frame" src="about:blank"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Service Configuration
+        const services = {
+            'work-orders': {
+                name: 'Work Orders',
+                url: '/work-orders',
+                icon: 'fas fa-tasks'
+            },
+            'assets': {
+                name: 'Asset Management', 
+                url: '/assets',
+                icon: 'fas fa-cogs'
+            },
+            'parts': {
+                name: 'Parts Inventory',
+                url: '/parts', 
+                icon: 'fas fa-boxes'
+            },
+            'ai-brain': {
+                name: 'AI Assistant',
+                url: '/ai-brain',
+                icon: 'fas fa-brain'
+            },
+            'document-intelligence': {
+                name: 'Document Intelligence',
+                url: '/document-intelligence',
+                icon: 'fas fa-file-alt'
+            },
+            'reports': {
+                name: 'Reports & Analytics',
+                url: '/reports',
+                icon: 'fas fa-chart-bar'
+            },
+            'settings': {
+                name: 'System Settings',
+                url: '/settings',
+                icon: 'fas fa-cog'
+            }
+        };
+
+        let currentService = 'overview';
+
+        // Load service content
+        function loadService(serviceName) {
+            // Update navigation state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            event.target.closest('.nav-link').classList.add('active');
+            
+            // Update breadcrumb
+            if (serviceName === 'overview') {
+                document.getElementById('currentService').textContent = 'Dashboard Overview';
+                document.getElementById('overview-content').style.display = 'block';
+                document.getElementById('service-content').style.display = 'none';
+            } else {
+                const service = services[serviceName];
+                if (service) {
+                    document.getElementById('currentService').textContent = service.name;
+                    document.getElementById('overview-content').style.display = 'none';
+                    document.getElementById('service-content').style.display = 'block';
+                    
+                    // Load service in iframe
+                    const iframe = document.getElementById('serviceFrame');
+                    iframe.src = service.url;
+                }
+            }
+            
+            currentService = serviceName;
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load work orders count
+                const workOrdersResponse = await fetch('/api/work-orders');
+                if (workOrdersResponse.ok) {
+                    const workOrders = await workOrdersResponse.json();
+                    document.getElementById('activeWorkOrders').textContent = workOrders.length;
+                }
+
+                // Load assets count
+                const assetsResponse = await fetch('/api/assets');
+                if (assetsResponse.ok) {
+                    const assets = await assetsResponse.json();
+                    document.getElementById('totalAssets').textContent = assets.length;
+                }
+
+                // Load parts count
+                const partsResponse = await fetch('/api/parts');
+                if (partsResponse.ok) {
+                    const parts = await partsResponse.json();
+                    document.getElementById('partsInventory').textContent = parts.length;
+                    
+                    // Calculate low stock items
+                    const lowStockCount = parts.filter(part => 
+                        parseInt(part.quantity || 0) <= parseInt(part.min_stock || 10)
+                    ).length;
+                    document.getElementById('lowStockItems').textContent = lowStockCount;
+                }
+
+                // Load recent activity
+                loadRecentActivity();
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Load recent activity
+        function loadRecentActivity() {
+            const activityList = document.getElementById('activityList');
+            
+            // Sample activity data (in real implementation, this would come from API)
+            const activities = [
+                {
+                    icon: 'fas fa-plus',
+                    title: 'New Work Order Created',
+                    description: 'WO-2025-001 - HVAC Maintenance',
+                    time: '5 minutes ago'
+                },
+                {
+                    icon: 'fas fa-cog',
+                    title: 'Asset Updated',
+                    description: 'Pump #A-101 status changed to maintenance',
+                    time: '15 minutes ago'
+                },
+                {
+                    icon: 'fas fa-boxes',
+                    title: 'Low Stock Alert',
+                    description: 'Bearing SKU-001 below minimum level',
+                    time: '1 hour ago'
+                },
+                {
+                    icon: 'fas fa-check',
+                    title: 'Work Order Completed',
+                    description: 'WO-2025-998 - Electrical Panel Inspection',
+                    time: '2 hours ago'
+                }
+            ];
+
+            activityList.innerHTML = activities.map(activity => `
+                <li class="activity-item">
+                    <div class="activity-icon">
+                        <i class="${activity.icon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-description">${activity.description}</div>
+                    </div>
+                    <div class="activity-time">${activity.time}</div>
+                </li>
+            `).join('');
+        }
+
+        // Check service health
+        async function checkServiceHealth() {
+            for (const [serviceName, config] of Object.entries(services)) {
+                try {
+                    const response = await fetch(`${config.url.replace('/', '/api/')}/health`);
+                    const statusElement = document.querySelector(`[onclick="loadService('${serviceName}')"] .service-status`);
+                    
+                    if (response.ok) {
+                        statusElement.className = 'service-status status-online';
+                    } else {
+                        statusElement.className = 'service-status status-warning';
+                    }
+                } catch (error) {
+                    const statusElement = document.querySelector(`[onclick="loadService('${serviceName}')"] .service-status`);
+                    statusElement.className = 'service-status status-offline';
+                }
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            checkServiceHealth();
+            
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                if (currentService === 'overview') {
+                    loadDashboardData();
+                }
+                checkServiceHealth();
+            }, 30000);
+        });
+
+        // Handle iframe communication
+        window.addEventListener('message', function(event) {
+            // Handle messages from embedded services
+            if (event.data.type === 'navigation') {
+                loadService(event.data.service);
+            }
+        });
+    </script>
+
+    <!-- Global AI Chat Widget (from base template) -->
+    <div id="ai-chat-widget" class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Toggle Button -->
+        <button id="chat-toggle" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 transform hover:scale-110 group">
+            <svg id="chat-icon" class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="hidden absolute bottom-16 right-0 w-80 h-96 bg-gray-900 rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
+            <!-- Chat content will be loaded here -->
+        </div>
+    </div>
+
+    <style>
+        /* Chat widget styles */
+        #ai-chat-widget {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+        }
+
+        #chat-toggle {
+            background: var(--gradient-primary);
+            border: none;
+            padding: 16px;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #chat-toggle:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+    </style>
+</body>
+</html>

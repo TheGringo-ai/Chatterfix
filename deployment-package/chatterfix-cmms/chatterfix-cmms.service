@@ -1,0 +1,19 @@
+[Unit]
+Description=ChatterFix CMMS Complete Platform
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=yoyofred_gringosgambit_com
+Group=yoyofred_gringosgambit_com
+WorkingDirectory=/home/yoyofred_gringosgambit_com/chatterfix-cmms
+ExecStart=/home/yoyofred_gringosgambit_com/chatterfix-cmms/start-chatterfix.sh
+ExecStop=/bin/bash -c 'pkill -f "python.*app.py"; pkill -f "python.*service.py"'
+Restart=always
+RestartSec=10
+Environment=PYTHONPATH=/home/yoyofred_gringosgambit_com/chatterfix-cmms
+Environment=CHATTERFIX_ENV=production
+
+[Install]
+WantedBy=multi-user.target

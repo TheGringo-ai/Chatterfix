@@ -1,15 +1,15 @@
-# GitHub Secrets Configuration for Fix It Fred
+# GitHub Secrets Configuration for Fix It Fred Git Integration
 
-## 🔐 Secure Deployment with GitHub Secrets
+## 🔐 Secure Deployment with GitHub Secrets & Git Integration
 
-The GitHub token stays securely in GitHub Secrets where it belongs! Fix It Fred triggers deployments by pushing changes, which automatically triggers GitHub Actions workflows.
+The GitHub token stays securely in GitHub Secrets where it belongs! Fix It Fred now has comprehensive Git integration with real-time monitoring, AI-powered commits, and automated deployment workflows.
 
 ## 📋 Required GitHub Secrets
 
 Go to your repository: **Settings → Secrets and variables → Actions → New repository secret**
 
-### 1. `GCP_SERVICE_ACCOUNT_KEY`
-**Purpose**: Allows GitHub Actions to deploy to your GCP VM
+### 1. `GCP_SA_KEY` (Required for VM Deployment)
+**Purpose**: Allows GitHub Actions to deploy to your GCP VM and manage Git integration services
 
 **How to get it**:
 ```bash
@@ -17,10 +17,14 @@ Go to your repository: **Settings → Secrets and variables → Actions → New 
 gcloud iam service-accounts create github-actions \
   --display-name="GitHub Actions Deployer"
 
-# Grant permissions
+# Grant comprehensive permissions for Git integration
 gcloud projects add-iam-policy-binding fredfix \
   --member="serviceAccount:github-actions@fredfix.iam.gserviceaccount.com" \
   --role="roles/compute.instanceAdmin.v1"
+
+gcloud projects add-iam-policy-binding fredfix \
+  --member="serviceAccount:github-actions@fredfix.iam.gserviceaccount.com" \
+  --role="roles/compute.osLogin"
 
 # Create key
 gcloud iam service-accounts keys create github-actions-key.json \
@@ -31,7 +35,7 @@ cat github-actions-key.json
 ```
 
 **Add to GitHub Secrets**:
-- Name: `GCP_SERVICE_ACCOUNT_KEY`
+- Name: `GCP_SA_KEY`
 - Value: [Entire JSON contents]
 
 ### 2. `DEPLOYMENT_API_KEY` (Optional)
@@ -101,39 +105,47 @@ OLLAMA_HOST=http://localhost:11434
 
 **Notice**: No `GITHUB_TOKEN` required! 🎉
 
-## 🎯 Workflow: How It Works
+## 🎯 Git Integration Workflow: How It Works
 
 ```
-┌─────────────────┐
-│  Fix It Fred    │
-│   on VM         │
-└────────┬────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Fix It Fred on VM                       │
+├─────────────────────────────────────────────────────────────┤
+│  🤖 AI Service (Port 9000)                                 │
+│  🔍 Git Integration Service (Port 9002)                    │
+│  📊 Real-time File Monitor                                 │
+└────────┬────────────────────────────────────────────────────┘
          │
-         │ 1. "deploy to production"
+         │ 1. File changes detected
+         │ 2. AI analysis performed
+         │ 3. Intelligent commit created
+         │ 4. Push to GitHub
          ▼
-┌─────────────────┐
-│ Git Operations  │
-│ - Commit        │
-│ - Push          │
-└────────┬────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    GitHub Actions                          │
+├─────────────────────────────────────────────────────────────┤
+│  Workflow 1: deploy-fix-it-fred-git-integration.yml        │
+│  - Deploys Git Integration Service                         │
+│  - Configures systemd service                             │
+│  - Sets up monitoring                                      │
+│                                                            │
+│  Workflow 2: deploy.yml                                   │
+│  - Main application deployment                             │
+│  - Includes Git integration health checks                 │
+│                                                            │
+│  Uses Secrets: GCP_SA_KEY                                │
+└────────┬────────────────────────────────────────────────────┘
          │
-         │ 2. Push to GitHub
+         │ 3. Deploy to GCP VM
          ▼
-┌─────────────────────┐
-│   GitHub Actions    │
-│                     │
-│ Uses Secrets:       │
-│ - GCP_SERVICE_      │
-│   ACCOUNT_KEY       │
-└────────┬────────────┘
-         │
-         │ 3. Deploy to GCP
-         ▼
-┌─────────────────┐
-│   Your VM       │
-│  ChatterFix     │
-│  Updated! ✅    │
-└─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Production VM                           │
+├─────────────────────────────────────────────────────────────┤
+│  ✅ ChatterFix CMMS Updated                               │
+│  ✅ Git Integration Active                                │
+│  ✅ Real-time Monitoring                                 │
+│  ✅ AI-Powered Commits                                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## 🔧 Testing the Setup

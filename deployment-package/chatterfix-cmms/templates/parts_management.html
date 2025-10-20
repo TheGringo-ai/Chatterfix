@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parts Inventory - ChatterFix CMMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Primary Color Palette */
+            --primary-blue: #006fee;
+            --secondary-blue: #4285f4;
+            --accent-blue: #0ea5e9;
+            --success-green: #00c851;
+            --warning-amber: #ff9800;
+            --error-red: #f44336;
+            --info-purple: #6366f1;
+            
+            /* Background Colors - Ultra Clean */
+            --bg-primary: #ffffff;
+            --bg-secondary: #fafbfc;
+            --bg-tertiary: #f5f7fa;
+            --bg-sidebar: #fafbfc;
+            --bg-card: #ffffff;
+            
+            /* Text Colors - Enhanced Contrast */
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-white: #ffffff;
+            --text-accent: #006fee;
+            
+            /* Border & Shadow - Softer */
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-focus: #006fee;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+            --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.08);
+            --shadow-lg: 0 8px 25px 0 rgb(0 0 0 / 0.12);
+            --shadow-focus: 0 0 0 3px rgb(0 111 238 / 0.1);
+            
+            /* Modern Spacing & Radius */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--accent-purple);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-input {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            width: 300px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .parts-table {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .table-header {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.5fr;
+            gap: 1rem;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .table-row {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1.5fr;
+            gap: 1rem;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .table-row:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .part-name {
+            font-weight: 600;
+        }
+
+        .part-sku {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .stock-level {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stock-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .stock-high { background: #10b981; }
+        .stock-medium { background: #f59e0b; }
+        .stock-low { background: #ef4444; }
+        .stock-out { background: #6b7280; }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .close:hover {
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .no-parts {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .no-parts i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .table-header, .table-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-boxes"></i> Parts Inventory</h1>
+        <div class="nav-actions">
+            <a href="/dashboard" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Add Part
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="totalParts">0</span>
+                <span class="stat-label">Total Parts</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="lowStock">0</span>
+                <span class="stat-label">Low Stock</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="outOfStock">0</span>
+                <span class="stat-label">Out of Stock</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="totalValue">$0</span>
+                <span class="stat-label">Total Value</span>
+            </div>
+        </div>
+
+        <div class="actions-bar">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Search parts..." id="searchInput">
+                <button class="btn btn-secondary" onclick="refreshParts()">
+                    <i class="fas fa-refresh"></i> Refresh
+                </button>
+            </div>
+            <div>
+                <select class="form-select" id="categoryFilter" onchange="filterParts()">
+                    <option value="">All Categories</option>
+                    <option value="mechanical">Mechanical</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="hydraulic">Hydraulic</option>
+                    <option value="pneumatic">Pneumatic</option>
+                    <option value="consumable">Consumable</option>
+                    <option value="safety">Safety</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="parts-table">
+            <div class="table-header">
+                <div>Part Name</div>
+                <div>SKU</div>
+                <div>Category</div>
+                <div>Stock</div>
+                <div>Unit Cost</div>
+                <div>Total Value</div>
+                <div>Actions</div>
+            </div>
+            <div id="partsContainer">
+                <!-- Parts will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Part Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Part</h2>
+                <button class="close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <form id="createPartForm" onsubmit="createPart(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Part Name *</label>
+                        <input type="text" class="form-input" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SKU</label>
+                        <input type="text" class="form-input" name="sku" placeholder="Auto-generated if empty">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category">
+                            <option value="mechanical">Mechanical</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="hydraulic">Hydraulic</option>
+                            <option value="pneumatic">Pneumatic</option>
+                            <option value="consumable">Consumable</option>
+                            <option value="safety">Safety</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unit</label>
+                        <input type="text" class="form-input" name="unit" placeholder="pcs, kg, m, etc.">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Quantity *</label>
+                        <input type="number" class="form-input" name="quantity" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Minimum Stock Level</label>
+                        <input type="number" class="form-input" name="min_stock" value="10" min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Unit Cost</label>
+                        <input type="number" class="form-input" name="unit_cost" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Supplier</label>
+                        <input type="text" class="form-input" name="supplier">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-input" name="location" placeholder="Warehouse A-12">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Part Number</label>
+                        <input type="text" class="form-input" name="part_number">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="description" placeholder="Additional details about the part..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-save"></i> Add Part
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let parts = [];
+
+        // Load parts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadParts();
+        });
+
+        async function loadParts() {
+            try {
+                const response = await fetch('/api/parts');
+                if (response.ok) {
+                    parts = await response.json();
+                    renderParts(parts);
+                    updateStats();
+                } else {
+                    console.error('Failed to load parts');
+                    renderParts([]);
+                }
+            } catch (error) {
+                console.error('Error loading parts:', error);
+                renderParts([]);
+            }
+        }
+
+        function renderParts(partsToRender) {
+            const container = document.getElementById('partsContainer');
+            
+            if (partsToRender.length === 0) {
+                container.innerHTML = `
+                    <div class="no-parts" style="grid-column: 1 / -1; padding: 4rem;">
+                        <i class="fas fa-boxes"></i>
+                        <h3>No Parts Found</h3>
+                        <p>Add your first part to start managing inventory.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = partsToRender.map(part => {
+                const quantity = parseInt(part.quantity || 0);
+                const minStock = parseInt(part.min_stock || 10);
+                const unitCost = parseFloat(part.unit_cost || 0);
+                const totalValue = quantity * unitCost;
+                
+                let stockStatus = 'stock-high';
+                if (quantity === 0) stockStatus = 'stock-out';
+                else if (quantity <= minStock) stockStatus = 'stock-low';
+                else if (quantity <= minStock * 2) stockStatus = 'stock-medium';
+
+                return `
+                    <div class="table-row">
+                        <div>
+                            <div class="part-name">${part.name || 'Unnamed Part'}</div>
+                            <div class="part-sku">${part.part_number || part.sku || 'No SKU'}</div>
+                        </div>
+                        <div>${part.sku || 'AUTO'}</div>
+                        <div>${(part.category || 'General').charAt(0).toUpperCase() + (part.category || 'general').slice(1)}</div>
+                        <div class="stock-level">
+                            <div class="stock-indicator ${stockStatus}"></div>
+                            ${quantity} ${part.unit || 'pcs'}
+                        </div>
+                        <div>$${unitCost.toFixed(2)}</div>
+                        <div>$${totalValue.toFixed(2)}</div>
+                        <div class="actions">
+                            <button class="btn btn-secondary btn-sm" onclick="editPart(${part.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="adjustStock(${part.id})">
+                                <i class="fas fa-warehouse"></i>
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="orderPart(${part.id})">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const totalParts = parts.length;
+            const lowStock = parts.filter(p => parseInt(p.quantity || 0) <= parseInt(p.min_stock || 10) && parseInt(p.quantity || 0) > 0).length;
+            const outOfStock = parts.filter(p => parseInt(p.quantity || 0) === 0).length;
+            const totalValue = parts.reduce((sum, p) => sum + (parseInt(p.quantity || 0) * parseFloat(p.unit_cost || 0)), 0);
+
+            document.getElementById('totalParts').textContent = totalParts;
+            document.getElementById('lowStock').textContent = lowStock;
+            document.getElementById('outOfStock').textContent = outOfStock;
+            document.getElementById('totalValue').textContent = '$' + totalValue.toLocaleString();
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'block';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('createPartForm').reset();
+        }
+
+        async function createPart(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const partData = Object.fromEntries(formData.entries());
+            
+            // Generate SKU if not provided
+            if (!partData.sku) {
+                partData.sku = generateSKU(partData.name, partData.category);
+            }
+            
+            try {
+                const response = await fetch('/api/parts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(partData)
+                });
+                
+                if (response.ok) {
+                    const newPart = await response.json();
+                    parts.push(newPart);
+                    renderParts(parts);
+                    updateStats();
+                    closeCreateModal();
+                    showToast('Part added successfully!', 'success');
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to add part', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating part:', error);
+                showToast('Failed to add part', 'error');
+            }
+        }
+
+        function generateSKU(name, category) {
+            const nameCode = (name || '').substring(0, 3).toUpperCase();
+            const categoryCode = (category || '').substring(0, 2).toUpperCase();
+            const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `${categoryCode}${nameCode}${randomNum}`;
+        }
+
+        function filterParts() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredParts = parts;
+            
+            if (categoryFilter) {
+                filteredParts = filteredParts.filter(part => 
+                    (part.category || '').toLowerCase() === categoryFilter
+                );
+            }
+            
+            if (searchTerm) {
+                filteredParts = filteredParts.filter(part =>
+                    (part.name || '').toLowerCase().includes(searchTerm) ||
+                    (part.sku || '').toLowerCase().includes(searchTerm) ||
+                    (part.part_number || '').toLowerCase().includes(searchTerm) ||
+                    (part.supplier || '').toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            renderParts(filteredParts);
+        }
+
+        function refreshParts() {
+            loadParts();
+        }
+
+        function editPart(partId) {
+            showToast('Edit functionality coming soon!', 'info');
+        }
+
+        function adjustStock(partId) {
+            const newQuantity = prompt('Enter new stock quantity:');
+            if (newQuantity !== null && !isNaN(newQuantity)) {
+                // TODO: Implement stock adjustment API call
+                showToast('Stock adjustment functionality coming soon!', 'info');
+            }
+        }
+
+        function orderPart(partId) {
+            showToast('Purchase order functionality coming soon!', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            switch(type) {
+                case 'success':
+                    toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                    break;
+                case 'error':
+                    toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                    break;
+                default:
+                    toast.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', filterParts);
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('createModal');
+            if (event.target == modal) {
+                closeCreateModal();
+            }
+        }
+    </script>
+</body>
+</html>

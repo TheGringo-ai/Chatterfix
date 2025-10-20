@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 
 # Import our database module
-from chatterfix_database import db
+from backend.app.database.chatterfix_db import db
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)

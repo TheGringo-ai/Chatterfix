@@ -13,7 +13,7 @@ from typing import Dict, List, Any
 from dataclasses import dataclass
 
 # Import Fix It Fred AI service capabilities
-from fix_it_fred_ai_service import (
+from ai.services.fix_it_fred_service import (
     call_ollama, call_openai, call_anthropic, 
     call_google, call_xai, user_settings
 )

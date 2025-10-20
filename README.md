@@ -17,7 +17,7 @@ A comprehensive Computerized Maintenance Management System (CMMS) with AI-powere
 
 ## 🛠️ Technology Stack
 
-- **Backend**: FastAPI with SQLite database
+- **Backend**: FastAPI with PostgreSQL database
 - **Frontend**: Modern HTML5 with responsive CSS
 - **AI**: LLaMA 3.1:8b via Ollama for intelligent assistance
 - **Testing**: Pytest with comprehensive unit and performance tests

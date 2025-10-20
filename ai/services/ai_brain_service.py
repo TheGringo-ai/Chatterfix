@@ -21,6 +21,71 @@ import asyncio
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Event-driven automation system
+class AutomationEngine:
+    """AI-driven automation engine for CMMS workflows"""
+    
+    def __init__(self):
+        self.rules = {}
+        self.event_handlers = {}
+        self.register_default_rules()
+    
+    def register_default_rules(self):
+        """Register default automation rules"""
+        self.rules.update({
+            "high_priority_assignment": {
+                "trigger": "WorkOrderCreated",
+                "condition": lambda wo: wo.get("priority") == "critical",
+                "action": "auto_assign_senior_tech"
+            },
+            "predictive_maintenance": {
+                "trigger": "AssetThresholdExceeded", 
+                "condition": lambda data: data.get("severity") > 0.8,
+                "action": "create_preventive_workorder"
+            },
+            "parts_reorder": {
+                "trigger": "InventoryLowStock",
+                "condition": lambda item: item.get("quantity") < item.get("reorder_point"),
+                "action": "auto_reorder_parts"
+            }
+        })
+    
+    async def trigger_event(self, event_type: str, payload: dict):
+        """Process automation event"""
+        for rule_name, rule in self.rules.items():
+            if rule["trigger"] == event_type and rule["condition"](payload):
+                await self.execute_action(rule["action"], payload)
+                logger.info(f"Automation rule '{rule_name}' executed for event '{event_type}'")
+    
+    async def execute_action(self, action: str, payload: dict):
+        """Execute automation action"""
+        actions = {
+            "auto_assign_senior_tech": self.auto_assign_technician,
+            "create_preventive_workorder": self.create_preventive_workorder,
+            "auto_reorder_parts": self.auto_reorder_parts
+        }
+        
+        if action in actions:
+            await actions[action](payload)
+    
+    async def auto_assign_technician(self, workorder_data: dict):
+        """Auto-assign best available technician"""
+        # AI logic for technician assignment
+        pass
+    
+    async def create_preventive_workorder(self, asset_data: dict):
+        """Create preventive maintenance work order"""
+        # AI logic for PM creation
+        pass
+    
+    async def auto_reorder_parts(self, inventory_data: dict):
+        """Automatically reorder parts based on usage patterns"""
+        # AI logic for parts reordering
+        pass
+
+# Initialize automation engine
+automation_engine = AutomationEngine()
+
 # Database service configuration
 DATABASE_SERVICE_URL = os.getenv("DATABASE_SERVICE_URL", "https://chatterfix-database-650169261019.us-central1.run.app")
 
@@ -141,6 +206,21 @@ app.add_middleware(
 async def get_database_client():
     """Get HTTP client for database service"""
     return httpx.AsyncClient(base_url=DATABASE_SERVICE_URL, timeout=30.0)
+
+@app.post("/automation/trigger")
+async def trigger_automation(event_type: str, payload: dict):
+    """Trigger automation workflow"""
+    try:
+        await automation_engine.trigger_event(event_type, payload)
+        return {"status": "success", "message": f"Event '{event_type}' processed"}
+    except Exception as e:
+        logger.error(f"Automation trigger failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/automation/rules")
+async def get_automation_rules():
+    """Get all automation rules"""
+    return {"rules": list(automation_engine.rules.keys())}
 
 @app.get("/health")
 async def health_check():

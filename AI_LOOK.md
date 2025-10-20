@@ -1,8 +1,9 @@
 # AI LOOK 🤖
+
 ## Complete Development Reference for ChatterFix CMMS & Fix It Fred AI Platform
 
 > **Professional AI Model Reference Guide**
-> 
+>
 > This document provides comprehensive platform architecture, development patterns, and implementation guidelines for the ChatterFix CMMS and Fix It Fred AI ecosystem. Use this as your complete reference when developing, maintaining, or extending the platform.
 
 ---
@@ -25,12 +26,14 @@
 ## 🏗️ PLATFORM OVERVIEW
 
 ### Core Systems
+
 - **ChatterFix CMMS**: Complete maintenance management system
 - **Fix It Fred AI**: Advanced AI assistant for maintenance operations
 - **Microservices Architecture**: Scalable, containerized services
 - **Real-time Analytics**: Live performance monitoring and insights
 
 ### Technology Stack
+
 ```yaml
 Backend:
   - Python 3.13+ (FastAPI, SQLAlchemy, Pydantic)
@@ -64,6 +67,7 @@ Infrastructure:
 ## 🏛️ ARCHITECTURE MAP
 
 ### Service Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    ChatterFix CMMS Platform                │
@@ -92,6 +96,7 @@ Infrastructure:
 ```
 
 ### File Structure
+
 ```
 ai-tools/
 ├── core/
@@ -124,6 +129,7 @@ ai-tools/
 ### Core Tables
 
 #### 1. Work Orders
+
 ```sql
 CREATE TABLE work_orders (
     id SERIAL PRIMARY KEY,
@@ -146,6 +152,7 @@ CREATE TABLE work_orders (
 ```
 
 #### 2. Assets
+
 ```sql
 CREATE TABLE assets (
     id SERIAL PRIMARY KEY,
@@ -169,6 +176,7 @@ CREATE TABLE assets (
 ```
 
 #### 3. Parts Inventory
+
 ```sql
 CREATE TABLE parts (
     id SERIAL PRIMARY KEY,
@@ -190,6 +198,7 @@ CREATE TABLE parts (
 ```
 
 #### 4. AI Chat Sessions
+
 ```sql
 CREATE TABLE ai_chat_sessions (
     id SERIAL PRIMARY KEY,
@@ -207,6 +216,7 @@ CREATE TABLE ai_chat_sessions (
 ```
 
 ### Database Connection Patterns
+
 ```python
 # Standard connection pattern
 from sqlalchemy import create_engine
@@ -229,7 +239,9 @@ def get_db():
 ## 🔌 API REFERENCE
 
 ### Authentication
+
 All APIs use Bearer token authentication:
+
 ```
 Authorization: Bearer <jwt_token>
 ```
@@ -237,6 +249,7 @@ Authorization: Bearer <jwt_token>
 ### Core Endpoints
 
 #### Platform Gateway (Port 8000)
+
 ```python
 # Health Check
 GET /health
@@ -252,6 +265,7 @@ Headers: {"Authorization": "Bearer <token>"}
 ```
 
 #### Database Service (Port 8001)
+
 ```python
 # Database Health
 GET /health
@@ -268,6 +282,7 @@ Body: {"operation": "insert", "table": "parts", "data": [...]}
 ```
 
 #### Work Orders Service (Port 8002)
+
 ```python
 # List Work Orders
 GET /api/work-orders
@@ -294,6 +309,7 @@ Body: {"optimization_type": "schedule", "timeframe": "week"}
 ```
 
 #### Assets Service (Port 8003)
+
 ```python
 # Asset Dashboard
 GET /api/assets/dashboard
@@ -319,6 +335,7 @@ Body: {"asset_id": 123, "prediction_window": "30_days"}
 ```
 
 #### Parts Service (Port 8004)
+
 ```python
 # Inventory Status
 GET /api/parts/inventory
@@ -339,6 +356,7 @@ Query: ?q=bearing&category=mechanical&in_stock=true
 ```
 
 #### Fix It Fred AI Service (Port 8005)
+
 ```python
 # AI Chat
 POST /api/chat
@@ -376,124 +394,137 @@ Response: {
 ### Core UI Components
 
 #### 1. Dashboard Layout
+
 ```html
 <div class="dashboard-container">
-    <header class="dashboard-header">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">
-                    <i class="fas fa-wrench"></i> ChatterFix CMMS
-                </a>
-                <div class="navbar-nav ms-auto">
-                    <span class="nav-text">Welcome, {user}</span>
-                    <a class="nav-link" href="/logout">Logout</a>
-                </div>
-            </div>
-        </nav>
-    </header>
-    
-    <div class="dashboard-content">
-        <aside class="sidebar">
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="/dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a class="nav-link" href="/work-orders">
-                    <i class="fas fa-clipboard-list"></i> Work Orders
-                </a>
-                <a class="nav-link" href="/assets">
-                    <i class="fas fa-industry"></i> Assets
-                </a>
-                <a class="nav-link" href="/parts">
-                    <i class="fas fa-cogs"></i> Parts
-                </a>
-                <a class="nav-link" href="/analytics">
-                    <i class="fas fa-chart-bar"></i> Analytics
-                </a>
-            </nav>
-        </aside>
-        
-        <main class="main-content">
-            <div id="content-area">
-                <!-- Dynamic content loaded here -->
-            </div>
-        </main>
-    </div>
+  <header class="dashboard-header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <i class="fas fa-wrench"></i> ChatterFix CMMS
+        </a>
+        <div class="navbar-nav ms-auto">
+          <span class="nav-text">Welcome, {user}</span>
+          <a class="nav-link" href="/logout">Logout</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="dashboard-content">
+    <aside class="sidebar">
+      <nav class="nav flex-column">
+        <a class="nav-link active" href="/dashboard">
+          <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a class="nav-link" href="/work-orders">
+          <i class="fas fa-clipboard-list"></i> Work Orders
+        </a>
+        <a class="nav-link" href="/assets">
+          <i class="fas fa-industry"></i> Assets
+        </a>
+        <a class="nav-link" href="/parts">
+          <i class="fas fa-cogs"></i> Parts
+        </a>
+        <a class="nav-link" href="/analytics">
+          <i class="fas fa-chart-bar"></i> Analytics
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div id="content-area">
+        <!-- Dynamic content loaded here -->
+      </div>
+    </main>
+  </div>
 </div>
 ```
 
 #### 2. Work Order Card Component
+
 ```html
 <div class="work-order-card" data-priority="{priority}">
-    <div class="card-header">
-        <div class="work-order-title">
-            <h5>{title}</h5>
-            <span class="badge badge-{priority}">{priority}</span>
-        </div>
-        <div class="work-order-meta">
-            <span class="asset-tag">Asset: {asset_tag}</span>
-            <span class="due-date">Due: {due_date}</span>
-        </div>
+  <div class="card-header">
+    <div class="work-order-title">
+      <h5>{title}</h5>
+      <span class="badge badge-{priority}">{priority}</span>
     </div>
-    
-    <div class="card-body">
-        <p class="description">{description}</p>
-        <div class="assignment-info">
-            <span class="assigned-to">Assigned: {assigned_to}</span>
-            <span class="estimated-hours">{estimated_hours}h estimated</span>
-        </div>
+    <div class="work-order-meta">
+      <span class="asset-tag">Asset: {asset_tag}</span>
+      <span class="due-date">Due: {due_date}</span>
     </div>
-    
-    <div class="card-footer">
-        <div class="action-buttons">
-            <button class="btn btn-primary btn-sm" onclick="startWorkOrder({id})">
-                Start Work
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="viewDetails({id})">
-                Details
-            </button>
-            <button class="btn btn-success btn-sm" onclick="completeWorkOrder({id})">
-                Complete
-            </button>
-        </div>
+  </div>
+
+  <div class="card-body">
+    <p class="description">{description}</p>
+    <div class="assignment-info">
+      <span class="assigned-to">Assigned: {assigned_to}</span>
+      <span class="estimated-hours">{estimated_hours}h estimated</span>
     </div>
+  </div>
+
+  <div class="card-footer">
+    <div class="action-buttons">
+      <button class="btn btn-primary btn-sm" onclick="startWorkOrder({id})">
+        Start Work
+      </button>
+      <button
+        class="btn btn-outline-secondary btn-sm"
+        onclick="viewDetails({id})"
+      >
+        Details
+      </button>
+      <button class="btn btn-success btn-sm" onclick="completeWorkOrder({id})">
+        Complete
+      </button>
+    </div>
+  </div>
 </div>
 ```
 
 #### 3. AI Chat Widget
+
 ```html
 <div id="ai-chat-widget" class="chat-widget">
-    <div class="chat-header">
-        <div class="chat-title">
-            <i class="fas fa-robot"></i>
-            <span>Fix It Fred AI</span>
-        </div>
-        <button class="chat-toggle" onclick="toggleChat()">
-            <i class="fas fa-comment"></i>
-        </button>
+  <div class="chat-header">
+    <div class="chat-title">
+      <i class="fas fa-robot"></i>
+      <span>Fix It Fred AI</span>
     </div>
-    
-    <div class="chat-body" id="chat-messages">
-        <div class="message assistant-message">
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <p>Hi! I'm Fix It Fred, your AI maintenance assistant. How can I help you today?</p>
-            </div>
-        </div>
+    <button class="chat-toggle" onclick="toggleChat()">
+      <i class="fas fa-comment"></i>
+    </button>
+  </div>
+
+  <div class="chat-body" id="chat-messages">
+    <div class="message assistant-message">
+      <div class="message-avatar">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="message-content">
+        <p>
+          Hi! I'm Fix It Fred, your AI maintenance assistant. How can I help you
+          today?
+        </p>
+      </div>
     </div>
-    
-    <div class="chat-footer">
-        <div class="input-group">
-            <input type="text" id="chat-input" class="form-control" 
-                   placeholder="Ask about maintenance, safety, or equipment..."
-                   onkeypress="handleChatEnter(event)">
-            <button class="btn btn-primary" onclick="sendChatMessage()">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
+  </div>
+
+  <div class="chat-footer">
+    <div class="input-group">
+      <input
+        type="text"
+        id="chat-input"
+        class="form-control"
+        placeholder="Ask about maintenance, safety, or equipment..."
+        onkeypress="handleChatEnter(event)"
+      />
+      <button class="btn btn-primary" onclick="sendChatMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
     </div>
+  </div>
 </div>
 ```
 
@@ -502,159 +533,217 @@ Response: {
 ## 🎨 STYLING GUIDE
 
 ### Color Palette
+
 ```css
 :root {
-    /* Primary Brand Colors */
-    --primary-blue: #006fee;
-    --primary-blue-dark: #0056b3;
-    --primary-blue-light: #4285f4;
-    
-    /* Secondary Colors */
-    --success-green: #28a745;
-    --warning-orange: #fd7e14;
-    --danger-red: #dc3545;
-    --info-blue: #17a2b8;
-    
-    /* Neutral Colors */
-    --gray-100: #f8f9fa;
-    --gray-200: #e9ecef;
-    --gray-300: #dee2e6;
-    --gray-400: #ced4da;
-    --gray-500: #adb5bd;
-    --gray-600: #6c757d;
-    --gray-700: #495057;
-    --gray-800: #343a40;
-    --gray-900: #212529;
-    
-    /* Status Colors */
-    --status-open: #17a2b8;
-    --status-in-progress: #fd7e14;
-    --status-completed: #28a745;
-    --status-cancelled: #6c757d;
-    
-    /* Priority Colors */
-    --priority-low: #28a745;
-    --priority-medium: #ffc107;
-    --priority-high: #fd7e14;
-    --priority-critical: #dc3545;
+  /* Primary Brand Colors */
+  --primary-blue: #006fee;
+  --primary-blue-dark: #0056b3;
+  --primary-blue-light: #4285f4;
+
+  /* Secondary Colors */
+  --success-green: #28a745;
+  --warning-orange: #fd7e14;
+  --danger-red: #dc3545;
+  --info-blue: #17a2b8;
+
+  /* Neutral Colors */
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+
+  /* Status Colors */
+  --status-open: #17a2b8;
+  --status-in-progress: #fd7e14;
+  --status-completed: #28a745;
+  --status-cancelled: #6c757d;
+
+  /* Priority Colors */
+  --priority-low: #28a745;
+  --priority-medium: #ffc107;
+  --priority-high: #fd7e14;
+  --priority-critical: #dc3545;
 }
 ```
 
 ### Typography
+
 ```css
 /* Base Typography */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
-                 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--gray-800);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--gray-800);
 }
 
 /* Headings */
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    color: var(--gray-900);
-    margin-bottom: 0.5rem;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; }
-h3 { font-size: 1.75rem; }
-h4 { font-size: 1.5rem; }
-h5 { font-size: 1.25rem; }
-h6 { font-size: 1rem; }
+h1 {
+  font-size: 2.5rem;
+}
+h2 {
+  font-size: 2rem;
+}
+h3 {
+  font-size: 1.75rem;
+}
+h4 {
+  font-size: 1.5rem;
+}
+h5 {
+  font-size: 1.25rem;
+}
+h6 {
+  font-size: 1rem;
+}
 
 /* Text Utilities */
-.text-primary { color: var(--primary-blue) !important; }
-.text-success { color: var(--success-green) !important; }
-.text-warning { color: var(--warning-orange) !important; }
-.text-danger { color: var(--danger-red) !important; }
+.text-primary {
+  color: var(--primary-blue) !important;
+}
+.text-success {
+  color: var(--success-green) !important;
+}
+.text-warning {
+  color: var(--warning-orange) !important;
+}
+.text-danger {
+  color: var(--danger-red) !important;
+}
 ```
 
 ### Component Styles
 
 #### Buttons
+
 ```css
 .btn {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    text-decoration: none;
-    border: 1px solid transparent;
-    transition: all 0.15s ease-in-out;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
-    border-color: var(--primary-blue);
-    color: white;
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue),
+    var(--primary-blue-light)
+  );
+  border-color: var(--primary-blue);
+  color: white;
 }
 
 .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 111, 238, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 111, 238, 0.3);
 }
 
 .btn-success {
-    background: linear-gradient(135deg, var(--success-green), #20c997);
-    border-color: var(--success-green);
-    color: white;
+  background: linear-gradient(135deg, var(--success-green), #20c997);
+  border-color: var(--success-green);
+  color: white;
 }
 ```
 
 #### Cards
+
 ```css
 .card {
-    background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.15s ease-in-out;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.15s ease-in-out;
 }
 
 .card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .card-header {
-    padding: 1rem;
-    border-bottom: 1px solid var(--gray-200);
-    background: var(--gray-100);
-    border-radius: 0.5rem 0.5rem 0 0;
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-100);
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .card-body {
-    padding: 1rem;
+  padding: 1rem;
 }
 
 .card-footer {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--gray-200);
-    background: var(--gray-50);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
 }
 ```
 
 #### Status Badges
+
 ```css
 .badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 0.375rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.badge-open { background: var(--status-open); color: white; }
-.badge-in-progress { background: var(--status-in-progress); color: white; }
-.badge-completed { background: var(--status-completed); color: white; }
-.badge-cancelled { background: var(--status-cancelled); color: white; }
+.badge-open {
+  background: var(--status-open);
+  color: white;
+}
+.badge-in-progress {
+  background: var(--status-in-progress);
+  color: white;
+}
+.badge-completed {
+  background: var(--status-completed);
+  color: white;
+}
+.badge-cancelled {
+  background: var(--status-cancelled);
+  color: white;
+}
 
-.badge-low { background: var(--priority-low); color: white; }
-.badge-medium { background: var(--priority-medium); color: var(--gray-800); }
-.badge-high { background: var(--priority-high); color: white; }
-.badge-critical { background: var(--priority-critical); color: white; }
+.badge-low {
+  background: var(--priority-low);
+  color: white;
+}
+.badge-medium {
+  background: var(--priority-medium);
+  color: var(--gray-800);
+}
+.badge-high {
+  background: var(--priority-high);
+  color: white;
+}
+.badge-critical {
+  background: var(--priority-critical);
+  color: white;
+}
 ```
 
 ---
@@ -664,6 +753,7 @@ h6 { font-size: 1rem; }
 ### Fix It Fred AI Architecture
 
 #### Core AI Service Configuration
+
 ```python
 # AI Provider Settings
 AI_PROVIDERS = {
@@ -708,50 +798,51 @@ Keep responses concise but comprehensive.
 ```
 
 #### AI Chat Integration Pattern
+
 ```javascript
 class FixItFredAI {
-    constructor() {
-        this.apiBase = 'http://localhost:8005';
-        this.defaultProvider = 'ollama';
-        this.contextMemory = [];
-    }
+  constructor() {
+    this.apiBase = "http://localhost:8005";
+    this.defaultProvider = "ollama";
+    this.contextMemory = [];
+  }
 
-    async sendMessage(message, context = 'maintenance') {
-        // Build context from conversation history
-        const conversationContext = this.buildContext(message, context);
-        
-        try {
-            const response = await fetch(`${this.apiBase}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: conversationContext,
-                    context: context,
-                    provider: this.defaultProvider,
-                    temperature: 0.7,
-                    max_tokens: 1000
-                })
-            });
+  async sendMessage(message, context = "maintenance") {
+    // Build context from conversation history
+    const conversationContext = this.buildContext(message, context);
 
-            const data = await response.json();
-            
-            if (data.success) {
-                this.updateContextMemory(message, data.response);
-                return this.formatResponse(data);
-            }
-        } catch (error) {
-            return this.handleError(error, message);
-        }
-    }
+    try {
+      const response = await fetch(`${this.apiBase}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: conversationContext,
+          context: context,
+          provider: this.defaultProvider,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
 
-    buildContext(message, context) {
-        const recentHistory = this.contextMemory.slice(-3);
-        const contextPrefix = `Context: ${context}\nRecent conversation:\n${
-            recentHistory.map(h => `User: ${h.user}\nFred: ${h.assistant}`).join('\n')
-        }\n\nCurrent question: ${message}`;
-        
-        return contextPrefix;
+      const data = await response.json();
+
+      if (data.success) {
+        this.updateContextMemory(message, data.response);
+        return this.formatResponse(data);
+      }
+    } catch (error) {
+      return this.handleError(error, message);
     }
+  }
+
+  buildContext(message, context) {
+    const recentHistory = this.contextMemory.slice(-3);
+    const contextPrefix = `Context: ${context}\nRecent conversation:\n${recentHistory
+      .map((h) => `User: ${h.user}\nFred: ${h.assistant}`)
+      .join("\n")}\n\nCurrent question: ${message}`;
+
+    return contextPrefix;
+  }
 }
 ```
 
@@ -760,6 +851,7 @@ class FixItFredAI {
 ## ⚙️ DEVELOPMENT WORKFLOWS
 
 ### 1. Local Development Setup
+
 ```bash
 # Clone repository
 git clone <repository-url>
@@ -790,6 +882,7 @@ python3 fix_it_fred_ai_service.py      # AI service
 ### 2. Adding New Features
 
 #### Backend Service Pattern
+
 ```python
 # New service template
 from fastapi import FastAPI, HTTPException, Depends
@@ -824,33 +917,34 @@ if __name__ == "__main__":
 ```
 
 #### Frontend Component Pattern
+
 ```javascript
 // Component class template
 class NewComponent {
-    constructor(containerId) {
-        this.container = document.getElementById(containerId);
-        this.apiBase = '/api/new-service';
-        this.init();
-    }
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.apiBase = "/api/new-service";
+    this.init();
+  }
 
-    async init() {
-        await this.loadData();
-        this.render();
-        this.attachEventListeners();
-    }
+  async init() {
+    await this.loadData();
+    this.render();
+    this.attachEventListeners();
+  }
 
-    async loadData() {
-        try {
-            const response = await fetch(`${this.apiBase}/data`);
-            this.data = await response.json();
-        } catch (error) {
-            console.error('Failed to load data:', error);
-            this.showError('Failed to load data');
-        }
+  async loadData() {
+    try {
+      const response = await fetch(`${this.apiBase}/data`);
+      this.data = await response.json();
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      this.showError("Failed to load data");
     }
+  }
 
-    render() {
-        this.container.innerHTML = `
+  render() {
+    this.container.innerHTML = `
             <div class="component-header">
                 <h3>New Component</h3>
             </div>
@@ -858,28 +952,33 @@ class NewComponent {
                 ${this.renderContent()}
             </div>
         `;
-    }
+  }
 
-    renderContent() {
-        return this.data.map(item => `
+  renderContent() {
+    return this.data
+      .map(
+        (item) => `
             <div class="item-card" data-id="${item.id}">
                 <h5>${item.title}</h5>
                 <p>${item.description}</p>
             </div>
-        `).join('');
-    }
+        `
+      )
+      .join("");
+  }
 
-    attachEventListeners() {
-        this.container.addEventListener('click', (e) => {
-            if (e.target.classList.contains('item-card')) {
-                this.handleItemClick(e.target.dataset.id);
-            }
-        });
-    }
+  attachEventListeners() {
+    this.container.addEventListener("click", (e) => {
+      if (e.target.classList.contains("item-card")) {
+        this.handleItemClick(e.target.dataset.id);
+      }
+    });
+  }
 }
 ```
 
 ### 3. Database Migration Pattern
+
 ```python
 # Migration script template
 import psycopg2
@@ -888,27 +987,27 @@ from datetime import datetime
 def run_migration(connection_string):
     conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
-    
+
     try:
         # Migration SQL
         migration_sql = """
         -- Add new column
-        ALTER TABLE work_orders 
+        ALTER TABLE work_orders
         ADD COLUMN new_field VARCHAR(255);
-        
+
         -- Create index
-        CREATE INDEX idx_work_orders_new_field 
+        CREATE INDEX idx_work_orders_new_field
         ON work_orders(new_field);
-        
+
         -- Update migration log
-        INSERT INTO schema_migrations (version, applied_at) 
+        INSERT INTO schema_migrations (version, applied_at)
         VALUES ('20251014_add_new_field', CURRENT_TIMESTAMP);
         """
-        
+
         cursor.execute(migration_sql)
         conn.commit()
         print(f"Migration completed successfully at {datetime.now()}")
-        
+
     except Exception as e:
         conn.rollback()
         print(f"Migration failed: {e}")
@@ -925,6 +1024,7 @@ def run_migration(connection_string):
 ### Production Deployment (Google Cloud Run)
 
 #### 1. Docker Configuration
+
 ```dockerfile
 # Dockerfile template
 FROM python:3.13-slim
@@ -959,6 +1059,7 @@ CMD ["python", "core/cmms/platform_gateway.py"]
 ```
 
 #### 2. Cloud Run Deployment Script
+
 ```bash
 #!/bin/bash
 # deploy-production.sh
@@ -992,6 +1093,7 @@ echo "🌐 Service URL: $(gcloud run services describe $SERVICE_NAME --region=$R
 ```
 
 ### 3. Environment Configuration
+
 ```bash
 # Production .env template
 # Database
@@ -1025,6 +1127,7 @@ ENABLE_DOCUMENT_INTELLIGENCE=false
 ### Common Issues and Solutions
 
 #### 1. Database Connection Issues
+
 ```python
 # Check database connectivity
 import psycopg2
@@ -1050,6 +1153,7 @@ def test_db_connection():
 ```
 
 #### 2. AI Service Connection Issues
+
 ```python
 # AI service health check
 async def check_ai_services():
@@ -1058,7 +1162,7 @@ async def check_ai_services():
         ("Ollama", "http://localhost:11434/api/tags"),
         ("AI Team", "http://localhost:8008/health")
     ]
-    
+
     for name, url in services:
         try:
             response = await httpx.get(url, timeout=5.0)
@@ -1071,6 +1175,7 @@ async def check_ai_services():
 ```
 
 #### 3. Performance Optimization
+
 ```python
 # Database query optimization
 def optimize_work_orders_query():
@@ -1081,18 +1186,18 @@ def optimize_work_orders_query():
         "CREATE INDEX IF NOT EXISTS idx_work_orders_assigned ON work_orders(assigned_to);",
         "CREATE INDEX IF NOT EXISTS idx_work_orders_due_date ON work_orders(due_date);"
     ]
-    
+
     # Use query optimization
     optimized_query = """
     SELECT wo.*, a.name as asset_name, a.location
     FROM work_orders wo
     LEFT JOIN assets a ON wo.asset_id = a.id
-    WHERE wo.status = %s 
+    WHERE wo.status = %s
     AND wo.due_date >= CURRENT_DATE
     ORDER BY wo.priority DESC, wo.due_date ASC
     LIMIT %s OFFSET %s;
     """
-    
+
 # Frontend performance
 function optimizeRendering() {
     // Use virtual scrolling for large lists
@@ -1103,6 +1208,7 @@ function optimizeRendering() {
 ```
 
 #### 4. Logging and Monitoring
+
 ```python
 # Structured logging setup
 import logging
@@ -1120,12 +1226,12 @@ class JSONFormatter(logging.Formatter):
             "function": record.funcName,
             "line": record.lineno
         }
-        
+
         if hasattr(record, 'user_id'):
             log_entry['user_id'] = record.user_id
         if hasattr(record, 'request_id'):
             log_entry['request_id'] = record.request_id
-            
+
         return json.dumps(log_entry)
 
 # Setup logging
@@ -1141,6 +1247,7 @@ logger.setLevel(logging.INFO)
 ## 📚 BEST PRACTICES
 
 ### Code Quality
+
 - Use type hints in Python
 - Follow PEP 8 style guidelines
 - Write comprehensive docstrings
@@ -1148,6 +1255,7 @@ logger.setLevel(logging.INFO)
 - Use async/await for I/O operations
 
 ### Security
+
 - Validate all input data
 - Use parameterized queries
 - Implement proper authentication
@@ -1155,6 +1263,7 @@ logger.setLevel(logging.INFO)
 - Regular dependency updates
 
 ### Performance
+
 - Implement caching strategies
 - Use database indexing
 - Optimize API responses
@@ -1162,6 +1271,7 @@ logger.setLevel(logging.INFO)
 - Implement rate limiting
 
 ### Maintenance
+
 - Regular backups
 - Monitor application health
 - Update dependencies
@@ -1173,6 +1283,7 @@ logger.setLevel(logging.INFO)
 ## 📖 QUICK REFERENCE
 
 ### Essential Commands
+
 ```bash
 # Start development environment
 ./start-dev.sh
@@ -1191,6 +1302,7 @@ curl http://localhost:8000/health
 ```
 
 ### Key URLs
+
 - Dashboard: http://localhost:8000/dashboard
 - API Docs: http://localhost:8000/docs
 - AI Chat: http://localhost:8005/docs

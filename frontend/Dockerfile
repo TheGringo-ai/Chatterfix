@@ -7,18 +7,21 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY fixit-requirements.txt requirements.txt
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
-COPY fix_it_fred_diy.py .
-
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+COPY phase6b-unified-gateway.py .
 
 # Expose port
 EXPOSE 8080
 
-# Run application  
-CMD ["python", "fix_it_fred_diy.py"]
+# Set environment variables
+ENV PORT=8080
+ENV PYTHONUNBUFFERED=1
+
+# Run the application
+CMD ["python", "phase6b-unified-gateway.py"]

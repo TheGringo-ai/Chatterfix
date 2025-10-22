@@ -1,120 +1,46 @@
 {
-  "report_metadata": {
-    "generated_at": "2025-10-21T17:19:00Z",
-    "report_version": "1.0",
-    "test_type": "production_health_check",
-    "platform": "cloud_run_phase_6b"
+  "timestamp": "2025-10-22T17:50:45.642833",
+  "phase": "7.0.0",
+  "qa_validation": {
+    "services_tested": 5,
+    "services_healthy": 2,
+    "uptime_percentage": 40.0,
+    "average_response_time_ms": 446.4,
+    "all_services_under_1s": true,
+    "sla_compliance": false
   },
-  "services_status": {
-    "chatterfix-cmms": {
-      "url": "https://chatterfix-cmms-650169261019.us-central1.run.app",
-      "health_endpoint": "/health",
-      "status_code": 200,
-      "response_time_ms": 224.656,
-      "response_size_bytes": 56,
-      "status": "healthy",
-      "service_version": "6B.1.0",
-      "database_connected": true,
-      "performance_grade": "A"
+  "service_details": [
+    {
+      "service": "cmms",
+      "status": 200,
+      "response_time_ms": 537.3,
+      "healthy": true
     },
-    "chatterfix-unified-gateway": {
-      "url": "https://chatterfix-unified-gateway-650169261019.us-central1.run.app",
-      "health_endpoint": "/health",
-      "status_code": 200,
-      "response_time_ms": 164.269,
-      "response_size_bytes": 127,
-      "status": "healthy",
-      "service_version": "6B.1.0",
-      "connected_services": 5,
-      "performance_grade": "A+"
+    {
+      "service": "unified",
+      "status": 200,
+      "response_time_ms": 271.1,
+      "healthy": true
     },
-    "chatterfix-revenue-intelligence": {
-      "url": "https://chatterfix-revenue-intelligence-650169261019.us-central1.run.app",
-      "health_endpoint": "/health",
-      "status_code": "timeout",
-      "response_time_ms": "> 120000",
-      "status": "cold_start_or_down",
-      "performance_grade": "F",
-      "recommended_action": "enable_minimum_instances"
+    {
+      "service": "revenue",
+      "status": "error",
+      "response_time_ms": null,
+      "healthy": false,
+      "error": "HTTPSConnectionPool(host='chatterfix-revenue-intelligence-650169261019.us-central1.run.app', port=443): Read timed out. (read timeout=5)"
     },
-    "chatterfix-customer-success": {
-      "url": "https://chatterfix-customer-success-650169261019.us-central1.run.app",
-      "health_endpoint": "/health",
-      "status_code": "timeout",
-      "response_time_ms": "> 120000",
-      "status": "cold_start_or_down",
-      "performance_grade": "F",
-      "recommended_action": "enable_minimum_instances"
+    {
+      "service": "customer",
+      "status": "error",
+      "response_time_ms": null,
+      "healthy": false,
+      "error": "HTTPSConnectionPool(host='chatterfix-customer-success-650169261019.us-central1.run.app', port=443): Read timed out. (read timeout=5)"
     },
-    "chatterfix-data-room": {
-      "url": "https://chatterfix-data-room-650169261019.us-central1.run.app",
-      "health_endpoint": "/health",
-      "status_code": 404,
-      "response_time_ms": 357.625,
-      "response_size_bytes": 22,
-      "status": "no_health_endpoint",
-      "performance_grade": "C",
-      "recommended_action": "add_health_endpoint"
+    {
+      "service": "data",
+      "status": 404,
+      "response_time_ms": 530.8,
+      "healthy": false
     }
-  },
-  "performance_summary": {
-    "total_services": 5,
-    "healthy_services": 2,
-    "degraded_services": 3,
-    "average_response_time_healthy": 194.46,
-    "target_response_time": 1000,
-    "services_meeting_target": 2,
-    "overall_system_health": "NEEDS_OPTIMIZATION"
-  },
-  "recommendations": {
-    "immediate_actions": [
-      "Enable minimum instances for revenue-intelligence and customer-success services",
-      "Add /health endpoints to data-room service",
-      "Implement connection pooling for database services",
-      "Add Redis caching for heavy database queries"
-    ],
-    "performance_optimizations": [
-      "Enable Cloud SQL connection pooling",
-      "Implement container warm-up strategies",
-      "Add health check monitoring automation",
-      "Set up auto-scaling based on load patterns"
-    ],
-    "monitoring_setup": [
-      "Deploy AI brain health monitor",
-      "Set up real-time alerting for 5xx errors",
-      "Create automated restart policies",
-      "Generate daily performance reports"
-    ]
-  },
-  "api_endpoints_tested": {
-    "cmms_work_orders": {
-      "endpoint": "/api/work-orders",
-      "status": "working",
-      "response_time_last_test": 5256.592,
-      "data_quality": "live_database_connected"
-    },
-    "cmms_assets": {
-      "endpoint": "/api/assets", 
-      "status": "working",
-      "response_time_last_test": 40390.243,
-      "data_quality": "live_database_connected",
-      "performance_concern": "slow_response_needs_caching"
-    },
-    "cmms_parts": {
-      "endpoint": "/api/parts",
-      "status": "working", 
-      "response_time_last_test": 5295.121,
-      "data_quality": "live_database_connected"
-    }
-  },
-  "database_status": {
-    "cloud_sql_instance": "connected",
-    "connection_pooling": "not_implemented",
-    "query_performance": "acceptable_but_improvable",
-    "recommended_optimizations": [
-      "Implement connection pooling",
-      "Add query result caching",
-      "Optimize asset queries with pagination"
-    ]
-  }
+  ]
 }

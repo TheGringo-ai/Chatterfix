@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-🧠 ChatterFix AI Brain Health Monitor
-Self-healing system monitoring for Phase 6B enterprise services
-Automatically detects issues and triggers recovery actions
+🧠 ChatterFix AI Brain Health Monitor - Phase 7 Enterprise
+Self-healing system monitoring with autonomous recovery
+15-minute checks, 3-strike restart policy, Firestore metrics storage
 """
 
 import asyncio
@@ -10,19 +10,24 @@ import aiohttp
 import json
 import logging
 import os
+import subprocess
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 import smtplib
 from email.mime.text import MimeText
 from google.cloud import monitoring_v3
 from google.cloud import logging as cloud_logging
+from google.cloud import firestore
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+import uvicorn
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ServiceHealthMonitor:
-    """Intelligent health monitoring with auto-healing capabilities"""
+    """Phase 7 Enterprise health monitoring with autonomous recovery"""
     
     def __init__(self):
         self.services = {
@@ -30,43 +35,61 @@ class ServiceHealthMonitor:
                 "url": "https://chatterfix-cmms-650169261019.us-central1.run.app",
                 "health_endpoint": "/health",
                 "critical": True,
-                "max_response_time": 5.0,
-                "retry_count": 3
+                "max_response_time": 1.0,
+                "retry_count": 3,
+                "failure_threshold": 3
             },
             "chatterfix-unified-gateway": {
                 "url": "https://chatterfix-unified-gateway-650169261019.us-central1.run.app", 
                 "health_endpoint": "/health",
                 "critical": True,
-                "max_response_time": 2.0,
-                "retry_count": 3
+                "max_response_time": 0.5,
+                "retry_count": 3,
+                "failure_threshold": 3
             },
             "chatterfix-revenue-intelligence": {
                 "url": "https://chatterfix-revenue-intelligence-650169261019.us-central1.run.app",
                 "health_endpoint": "/health", 
                 "critical": False,
-                "max_response_time": 10.0,
-                "retry_count": 2
+                "max_response_time": 2.0,
+                "retry_count": 2,
+                "failure_threshold": 3
             },
             "chatterfix-customer-success": {
                 "url": "https://chatterfix-customer-success-650169261019.us-central1.run.app",
                 "health_endpoint": "/health",
                 "critical": False,
-                "max_response_time": 10.0,
-                "retry_count": 2
+                "max_response_time": 2.0,
+                "retry_count": 2,
+                "failure_threshold": 3
             },
             "chatterfix-data-room": {
                 "url": "https://chatterfix-data-room-650169261019.us-central1.run.app",
                 "health_endpoint": "/health",
                 "critical": False,
-                "max_response_time": 5.0,
-                "retry_count": 2
+                "max_response_time": 1.5,
+                "retry_count": 2,
+                "failure_threshold": 3
             }
         }
         
         self.health_history = {}
         self.alert_cooldown = {}
+        self.failure_counts = {service: 0 for service in self.services.keys()}
         self.monitoring_client = monitoring_v3.MetricServiceClient()
+        self.firestore_client = firestore.Client()
         self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix")
+        
+        # Phase 7 monitoring configuration
+        self.check_interval_minutes = 15
+        self.alert_threshold_ms = 2000
+        self.metrics_collection = {
+            "cpu_monitoring": True,
+            "memory_monitoring": True,
+            "response_time": True,
+            "error_rate": True,
+            "uptime_percentage": True
+        }
         
     async def check_service_health(self, service_name: str, config: Dict) -> Dict:
         """Check health of a single service with detailed metrics"""
@@ -257,14 +280,32 @@ class ServiceHealthMonitor:
             return False
     
     async def restart_cloud_run_service(self, service_name: str) -> bool:
-        """Restart Cloud Run service by updating revision"""
+        """Restart Cloud Run service by forcing new revision (Phase 7 implementation)"""
         try:
-            # This would use Google Cloud Run API to force a new revision
-            # For now, return simulated success
-            logger.info(f"Would restart Cloud Run service: {service_name}")
-            return True
+            # Execute gcloud command to force restart by updating environment
+            restart_timestamp = datetime.now().isoformat()
+            cmd = [
+                "gcloud", "run", "services", "update", service_name,
+                "--region", "us-central1",
+                "--update-env-vars", f"RESTART_TIMESTAMP={restart_timestamp}",
+                "--quiet"
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            
+            if result.returncode == 0:
+                logger.info(f"✅ Successfully restarted Cloud Run service: {service_name}")
+                self.failure_counts[service_name] = 0  # Reset failure count on success
+                return True
+            else:
+                logger.error(f"❌ Failed to restart {service_name}: {result.stderr}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            logger.error(f"❌ Timeout restarting service {service_name}")
+            return False
         except Exception as e:
-            logger.error(f"Failed to restart service {service_name}: {e}")
+            logger.error(f"❌ Exception restarting service {service_name}: {e}")
             return False
     
     async def scale_up_service(self, service_name: str) -> bool:
@@ -485,6 +526,83 @@ This is an automated alert from the ChatterFix AI Brain Health Monitor.
             recommendations.append("Implement Redis caching for database-heavy operations")
         
         return recommendations if recommendations else ["System is performing well"]
+    
+    async def store_metrics_to_firestore(self, metrics_data: Dict):
+        """Store service metrics in Firestore for historical analysis (Phase 7)"""
+        try:
+            collection_ref = self.firestore_client.collection("service_metrics")
+            doc_ref = collection_ref.document(f"metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            doc_ref.set({
+                **metrics_data,
+                "timestamp": firestore.SERVER_TIMESTAMP,
+                "monitoring_version": "7.0.0"
+            })
+            logger.info("✅ Metrics stored to Firestore successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to store metrics to Firestore: {e}")
+    
+    async def execute_recovery_sequence(self, service_name: str, failure_type: str):
+        """Execute enterprise recovery sequence with 3-strike policy"""
+        recovery_actions = {
+            "timeout": ["restart_service", "scale_up", "check_dependencies"],
+            "high_latency": ["scale_up", "enable_caching", "optimize_queries"],
+            "health_failure": ["restart_service", "verify_config", "rollback_if_needed"],
+            "memory_leak": ["restart_service", "increase_memory", "enable_monitoring"]
+        }
+        
+        # Increment failure count
+        self.failure_counts[service_name] += 1
+        logger.warning(f"🚨 Service {service_name} failure #{self.failure_counts[service_name]} - {failure_type}")
+        
+        # Check if we've hit the 3-strike threshold
+        if self.failure_counts[service_name] >= self.services[service_name]["failure_threshold"]:
+            logger.critical(f"💥 Service {service_name} hit 3-strike threshold - executing emergency restart")
+            success = await self.restart_cloud_run_service(service_name)
+            if success:
+                self.failure_counts[service_name] = 0
+                return True
+            else:
+                await self.send_critical_alert(service_name, failure_type)
+                return False
+        
+        # Execute regular recovery actions
+        for action in recovery_actions.get(failure_type, ["restart_service"]):
+            success = await self.perform_recovery_action(service_name, action)
+            if success:
+                logger.info(f"✅ Recovery action '{action}' succeeded for {service_name}")
+                self.failure_counts[service_name] = max(0, self.failure_counts[service_name] - 1)
+                return True
+            logger.warning(f"❌ Recovery action '{action}' failed for {service_name}")
+        
+        return False
+    
+    async def perform_recovery_action(self, service_name: str, action: str) -> bool:
+        """Perform specific recovery action"""
+        if action == "restart_service":
+            return await self.restart_cloud_run_service(service_name)
+        elif action == "scale_up":
+            return await self.scale_up_service(service_name)
+        elif action == "check_dependencies":
+            return await self.verify_database_health()
+        # Add more actions as needed
+        return False
+    
+    async def send_critical_alert(self, service_name: str, failure_type: str):
+        """Send critical alert when recovery fails"""
+        alert_message = f"""
+🚨 CRITICAL: ChatterFix Service Recovery Failed
+
+Service: {service_name}
+Failure Type: {failure_type}
+Attempts: {self.failure_counts[service_name]}
+Timestamp: {datetime.now().isoformat()}
+
+MANUAL INTERVENTION REQUIRED
+Service requires immediate attention.
+        """
+        
+        logger.critical(alert_message)
+        await self.send_email_alert("CRITICAL ChatterFix Alert", alert_message)
 
 class HealthMonitorServer:
     """HTTP server for health monitor API and dashboard"""
@@ -492,49 +610,152 @@ class HealthMonitorServer:
     def __init__(self, monitor: ServiceHealthMonitor):
         self.monitor = monitor
         
-    async def start_monitoring_loop(self, interval_minutes: int = 2):
-        """Start continuous monitoring loop"""
-        logger.info(f"🧠 Starting AI Brain Health Monitor - checking every {interval_minutes} minutes")
+    async def start_monitoring_loop(self, interval_minutes: int = 15):
+        """Start Phase 7 continuous monitoring loop (15-minute intervals)"""
+        logger.info(f"🧠 Starting Phase 7 AI Brain Health Monitor - checking every {interval_minutes} minutes")
         
         while True:
             try:
                 health_report = await self.monitor.run_full_health_check()
                 
-                # Check for failures and trigger recovery
+                # Check for failures and trigger enterprise recovery
                 for service_name, service_data in health_report["services"].items():
                     if service_data["status"] not in ["healthy", "slow"]:
-                        await self.monitor.handle_service_failure(service_name, service_data)
+                        # Determine failure type based on status
+                        failure_type = "health_failure"
+                        if service_data["status"] == "timeout":
+                            failure_type = "timeout"
+                        elif service_data.get("response_time", 0) > 2.0:
+                            failure_type = "high_latency"
+                        
+                        await self.monitor.execute_recovery_sequence(service_name, failure_type)
+                
+                # Store metrics to Firestore
+                await self.monitor.store_metrics_to_firestore(health_report)
+                
+                # Save diagnostics report with daily rotation
+                diagnostics_file = "diagnostics_report.json"
+                with open(diagnostics_file, 'w') as f:
+                    json.dump(health_report, f, indent=2)
                 
                 # Log summary
                 summary = health_report["summary"]
-                logger.info(f"Health Check: {summary['healthy']}/{summary['total_services']} healthy, "
+                logger.info(f"Phase 7 Health Check: {summary['healthy']}/{summary['total_services']} healthy, "
                            f"{summary['unhealthy']} unhealthy, {summary['slow']} slow")
                 
-                # Save report to file
-                report_file = f"/tmp/health_report_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
-                with open(report_file, 'w') as f:
-                    json.dump(health_report, f, indent=2)
+                # Generate performance report
+                performance_report = await self.monitor.generate_performance_report()
+                with open("performance_summary.json", 'w') as f:
+                    json.dump(performance_report, f, indent=2)
                 
             except Exception as e:
                 logger.error(f"Health monitoring error: {e}")
             
-            # Wait for next check
+            # Wait for next check (15 minutes for enterprise monitoring)
             await asyncio.sleep(interval_minutes * 60)
+
+# Phase 7 FastAPI endpoints for AI Brain monitoring
+app = FastAPI(title="ChatterFix AI Brain Health Monitor", version="7.0.0")
+monitor = ServiceHealthMonitor()
+
+@app.get("/monitor/run")
+async def trigger_health_check():
+    """Trigger one-shot health check (for Cloud Scheduler)"""
+    try:
+        health_report = await monitor.run_full_health_check()
+        
+        # Store to Firestore
+        await monitor.store_metrics_to_firestore(health_report)
+        
+        # Save diagnostics report
+        with open("diagnostics_report.json", 'w') as f:
+            json.dump(health_report, f, indent=2)
+        
+        return JSONResponse({
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "summary": health_report["summary"],
+            "message": "Health check completed successfully"
+        })
+    except Exception as e:
+        logger.error(f"Health check endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/monitor/status")
+async def get_monitor_status():
+    """Get current monitor status and metrics"""
+    try:
+        with open("diagnostics_report.json", 'r') as f:
+            latest_report = json.load(f)
+        
+        return JSONResponse({
+            "monitor_version": "7.0.0",
+            "last_check": latest_report.get("timestamp"),
+            "overall_health": monitor.calculate_overall_health(),
+            "failure_counts": monitor.failure_counts,
+            "recommendations": monitor.generate_recommendations()
+        })
+    except FileNotFoundError:
+        return JSONResponse({
+            "monitor_version": "7.0.0",
+            "status": "No health checks run yet"
+        })
+
+@app.get("/monitor/recovery/{service_name}")
+async def trigger_service_recovery(service_name: str):
+    """Manually trigger recovery for a specific service"""
+    if service_name not in monitor.services:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    try:
+        success = await monitor.execute_recovery_sequence(service_name, "manual_trigger")
+        return JSONResponse({
+            "service": service_name,
+            "recovery_triggered": True,
+            "success": success,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Manual recovery error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for the monitor itself"""
+    return {
+        "status": "healthy",
+        "service": "ai-brain-health-monitor",
+        "version": "7.0.0",
+        "timestamp": datetime.now().isoformat()
+    }
 
 async def main():
     """Main entry point for AI Brain Health Monitor"""
     
-    # Initialize monitor
-    monitor = ServiceHealthMonitor()
-    
     # Run initial health check
-    logger.info("🚀 ChatterFix AI Brain Health Monitor Starting...")
+    logger.info("🚀 ChatterFix Phase 7 AI Brain Health Monitor Starting...")
     initial_report = await monitor.run_full_health_check()
     print(json.dumps(initial_report, indent=2))
     
-    # Start continuous monitoring
+    # Start continuous monitoring in background
     server = HealthMonitorServer(monitor)
-    await server.start_monitoring_loop(interval_minutes=2)
+    
+    # Start both the monitoring loop and FastAPI server
+    import threading
+    
+    def start_monitoring_background():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        asyncio.get_event_loop().run_until_complete(
+            server.start_monitoring_loop(interval_minutes=15)
+        )
+    
+    # Start monitoring in background thread
+    monitoring_thread = threading.Thread(target=start_monitoring_background, daemon=True)
+    monitoring_thread.start()
+    
+    # Start FastAPI server
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     # Set up signal handlers for graceful shutdown

@@ -1,0 +1,19 @@
+# Ignore everything except what we need for Fix-It Fred
+/*
+
+# Include only Fix-It Fred files
+!fix_it_fred_diy.py
+!Dockerfile.fixit
+!requirements.fixit.txt
+
+# Ignore common files
+.git/
+.gitignore
+node_modules/
+*.log
+*.tmp
+__pycache__/
+*.pyc
+.DS_Store
+*.env
+.env.*

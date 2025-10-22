@@ -80,7 +80,10 @@
       "Bash(gcloud compute scp:*)",
       "Bash(gcloud compute ssh:*)",
       "Bash(unset:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:chatterfix-customer-success-650169261019.us-central1.run.app)",
+      "WebFetch(domain:chatterfix-revenue-intelligence-650169261019.us-central1.run.app)",
+      "WebFetch(domain:chatterfix-data-room-650169261019.us-central1.run.app)"
     ],
     "deny": [],
     "ask": []

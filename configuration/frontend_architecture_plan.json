@@ -1,0 +1,120 @@
+{
+  "project_name": "ChatterFix Enterprise CMMS Frontend",
+  "framework": "React 18 with TypeScript",
+  "architecture": {
+    "component_structure": {
+      "core": [
+        "App.tsx - Main application shell",
+        "Router.tsx - Route management",
+        "Layout/ - Layout components",
+        "providers/ - Context providers"
+      ],
+      "features": [
+        "WorkOrders/ - Work order management",
+        "Assets/ - Asset management",
+        "Parts/ - Parts inventory",
+        "Analytics/ - Dashboard & reports",
+        "Users/ - User management",
+        "Settings/ - Configuration"
+      ],
+      "shared": [
+        "components/ - Reusable UI components",
+        "hooks/ - Custom React hooks",
+        "utils/ - Utility functions",
+        "types/ - TypeScript definitions",
+        "services/ - API clients"
+      ]
+    },
+    "state_management": {
+      "solution": "Redux Toolkit with RTK Query",
+      "stores": [
+        "authSlice - Authentication state",
+        "workOrdersSlice - Work order data",
+        "assetsSlice - Asset inventory",
+        "partsSlice - Parts management",
+        "uiSlice - UI state & preferences"
+      ]
+    },
+    "real_time": {
+      "technology": "Socket.IO Client",
+      "features": [
+        "Live work order updates",
+        "Real-time notifications",
+        "Asset status changes",
+        "Team collaboration"
+      ]
+    },
+    "ui_framework": {
+      "design_system": "Material-UI (MUI) v5",
+      "theme": "ChatterFix Enterprise Theme",
+      "components": [
+        "DataGrid for work orders",
+        "Charts for analytics",
+        "Forms with validation",
+        "Mobile-responsive layouts"
+      ]
+    }
+  },
+  "enterprise_features": {
+    "multi_tenant": {
+      "tenant_switching": "Header tenant selector",
+      "data_isolation": "Tenant-scoped API calls",
+      "branding": "Per-tenant theme customization"
+    },
+    "accessibility": {
+      "compliance": "WCAG 2.1 AA",
+      "features": [
+        "Screen reader support",
+        "Keyboard navigation",
+        "High contrast mode",
+        "Font size controls"
+      ]
+    },
+    "pwa": {
+      "offline_support": "Service worker caching",
+      "installable": "PWA manifest",
+      "push_notifications": "Work order alerts"
+    },
+    "security": {
+      "authentication": "OAuth2/OIDC integration",
+      "authorization": "Role-based UI rendering",
+      "data_protection": "Input sanitization"
+    }
+  },
+  "mobile_strategy": {
+    "responsive_web": "Mobile-first responsive design",
+    "native_app": "React Native companion app",
+    "features": [
+      "Offline work order completion",
+      "Camera for asset photos",
+      "GPS for location tracking",
+      "Barcode scanning"
+    ]
+  },
+  "development_setup": {
+    "build_tools": "Vite for fast development",
+    "testing": [
+      "Jest + React Testing Library",
+      "Cypress for E2E testing",
+      "Storybook for component dev"
+    ],
+    "code_quality": [
+      "ESLint + Prettier",
+      "Husky pre-commit hooks",
+      "TypeScript strict mode"
+    ]
+  },
+  "performance": {
+    "optimization": [
+      "Code splitting by route",
+      "Lazy loading components",
+      "Image optimization",
+      "Bundle analysis"
+    ],
+    "monitoring": [
+      "Web Vitals tracking",
+      "Error boundary reporting",
+      "Performance budgets"
+    ]
+  }
+}

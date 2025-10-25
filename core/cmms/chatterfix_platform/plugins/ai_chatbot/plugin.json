@@ -1,0 +1,22 @@
+{
+  "name": "ai_chatbot",
+  "version": "1.0.0",
+  "description": "AI-powered chatbot for CMMS assistance",
+  "author": "ChatterFix AI Platform",
+  "app_type": "ai_service",
+  "dependencies": [],
+  "routes": ["/api/ai_chatbot/.*"],
+  "permissions": ["ai.use"],
+  "enabled": true,
+  "auto_start": true,
+  "port": 8100,
+  "health_endpoint": "/health",
+  "config_schema": {
+    "ai_provider": {
+      "type": "string",
+      "default": "openai",
+      "description": "AI provider to use"
+    }
+  },
+  "created_at": "2024-10-05T12:00:00"
+}

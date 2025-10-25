@@ -1,0 +1,14 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatterfix-config
+  namespace: chatterfix-enterprise
+data:
+  DATABASE_HOST: "postgresql.chatterfix-enterprise.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "chatterfix_enterprise"
+  REDIS_HOST: "redis.chatterfix-enterprise.svc.cluster.local"
+  REDIS_PORT: "6379"
+  API_GATEWAY_URL: "http://chatterfix-gateway.chatterfix-enterprise.svc.cluster.local:8080"
+  ENVIRONMENT: "production"

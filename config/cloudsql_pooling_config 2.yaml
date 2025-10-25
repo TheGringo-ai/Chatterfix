@@ -1,0 +1,47 @@
+# Enterprise Database Connection Pooling Configuration
+database_config:
+  pool_settings:
+    pool_size: 10
+    max_overflow: 20
+    pool_recycle: 180
+    pool_pre_ping: true
+    pool_timeout: 30
+    echo: false
+  
+  connection_settings:
+    connect_timeout: 5
+    query_timeout: 20
+    retry_attempts: 3
+    retry_delay: 1
+  
+  ssl_settings:
+    ssl_mode: "require"
+    ssl_verify: true
+  
+  performance:
+    statement_timeout: "20s"
+    idle_in_transaction_session_timeout: "60s"
+    
+# CORS Configuration
+cors_config:
+  allowed_origins:
+    - "https://chatterfix.com"
+    - "https://*.run.app"
+    - "https://chatterfix-unified-gateway-650169261019.us-central1.run.app"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+  allowed_headers:
+    - "*"
+  allow_credentials: true
+  max_age: 3600
+
+# Request Timeout Configuration  
+timeout_config:
+  request_timeout_ms: 10000
+  db_connect_timeout_s: 5
+  db_query_timeout_s: 20
+  health_check_timeout_s: 3

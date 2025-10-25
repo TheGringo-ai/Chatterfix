@@ -1,0 +1,148 @@
+name: Auto Deploy to VM
+
+on:
+  push:
+    branches: [ main-clean, main ]
+    paths:
+      - 'core/cmms/**'
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'What to deploy'
+        required: true
+        default: 'microservices'
+        type: choice
+        options:
+        - microservices
+        - full-stack
+        - quick-fix
+
+jobs:
+  deploy-to-vm:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: 🚀 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔑 Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+        
+    - name: 📦 Deploy ChatterFix CMMS to VM
+      run: |
+        echo "🤖 ChatterFix Auto-Deploy: Starting deployment to VM..."
+        
+        VM_IP="35.237.149.25"
+        VM_USER="yoyofred_gringosgambit_com"
+        
+        # Add VM to known hosts
+        ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts
+        
+        echo "📁 Copying updated files to VM..."
+        cd core/cmms
+        
+        # Copy core microservices
+        scp -o StrictHostKeyChecking=no \
+            app.py \
+            database_service.py \
+            work_orders_service.py \
+            assets_service.py \
+            parts_service.py \
+            document_intelligence_service.py \
+            enterprise_security_service.py \
+            grok_connector.py \
+            requirements.txt \
+            ${VM_USER}@${VM_IP}:/opt/chatterfix-cmms/current/
+        
+        echo "🔄 Deploying microservices on VM..."
+        ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} << 'ENDSSH'
+        cd /opt/chatterfix-cmms/current
+        
+        echo "🛑 Stopping existing services..."
+        sudo systemctl stop chatterfix-ai-brain.service chatterfix-platform.service chatterfix.service 2>/dev/null || true
+        sudo pkill -f "python3" 2>/dev/null || true
+        for port in 8000 8001 8002 8003 8004 8005 8006 8007 8008 8080; do
+            sudo lsof -ti:$port | xargs sudo kill -9 2>/dev/null || true
+        done
+        
+        sleep 5
+        
+        echo "🚀 Starting clean microservices..."
+        mkdir -p logs pids
+        
+        # Start microservices
+        nohup python3 database_service.py --port 8001 > logs/database.log 2>&1 &
+        echo $! > pids/database.pid
+        
+        nohup python3 work_orders_service.py --port 8002 > logs/work_orders.log 2>&1 &
+        echo $! > pids/work_orders.pid
+        
+        nohup python3 assets_service.py --port 8003 > logs/assets.log 2>&1 &
+        echo $! > pids/assets.pid
+        
+        nohup python3 parts_service.py --port 8004 > logs/parts.log 2>&1 &
+        echo $! > pids/parts.pid
+        
+        nohup python3 grok_connector.py > logs/grok.log 2>&1 &
+        echo $! > pids/grok.pid
+        
+        nohup python3 document_intelligence_service.py --port 8008 > logs/doc_intel.log 2>&1 &
+        echo $! > pids/doc_intel.pid
+        
+        nohup python3 enterprise_security_service.py --port 8007 > logs/security.log 2>&1 &
+        echo $! > pids/security.pid
+        
+        sleep 10
+        
+        # Start main gateway
+        PORT=8080 nohup python3 app.py > logs/main_gateway.log 2>&1 &
+        echo $! > pids/main_gateway.pid
+        
+        sleep 5
+        
+        echo "✅ Deployment complete!"
+        ENDSSH
+        
+    - name: 🧪 Verify Deployment
+      run: |
+        echo "🔍 Testing deployed services..."
+        
+        VM_IP="35.237.149.25"
+        
+        # Test main application health
+        if curl -s -f "http://$VM_IP:8080/health" > /dev/null; then
+          echo "✅ Main application: HEALTHY"
+        else
+          echo "❌ Main application: FAILED"
+          exit 1
+        fi
+        
+        # Test work orders page
+        if curl -s "http://$VM_IP:8080/work-orders" | grep -q "Work Orders"; then
+          echo "✅ Work orders page: WORKING"
+        else
+          echo "❌ Work orders page: FAILED"
+          exit 1
+        fi
+        
+        echo "🎯 All verification tests passed!"
+        
+    - name: 📢 Deployment Success Notification
+      if: success()
+      run: |
+        echo "🎉 ChatterFix CMMS successfully deployed!"
+        echo "🌐 Live at: http://35.237.149.25:8080"
+        echo "🔧 Work Orders: http://35.237.149.25:8080/work-orders"
+        echo "🏗️ Assets: http://35.237.149.25:8080/assets"
+        echo "📦 Parts: http://35.237.149.25:8080/parts"
+        
+    - name: 🚨 Deployment Failure Notification
+      if: failure()
+      run: |
+        echo "❌ ChatterFix CMMS deployment failed!"
+        echo "Please check the logs and VM status."

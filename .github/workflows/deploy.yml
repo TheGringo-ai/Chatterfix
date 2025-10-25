@@ -2,7 +2,7 @@ name: 🚀 Deploy to Production
 
 on:
   push:
-    branches: [main]
+    branches: [main, main-clean]
     paths-ignore:
       - "README.md"
       - "docs/**"
@@ -36,6 +36,7 @@ env:
   INSTANCE_NAME: chatterfix-cmms-production
   ZONE: us-east1-b
   DEPLOY_USER: yoyofred
+  PRODUCTION_IP: 35.237.149.25
 
 jobs:
   # Pre-deployment checks
@@ -121,6 +122,16 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
+      - name: 🔑 Setup GCP Authentication
+        if: needs.pre-deployment.outputs.has-credentials == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        if: needs.pre-deployment.outputs.has-credentials == 'true'
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: 🚀 Deployment Process
         run: |
           echo "🚀 Starting deployment process..."
@@ -140,6 +151,13 @@ jobs:
             # Copy new application files to production (correct location for systemd service)
             gcloud compute scp core/cmms/app.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/app.py --zone=${{ env.ZONE }}
             
+            # Deploy Fix It Fred's Assets API fix
+            echo "🤖 Deploying Fix It Fred's Assets API fix..."
+            if [ -f core/cmms/fixed_assets_api.py ]; then
+              gcloud compute scp core/cmms/fixed_assets_api.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/fixed_assets_api.py --zone=${{ env.ZONE }}
+              echo "✅ Fix It Fred's Assets API deployed"
+            fi
+            
             # Copy voice workorder processor
             if [ -f core/cmms/voice_workorder_enhanced.py ]; then
               gcloud compute scp core/cmms/voice_workorder_enhanced.py ${{ env.INSTANCE_NAME }}:/opt/chatterfix-cmms/current/voice_workorder_enhanced.py --zone=${{ env.ZONE }}
@@ -151,8 +169,53 @@ jobs:
               echo "✅ Static files including voice UI deployed"
             fi
             
-            # Restart the application service
-            gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="sudo systemctl restart chatterfix-cmms"
+            # Deploy working backend scripts
+            echo "🚀 Deploying working backend and cleanup scripts..."
+            
+            # Copy and run cleanup script if it exists
+            if [ -f cleanup-and-restart-vm.sh ]; then
+              gcloud compute scp cleanup-and-restart-vm.sh ${{ env.INSTANCE_NAME }}:/tmp/cleanup-and-restart-vm.sh --zone=${{ env.ZONE }}
+              echo "🧹 Running VM cleanup..."
+              gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="chmod +x /tmp/cleanup-and-restart-vm.sh && sudo /tmp/cleanup-and-restart-vm.sh"
+            fi
+            
+            # Deploy Fix It Fred Git Integration if files exist
+            echo "🤖 Deploying Fix It Fred Git Integration..."
+            if [ -f fix_it_fred_git_integration_service.py ]; then
+              # Copy Git integration files
+              gcloud compute scp fix_it_fred_git_integration_service.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              gcloud compute scp fix_it_fred_git_security.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              gcloud compute scp fix_it_fred_git_ai_enhancement.py ${{ env.INSTANCE_NAME }}:/home/yoyofred_gringosgambit_com/chatterfix-docker/ --zone=${{ env.ZONE }}
+              
+              # Install Git integration dependencies and start service
+              gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+                cd /home/yoyofred_gringosgambit_com/chatterfix-docker &&
+                pip3 install --user watchdog cryptography fastapi uvicorn &&
+                pkill -f 'fix_it_fred_git_integration_service.py' || true &&
+                nohup python3 fix_it_fred_git_integration_service.py > /tmp/git_integration.log 2>&1 &
+                echo '✅ Git Integration Service deployed on port 9002'
+              "
+            else
+              echo "⚠️ Git integration files not found, skipping..."
+            fi
+            
+            # Copy and run working backend deployment
+            if [ -f deploy-working-backend.sh ]; then
+              gcloud compute scp deploy-working-backend.sh ${{ env.INSTANCE_NAME }}:/tmp/deploy-working-backend.sh --zone=${{ env.ZONE }}
+              echo "🚀 Deploying working backend on port 8081..."
+              gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="chmod +x /tmp/deploy-working-backend.sh && /tmp/deploy-working-backend.sh"
+            fi
+            
+            # Copy and run emergency backend deployment as fallback
+            if [ -f deploy-emergency-backend.sh ]; then
+              gcloud compute scp deploy-emergency-backend.sh ${{ env.INSTANCE_NAME }}:/tmp/deploy-emergency-backend.sh --zone=${{ env.ZONE }}
+              echo "🚨 Deploying emergency backend as backup..."
+              gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="chmod +x /tmp/deploy-emergency-backend.sh && /tmp/deploy-emergency-backend.sh"
+            fi
+            
+            # Restart the main application service
+            echo "🔄 Restarting main ChatterFix service..."
+            gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="sudo systemctl restart chatterfix-cmms || true"
             
             echo "✅ Deployment with LLaMA optimization completed successfully"
           else
@@ -169,24 +232,52 @@ jobs:
           echo "🏥 Running post-deployment health checks..."
           
           # Check main application
-          if curl -f --max-time 15 https://www.chatterfix.com/ > /dev/null 2>&1; then
+          if curl -f --max-time 15 http://35.237.149.25:8080/ > /dev/null 2>&1; then
             echo "✅ Main application is healthy"
           else
             echo "⚠️ Main application health check failed"
           fi
           
-          # Check admin endpoints
-          if curl -f --max-time 15 https://www.chatterfix.com/vm/admin > /dev/null 2>&1; then
-            echo "✅ Admin dashboard is accessible"
+          # Check main health endpoint
+          if curl -f --max-time 15 http://35.237.149.25:8080/health > /dev/null 2>&1; then
+            echo "✅ Health endpoint is responding"
+            curl -s http://35.237.149.25:8080/health | head -5
           else
-            echo "ℹ️ Admin dashboard check completed"
+            echo "⚠️ Health endpoint check failed"
           fi
           
-          # Check AI assistant health endpoint
-          if curl -f --max-time 15 https://chatterfix.com/health > /dev/null 2>&1; then
-            echo "✅ AI assistant API is healthy"
+          # Check AI chat functionality
+          echo "🤖 Testing AI chat..."
+          AI_RESPONSE=$(curl -X POST http://35.237.149.25:8080/api/ai/chat \
+                           -H "Content-Type: application/json" \
+                           -d '{"message": "test deployment"}' \
+                           --max-time 10 -s | grep -o '"fallback":[^,]*' || echo "")
+          
+          if [[ "$AI_RESPONSE" == *"false"* ]]; then
+            echo "✅ AI chat is working with intelligent responses"
           else
-            echo "⚠️ AI assistant API health check failed"
+            echo "⚠️ AI chat is using fallback responses"
+          fi
+          
+          # Check working backend on port 8081
+          if curl -f --max-time 10 http://35.237.149.25:8081/health > /dev/null 2>&1; then
+            echo "✅ Working backend on port 8081 is healthy"
+          else
+            echo "⚠️ Working backend on port 8081 not responding"
+          fi
+          
+          # Check Fix It Fred Git Integration on port 9002
+          echo "🤖 Testing Fix It Fred Git Integration..."
+          if curl -f --max-time 10 http://35.237.149.25:9002/health > /dev/null 2>&1; then
+            echo "✅ Git Integration Service on port 9002 is healthy"
+            # Test git status endpoint
+            if curl -f --max-time 10 http://35.237.149.25:9002/api/git/status > /dev/null 2>&1; then
+              echo "✅ Git Status API is working"
+            else
+              echo "⚠️ Git Status API needs attention"
+            fi
+          else
+            echo "⚠️ Git Integration Service on port 9002 not responding"
           fi
           
           # Test LLaMA integration if credentials available

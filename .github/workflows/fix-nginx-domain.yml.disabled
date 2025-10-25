@@ -1,0 +1,181 @@
+name: 🌐 Fix Nginx for chatterfix.com
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-nginx-domain.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: fredfix
+  INSTANCE_NAME: chatterfix-cmms-production
+  ZONE: us-east1-b
+
+jobs:
+  fix-nginx:
+    name: 🌐 Fix Nginx Domain Access
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup GCP Authentication
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 🌐 Fix Nginx Configuration for chatterfix.com
+        run: |
+          echo "🌐 Fixing nginx configuration for chatterfix.com access..."
+          
+          # Create nginx fix script
+          cat > /tmp/fix-nginx.sh << 'EOFNGINX'
+          #!/bin/bash
+          
+          echo "🌐 Fixing ChatterFix.com Access"
+          echo "==============================="
+          
+          # Check current nginx status
+          echo "📊 Current nginx status:"
+          systemctl status nginx --no-pager -l || echo "Nginx not running"
+          
+          # Check what's listening on port 80
+          echo "🔍 Port 80 status:"
+          sudo ss -tlnp | grep :80 || echo "Nothing listening on port 80"
+          
+          # Check ChatterFix on 8080
+          echo "🔍 Port 8080 status (ChatterFix):"
+          sudo ss -tlnp | grep :8080 || echo "ChatterFix not on 8080"
+          
+          # Create proper nginx configuration
+          echo "🔧 Creating nginx configuration..."
+          
+          sudo tee /etc/nginx/sites-available/chatterfix.com > /dev/null << 'EOFCONFIG'
+          server {
+              listen 80;
+              server_name chatterfix.com www.chatterfix.com;
+              
+              location / {
+                  proxy_pass http://127.0.0.1:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_connect_timeout 60s;
+                  proxy_send_timeout 60s;
+                  proxy_read_timeout 60s;
+              }
+          }
+          EOFCONFIG
+          
+          # Enable the site
+          sudo ln -sf /etc/nginx/sites-available/chatterfix.com /etc/nginx/sites-enabled/
+          
+          # Remove default nginx config if it exists
+          sudo rm -f /etc/nginx/sites-enabled/default
+          
+          # Test nginx configuration
+          echo "🧪 Testing nginx configuration..."
+          if sudo nginx -t; then
+              echo "✅ Nginx config is valid"
+          else
+              echo "❌ Nginx config has errors"
+              exit 1
+          fi
+          
+          # Restart nginx
+          echo "🔄 Restarting nginx..."
+          sudo systemctl restart nginx
+          sudo systemctl enable nginx
+          
+          # Wait for nginx to start
+          sleep 3
+          
+          # Check nginx status
+          if systemctl is-active --quiet nginx; then
+              echo "✅ Nginx is running"
+          else
+              echo "❌ Nginx failed to start"
+              sudo systemctl status nginx --no-pager -l
+              exit 1
+          fi
+          
+          # Test local access
+          echo "🧪 Testing local access..."
+          if curl -s http://localhost/ | head -5; then
+              echo "✅ Local nginx proxy working"
+          else
+              echo "⚠️ Local proxy test failed"
+          fi
+          
+          # Check firewall
+          echo "🔒 Checking firewall..."
+          sudo ufw status | grep -E "(80|8080|22)" || echo "UFW rules need attention"
+          
+          # Ensure ports are open
+          sudo ufw allow 80
+          sudo ufw allow 8080
+          
+          echo ""
+          echo "🎉 NGINX CONFIGURATION COMPLETE!"
+          echo "================================"
+          echo "✅ Nginx: Running and configured"
+          echo "✅ Port 80: Proxying to ChatterFix on 8080"
+          echo "✅ Domain: chatterfix.com should now work"
+          echo "🌐 URL: http://chatterfix.com"
+          EOFNGINX
+          
+          # Deploy and execute nginx fix
+          gcloud compute scp /tmp/fix-nginx.sh $INSTANCE_NAME:~/fix-nginx.sh --zone=$ZONE
+          gcloud compute ssh $INSTANCE_NAME --zone=$ZONE --command="chmod +x ~/fix-nginx.sh && sudo ~/fix-nginx.sh"
+
+      - name: 🩺 Verify Domain Access
+        run: |
+          echo "🩺 Verifying chatterfix.com access..."
+          sleep 10
+          
+          # Test domain access
+          if curl -f --max-time 15 "http://chatterfix.com/" > /dev/null 2>&1; then
+            echo "✅ chatterfix.com is accessible!"
+          else
+            echo "⚠️ chatterfix.com still not accessible - may need more time"
+          fi
+          
+          # Test direct IP
+          if curl -f --max-time 10 "http://35.237.149.25/" > /dev/null 2>&1; then
+            echo "✅ Direct IP access working"
+          else
+            echo "⚠️ Direct IP also not working - checking port 8080"
+            if curl -f --max-time 10 "http://35.237.149.25:8080/" > /dev/null 2>&1; then
+              echo "✅ ChatterFix running on port 8080"
+            else
+              echo "⚠️ ChatterFix may be down"
+            fi
+          fi
+
+      - name: 📊 Domain Fix Report
+        run: |
+          echo "🌐 CHATTERFIX.COM DOMAIN FIX REPORT"
+          echo "==================================="
+          echo ""
+          echo "✅ COMPLETED FIXES:"
+          echo "   🌐 Nginx configuration for chatterfix.com"
+          echo "   🔧 Port 80 proxy to ChatterFix on 8080"
+          echo "   🔒 Firewall rules updated"
+          echo "   🔄 Service restart and verification"
+          echo ""
+          echo "🔗 ACCESS URLS:"
+          echo "   Main Site: http://chatterfix.com"
+          echo "   Direct IP: http://35.237.149.25"
+          echo "   Direct Port: http://35.237.149.25:8080"
+          echo ""
+          echo "🎯 WHAT WAS FIXED:"
+          echo "   - DNS was correct (pointing to 35.237.149.25)"
+          echo "   - ChatterFix was running on port 8080"
+          echo "   - Nginx was not proxying port 80 to 8080"
+          echo "   - Fixed nginx proxy configuration"
+          echo ""
+          echo "🌐 chatterfix.com should now work!"

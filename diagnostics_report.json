@@ -1,23 +1,5 @@
-{
-  "phase7_validation": {
-    "timestamp": "2025-10-22T23:45:00Z",
-    "validation_type": "comprehensive_health_audit",
-    
-    "health_audit": {
-      "gateway_url": "https://chatterfix-unified-gateway-650169261019.us-central1.run.app/api/health/all",
-      "overall_status": "degraded",
-      "total_services": 10,
-      "healthy_services": 6,
-      "services_status": {
-        "gateway": "healthy",
-        "fix_it_fred": "healthy",
-        "fix_it_fred_diy": "healthy", 
-        "cmms": "healthy",
-        "work_orders": "healthy",
-        "assets": "healthy",
-        "parts": "unhealthy",
-        "voice_ai": "unknown",
-        "customer_success": "unreachable",
+
+
         "revenue_intelligence": "unreachable",
         "data_room": "unhealthy"
       },

@@ -342,20 +342,24 @@ async def dashboard():
         
         /* Analytics Dashboard Styles */
         .tab-btn {{
-            background: rgba(255,255,255,0.1);
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
             color: white;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.1);
             padding: 12px 24px;
             margin-right: 10px;
-            border-radius: 5px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }}
         .tab-btn:hover {{
-            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
         }}
         .active-tab {{
-            background: #4a9eff !important;
+            background: linear-gradient(45deg, #4a9eff, #2ecc71) !important;
+            border-color: rgba(255,255,255,0.3) !important;
         }}
         .tab-content {{
             animation: fadeIn 0.3s ease;
@@ -365,16 +369,25 @@ async def dashboard():
             to {{ opacity: 1; }}
         }}
         .metric-card {{
-            background: rgba(255,255,255,0.1);
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
             padding: 1.5rem;
-            border-radius: 10px;
+            border-radius: 15px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }}
+        .metric-card:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
         }}
         .metric-value {{
             font-size: 2.5rem;
             font-weight: bold;
-            color: #4a9eff;
+            background: linear-gradient(45deg, #4a9eff, #2ecc71, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 0.5rem 0;
         }}
         .metric-unit {{
@@ -466,7 +479,7 @@ async def dashboard():
 
         <!-- Analytics Dashboard Modal -->
         <div id="analyticsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
-            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 50%, #0d1117 100%); margin: 2% auto; padding: 2rem; width: 95%; height: 90%; border-radius: 15px; overflow-y: auto; color: white;">
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 50%, #0d1117 100%); margin: 2% auto; padding: 2rem; width: 95%; height: 90%; border-radius: 15px; overflow-y: auto; color: white; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                     <h2>📊 Business Intelligence & Automation Control</h2>
                     <button onclick="closeAnalytics()" style="background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">✕ Close</button>
@@ -504,7 +517,7 @@ async def dashboard():
                         </div>
                     </div>
                     
-                    <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+                    <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                         <h3>👥 Technician Performance</h3>
                         <div id="technicianStats">Loading technician data...</div>
                     </div>
@@ -512,21 +525,21 @@ async def dashboard():
 
                 <!-- Trends Tab -->
                 <div id="trendsContent" class="tab-content" style="display: none;">
-                    <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+                    <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1);">
                         <h3>📈 Performance Trends (Last 7 Days)</h3>
                         <canvas id="trendsChart" width="800" height="400"></canvas>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+                        <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                             <h4>🔍 Insights</h4>
                             <div id="trendInsights">Analyzing trends...</div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+                        <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                             <h4>📋 Export Options</h4>
-                            <button onclick="exportReport('csv')" style="background: #2ecc71; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer;">📄 CSV</button>
-                            <button onclick="exportReport('pdf')" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer;">📑 PDF</button>
-                            <button onclick="exportReport('json')" style="background: #3498db; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer;">🔗 JSON</button>
+                            <button onclick="exportReport('csv')" style="background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">📄 CSV</button>
+                            <button onclick="exportReport('pdf')" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">📑 PDF</button>
+                            <button onclick="exportReport('json')" style="background: linear-gradient(45deg, #4a9eff, #3498db); color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">🔗 JSON</button>
                         </div>
                     </div>
                 </div>
@@ -534,36 +547,36 @@ async def dashboard():
                 <!-- Automation Tab -->
                 <div id="automationContent" class="tab-content" style="display: none;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+                        <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                             <h3>🎛️ Automation Controls</h3>
                             <div style="margin: 1rem 0;">
-                                <label style="display: flex; align-items: center; margin: 10px 0;">
-                                    <input type="checkbox" id="autoSchedule" checked style="margin-right: 10px;">
+                                <label style="display: flex; align-items: center; margin: 10px 0; cursor: pointer;">
+                                    <input type="checkbox" id="autoSchedule" checked style="margin-right: 10px; transform: scale(1.2);">
                                     Auto-schedule maintenance ✅
                                 </label>
-                                <label style="display: flex; align-items: center; margin: 10px 0;">
-                                    <input type="checkbox" id="autoReorder" checked style="margin-right: 10px;">
+                                <label style="display: flex; align-items: center; margin: 10px 0; cursor: pointer;">
+                                    <input type="checkbox" id="autoReorder" checked style="margin-right: 10px; transform: scale(1.2);">
                                     Auto-reorder parts ✅
                                 </label>
-                                <label style="display: flex; align-items: center; margin: 10px 0;">
-                                    <input type="checkbox" id="aiOptimize" checked style="margin-right: 10px;">
+                                <label style="display: flex; align-items: center; margin: 10px 0; cursor: pointer;">
+                                    <input type="checkbox" id="aiOptimize" checked style="margin-right: 10px; transform: scale(1.2);">
                                     Enable AI-driven optimization ✅
                                 </label>
                             </div>
-                            <button onclick="executeAutomation()" style="background: #f39c12; color: white; border: none; padding: 15px 25px; border-radius: 5px; cursor: pointer; width: 100%;">🚀 Execute Automation</button>
+                            <button onclick="executeAutomation()" style="background: linear-gradient(45deg, #f39c12, #e67e22); color: white; border: none; padding: 15px 25px; border-radius: 10px; cursor: pointer; width: 100%; transition: all 0.3s ease; font-weight: bold;">🚀 Execute Automation</button>
                         </div>
                         
-                        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+                        <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
                             <h3>📋 Automation Log</h3>
-                            <div id="automationLog" style="background: #000; padding: 1rem; border-radius: 5px; font-family: monospace; font-size: 0.875rem; max-height: 300px; overflow-y: auto;">
+                            <div id="automationLog" style="background: linear-gradient(145deg, #0d1117, #1a1a1a); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.875rem; max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);">
                                 System ready for automation...<br>
                             </div>
                         </div>
                     </div>
                     
                     <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <button onclick="scheduleWorkOrders()" style="background: #9b59b6; color: white; border: none; padding: 15px 25px; border-radius: 5px; cursor: pointer;">📅 Auto-Schedule Work Orders</button>
-                        <button onclick="refreshMetrics()" style="background: #1abc9c; color: white; border: none; padding: 15px 25px; border-radius: 5px; cursor: pointer;">🔄 Refresh All Metrics</button>
+                        <button onclick="scheduleWorkOrders()" style="background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; border: none; padding: 15px 25px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; font-weight: bold;">📅 Auto-Schedule Work Orders</button>
+                        <button onclick="refreshMetrics()" style="background: linear-gradient(45deg, #1abc9c, #16a085); color: white; border: none; padding: 15px 25px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; font-weight: bold;">🔄 Refresh All Metrics</button>
                     </div>
                 </div>
             </div>
@@ -641,18 +654,18 @@ async def dashboard():
                     let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">';
                     Object.entries(data.technician_efficiency).forEach(([tech, stats]) => {{
                         html += `
-                            <div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px;">
-                                <h4>${{tech}}</h4>
-                                <p>Efficiency: ${{stats.efficiency || 0}}%</p>
-                                <p>Completed: ${{stats.completed || 0}}/${{stats.total || 0}}</p>
-                                <p>Avg Time: ${{stats.avg_time || 0}}h</p>
+                            <div style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); padding: 1rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                                <h4 style="margin: 0 0 0.5rem 0; background: linear-gradient(45deg, #4a9eff, #2ecc71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${{tech}}</h4>
+                                <p style="margin: 0.25rem 0;">Efficiency: <span style="color: #2ecc71; font-weight: bold;">${{stats.efficiency || 0}}%</span></p>
+                                <p style="margin: 0.25rem 0;">Completed: <span style="color: #4a9eff; font-weight: bold;">${{stats.completed || 0}}/${{stats.total || 0}}</span></p>
+                                <p style="margin: 0.25rem 0;">Avg Time: <span style="color: #f39c12; font-weight: bold;">${{stats.avg_time || 0}}h</span></p>
                             </div>
                         `;
                     }});
                     html += '</div>';
                     techStats.innerHTML = html;
                 }} else {{
-                    techStats.innerHTML = '<p>No technician data available</p>';
+                    techStats.innerHTML = '<p style="color: #aaa;">No technician data available</p>';
                 }}
             }} catch (error) {{
                 console.error('Failed to load analytics:', error);

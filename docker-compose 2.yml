@@ -1,0 +1,96 @@
+services:
+  # ChatterFix CMMS Application
+  chatterfix:
+    build:
+      context: ./core/cmms
+      dockerfile: Dockerfile
+    container_name: chatterfix-cmms
+    ports:
+      - "8080:8080"
+    environment:
+      # Service Configuration
+      - SERVICE_MODE=default
+      - PORT=8080
+
+      # GitHub Configuration
+      - GITHUB_PAT=${GITHUB_PAT}
+
+      # GCP Configuration
+      - GCLOUD_PROJECT=${GCLOUD_PROJECT:-fredfix}
+      - GCP_PROJECT_ID=${GCLOUD_PROJECT:-fredfix}
+
+      # Ollama Configuration
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
+
+      # AI Service URLs (if using microservices)
+      - AI_BRAIN_SERVICE_URL=${AI_BRAIN_SERVICE_URL:-http://localhost:8005}
+      - DOCUMENT_INTELLIGENCE_URL=${DOCUMENT_INTELLIGENCE_URL:-http://localhost:8006}
+
+      # API Keys (optional, load from .env)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - XAI_API_KEY=${XAI_API_KEY:-}
+
+      # Database (if needed)
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./chatterfix.db}
+
+    volumes:
+      # Mount app code for development hot-reload
+      - ./core/cmms:/app
+      # Persist data
+      - chatterfix-data:/app/data
+    depends_on:
+      - ollama
+    networks:
+      - chatterfix-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Ollama Service for Local LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatterfix-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - chatterfix-network
+    restart: unless-stopped
+    # Pull models on startup
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      ollama serve &
+      SERVER_PID=$$!
+      echo 'Waiting for Ollama server to start...'
+      sleep 10
+      echo 'Pulling Mistral 7B model...'
+      ollama pull mistral:7b || echo 'Mistral pull failed, continuing...'
+      echo 'Pulling Llama3 8B model...'
+      ollama pull llama3:8b || echo 'Llama3 pull failed, continuing...'
+      echo 'Models ready! Keeping server running...'
+      wait $$SERVER_PID
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  chatterfix-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    driver: local
+  chatterfix-data:
+    driver: local

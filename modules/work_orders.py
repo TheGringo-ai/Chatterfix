@@ -5,7 +5,7 @@ Work Orders Module - Handles all work order related operations
 import io
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import pandas as pd
@@ -15,7 +15,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
-from .shared import success_response, error_response, logger
+from .shared import success_response, error_response, logger, verify_api_key
 
 router = APIRouter()
 
@@ -214,7 +214,8 @@ async def get_work_orders(
     priority: Optional[str] = Query(None, description="Filter by priority"),
     assigned_to: Optional[str] = Query(None, description="Filter by assignee"),
     limit: int = Query(50, le=500),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
+    authenticated: bool = Depends(verify_api_key)
 ):
     """Get all work orders with optional filtering"""
     filtered_orders = work_orders_data.copy()
@@ -240,7 +241,7 @@ async def get_work_orders(
     }
 
 @router.get("/{work_order_id}")
-async def get_work_order(work_order_id: int):
+async def get_work_order(work_order_id: int, authenticated: bool = Depends(verify_api_key)):
     """Get detailed work order with activity and parts"""
     work_order = next((wo for wo in work_orders_data if wo["id"] == work_order_id), None)
     if not work_order:
@@ -255,7 +256,7 @@ async def get_work_order(work_order_id: int):
     return result
 
 @router.post("/")
-async def create_work_order(work_order: WorkOrderCreate):
+async def create_work_order(work_order: WorkOrderCreate, authenticated: bool = Depends(verify_api_key)):
     """Create a new work order"""
     new_id = max([wo["id"] for wo in work_orders_data]) + 1 if work_orders_data else 1
     
@@ -294,7 +295,7 @@ async def create_work_order(work_order: WorkOrderCreate):
     return success_response("Work order created successfully", {"work_order": new_work_order})
 
 @router.put("/{work_order_id}")
-async def update_work_order(work_order_id: int, updates: WorkOrderUpdate):
+async def update_work_order(work_order_id: int, updates: WorkOrderUpdate, authenticated: bool = Depends(verify_api_key)):
     """Update work order fields"""
     work_order = next((wo for wo in work_orders_data if wo["id"] == work_order_id), None)
     if not work_order:
@@ -335,7 +336,7 @@ async def update_work_order(work_order_id: int, updates: WorkOrderUpdate):
     return success_response("Work order updated successfully", {"work_order": work_order})
 
 @router.get("/stats/summary")
-async def get_work_order_stats():
+async def get_work_order_stats(authenticated: bool = Depends(verify_api_key)):
     """Get work order statistics"""
     total = len(work_orders_data)
     by_status = {}
@@ -376,6 +377,7 @@ async def get_work_order_stats():
 
 @router.get("/export.csv")
 async def export_work_orders_csv(
+    authenticated: bool = Depends(verify_api_key),
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
     assigned_to: Optional[str] = Query(None)

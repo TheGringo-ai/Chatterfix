@@ -1,0 +1,101 @@
+# ChatterFix CMMS - Environment Variables Template
+# Copy this file to .env and fill in your actual values
+# NEVER commit .env files to git!
+
+# ============================================
+# API KEYS (Replace with your actual keys)
+# ============================================
+
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-proj-your-openai-key-here
+OPENAI_MODEL=gpt-4-turbo-preview
+OPENAI_MAX_TOKENS=4000
+
+# Anthropic Claude API (if using)
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+
+# xAI Grok API (if using)
+XAI_API_KEY=xai-your-xai-key-here
+
+# ============================================
+# DATABASE CONFIGURATION
+# ============================================
+
+# PostgreSQL Database
+DATABASE_URL=postgresql://username:password@host:port/database
+DB_HOST=your-db-host
+DB_PORT=5432
+DB_NAME=chatterfix_cmms
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
+DB_SSL_MODE=require
+
+# ============================================
+# CLOUD SERVICES
+# ============================================
+
+# Google Cloud Configuration
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+
+# ============================================
+# APPLICATION CONFIGURATION
+# ============================================
+
+# Environment
+NODE_ENV=development
+PYTHON_ENV=development
+DEBUG=true
+
+# Server Configuration
+PORT=8080
+HOST=0.0.0.0
+
+# Security
+SECRET_KEY=your-super-secret-key-here
+JWT_SECRET=your-jwt-secret-here
+ENCRYPTION_KEY=your-encryption-key-here
+
+# CORS Settings
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080,https://chatterfix.com
+
+# ============================================
+# MICROSERVICES URLS (for local development)
+# ============================================
+
+WORK_ORDERS_URL=http://localhost:8001
+ASSETS_URL=http://localhost:8002
+PARTS_URL=http://localhost:8003
+AI_BRAIN_URL=http://localhost:8005
+VOICE_AI_URL=http://localhost:8006
+CUSTOMER_SUCCESS_URL=http://localhost:8007
+
+# ============================================
+# EXTERNAL SERVICES
+# ============================================
+
+# Email Service (SendGrid, etc.)
+SENDGRID_API_KEY=your-sendgrid-key
+EMAIL_FROM=noreply@chatterfix.com
+
+# SMS Service (Twilio, etc.)
+TWILIO_ACCOUNT_SID=your-twilio-sid
+TWILIO_AUTH_TOKEN=your-twilio-token
+TWILIO_PHONE_NUMBER=+1234567890
+
+# File Storage
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+S3_BUCKET=chatterfix-files
+
+# ============================================
+# MONITORING & LOGGING
+# ============================================
+
+# Logging Level
+LOG_LEVEL=info
+LOG_FORMAT=json
+
+# Application Insights, Sentry, etc.
+SENTRY_DSN=your-sentry-dsn
+ANALYTICS_KEY=your-analytics-key

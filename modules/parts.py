@@ -5,7 +5,7 @@ Parts Module - Handles all parts inventory and checkout operations
 import io
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import pandas as pd
@@ -14,7 +14,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
-from .shared import success_response, error_response, logger
+from .shared import success_response, error_response, logger, verify_api_key
 
 router = APIRouter()
 
@@ -359,6 +359,7 @@ def record_transaction(part_id: int, transaction_type: str, quantity: int,
 
 @router.get("/")
 async def get_parts(
+    authenticated: bool = Depends(verify_api_key),
     category: Optional[str] = Query(None, description="Filter by category"),
     low_stock: Optional[bool] = Query(None, description="Show only low stock items"),
     supplier: Optional[str] = Query(None, description="Filter by supplier"),
@@ -406,7 +407,7 @@ async def get_parts(
     }
 
 @router.get("/{part_id}")
-async def get_part(part_id: int):
+async def get_part(part_id: int, authenticated: bool = Depends(verify_api_key)):
     """Get detailed part with transaction history"""
     part = next((p for p in parts_data if p["id"] == part_id), None)
     if not part:
@@ -427,7 +428,7 @@ async def get_part(part_id: int):
     return result
 
 @router.post("/")
-async def create_part(part: PartCreate):
+async def create_part(part: PartCreate, authenticated: bool = Depends(verify_api_key)):
     """Create a new part"""
     new_id = max([p["id"] for p in parts_data]) + 1 if parts_data else 1
     
@@ -469,7 +470,7 @@ async def create_part(part: PartCreate):
     return success_response("Part created successfully", {"part": new_part})
 
 @router.post("/{part_id}/checkout")
-async def checkout_part(part_id: int, checkout: CheckoutRequest):
+async def checkout_part(part_id: int, checkout: CheckoutRequest, authenticated: bool = Depends(verify_api_key)):
     """Checkout parts from inventory"""
     part = next((p for p in parts_data if p["id"] == part_id), None)
     if not part:
@@ -503,7 +504,7 @@ async def checkout_part(part_id: int, checkout: CheckoutRequest):
     )
 
 @router.post("/{part_id}/restock")
-async def restock_part(part_id: int, restock: RestockRequest):
+async def restock_part(part_id: int, restock: RestockRequest, authenticated: bool = Depends(verify_api_key)):
     """Restock parts inventory"""
     part = next((p for p in parts_data if p["id"] == part_id), None)
     if not part:
@@ -531,7 +532,7 @@ async def restock_part(part_id: int, restock: RestockRequest):
     )
 
 @router.get("/stats/summary")
-async def get_parts_stats():
+async def get_parts_stats(authenticated: bool = Depends(verify_api_key)):
     """Get parts inventory statistics"""
     total = len(parts_data)
     total_value = sum(part["stock_qty"] * part["unit_cost"] for part in parts_data)
@@ -571,7 +572,8 @@ async def get_parts_stats():
     }
 
 @router.get("/alerts/low-stock")
-async def get_low_stock_alerts():
+async def get_low_stock_alerts(
+    authenticated: bool = Depends(verify_api_key),):
     """Get low stock alerts"""
     low_stock_items = [part for part in parts_data if part["stock_qty"] <= part["min_qty"]]
     
@@ -597,6 +599,7 @@ async def get_low_stock_alerts():
 
 @router.get("/export.csv")
 async def export_parts_csv(
+    authenticated: bool = Depends(verify_api_key),
     category: Optional[str] = Query(None),
     low_stock: Optional[bool] = Query(None),
     location: Optional[str] = Query(None)

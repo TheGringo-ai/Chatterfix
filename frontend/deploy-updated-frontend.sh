@@ -67,7 +67,7 @@ gcloud run deploy $SERVICE_NAME \
   --min-instances $MIN_INSTANCES \
   --max-instances $MAX_INSTANCES \
   --port 8080 \
-  --set-env-vars="WORK_ORDERS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,ASSETS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,PARTS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,CUSTOMER_SUCCESS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,REVENUE_INTELLIGENCE_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,DATA_ROOM_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app" \
+  --set-env-vars="WORK_ORDERS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,ASSETS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,PARTS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,CUSTOMER_SUCCESS_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,REVENUE_INTELLIGENCE_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,DATA_ROOM_URL=https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app,CHATTERFIX_API_KEY=chatterfix_secure_api_key_2025_cmms_prod_v1" \
   --timeout=300
 
 echo "✅ Deployment complete!"

@@ -29,7 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Service URLs (will be set from environment variables)
+# Service URLs and API keys (will be set from environment variables)
+CHATTERFIX_API_KEY = os.getenv("CHATTERFIX_API_KEY", "chatterfix_secure_api_key_2025_cmms_prod_v1")
+
 SERVICES = {
     "customer_success": os.getenv("CUSTOMER_SUCCESS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
     "revenue_intelligence": os.getenv("REVENUE_INTELLIGENCE_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
@@ -51,6 +53,15 @@ async def proxy_request(service_url: str, path: str, request: Request):
         # Forward headers
         headers = dict(request.headers)
         headers.pop('host', None)  # Remove host header to avoid conflicts
+        
+        # Add API key for CMMS services (consolidated backend)
+        if any(service_url in url for service_url in [
+            "chatterfix-consolidated-cmms",
+            SERVICES["work_orders"],
+            SERVICES["assets"], 
+            SERVICES["parts"]
+        ]):
+            headers["x-api-key"] = CHATTERFIX_API_KEY
         
         try:
             if request.method == "GET":
@@ -1691,6 +1702,21 @@ async def root():
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // API Key for authenticated requests to CMMS endpoints
+        const API_KEY = 'chatterfix_secure_api_key_2025_cmms_prod_v1';
+        
+        // Helper function for authenticated fetch requests
+        function authenticatedFetch(url, options = {}) {
+            // Add API key header for CMMS endpoints
+            if (url.includes('/api/work-orders') || url.includes('/api/assets') || url.includes('/api/parts')) {
+                options.headers = {
+                    ...options.headers,
+                    'x-api-key': API_KEY
+                };
+            }
+            return fetch(url, options);
+        }
+        
         // Global variables
         let currentSection = 'dashboard';
         let chatMinimized = true;
@@ -1990,7 +2016,7 @@ async def root():
                     </div>
                 `;
                 
-                const response = await fetch('/api/work-orders?limit=50');
+                const response = await authenticatedFetch('/api/work-orders?limit=50');
                 if (response.ok) {
                     const data = await response.json();
                     container.innerHTML = generateWorkOrdersTable(data.work_orders);
@@ -2013,7 +2039,7 @@ async def root():
         async function loadAssetsContent() {
             const container = document.getElementById('assets-content');
             try {
-                const response = await fetch('/api/assets?limit=10');
+                const response = await authenticatedFetch('/api/assets?limit=10');
                 if (response.ok) {
                     const data = await response.json();
                     container.innerHTML = generateAssetsTable(data.assets);
@@ -2033,7 +2059,7 @@ async def root():
         async function loadPartsContent() {
             const container = document.getElementById('parts-content');
             try {
-                const response = await fetch('/api/parts?limit=10');
+                const response = await authenticatedFetch('/api/parts?limit=10');
                 if (response.ok) {
                     const data = await response.json();
                     container.innerHTML = generatePartsTable(data.parts);
@@ -2379,7 +2405,7 @@ async def root():
         async function loadCMMSStats() {
             try {
                 // Load work orders stats
-                const woStatsResponse = await fetch('/api/work-orders/stats/summary');
+                const woStatsResponse = await authenticatedFetch('/api/work-orders/stats/summary');
                 if (woStatsResponse.ok) {
                     const woStats = await woStatsResponse.json();
                     document.getElementById('total-work-orders').textContent = woStats.total_work_orders || 0;
@@ -2388,7 +2414,7 @@ async def root():
                 }
 
                 // Load assets stats
-                const assetsStatsResponse = await fetch('/api/assets/stats/summary');
+                const assetsStatsResponse = await authenticatedFetch('/api/assets/stats/summary');
                 if (assetsStatsResponse.ok) {
                     const assetsStats = await assetsStatsResponse.json();
                     document.getElementById('total-assets').textContent = assetsStats.total_assets || 0;
@@ -2396,7 +2422,7 @@ async def root():
                 }
 
                 // Load parts stats
-                const partsStatsResponse = await fetch('/api/parts/stats/summary');
+                const partsStatsResponse = await authenticatedFetch('/api/parts/stats/summary');
                 if (partsStatsResponse.ok) {
                     const partsStats = await partsStatsResponse.json();
                     document.getElementById('total-parts').textContent = partsStats.total_parts || 0;
@@ -2442,7 +2468,7 @@ async def root():
 
         async function editWorkOrder(id, viewOnly = false) {
             try {
-                const response = await fetch(`/api/work-orders/${id}`);
+                const response = await authenticatedFetch(`/api/work-orders/${id}`);
                 if (response.ok) {
                     const workOrder = await response.json();
                     
@@ -2565,7 +2591,7 @@ async def root():
 
         async function editAsset(id, viewOnly = false) {
             try {
-                const response = await fetch(`/api/assets/${id}`);
+                const response = await authenticatedFetch(`/api/assets/${id}`);
                 if (response.ok) {
                     const asset = await response.json();
                     
@@ -2685,7 +2711,7 @@ async def root():
 
         async function editPart(id, viewOnly = false) {
             try {
-                const response = await fetch(`/api/parts/${id}`);
+                const response = await authenticatedFetch(`/api/parts/${id}`);
                 if (response.ok) {
                     const part = await response.json();
                     
@@ -2789,7 +2815,7 @@ async def root():
         // Helper Functions
         async function loadAssetsForDropdown() {
             try {
-                const response = await fetch('/api/assets');
+                const response = await authenticatedFetch('/api/assets');
                 if (response.ok) {
                     const assets = await response.json();
                     const dropdown = document.getElementById('workOrderAssetId');

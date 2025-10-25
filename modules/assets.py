@@ -5,7 +5,7 @@ Assets Module - Handles all asset management operations
 import io
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import pandas as pd
@@ -14,7 +14,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 
-from .shared import success_response, error_response, logger
+from .shared import success_response, error_response, logger, verify_api_key
 
 router = APIRouter()
 
@@ -284,6 +284,7 @@ maintenance_schedules_data = {
 
 @router.get("/")
 async def get_assets(
+    authenticated: bool = Depends(verify_api_key),
     status: Optional[str] = Query(None, description="Filter by status"),
     asset_type: Optional[str] = Query(None, description="Filter by asset type"),
     location: Optional[str] = Query(None, description="Filter by location"),
@@ -318,7 +319,7 @@ async def get_assets(
     }
 
 @router.get("/{asset_id}")
-async def get_asset(asset_id: int):
+async def get_asset(asset_id: int, authenticated: bool = Depends(verify_api_key)):
     """Get detailed asset with maintenance schedules"""
     asset = next((a for a in assets_data if a["id"] == asset_id), None)
     if not asset:
@@ -333,7 +334,7 @@ async def get_asset(asset_id: int):
     return result
 
 @router.post("/")
-async def create_asset(asset: AssetCreate):
+async def create_asset(asset: AssetCreate, authenticated: bool = Depends(verify_api_key)):
     """Create a new asset"""
     new_id = max([a["id"] for a in assets_data]) + 1 if assets_data else 1
     
@@ -363,7 +364,7 @@ async def create_asset(asset: AssetCreate):
     return success_response("Asset created successfully", {"asset": new_asset})
 
 @router.put("/{asset_id}")
-async def update_asset(asset_id: int, updates: AssetUpdate):
+async def update_asset(asset_id: int, updates: AssetUpdate, authenticated: bool = Depends(verify_api_key)):
     """Update asset fields"""
     asset = next((a for a in assets_data if a["id"] == asset_id), None)
     if not asset:
@@ -383,7 +384,7 @@ async def update_asset(asset_id: int, updates: AssetUpdate):
     return success_response("Asset updated successfully", {"asset": asset})
 
 @router.get("/stats/summary")
-async def get_asset_stats():
+async def get_asset_stats(authenticated: bool = Depends(verify_api_key)):
     """Get asset statistics"""
     total = len(assets_data)
     by_status = {}
@@ -431,7 +432,8 @@ async def get_asset_stats():
     }
 
 @router.get("/maintenance/upcoming")
-async def get_upcoming_maintenance():
+async def get_upcoming_maintenance(
+    authenticated: bool = Depends(verify_api_key),):
     """Get assets with upcoming maintenance"""
     upcoming = []
     
@@ -458,6 +460,7 @@ async def get_upcoming_maintenance():
 
 @router.get("/export.csv")
 async def export_assets_csv(
+    authenticated: bool = Depends(verify_api_key),
     status: Optional[str] = Query(None),
     asset_type: Optional[str] = Query(None),
     location: Optional[str] = Query(None),

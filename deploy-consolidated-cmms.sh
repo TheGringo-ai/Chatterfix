@@ -31,7 +31,7 @@ gcloud run deploy $SERVICE_NAME \
   --min-instances $MIN_INSTANCES \
   --max-instances $MAX_INSTANCES \
   --port 8080 \
-  --set-env-vars="GCS_BUCKET=chatterfix-attachments" \
+  --set-env-vars="GCS_BUCKET=chatterfix-attachments,CHATTERFIX_API_KEY=chatterfix_secure_api_key_2025_cmms_prod_v1" \
   --timeout=300
 
 echo "✅ Deployment complete!"
@@ -40,7 +40,7 @@ echo "🌐 Service URL: https://$SERVICE_NAME-psycl7nhha-uc.a.run.app"
 # Health check
 echo "🔍 Running health check..."
 sleep 10
-curl -f "https://$SERVICE_NAME-psycl7nhha-uc.a.run.app/health" || echo "❌ Health check failed"
+curl -f -H "x-api-key: chatterfix_secure_api_key_2025_cmms_prod_v1" "https://$SERVICE_NAME-psycl7nhha-uc.a.run.app/health" || echo "❌ Health check failed"
 
 echo "📊 Service endpoints:"
 echo "  - Work Orders: https://$SERVICE_NAME-psycl7nhha-uc.a.run.app/work_orders"

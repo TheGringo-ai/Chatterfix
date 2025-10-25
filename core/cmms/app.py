@@ -481,15 +481,15 @@ async def dashboard():
         <div id="analyticsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
             <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 50%, #0d1117 100%); margin: 2% auto; padding: 2rem; width: 95%; height: 90%; border-radius: 15px; overflow-y: auto; color: white; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                    <h2>📊 Business Intelligence & Automation Control</h2>
-                    <button onclick="closeAnalytics()" style="background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">✕ Close</button>
+                    <h2 style="background: linear-gradient(45deg, #4a9eff, #2ecc71, #f39c12); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0;">📊 Business Intelligence & Automation Control</h2>
+                    <button onclick="closeAnalytics()" style="background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease;">✕ Close</button>
                 </div>
                 
                 <!-- Tab Navigation -->
                 <div style="display: flex; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <button onclick="showTab('metrics')" id="metricsTab" class="tab-btn active-tab">📈 Key Metrics</button>
-                    <button onclick="showTab('trends')" id="trendsTab" class="tab-btn">📊 Trends</button>
-                    <button onclick="showTab('automation')" id="automationTab" class="tab-btn">🤖 Automation</button>
+                    <button onclick="showTab('metrics')" id="metricsTab" style="background: linear-gradient(45deg, #4a9eff, #2ecc71); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 12px 24px; margin-right: 10px; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">📈 Key Metrics</button>
+                    <button onclick="showTab('trends')" id="trendsTab" style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; margin-right: 10px; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">📊 Trends</button>
+                    <button onclick="showTab('automation')" id="automationTab" style="background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; margin-right: 10px; border-radius: 15px; cursor: pointer; transition: all 0.3s ease; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">🤖 Automation</button>
                 </div>
 
                 <!-- Metrics Tab -->
@@ -624,13 +624,20 @@ async def dashboard():
             document.querySelectorAll('.tab-content').forEach(tab => {{
                 tab.style.display = 'none';
             }});
-            document.querySelectorAll('.tab-btn').forEach(btn => {{
-                btn.classList.remove('active-tab');
-            }});
             
-            // Show selected tab
+            // Reset all tab buttons to inactive style
+            document.getElementById('metricsTab').style.background = 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))';
+            document.getElementById('metricsTab').style.borderColor = 'rgba(255,255,255,0.1)';
+            document.getElementById('trendsTab').style.background = 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))';
+            document.getElementById('trendsTab').style.borderColor = 'rgba(255,255,255,0.1)';
+            document.getElementById('automationTab').style.background = 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))';
+            document.getElementById('automationTab').style.borderColor = 'rgba(255,255,255,0.1)';
+            
+            // Show selected tab and activate button
             document.getElementById(tabName + 'Content').style.display = 'block';
-            document.getElementById(tabName + 'Tab').classList.add('active-tab');
+            const activeTab = document.getElementById(tabName + 'Tab');
+            activeTab.style.background = 'linear-gradient(45deg, #4a9eff, #2ecc71)';
+            activeTab.style.borderColor = 'rgba(255,255,255,0.3)';
             
             if (tabName === 'trends') {{
                 loadTrendsData();

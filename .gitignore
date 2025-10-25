@@ -13,11 +13,32 @@ deploy_*.sh
 # OS
 .DS_Store
 
-# Local artifacts
+# Environment Variables & Secrets
 *.log
 .env
+.env.*
+!.env.template
+!.env.example
 *.key
 *.pem
+*.p12
+*.pfx
+service-account*.json
+credentials*.json
+
+# API Keys & Tokens
+*api-key*
+*secret*
+*token*
+auth.json
+secrets.yaml
+secrets.yml
+
+# Database & Security
+database.env
+db-credentials*
+*.sqlite
+*.sqlite3
 
 # Archives and uploads
 archive/

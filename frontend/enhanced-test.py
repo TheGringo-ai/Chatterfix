@@ -31,15 +31,15 @@ app.add_middleware(
 
 # Service URLs (will be set from environment variables)
 SERVICES = {
-    "customer_success": os.getenv("CUSTOMER_SUCCESS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "revenue_intelligence": os.getenv("REVENUE_INTELLIGENCE_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "data_room": os.getenv("DATA_ROOM_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
+    "customer_success": os.getenv("CUSTOMER_SUCCESS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"),
+    "revenue_intelligence": os.getenv("REVENUE_INTELLIGENCE_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"),
+    "data_room": os.getenv("DATA_ROOM_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"),
     "fix_it_fred": os.getenv("FIX_IT_FRED_ENHANCED_URL", "https://chatterfix-fix-it-fred-enhanced-650169261019.us-central1.run.app"),
     "fix_it_fred_diy": os.getenv("FIX_IT_FRED_DIY_URL", "https://fix-it-fred-diy-650169261019.us-central1.run.app"),
     "cmms": os.getenv("CMMS_SERVICE_URL", "https://chatterfix-cmms-650169261019.us-central1.run.app"),
-    "work_orders": os.getenv("WORK_ORDERS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "assets": os.getenv("ASSETS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "parts": os.getenv("PARTS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
+    "work_orders": os.getenv("WORK_ORDERS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"),
+    "assets": os.getenv("ASSETS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"),
+    "parts": os.getenv("PARTS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"),
     "voice_ai": os.getenv("VOICE_AI_URL", "https://chatterfix-voice-ai-650169261019.us-central1.run.app")
 }
 
@@ -238,61 +238,41 @@ async def diy_interface():
     response = await proxy_request(SERVICES["fix_it_fred_diy"], "", Request(scope={"type": "http", "method": "GET"}))
     return HTMLResponse(content=response.text)
 
-# CMMS API routes - Base routes FIRST to avoid path conflicts
-@app.api_route("/api/work-orders", methods=["GET", "POST"])
-async def work_orders_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - work orders base"""
-    response = await proxy_request(SERVICES["work_orders"], "work_orders/", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
+# CMMS API routes - Updated to use dedicated microservices
 @app.api_route("/api/work-orders/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def work_orders_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - work orders"""
+    """Proxy to dedicated Work Orders microservice"""
     response = await proxy_request(SERVICES["work_orders"], f"work_orders/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-@app.api_route("/api/assets", methods=["GET", "POST"])
-async def assets_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - assets base"""
-    response = await proxy_request(SERVICES["assets"], "assets/", request)
+@app.api_route("/api/work-orders", methods=["GET", "POST"])
+async def work_orders_base_proxy(request: Request):
+    """Proxy to dedicated Work Orders microservice - base endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], "work_orders", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/assets/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def assets_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - assets"""
+    """Proxy to dedicated Assets microservice"""
     response = await proxy_request(SERVICES["assets"], f"assets/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-@app.api_route("/api/parts", methods=["GET", "POST"])
-async def parts_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - parts base"""
-    response = await proxy_request(SERVICES["parts"], "parts/", request)
+@app.api_route("/api/assets", methods=["GET", "POST"])
+async def assets_base_proxy(request: Request):
+    """Proxy to dedicated Assets microservice - base endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/parts/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def parts_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - parts"""
+    """Proxy to dedicated Parts microservice"""
     response = await proxy_request(SERVICES["parts"], f"parts/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Alternative routes with underscores for consistency (base first)
-@app.api_route("/api/work_orders", methods=["GET", "POST"])
-async def work_orders_underscore_base_proxy(request: Request):
-    """Alternative route: work_orders base with underscores"""
-    response = await proxy_request(SERVICES["work_orders"], "work_orders/", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
-@app.api_route("/api/work_orders/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def work_orders_underscore_proxy(path: str, request: Request):
-    """Alternative route: work_orders with underscores"""
-    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{path}", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
-# Health endpoint for consolidated CMMS
-@app.api_route("/api/health", methods=["GET"])
-async def cmms_health_proxy(request: Request):
-    """Proxy to consolidated CMMS health endpoint"""
-    response = await proxy_request(SERVICES["work_orders"], "health", request)
+@app.api_route("/api/parts", methods=["GET", "POST"])
+async def parts_base_proxy(request: Request):
+    """Proxy to dedicated Parts microservice - base endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.get("/api/dashboard/cmms")
@@ -301,32 +281,116 @@ async def cmms_dashboard_proxy(request: Request):
     response = await proxy_request(SERVICES["cmms"], "api/dashboard/stats", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific work order routes removed to avoid conflicts with {path:path} pattern
-# The general work_orders_proxy handles all sub-paths including:
-# - /api/work-orders/{work_order_id}/comment
-# - /api/work-orders/{work_order_id}/parts  
-# - /api/work-orders/{work_order_id}/attachments
-# - /api/work-orders/{work_order_id}/export.pdf
-# - /api/work-orders/export.csv
+# Enhanced Work Orders API routes
+@app.api_route("/api/work-orders/{work_order_id}/comment", methods=["POST"])
+async def work_orders_comment_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders comment endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/comment", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific asset routes removed to avoid conflicts with {path:path} pattern
-# The general assets_proxy handles all sub-paths including:
-# - /api/assets/{asset_id}/attachments
-# - /api/assets/{asset_id}/work-order  
-# - /api/assets/{asset_id}/export.pdf
-# - /api/assets/export.csv
-# - /api/assets/maintenance/upcoming
+@app.api_route("/api/work-orders/{work_order_id}/parts", methods=["POST"])
+async def work_orders_parts_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders parts usage endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/parts", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific parts routes removed to avoid conflicts with {path:path} pattern  
-# The general parts_proxy handles all sub-paths including:
-# - /api/parts/{part_id}/checkout
-# - /api/parts/{part_id}/restock
-# - /api/parts/{part_id}/adjust
-# - /api/parts/{part_id}/transactions
-# - /api/parts/{part_id}/attachments
-# - /api/parts/{part_id}/export.pdf
-# - /api/parts/export.csv
-# - /api/parts/alerts/low-stock
+@app.api_route("/api/work-orders/{work_order_id}/attachments", methods=["GET", "POST"])
+async def work_orders_attachments_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders attachments endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/work-orders/{work_order_id}/export.pdf", methods=["GET"])
+async def work_orders_export_pdf_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders PDF export endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/work-orders/export.csv", methods=["GET"])
+async def work_orders_export_csv_proxy(request: Request):
+    """Proxy to Work Orders CSV export endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], "work_orders/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+# Enhanced Assets API routes
+@app.api_route("/api/assets/{asset_id}/attachments", methods=["GET", "POST"])
+async def assets_attachments_proxy(asset_id: int, request: Request):
+    """Proxy to Assets attachments endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/assets/{asset_id}/work-order", methods=["POST"])
+async def assets_work_order_proxy(asset_id: int, request: Request):
+    """Proxy to Assets work order creation endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/work-order", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/assets/{asset_id}/export.pdf", methods=["GET"])
+async def assets_export_pdf_proxy(asset_id: int, request: Request):
+    """Proxy to Assets PDF export endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/assets/export.csv", methods=["GET"])
+async def assets_export_csv_proxy(request: Request):
+    """Proxy to Assets CSV export endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+@app.api_route("/api/assets/maintenance/upcoming", methods=["GET"])
+async def assets_upcoming_maintenance_proxy(request: Request):
+    """Proxy to Assets upcoming maintenance endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets/maintenance/upcoming", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+# Enhanced Parts API routes
+@app.api_route("/api/parts/{part_id}/checkout", methods=["POST"])
+async def parts_checkout_proxy(part_id: int, request: Request):
+    """Proxy to Parts checkout endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/checkout", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/restock", methods=["POST"])
+async def parts_restock_proxy(part_id: int, request: Request):
+    """Proxy to Parts restock endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/restock", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/adjust", methods=["POST"])
+async def parts_adjust_proxy(part_id: int, request: Request):
+    """Proxy to Parts inventory adjustment endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/adjust", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/transactions", methods=["GET"])
+async def parts_transactions_proxy(part_id: int, request: Request):
+    """Proxy to Parts transaction history endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/transactions", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/attachments", methods=["GET", "POST"])
+async def parts_attachments_proxy(part_id: int, request: Request):
+    """Proxy to Parts attachments endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/export.pdf", methods=["GET"])
+async def parts_export_pdf_proxy(part_id: int, request: Request):
+    """Proxy to Parts PDF export endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/parts/export.csv", methods=["GET"])
+async def parts_export_csv_proxy(request: Request):
+    """Proxy to Parts CSV export endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+@app.api_route("/api/parts/alerts/low-stock", methods=["GET"])
+async def parts_low_stock_proxy(request: Request):
+    """Proxy to Parts low stock alerts endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts/alerts/low-stock", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/suppliers", methods=["GET"])
 async def suppliers_proxy(request: Request):
@@ -675,53 +739,6 @@ async def root():
                             </div>
                         </div>
 
-                        <!-- CMMS Statistics -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h4 class="mb-3"><i class="fas fa-wrench me-2 text-primary"></i>CMMS Operations Dashboard</h4>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-tasks fa-2x text-primary mb-3"></i>
-                                        <h3 class="metric-value" id="total-work-orders">-</h3>
-                                        <p class="metric-label">Total Work Orders</p>
-                                        <small class="text-primary"><span id="open-work-orders">-</span> open</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-building fa-2x text-success mb-3"></i>
-                                        <h3 class="metric-value" id="total-assets">-</h3>
-                                        <p class="metric-label">Managed Assets</p>
-                                        <small class="text-success"><span id="critical-assets">-</span> critical</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-cog fa-2x text-warning mb-3"></i>
-                                        <h3 class="metric-value" id="total-parts">-</h3>
-                                        <p class="metric-label">Parts Inventory</p>
-                                        <small class="text-warning"><span id="low-stock-parts">-</span> low stock</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-check-circle fa-2x text-info mb-3"></i>
-                                        <h3 class="metric-value" id="completion-rate">-</h3>
-                                        <p class="metric-label">Completion Rate</p>
-                                        <small class="text-info">Last 30 days</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Feature Status -->
                         <div class="row">
                             <div class="col-md-6">
@@ -833,39 +850,6 @@ async def root():
                                 <i class="fas fa-plus me-2"></i>New Work Order
                             </button>
                         </div>
-                        <!-- Work Order Filters -->
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <select class="form-select" id="statusFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Statuses</option>
-                                    <option value="Open">🟢 Open</option>
-                                    <option value="In Progress">🟡 In Progress</option>
-                                    <option value="On Hold">🟠 On Hold</option>
-                                    <option value="Completed">✅ Completed</option>
-                                    <option value="Cancelled">❌ Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="priorityFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Priorities</option>
-                                    <option value="Critical">🔴 Critical</option>
-                                    <option value="High">🟠 High</option>
-                                    <option value="Medium">🟡 Medium</option>
-                                    <option value="Low">🟢 Low</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="assigneeFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Technicians</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <button class="btn btn-outline-secondary" onclick="loadWorkOrdersContent()">
-                                    <i class="fas fa-refresh me-1"></i>Refresh
-                                </button>
-                            </div>
-                        </div>
-                        
                         <div id="work-orders-content">
                             <div class="text-center py-5">
                                 <div class="spinner-border text-primary" role="status"></div>
@@ -1745,9 +1729,6 @@ async def root():
                     dashboardData.systemPerformance = await systemResponse.json();
                 }
 
-                // Load CMMS statistics
-                await loadCMMSStats();
-
                 updateDashboardUI();
             } catch (error) {
                 console.warn('Some dashboard data unavailable:', error);
@@ -1982,15 +1963,7 @@ async def root():
         async function loadWorkOrdersContent() {
             const container = document.getElementById('work-orders-content');
             try {
-                // Add loading spinner
-                container.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2">Loading work orders...</p>
-                    </div>
-                `;
-                
-                const response = await fetch('/api/work-orders?limit=50');
+                const response = await fetch('/api/work-orders?limit=10');
                 if (response.ok) {
                     const data = await response.json();
                     container.innerHTML = generateWorkOrdersTable(data.work_orders);
@@ -2002,9 +1975,6 @@ async def root():
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         CMMS service is starting up. Please try again in a moment.
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadWorkOrdersContent()">
-                            <i class="fas fa-refresh me-1"></i>Retry
-                        </button>
                     </div>
                 `;
             }
@@ -2055,69 +2025,31 @@ async def root():
                 return '<div class="alert alert-info">No work orders found.</div>';
             }
 
-            // Populate assignee filter
-            const assignees = [...new Set(workOrders.map(wo => wo.assigned_to).filter(a => a))];
-            const assigneeSelect = document.getElementById('assigneeFilter');
-            if (assigneeSelect) {
-                assigneeSelect.innerHTML = '<option value="">All Technicians</option>' + 
-                    assignees.map(a => `<option value="${a}">${a}</option>`).join('');
-            }
-
             return `
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="workOrdersTable">
+                    <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th onclick="sortWorkOrders('code')" style="cursor: pointer;">
-                                    Code <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('title')" style="cursor: pointer;">
-                                    Title <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('status')" style="cursor: pointer;">
-                                    Status <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('priority')" style="cursor: pointer;">
-                                    Priority <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('assigned_to')" style="cursor: pointer;">
-                                    Assigned To <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('due_date')" style="cursor: pointer;">
-                                    Due Date <i class="fas fa-sort"></i>
-                                </th>
-                                <th>Progress</th>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Asset</th>
+                                <th>Assigned To</th>
+                                <th>Created</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${workOrders.map(wo => {
-                                const isOverdue = wo.due_date && new Date(wo.due_date) < new Date() && 
-                                                 !['Completed', 'Cancelled'].includes(wo.status);
-                                const dueSoon = wo.due_date && 
-                                               new Date(wo.due_date) < new Date(Date.now() + 7*24*60*60*1000) && 
-                                               !isOverdue && !['Completed', 'Cancelled'].includes(wo.status);
-                                
-                                return `
-                                <tr class="work-order-row ${isOverdue ? 'table-danger' : dueSoon ? 'table-warning' : ''}" 
-                                    style="cursor: pointer;" 
-                                    onclick="viewWorkOrder(${wo.id})" 
-                                    data-status="${wo.status}" 
-                                    data-priority="${wo.priority}" 
-                                    data-assignee="${wo.assigned_to || ''}"
-                                    onmouseover="this.style.opacity='0.8'" 
-                                    onmouseout="this.style.opacity='1'">
-                                    <td><strong>${wo.code || '#' + wo.id}</strong></td>
-                                    <td>
-                                        <strong>${wo.title}</strong>
-                                        ${isOverdue ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Overdue</small>' : ''}
-                                        ${dueSoon ? '<br><small class="text-warning"><i class="fas fa-clock"></i> Due Soon</small>' : ''}
-                                    </td>
-                                    <td>${getStatusBadge(wo.status)}</td>
-                                    <td>${getPriorityBadge(wo.priority)}</td>
-                                    <td>${wo.assigned_to || '<span class="text-muted">Unassigned</span>'}</td>
-                                    <td>${wo.due_date ? new Date(wo.due_date).toLocaleDateString() : '<span class="text-muted">No deadline</span>'}</td>
-                                    <td>${getProgressIndicator(wo)}</td>
+                            ${workOrders.map(wo => `
+                                <tr style="cursor: pointer;" onclick="viewWorkOrder(${wo.id})" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor=''">
+                                    <td>#${wo.id}</td>
+                                    <td><strong>${wo.title}</strong></td>
+                                    <td><span class="badge bg-${getStatusColor(wo.status)}">${wo.status}</span></td>
+                                    <td><span class="badge bg-${getPriorityColor(wo.priority)}">${wo.priority}</span></td>
+                                    <td>${wo.asset_name || 'N/A'}</td>
+                                    <td>${wo.assigned_to || 'Unassigned'}</td>
+                                    <td>${new Date(wo.created_at).toLocaleDateString()}</td>
                                     <td onclick="event.stopPropagation();">
                                         <button class="btn btn-sm btn-outline-primary me-1" onclick="viewWorkOrder(${wo.id})" title="View Details">
                                             <i class="fas fa-eye"></i>
@@ -2126,8 +2058,8 @@ async def root():
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     </td>
-                                </tr>`;
-                            }).join('')}
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -2246,172 +2178,6 @@ async def root():
                 case 'medium': return 'warning';
                 case 'low': return 'success';
                 default: return 'secondary';
-            }
-        }
-
-        // Enhanced UI Helper Functions
-        function getStatusBadge(status) {
-            const statusMap = {
-                'Open': { color: 'success', icon: '🟢' },
-                'In Progress': { color: 'warning', icon: '🟡' },
-                'On Hold': { color: 'secondary', icon: '🟠' },
-                'Completed': { color: 'success', icon: '✅' },
-                'Cancelled': { color: 'danger', icon: '❌' }
-            };
-            const s = statusMap[status] || { color: 'primary', icon: '📝' };
-            return `<span class="badge bg-${s.color}">${s.icon} ${status}</span>`;
-        }
-
-        function getPriorityBadge(priority) {
-            const priorityMap = {
-                'Critical': { color: 'danger', icon: '🔴' },
-                'High': { color: 'warning', icon: '🟠' },
-                'Medium': { color: 'info', icon: '🟡' },
-                'Low': { color: 'success', icon: '🟢' }
-            };
-            const p = priorityMap[priority] || { color: 'secondary', icon: '⚪' };
-            return `<span class="badge bg-${p.color}">${p.icon} ${priority}</span>`;
-        }
-
-        function getProgressIndicator(workOrder) {
-            if (!workOrder.estimated_hours) {
-                return '<span class="text-muted">No estimate</span>';
-            }
-            const progress = workOrder.actual_hours ? 
-                Math.min(100, (workOrder.actual_hours / workOrder.estimated_hours) * 100) : 0;
-            const colorClass = progress > 100 ? 'bg-danger' : progress > 80 ? 'bg-warning' : 'bg-success';
-            return `
-                <div class="progress" style="height: 20px;">
-                    <div class="progress-bar ${colorClass}" style="width: ${Math.min(progress, 100)}%">
-                        ${progress.toFixed(0)}%
-                    </div>
-                </div>
-                <small class="text-muted">${workOrder.actual_hours || 0}h / ${workOrder.estimated_hours}h</small>
-            `;
-        }
-
-        // Filtering and Sorting Functions
-        function filterWorkOrders() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;
-            const assigneeFilter = document.getElementById('assigneeFilter').value;
-            
-            const rows = document.querySelectorAll('.work-order-row');
-            rows.forEach(row => {
-                const status = row.dataset.status;
-                const priority = row.dataset.priority;
-                const assignee = row.dataset.assignee;
-                
-                const statusMatch = !statusFilter || status === statusFilter;
-                const priorityMatch = !priorityFilter || priority === priorityFilter;
-                const assigneeMatch = !assigneeFilter || assignee === assigneeFilter;
-                
-                row.style.display = (statusMatch && priorityMatch && assigneeMatch) ? '' : 'none';
-            });
-        }
-
-        let sortDirection = {};
-        function sortWorkOrders(field) {
-            const table = document.getElementById('workOrdersTable');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            sortDirection[field] = sortDirection[field] === 'asc' ? 'desc' : 'asc';
-            
-            rows.sort((a, b) => {
-                let aVal = a.children[getColumnIndex(field)].textContent.trim();
-                let bVal = b.children[getColumnIndex(field)].textContent.trim();
-                
-                if (field === 'due_date') {
-                    aVal = aVal === 'No deadline' ? '9999-12-31' : aVal;
-                    bVal = bVal === 'No deadline' ? '9999-12-31' : bVal;
-                }
-                
-                const comparison = aVal.localeCompare(bVal);
-                return sortDirection[field] === 'asc' ? comparison : -comparison;
-            });
-            
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        function getColumnIndex(field) {
-            const fields = ['code', 'title', 'status', 'priority', 'assigned_to', 'due_date'];
-            return fields.indexOf(field);
-        }
-
-        // Asset and Parts Helper Functions
-        function getAssetIcon(assetType) {
-            const iconMap = {
-                'HVAC': '<i class="fas fa-fan text-info"></i>',
-                'Safety': '<i class="fas fa-shield-alt text-success"></i>',
-                'Production': '<i class="fas fa-industry text-primary"></i>',
-                'Elevator': '<i class="fas fa-building text-warning"></i>',
-                'Lighting': '<i class="fas fa-lightbulb text-warning"></i>',
-                'Power': '<i class="fas fa-bolt text-danger"></i>',
-                'Structure': '<i class="fas fa-building text-secondary"></i>',
-                'Plumbing': '<i class="fas fa-tint text-info"></i>'
-            };
-            return iconMap[assetType] || '<i class="fas fa-cog text-muted"></i>';
-        }
-
-        function getConditionBadge(condition) {
-            const conditionMap = {
-                'Excellent': { color: 'success', icon: '🟢' },
-                'Good': { color: 'success', icon: '🟢' },
-                'Fair': { color: 'warning', icon: '🟡' },
-                'Poor': { color: 'danger', icon: '🔴' },
-                'Critical': { color: 'danger', icon: '❌' }
-            };
-            const c = conditionMap[condition] || { color: 'secondary', icon: '⚪' };
-            return `<span class="badge bg-${c.color}">${c.icon} ${condition}</span>`;
-        }
-
-        function getStockBadge(currentStock, minStock) {
-            if (currentStock <= minStock) {
-                return '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Low Stock</span>';
-            } else if (currentStock <= minStock * 1.5) {
-                return '<span class="badge bg-warning"><i class="fas fa-clock"></i> Reorder Soon</span>';
-            }
-            return '<span class="badge bg-success"><i class="fas fa-check"></i> In Stock</span>';
-        }
-
-        // CMMS Dashboard Statistics
-        async function loadCMMSStats() {
-            try {
-                // Load work orders stats
-                const woStatsResponse = await fetch('/api/work-orders/stats/summary');
-                if (woStatsResponse.ok) {
-                    const woStats = await woStatsResponse.json();
-                    document.getElementById('total-work-orders').textContent = woStats.total_work_orders || 0;
-                    document.getElementById('open-work-orders').textContent = woStats.by_status?.Open || 0;
-                    document.getElementById('completion-rate').textContent = `${Math.round(woStats.completion_rate || 0)}%`;
-                }
-
-                // Load assets stats
-                const assetsStatsResponse = await fetch('/api/assets/stats/summary');
-                if (assetsStatsResponse.ok) {
-                    const assetsStats = await assetsStatsResponse.json();
-                    document.getElementById('total-assets').textContent = assetsStats.total_assets || 0;
-                    document.getElementById('critical-assets').textContent = assetsStats.by_condition?.Critical || 0;
-                }
-
-                // Load parts stats
-                const partsStatsResponse = await fetch('/api/parts/stats/summary');
-                if (partsStatsResponse.ok) {
-                    const partsStats = await partsStatsResponse.json();
-                    document.getElementById('total-parts').textContent = partsStats.total_parts || 0;
-                    document.getElementById('low-stock-parts').textContent = partsStats.low_stock_count || 0;
-                }
-            } catch (error) {
-                console.warn('Failed to load CMMS stats:', error);
-                // Set fallback values
-                document.getElementById('total-work-orders').textContent = '8';
-                document.getElementById('open-work-orders').textContent = '3';
-                document.getElementById('total-assets').textContent = '9';
-                document.getElementById('critical-assets').textContent = '2';
-                document.getElementById('total-parts').textContent = '9';
-                document.getElementById('low-stock-parts').textContent = '1';
-                document.getElementById('completion-rate').textContent = '75%';
             }
         }
 
@@ -3229,4 +2995,4 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)Enhanced Test Version

@@ -31,15 +31,15 @@ app.add_middleware(
 
 # Service URLs (will be set from environment variables)
 SERVICES = {
-    "customer_success": os.getenv("CUSTOMER_SUCCESS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "revenue_intelligence": os.getenv("REVENUE_INTELLIGENCE_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "data_room": os.getenv("DATA_ROOM_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
+    "customer_success": os.getenv("CUSTOMER_SUCCESS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"),
+    "revenue_intelligence": os.getenv("REVENUE_INTELLIGENCE_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"),
+    "data_room": os.getenv("DATA_ROOM_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"),
     "fix_it_fred": os.getenv("FIX_IT_FRED_ENHANCED_URL", "https://chatterfix-fix-it-fred-enhanced-650169261019.us-central1.run.app"),
     "fix_it_fred_diy": os.getenv("FIX_IT_FRED_DIY_URL", "https://fix-it-fred-diy-650169261019.us-central1.run.app"),
     "cmms": os.getenv("CMMS_SERVICE_URL", "https://chatterfix-cmms-650169261019.us-central1.run.app"),
-    "work_orders": os.getenv("WORK_ORDERS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "assets": os.getenv("ASSETS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
-    "parts": os.getenv("PARTS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app"),
+    "work_orders": os.getenv("WORK_ORDERS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/work_orders"),
+    "assets": os.getenv("ASSETS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/assets"),
+    "parts": os.getenv("PARTS_URL", "https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"https://chatterfix-consolidated-cmms-650169261019.us-central1.run.app/parts"),
     "voice_ai": os.getenv("VOICE_AI_URL", "https://chatterfix-voice-ai-650169261019.us-central1.run.app")
 }
 
@@ -238,61 +238,41 @@ async def diy_interface():
     response = await proxy_request(SERVICES["fix_it_fred_diy"], "", Request(scope={"type": "http", "method": "GET"}))
     return HTMLResponse(content=response.text)
 
-# CMMS API routes - Base routes FIRST to avoid path conflicts
-@app.api_route("/api/work-orders", methods=["GET", "POST"])
-async def work_orders_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - work orders base"""
-    response = await proxy_request(SERVICES["work_orders"], "work_orders/", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
+# CMMS API routes - Updated to use dedicated microservices
 @app.api_route("/api/work-orders/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def work_orders_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - work orders"""
+    """Proxy to dedicated Work Orders microservice"""
     response = await proxy_request(SERVICES["work_orders"], f"work_orders/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-@app.api_route("/api/assets", methods=["GET", "POST"])
-async def assets_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - assets base"""
-    response = await proxy_request(SERVICES["assets"], "assets/", request)
+@app.api_route("/api/work-orders", methods=["GET", "POST"])
+async def work_orders_base_proxy(request: Request):
+    """Proxy to dedicated Work Orders microservice - base endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], "work_orders", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/assets/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def assets_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - assets"""
+    """Proxy to dedicated Assets microservice"""
     response = await proxy_request(SERVICES["assets"], f"assets/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-@app.api_route("/api/parts", methods=["GET", "POST"])
-async def parts_base_proxy(request: Request):
-    """Proxy to consolidated CMMS microservice - parts base"""
-    response = await proxy_request(SERVICES["parts"], "parts/", request)
+@app.api_route("/api/assets", methods=["GET", "POST"])
+async def assets_base_proxy(request: Request):
+    """Proxy to dedicated Assets microservice - base endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/parts/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def parts_proxy(path: str, request: Request):
-    """Proxy to consolidated CMMS microservice - parts"""
+    """Proxy to dedicated Parts microservice"""
     response = await proxy_request(SERVICES["parts"], f"parts/{path}", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Alternative routes with underscores for consistency (base first)
-@app.api_route("/api/work_orders", methods=["GET", "POST"])
-async def work_orders_underscore_base_proxy(request: Request):
-    """Alternative route: work_orders base with underscores"""
-    response = await proxy_request(SERVICES["work_orders"], "work_orders/", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
-@app.api_route("/api/work_orders/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def work_orders_underscore_proxy(path: str, request: Request):
-    """Alternative route: work_orders with underscores"""
-    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{path}", request)
-    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-
-# Health endpoint for consolidated CMMS
-@app.api_route("/api/health", methods=["GET"])
-async def cmms_health_proxy(request: Request):
-    """Proxy to consolidated CMMS health endpoint"""
-    response = await proxy_request(SERVICES["work_orders"], "health", request)
+@app.api_route("/api/parts", methods=["GET", "POST"])
+async def parts_base_proxy(request: Request):
+    """Proxy to dedicated Parts microservice - base endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.get("/api/dashboard/cmms")
@@ -301,32 +281,116 @@ async def cmms_dashboard_proxy(request: Request):
     response = await proxy_request(SERVICES["cmms"], "api/dashboard/stats", request)
     return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific work order routes removed to avoid conflicts with {path:path} pattern
-# The general work_orders_proxy handles all sub-paths including:
-# - /api/work-orders/{work_order_id}/comment
-# - /api/work-orders/{work_order_id}/parts  
-# - /api/work-orders/{work_order_id}/attachments
-# - /api/work-orders/{work_order_id}/export.pdf
-# - /api/work-orders/export.csv
+# Enhanced Work Orders API routes
+@app.api_route("/api/work-orders/{work_order_id}/comment", methods=["POST"])
+async def work_orders_comment_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders comment endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/comment", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific asset routes removed to avoid conflicts with {path:path} pattern
-# The general assets_proxy handles all sub-paths including:
-# - /api/assets/{asset_id}/attachments
-# - /api/assets/{asset_id}/work-order  
-# - /api/assets/{asset_id}/export.pdf
-# - /api/assets/export.csv
-# - /api/assets/maintenance/upcoming
+@app.api_route("/api/work-orders/{work_order_id}/parts", methods=["POST"])
+async def work_orders_parts_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders parts usage endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/parts", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
-# Note: Specific parts routes removed to avoid conflicts with {path:path} pattern  
-# The general parts_proxy handles all sub-paths including:
-# - /api/parts/{part_id}/checkout
-# - /api/parts/{part_id}/restock
-# - /api/parts/{part_id}/adjust
-# - /api/parts/{part_id}/transactions
-# - /api/parts/{part_id}/attachments
-# - /api/parts/{part_id}/export.pdf
-# - /api/parts/export.csv
-# - /api/parts/alerts/low-stock
+@app.api_route("/api/work-orders/{work_order_id}/attachments", methods=["GET", "POST"])
+async def work_orders_attachments_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders attachments endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/work-orders/{work_order_id}/export.pdf", methods=["GET"])
+async def work_orders_export_pdf_proxy(work_order_id: int, request: Request):
+    """Proxy to Work Orders PDF export endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], f"work_orders/{work_order_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/work-orders/export.csv", methods=["GET"])
+async def work_orders_export_csv_proxy(request: Request):
+    """Proxy to Work Orders CSV export endpoint"""
+    response = await proxy_request(SERVICES["work_orders"], "work_orders/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+# Enhanced Assets API routes
+@app.api_route("/api/assets/{asset_id}/attachments", methods=["GET", "POST"])
+async def assets_attachments_proxy(asset_id: int, request: Request):
+    """Proxy to Assets attachments endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/assets/{asset_id}/work-order", methods=["POST"])
+async def assets_work_order_proxy(asset_id: int, request: Request):
+    """Proxy to Assets work order creation endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/work-order", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/assets/{asset_id}/export.pdf", methods=["GET"])
+async def assets_export_pdf_proxy(asset_id: int, request: Request):
+    """Proxy to Assets PDF export endpoint"""
+    response = await proxy_request(SERVICES["assets"], f"assets/{asset_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/assets/export.csv", methods=["GET"])
+async def assets_export_csv_proxy(request: Request):
+    """Proxy to Assets CSV export endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+@app.api_route("/api/assets/maintenance/upcoming", methods=["GET"])
+async def assets_upcoming_maintenance_proxy(request: Request):
+    """Proxy to Assets upcoming maintenance endpoint"""
+    response = await proxy_request(SERVICES["assets"], "assets/maintenance/upcoming", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+# Enhanced Parts API routes
+@app.api_route("/api/parts/{part_id}/checkout", methods=["POST"])
+async def parts_checkout_proxy(part_id: int, request: Request):
+    """Proxy to Parts checkout endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/checkout", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/restock", methods=["POST"])
+async def parts_restock_proxy(part_id: int, request: Request):
+    """Proxy to Parts restock endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/restock", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/adjust", methods=["POST"])
+async def parts_adjust_proxy(part_id: int, request: Request):
+    """Proxy to Parts inventory adjustment endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/adjust", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/transactions", methods=["GET"])
+async def parts_transactions_proxy(part_id: int, request: Request):
+    """Proxy to Parts transaction history endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/transactions", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/attachments", methods=["GET", "POST"])
+async def parts_attachments_proxy(part_id: int, request: Request):
+    """Proxy to Parts attachments endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/attachments", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+
+@app.api_route("/api/parts/{part_id}/export.pdf", methods=["GET"])
+async def parts_export_pdf_proxy(part_id: int, request: Request):
+    """Proxy to Parts PDF export endpoint"""
+    response = await proxy_request(SERVICES["parts"], f"parts/{part_id}/export.pdf", request)
+    return Response(content=response.content, media_type="application/pdf")
+
+@app.api_route("/api/parts/export.csv", methods=["GET"])
+async def parts_export_csv_proxy(request: Request):
+    """Proxy to Parts CSV export endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts/export.csv", request)
+    return Response(content=response.content, media_type="text/csv")
+
+@app.api_route("/api/parts/alerts/low-stock", methods=["GET"])
+async def parts_low_stock_proxy(request: Request):
+    """Proxy to Parts low stock alerts endpoint"""
+    response = await proxy_request(SERVICES["parts"], "parts/alerts/low-stock", request)
+    return response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
 
 @app.api_route("/api/suppliers", methods=["GET"])
 async def suppliers_proxy(request: Request):
@@ -675,53 +739,6 @@ async def root():
                             </div>
                         </div>
 
-                        <!-- CMMS Statistics -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h4 class="mb-3"><i class="fas fa-wrench me-2 text-primary"></i>CMMS Operations Dashboard</h4>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-tasks fa-2x text-primary mb-3"></i>
-                                        <h3 class="metric-value" id="total-work-orders">-</h3>
-                                        <p class="metric-label">Total Work Orders</p>
-                                        <small class="text-primary"><span id="open-work-orders">-</span> open</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-building fa-2x text-success mb-3"></i>
-                                        <h3 class="metric-value" id="total-assets">-</h3>
-                                        <p class="metric-label">Managed Assets</p>
-                                        <small class="text-success"><span id="critical-assets">-</span> critical</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-cog fa-2x text-warning mb-3"></i>
-                                        <h3 class="metric-value" id="total-parts">-</h3>
-                                        <p class="metric-label">Parts Inventory</p>
-                                        <small class="text-warning"><span id="low-stock-parts">-</span> low stock</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="stat-card">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-check-circle fa-2x text-info mb-3"></i>
-                                        <h3 class="metric-value" id="completion-rate">-</h3>
-                                        <p class="metric-label">Completion Rate</p>
-                                        <small class="text-info">Last 30 days</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Feature Status -->
                         <div class="row">
                             <div class="col-md-6">
@@ -833,39 +850,6 @@ async def root():
                                 <i class="fas fa-plus me-2"></i>New Work Order
                             </button>
                         </div>
-                        <!-- Work Order Filters -->
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <select class="form-select" id="statusFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Statuses</option>
-                                    <option value="Open">🟢 Open</option>
-                                    <option value="In Progress">🟡 In Progress</option>
-                                    <option value="On Hold">🟠 On Hold</option>
-                                    <option value="Completed">✅ Completed</option>
-                                    <option value="Cancelled">❌ Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="priorityFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Priorities</option>
-                                    <option value="Critical">🔴 Critical</option>
-                                    <option value="High">🟠 High</option>
-                                    <option value="Medium">🟡 Medium</option>
-                                    <option value="Low">🟢 Low</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" id="assigneeFilter" onchange="filterWorkOrders()">
-                                    <option value="">All Technicians</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <button class="btn btn-outline-secondary" onclick="loadWorkOrdersContent()">
-                                    <i class="fas fa-refresh me-1"></i>Refresh
-                                </button>
-                            </div>
-                        </div>
-                        
                         <div id="work-orders-content">
                             <div class="text-center py-5">
                                 <div class="spinner-border text-primary" role="status"></div>
@@ -995,9 +979,9 @@ async def root():
     </div>
 
     <!-- CRUD Modals -->
-    <!-- Enhanced Work Order Modal -->
+    <!-- Work Order Modal -->
     <div class="modal fade" id="workOrderModal" tabindex="-1" aria-labelledby="workOrderModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="workOrderModalLabel">Work Order</h5>
@@ -1006,40 +990,14 @@ async def root():
                 <div class="modal-body">
                     <form id="workOrderForm">
                         <input type="hidden" id="workOrderId" name="id">
-                        
-                        <!-- Basic Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                                <hr>
-                            </div>
+                        <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-3">
-                                    <label for="workOrderTitle" class="form-label">Work Order Title *</label>
+                                    <label for="workOrderTitle" class="form-label">Title *</label>
                                     <input type="text" class="form-control" id="workOrderTitle" name="title" required>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="workOrderNumber" class="form-label">Work Order Number</label>
-                                    <input type="text" class="form-control" id="workOrderNumber" name="work_order_number" placeholder="Auto-generated">
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="workOrderDescription" class="form-label">Description *</label>
-                                    <textarea class="form-control" id="workOrderDescription" name="description" rows="3" required></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Priority & Status -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-exclamation-triangle me-2"></i>Priority & Status</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="workOrderPriority" class="form-label">Priority</label>
                                     <select class="form-select" id="workOrderPriority" name="priority">
@@ -1047,58 +1005,16 @@ async def root():
                                         <option value="Medium" selected>Medium</option>
                                         <option value="High">High</option>
                                         <option value="Critical">Critical</option>
-                                        <option value="Emergency">Emergency</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="workOrderStatus" class="form-label">Status</label>
-                                    <select class="form-select" id="workOrderStatus" name="status">
-                                        <option value="Open">Open</option>
-                                        <option value="In Progress">In Progress</option>
-                                        <option value="On Hold">On Hold</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="workOrderType" class="form-label">Work Order Type</label>
-                                    <select class="form-select" id="workOrderType" name="work_order_type">
-                                        <option value="Preventive">Preventive Maintenance</option>
-                                        <option value="Corrective">Corrective Maintenance</option>
-                                        <option value="Emergency">Emergency Repair</option>
-                                        <option value="Inspection">Inspection</option>
-                                        <option value="Installation">Installation</option>
-                                        <option value="Calibration">Calibration</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="workOrderCategory" class="form-label">Category</label>
-                                    <select class="form-select" id="workOrderCategory" name="category">
-                                        <option value="Electrical">Electrical</option>
-                                        <option value="Mechanical">Mechanical</option>
-                                        <option value="HVAC">HVAC</option>
-                                        <option value="Plumbing">Plumbing</option>
-                                        <option value="Safety">Safety</option>
-                                        <option value="Cleaning">Cleaning</option>
-                                        <option value="IT">IT/Technology</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Assignment & Scheduling -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-user-cog me-2"></i>Assignment & Scheduling</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="workOrderDescription" class="form-label">Description *</label>
+                            <textarea class="form-control" id="workOrderDescription" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="workOrderAssignedTo" class="form-label">Assigned To</label>
                                     <select class="form-select" id="workOrderAssignedTo" name="assigned_to">
@@ -1110,26 +1026,14 @@ async def root():
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="workOrderDueDate" class="form-label">Due Date</label>
                                     <input type="datetime-local" class="form-control" id="workOrderDueDate" name="due_date">
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="workOrderEstimatedHours" class="form-label">Estimated Hours</label>
-                                    <input type="number" step="0.5" class="form-control" id="workOrderEstimatedHours" name="estimated_hours">
-                                </div>
-                            </div>
                         </div>
-
-                        <!-- Asset & Location -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-map-marker-alt me-2"></i>Asset & Location</h6>
-                                <hr>
-                            </div>
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="workOrderAssetId" class="form-label">Asset</label>
@@ -1140,88 +1044,13 @@ async def root():
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="workOrderLocation" class="form-label">Location</label>
-                                    <input type="text" class="form-control" id="workOrderLocation" name="location" placeholder="Building, floor, room">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Cost & Resources -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-dollar-sign me-2"></i>Cost & Resources</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="workOrderMaterialCost" class="form-label">Material Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="workOrderMaterialCost" name="material_cost">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="workOrderLaborCost" class="form-label">Labor Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="workOrderLaborCost" name="labor_cost">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="workOrderTotalCost" class="form-label">Total Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="workOrderTotalCost" name="total_cost" readonly>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Parts & Materials -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-box me-2"></i>Parts & Materials</h6>
-                                <hr>
-                            </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="workOrderParts" class="form-label">Required Parts</label>
-                                    <textarea class="form-control" id="workOrderParts" name="required_parts" rows="2" placeholder="List parts and quantities needed"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instructions & Notes -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-clipboard me-2"></i>Instructions & Notes</h6>
-                                <hr>
-                            </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="workOrderInstructions" class="form-label">Work Instructions</label>
-                                    <textarea class="form-control" id="workOrderInstructions" name="instructions" rows="3" placeholder="Detailed work instructions and procedures"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="workOrderNotes" class="form-label">Additional Notes</label>
-                                    <textarea class="form-control" id="workOrderNotes" name="notes" rows="2" placeholder="Any additional notes or comments"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Safety & Compliance -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-shield-alt me-2"></i>Safety & Compliance</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="workOrderSafetyRequirements" class="form-label">Safety Requirements</label>
-                                    <textarea class="form-control" id="workOrderSafetyRequirements" name="safety_requirements" rows="2" placeholder="PPE, lockout/tagout, permits required"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="workOrderComplianceNotes" class="form-label">Compliance Notes</label>
-                                    <textarea class="form-control" id="workOrderComplianceNotes" name="compliance_notes" rows="2" placeholder="Regulatory requirements, standards"></textarea>
+                                    <label for="workOrderStatus" class="form-label">Status</label>
+                                    <select class="form-select" id="workOrderStatus" name="status">
+                                        <option value="Open">Open</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1236,130 +1065,72 @@ async def root():
         </div>
     </div>
 
-    <!-- Enhanced Asset Modal -->
+    <!-- Asset Modal -->
     <div class="modal fade" id="assetModal" tabindex="-1" aria-labelledby="assetModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="assetModalLabel">Asset Management</h5>
+                    <h5 class="modal-title" id="assetModalLabel">Asset</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="assetForm">
                         <input type="hidden" id="assetId" name="id">
-                        
-                        <!-- Basic Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-8">
                                 <div class="mb-3">
                                     <label for="assetName" class="form-label">Asset Name *</label>
                                     <input type="text" class="form-control" id="assetName" name="name" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="assetTag" class="form-label">Asset Tag/ID</label>
-                                    <input type="text" class="form-control" id="assetTag" name="asset_tag">
-                                </div>
-                            </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label for="assetType" class="form-label">Asset Type</label>
+                                    <label for="assetType" class="form-label">Type</label>
                                     <select class="form-select" id="assetType" name="type">
                                         <option value="Equipment">Equipment</option>
-                                        <option value="Machinery">Machinery</option>
+                                        <option value="Facility">Facility</option>
                                         <option value="Vehicle">Vehicle</option>
                                         <option value="Tool">Tool</option>
-                                        <option value="Facility">Facility</option>
                                         <option value="Infrastructure">Infrastructure</option>
-                                        <option value="IT Hardware">IT Hardware</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="assetCategory" class="form-label">Category</label>
-                                    <select class="form-select" id="assetCategory" name="category">
-                                        <option value="Production">Production</option>
-                                        <option value="HVAC">HVAC</option>
-                                        <option value="Electrical">Electrical</option>
-                                        <option value="Mechanical">Mechanical</option>
-                                        <option value="Safety">Safety</option>
-                                        <option value="Office">Office</option>
-                                        <option value="Facility">Facility</option>
-                                    </select>
+                                    <label for="assetLocation" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="assetLocation" name="location">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="assetStatus" class="form-label">Status</label>
                                     <select class="form-select" id="assetStatus" name="status">
                                         <option value="Active">Active</option>
                                         <option value="Inactive">Inactive</option>
-                                        <option value="Under Maintenance">Under Maintenance</option>
-                                        <option value="Out of Service">Out of Service</option>
+                                        <option value="Maintenance">Under Maintenance</option>
                                         <option value="Retired">Retired</option>
-                                        <option value="Disposed">Disposed</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Location & Details -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-map-marker-alt me-2"></i>Location & Details</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetBuilding" class="form-label">Building</label>
-                                    <input type="text" class="form-control" id="assetBuilding" name="building">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetFloor" class="form-label">Floor</label>
-                                    <input type="text" class="form-control" id="assetFloor" name="floor">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetRoom" class="form-label">Room/Area</label>
-                                    <input type="text" class="form-control" id="assetRoom" name="room">
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="assetLocation" class="form-label">Full Location</label>
-                                    <input type="text" class="form-control" id="assetLocation" name="location" placeholder="Complete location description">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Manufacturer & Technical Info -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-cogs me-2"></i>Manufacturer & Technical Information</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="assetManufacturer" class="form-label">Manufacturer</label>
                                     <input type="text" class="form-control" id="assetManufacturer" name="manufacturer">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="assetModel" class="form-label">Model</label>
                                     <input type="text" class="form-control" id="assetModel" name="model">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="assetSerialNumber" class="form-label">Serial Number</label>
                                     <input type="text" class="form-control" id="assetSerialNumber" name="serial_number">
@@ -1367,94 +1138,14 @@ async def root():
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="assetSpecifications" class="form-label">Technical Specifications</label>
-                                    <textarea class="form-control" id="assetSpecifications" name="specifications" rows="3" placeholder="Power, capacity, dimensions, etc."></textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="assetDescription" class="form-label">Description</label>
-                                    <textarea class="form-control" id="assetDescription" name="description" rows="3"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Dates & Lifecycle -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-calendar me-2"></i>Dates & Lifecycle</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="assetPurchaseDate" class="form-label">Purchase Date</label>
-                                    <input type="date" class="form-control" id="assetPurchaseDate" name="purchase_date">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
                                     <label for="assetInstallDate" class="form-label">Install Date</label>
                                     <input type="date" class="form-control" id="assetInstallDate" name="install_date">
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="assetWarrantyExpiry" class="form-label">Warranty Expiry</label>
-                                    <input type="date" class="form-control" id="assetWarrantyExpiry" name="warranty_expiry">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="assetLifeExpectancy" class="form-label">Life Expectancy (years)</label>
-                                    <input type="number" class="form-control" id="assetLifeExpectancy" name="life_expectancy">
-                                </div>
-                            </div>
                         </div>
-
-                        <!-- Financial Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-dollar-sign me-2"></i>Financial Information</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetPurchaseCost" class="form-label">Purchase Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="assetPurchaseCost" name="purchase_cost">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetCurrentValue" class="form-label">Current Value ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="assetCurrentValue" name="current_value">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="assetDepreciationRate" class="form-label">Depreciation Rate (%)</label>
-                                    <input type="number" step="0.01" class="form-control" id="assetDepreciationRate" name="depreciation_rate">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Vendor & Support -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-handshake me-2"></i>Vendor & Support</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="assetVendor" class="form-label">Primary Vendor</label>
-                                    <input type="text" class="form-control" id="assetVendor" name="vendor">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="assetVendorContact" class="form-label">Vendor Contact</label>
-                                    <input type="text" class="form-control" id="assetVendorContact" name="vendor_contact" placeholder="Phone, email, name">
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <label for="assetDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="assetDescription" name="description" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
@@ -1467,62 +1158,48 @@ async def root():
         </div>
     </div>
 
-    <!-- Enhanced Parts Modal -->
+    <!-- Part Modal -->
     <div class="modal fade" id="partModal" tabindex="-1" aria-labelledby="partModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="partModalLabel">Parts & Inventory Management</h5>
+                    <h5 class="modal-title" id="partModalLabel">Part</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="partForm">
                         <input type="hidden" id="partId" name="id">
-                        
-                        <!-- Basic Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-8">
                                 <div class="mb-3">
                                     <label for="partName" class="form-label">Part Name *</label>
                                     <input type="text" class="form-control" id="partName" name="name" required>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label for="partNumber" class="form-label">Part Number</label>
                                     <input type="text" class="form-control" id="partNumber" name="part_number">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="partCategory" class="form-label">Category</label>
                                     <select class="form-select" id="partCategory" name="category">
-                                        <option value="Electrical">Electrical Components</option>
-                                        <option value="Mechanical">Mechanical Parts</option>
-                                        <option value="HVAC">HVAC Components</option>
-                                        <option value="Plumbing">Plumbing Supplies</option>
-                                        <option value="Safety">Safety Equipment</option>
-                                        <option value="Filters">Filters</option>
-                                        <option value="Lubricants">Lubricants & Oils</option>
-                                        <option value="Fasteners">Fasteners</option>
-                                        <option value="Tools">Tools</option>
-                                        <option value="General">General Supplies</option>
+                                        <option value="Electrical">Electrical</option>
+                                        <option value="Mechanical">Mechanical</option>
+                                        <option value="HVAC">HVAC</option>
+                                        <option value="Plumbing">Plumbing</option>
+                                        <option value="Safety">Safety</option>
+                                        <option value="General">General</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="partSubcategory" class="form-label">Subcategory</label>
-                                    <input type="text" class="form-control" id="partSubcategory" name="subcategory" placeholder="Bearings, Motors, Sensors, etc.">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="partUnit" class="form-label">Unit of Measure</label>
+                                    <label for="partUnit" class="form-label">Unit</label>
                                     <select class="form-select" id="partUnit" name="unit">
                                         <option value="Each">Each</option>
                                         <option value="Box">Box</option>
@@ -1531,152 +1208,47 @@ async def root():
                                         <option value="Meter">Meter</option>
                                         <option value="Gallon">Gallon</option>
                                         <option value="Liter">Liter</option>
-                                        <option value="Pound">Pound</option>
-                                        <option value="Kilogram">Kilogram</option>
-                                        <option value="Set">Set</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <label for="partDescription" class="form-label">Description</label>
-                                    <textarea class="form-control" id="partDescription" name="description" rows="2" placeholder="Detailed part description and specifications"></textarea>
-                                </div>
-                            </div>
                         </div>
-
-                        <!-- Inventory Management -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-warehouse me-2"></i>Inventory Management</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-3">
+                        <div class="row">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label for="partQuantity" class="form-label">Current Stock</label>
                                     <input type="number" class="form-control" id="partQuantity" name="quantity" min="0">
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="partMinimumStock" class="form-label">Minimum Stock Level</label>
-                                    <input type="number" class="form-control" id="partMinimumStock" name="minimum_stock" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="partMaximumStock" class="form-label">Maximum Stock Level</label>
-                                    <input type="number" class="form-control" id="partMaximumStock" name="maximum_stock" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label for="partReorderPoint" class="form-label">Reorder Point</label>
                                     <input type="number" class="form-control" id="partReorderPoint" name="reorder_point" min="0">
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label for="partStorageLocation" class="form-label">Storage Location</label>
-                                    <input type="text" class="form-control" id="partStorageLocation" name="storage_location" placeholder="Warehouse, Bin, Shelf">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="partBarcode" class="form-label">Barcode/SKU</label>
-                                    <input type="text" class="form-control" id="partBarcode" name="barcode">
+                                    <label for="partCost" class="form-label">Unit Cost ($)</label>
+                                    <input type="number" step="0.01" class="form-control" id="partCost" name="cost" min="0">
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Cost & Pricing -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-dollar-sign me-2"></i>Cost & Pricing</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-3">
+                        <div class="row">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="partUnitCost" class="form-label">Unit Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="partUnitCost" name="unit_cost" min="0">
+                                    <label for="partSupplier" class="form-label">Supplier</label>
+                                    <input type="text" class="form-control" id="partSupplier" name="supplier">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="partAverageCost" class="form-label">Average Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="partAverageCost" name="average_cost" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="partLastCost" class="form-label">Last Purchase Cost ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="partLastCost" name="last_cost" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label for="partTotalValue" class="form-label">Total Value ($)</label>
-                                    <input type="number" step="0.01" class="form-control" id="partTotalValue" name="total_value" readonly>
+                                    <label for="partLocation" class="form-label">Storage Location</label>
+                                    <input type="text" class="form-control" id="partLocation" name="location">
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Supplier Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-truck me-2"></i>Supplier Information</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="partPrimarySupplier" class="form-label">Primary Supplier</label>
-                                    <input type="text" class="form-control" id="partPrimarySupplier" name="primary_supplier">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="partSupplierPartNumber" class="form-label">Supplier Part Number</label>
-                                    <input type="text" class="form-control" id="partSupplierPartNumber" name="supplier_part_number">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="partLeadTime" class="form-label">Lead Time (days)</label>
-                                    <input type="number" class="form-control" id="partLeadTime" name="lead_time" min="0">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="partAlternativeSuppliers" class="form-label">Alternative Suppliers</label>
-                                    <textarea class="form-control" id="partAlternativeSuppliers" name="alternative_suppliers" rows="2" placeholder="List backup suppliers"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="partSupplierContact" class="form-label">Supplier Contact</label>
-                                    <textarea class="form-control" id="partSupplierContact" name="supplier_contact" rows="2" placeholder="Contact information"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Compatibility & Usage -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h6 class="text-primary"><i class="fas fa-puzzle-piece me-2"></i>Compatibility & Usage</h6>
-                                <hr>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="partCompatibleAssets" class="form-label">Compatible Assets</label>
-                                    <textarea class="form-control" id="partCompatibleAssets" name="compatible_assets" rows="2" placeholder="List assets this part is used with"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="partUsageNotes" class="form-label">Usage Notes</label>
-                                    <textarea class="form-control" id="partUsageNotes" name="usage_notes" rows="2" placeholder="Installation notes, precautions, etc."></textarea>
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <label for="partDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="partDescription" name="description" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
@@ -1744,9 +1316,6 @@ async def root():
                 if (systemResponse && systemResponse.ok) {
                     dashboardData.systemPerformance = await systemResponse.json();
                 }
-
-                // Load CMMS statistics
-                await loadCMMSStats();
 
                 updateDashboardUI();
             } catch (error) {
@@ -1982,15 +1551,7 @@ async def root():
         async function loadWorkOrdersContent() {
             const container = document.getElementById('work-orders-content');
             try {
-                // Add loading spinner
-                container.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2">Loading work orders...</p>
-                    </div>
-                `;
-                
-                const response = await fetch('/api/work-orders?limit=50');
+                const response = await fetch('/api/work-orders?limit=10');
                 if (response.ok) {
                     const data = await response.json();
                     container.innerHTML = generateWorkOrdersTable(data.work_orders);
@@ -2002,9 +1563,6 @@ async def root():
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         CMMS service is starting up. Please try again in a moment.
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="loadWorkOrdersContent()">
-                            <i class="fas fa-refresh me-1"></i>Retry
-                        </button>
                     </div>
                 `;
             }
@@ -2055,69 +1613,31 @@ async def root():
                 return '<div class="alert alert-info">No work orders found.</div>';
             }
 
-            // Populate assignee filter
-            const assignees = [...new Set(workOrders.map(wo => wo.assigned_to).filter(a => a))];
-            const assigneeSelect = document.getElementById('assigneeFilter');
-            if (assigneeSelect) {
-                assigneeSelect.innerHTML = '<option value="">All Technicians</option>' + 
-                    assignees.map(a => `<option value="${a}">${a}</option>`).join('');
-            }
-
             return `
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="workOrdersTable">
+                    <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th onclick="sortWorkOrders('code')" style="cursor: pointer;">
-                                    Code <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('title')" style="cursor: pointer;">
-                                    Title <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('status')" style="cursor: pointer;">
-                                    Status <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('priority')" style="cursor: pointer;">
-                                    Priority <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('assigned_to')" style="cursor: pointer;">
-                                    Assigned To <i class="fas fa-sort"></i>
-                                </th>
-                                <th onclick="sortWorkOrders('due_date')" style="cursor: pointer;">
-                                    Due Date <i class="fas fa-sort"></i>
-                                </th>
-                                <th>Progress</th>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Asset</th>
+                                <th>Assigned To</th>
+                                <th>Created</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${workOrders.map(wo => {
-                                const isOverdue = wo.due_date && new Date(wo.due_date) < new Date() && 
-                                                 !['Completed', 'Cancelled'].includes(wo.status);
-                                const dueSoon = wo.due_date && 
-                                               new Date(wo.due_date) < new Date(Date.now() + 7*24*60*60*1000) && 
-                                               !isOverdue && !['Completed', 'Cancelled'].includes(wo.status);
-                                
-                                return `
-                                <tr class="work-order-row ${isOverdue ? 'table-danger' : dueSoon ? 'table-warning' : ''}" 
-                                    style="cursor: pointer;" 
-                                    onclick="viewWorkOrder(${wo.id})" 
-                                    data-status="${wo.status}" 
-                                    data-priority="${wo.priority}" 
-                                    data-assignee="${wo.assigned_to || ''}"
-                                    onmouseover="this.style.opacity='0.8'" 
-                                    onmouseout="this.style.opacity='1'">
-                                    <td><strong>${wo.code || '#' + wo.id}</strong></td>
-                                    <td>
-                                        <strong>${wo.title}</strong>
-                                        ${isOverdue ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Overdue</small>' : ''}
-                                        ${dueSoon ? '<br><small class="text-warning"><i class="fas fa-clock"></i> Due Soon</small>' : ''}
-                                    </td>
-                                    <td>${getStatusBadge(wo.status)}</td>
-                                    <td>${getPriorityBadge(wo.priority)}</td>
-                                    <td>${wo.assigned_to || '<span class="text-muted">Unassigned</span>'}</td>
-                                    <td>${wo.due_date ? new Date(wo.due_date).toLocaleDateString() : '<span class="text-muted">No deadline</span>'}</td>
-                                    <td>${getProgressIndicator(wo)}</td>
+                            ${workOrders.map(wo => `
+                                <tr style="cursor: pointer;" onclick="viewWorkOrder(${wo.id})" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor=''">
+                                    <td>#${wo.id}</td>
+                                    <td><strong>${wo.title}</strong></td>
+                                    <td><span class="badge bg-${getStatusColor(wo.status)}">${wo.status}</span></td>
+                                    <td><span class="badge bg-${getPriorityColor(wo.priority)}">${wo.priority}</span></td>
+                                    <td>${wo.asset_name || 'N/A'}</td>
+                                    <td>${wo.assigned_to || 'Unassigned'}</td>
+                                    <td>${new Date(wo.created_at).toLocaleDateString()}</td>
                                     <td onclick="event.stopPropagation();">
                                         <button class="btn btn-sm btn-outline-primary me-1" onclick="viewWorkOrder(${wo.id})" title="View Details">
                                             <i class="fas fa-eye"></i>
@@ -2126,8 +1646,8 @@ async def root():
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     </td>
-                                </tr>`;
-                            }).join('')}
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -2246,172 +1766,6 @@ async def root():
                 case 'medium': return 'warning';
                 case 'low': return 'success';
                 default: return 'secondary';
-            }
-        }
-
-        // Enhanced UI Helper Functions
-        function getStatusBadge(status) {
-            const statusMap = {
-                'Open': { color: 'success', icon: '🟢' },
-                'In Progress': { color: 'warning', icon: '🟡' },
-                'On Hold': { color: 'secondary', icon: '🟠' },
-                'Completed': { color: 'success', icon: '✅' },
-                'Cancelled': { color: 'danger', icon: '❌' }
-            };
-            const s = statusMap[status] || { color: 'primary', icon: '📝' };
-            return `<span class="badge bg-${s.color}">${s.icon} ${status}</span>`;
-        }
-
-        function getPriorityBadge(priority) {
-            const priorityMap = {
-                'Critical': { color: 'danger', icon: '🔴' },
-                'High': { color: 'warning', icon: '🟠' },
-                'Medium': { color: 'info', icon: '🟡' },
-                'Low': { color: 'success', icon: '🟢' }
-            };
-            const p = priorityMap[priority] || { color: 'secondary', icon: '⚪' };
-            return `<span class="badge bg-${p.color}">${p.icon} ${priority}</span>`;
-        }
-
-        function getProgressIndicator(workOrder) {
-            if (!workOrder.estimated_hours) {
-                return '<span class="text-muted">No estimate</span>';
-            }
-            const progress = workOrder.actual_hours ? 
-                Math.min(100, (workOrder.actual_hours / workOrder.estimated_hours) * 100) : 0;
-            const colorClass = progress > 100 ? 'bg-danger' : progress > 80 ? 'bg-warning' : 'bg-success';
-            return `
-                <div class="progress" style="height: 20px;">
-                    <div class="progress-bar ${colorClass}" style="width: ${Math.min(progress, 100)}%">
-                        ${progress.toFixed(0)}%
-                    </div>
-                </div>
-                <small class="text-muted">${workOrder.actual_hours || 0}h / ${workOrder.estimated_hours}h</small>
-            `;
-        }
-
-        // Filtering and Sorting Functions
-        function filterWorkOrders() {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;
-            const assigneeFilter = document.getElementById('assigneeFilter').value;
-            
-            const rows = document.querySelectorAll('.work-order-row');
-            rows.forEach(row => {
-                const status = row.dataset.status;
-                const priority = row.dataset.priority;
-                const assignee = row.dataset.assignee;
-                
-                const statusMatch = !statusFilter || status === statusFilter;
-                const priorityMatch = !priorityFilter || priority === priorityFilter;
-                const assigneeMatch = !assigneeFilter || assignee === assigneeFilter;
-                
-                row.style.display = (statusMatch && priorityMatch && assigneeMatch) ? '' : 'none';
-            });
-        }
-
-        let sortDirection = {};
-        function sortWorkOrders(field) {
-            const table = document.getElementById('workOrdersTable');
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            sortDirection[field] = sortDirection[field] === 'asc' ? 'desc' : 'asc';
-            
-            rows.sort((a, b) => {
-                let aVal = a.children[getColumnIndex(field)].textContent.trim();
-                let bVal = b.children[getColumnIndex(field)].textContent.trim();
-                
-                if (field === 'due_date') {
-                    aVal = aVal === 'No deadline' ? '9999-12-31' : aVal;
-                    bVal = bVal === 'No deadline' ? '9999-12-31' : bVal;
-                }
-                
-                const comparison = aVal.localeCompare(bVal);
-                return sortDirection[field] === 'asc' ? comparison : -comparison;
-            });
-            
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        function getColumnIndex(field) {
-            const fields = ['code', 'title', 'status', 'priority', 'assigned_to', 'due_date'];
-            return fields.indexOf(field);
-        }
-
-        // Asset and Parts Helper Functions
-        function getAssetIcon(assetType) {
-            const iconMap = {
-                'HVAC': '<i class="fas fa-fan text-info"></i>',
-                'Safety': '<i class="fas fa-shield-alt text-success"></i>',
-                'Production': '<i class="fas fa-industry text-primary"></i>',
-                'Elevator': '<i class="fas fa-building text-warning"></i>',
-                'Lighting': '<i class="fas fa-lightbulb text-warning"></i>',
-                'Power': '<i class="fas fa-bolt text-danger"></i>',
-                'Structure': '<i class="fas fa-building text-secondary"></i>',
-                'Plumbing': '<i class="fas fa-tint text-info"></i>'
-            };
-            return iconMap[assetType] || '<i class="fas fa-cog text-muted"></i>';
-        }
-
-        function getConditionBadge(condition) {
-            const conditionMap = {
-                'Excellent': { color: 'success', icon: '🟢' },
-                'Good': { color: 'success', icon: '🟢' },
-                'Fair': { color: 'warning', icon: '🟡' },
-                'Poor': { color: 'danger', icon: '🔴' },
-                'Critical': { color: 'danger', icon: '❌' }
-            };
-            const c = conditionMap[condition] || { color: 'secondary', icon: '⚪' };
-            return `<span class="badge bg-${c.color}">${c.icon} ${condition}</span>`;
-        }
-
-        function getStockBadge(currentStock, minStock) {
-            if (currentStock <= minStock) {
-                return '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> Low Stock</span>';
-            } else if (currentStock <= minStock * 1.5) {
-                return '<span class="badge bg-warning"><i class="fas fa-clock"></i> Reorder Soon</span>';
-            }
-            return '<span class="badge bg-success"><i class="fas fa-check"></i> In Stock</span>';
-        }
-
-        // CMMS Dashboard Statistics
-        async function loadCMMSStats() {
-            try {
-                // Load work orders stats
-                const woStatsResponse = await fetch('/api/work-orders/stats/summary');
-                if (woStatsResponse.ok) {
-                    const woStats = await woStatsResponse.json();
-                    document.getElementById('total-work-orders').textContent = woStats.total_work_orders || 0;
-                    document.getElementById('open-work-orders').textContent = woStats.by_status?.Open || 0;
-                    document.getElementById('completion-rate').textContent = `${Math.round(woStats.completion_rate || 0)}%`;
-                }
-
-                // Load assets stats
-                const assetsStatsResponse = await fetch('/api/assets/stats/summary');
-                if (assetsStatsResponse.ok) {
-                    const assetsStats = await assetsStatsResponse.json();
-                    document.getElementById('total-assets').textContent = assetsStats.total_assets || 0;
-                    document.getElementById('critical-assets').textContent = assetsStats.by_condition?.Critical || 0;
-                }
-
-                // Load parts stats
-                const partsStatsResponse = await fetch('/api/parts/stats/summary');
-                if (partsStatsResponse.ok) {
-                    const partsStats = await partsStatsResponse.json();
-                    document.getElementById('total-parts').textContent = partsStats.total_parts || 0;
-                    document.getElementById('low-stock-parts').textContent = partsStats.low_stock_count || 0;
-                }
-            } catch (error) {
-                console.warn('Failed to load CMMS stats:', error);
-                // Set fallback values
-                document.getElementById('total-work-orders').textContent = '8';
-                document.getElementById('open-work-orders').textContent = '3';
-                document.getElementById('total-assets').textContent = '9';
-                document.getElementById('critical-assets').textContent = '2';
-                document.getElementById('total-parts').textContent = '9';
-                document.getElementById('low-stock-parts').textContent = '1';
-                document.getElementById('completion-rate').textContent = '75%';
             }
         }
 

@@ -1,19 +1,13 @@
-# Ignore everything except what we need for Fix-It Fred
-/*
+# Ignore everything by default
+*
 
-# Include only Fix-It Fred files
-!fix_it_fred_diy.py
-!Dockerfile.fixit
-!requirements.fixit.txt
-
-# Ignore common files
-.git/
-.gitignore
-node_modules/
-*.log
-*.tmp
-__pycache__/
-*.pyc
-.DS_Store
-*.env
-.env.*
+# Include only what we need for consolidated CMMS
+!consolidated_cmms_service.py
+!consolidated_requirements.txt
+!Dockerfile
+!modules/
+!modules/__init__.py
+!modules/shared.py
+!modules/work_orders.py
+!modules/assets.py
+!modules/parts.py

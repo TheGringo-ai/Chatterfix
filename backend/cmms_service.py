@@ -332,6 +332,18 @@ class Part(BaseModel):
     location: Optional[str] = ""
 
 # Health check
+@app.get("/")
+async def root():
+    """Root endpoint - redirect to docs"""
+    return {
+        "service": "cmms",
+        "status": "running",
+        "version": "7.0.0",
+        "docs": "/docs",
+        "health": "/health",
+        "message": "ChatterFix CMMS Backend Service"
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "cmms", "version": "6B.1.0"}

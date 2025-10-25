@@ -20,6 +20,11 @@ from modules.assets import router as assets_router
 from modules.parts import router as parts_router
 from modules.shared import get_health_status, verify_api_key, RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW
 
+# Import AI modules
+from modules.predictive_maintenance import get_predictive_maintenance_data, get_asset_risk_summary
+from modules.ai_insights import get_ai_summary, get_asset_specific_insights
+from modules.anomaly_detection import monitor_cmms_metrics, get_alerts
+
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
@@ -170,18 +175,167 @@ async def log_analytics(request: Request, authenticated: bool = Depends(verify_a
         logger.error(f"Analytics logging error: {e}")
         raise HTTPException(status_code=500, detail="Failed to log analytics")
 
+@app.get("/predictive_maintenance")
+@limiter.limit(f"{RATE_LIMIT_REQUESTS}/minute")
+async def predictive_maintenance_endpoint(request: Request, authenticated: bool = Depends(verify_api_key)):
+    """AI-powered predictive maintenance analysis"""
+    try:
+        # Get sample asset data for prediction
+        from modules.assets import get_sample_data as get_assets_data
+        assets_response = get_assets_data()
+        assets = assets_response.get("assets", [])
+        
+        if not assets:
+            return {
+                "predictions": [],
+                "summary": get_asset_risk_summary(),
+                "message": "No assets available for analysis",
+                "generated_at": datetime.now().isoformat()
+            }
+        
+        # Generate predictions
+        predictions = get_predictive_maintenance_data(assets)
+        summary = get_asset_risk_summary()
+        
+        # Log analytics
+        try:
+            logger.info(f"Predictive maintenance analysis: {len(predictions)} predictions generated")
+        except:
+            pass
+        
+        return {
+            "predictions": predictions,
+            "summary": summary,
+            "total_assets_analyzed": len(assets),
+            "high_risk_assets": len([p for p in predictions if p.get("failure_risk", 0) > 0.7]),
+            "generated_at": datetime.now().isoformat(),
+            "model_version": "1.0.0"
+        }
+        
+    except Exception as e:
+        logger.error(f"Predictive maintenance error: {e}")
+        raise HTTPException(status_code=500, detail=f"Predictive maintenance analysis failed: {str(e)}")
+
+@app.get("/insights/summary")
+@limiter.limit(f"{RATE_LIMIT_REQUESTS}/minute")
+async def ai_insights_summary(request: Request, authenticated: bool = Depends(verify_api_key)):
+    """AI-generated operational insights and summary"""
+    try:
+        # Get data from all modules
+        from modules.work_orders import get_sample_data as get_work_orders_data
+        from modules.assets import get_sample_data as get_assets_data
+        from modules.parts import get_sample_data as get_parts_data
+        
+        work_orders_response = get_work_orders_data()
+        assets_response = get_assets_data()
+        parts_response = get_parts_data()
+        
+        work_orders = work_orders_response.get("work_orders", [])
+        assets = assets_response.get("assets", [])
+        parts = parts_response.get("parts", [])
+        
+        # Generate AI insights
+        ai_summary = await get_ai_summary(work_orders, assets, parts)
+        
+        # Get predictive maintenance data for asset insights
+        predictions = get_predictive_maintenance_data(assets)
+        asset_insights = await get_asset_specific_insights(assets, predictions)
+        
+        return {
+            "summary": ai_summary,
+            "asset_insights": asset_insights,
+            "data_sources": {
+                "work_orders": len(work_orders),
+                "assets": len(assets),
+                "parts": len(parts)
+            },
+            "generated_at": datetime.now().isoformat(),
+            "ai_powered": True
+        }
+        
+    except Exception as e:
+        logger.error(f"AI insights error: {e}")
+        # Fallback response
+        return {
+            "summary": {
+                "summary": "AI insights temporarily unavailable. Operations are continuing normally.",
+                "recommendations": {
+                    "immediate_actions": ["Continue standard maintenance procedures"],
+                    "weekly_priorities": ["Monitor system performance"],
+                    "optimization_opportunities": ["Review maintenance workflows"],
+                    "cost_reduction_tips": ["Optimize resource scheduling"]
+                },
+                "generated_by": "fallback"
+            },
+            "asset_insights": [],
+            "error": str(e),
+            "generated_at": datetime.now().isoformat()
+        }
+
+@app.get("/alerts")
+@limiter.limit(f"{RATE_LIMIT_REQUESTS}/minute")
+async def anomaly_alerts(request: Request, authenticated: bool = Depends(verify_api_key)):
+    """Current anomaly alerts and system status"""
+    try:
+        # Get current data for anomaly detection
+        from modules.work_orders import get_sample_data as get_work_orders_data
+        from modules.assets import get_sample_data as get_assets_data
+        from modules.parts import get_sample_data as get_parts_data
+        
+        work_orders_response = get_work_orders_data()
+        assets_response = get_assets_data()
+        parts_response = get_parts_data()
+        
+        work_orders = work_orders_response.get("work_orders", [])
+        assets = assets_response.get("assets", [])
+        parts = parts_response.get("parts", [])
+        
+        # Monitor metrics and detect anomalies
+        monitoring_result = monitor_cmms_metrics(work_orders, assets, parts)
+        
+        # Get current alerts
+        alerts = get_alerts()
+        
+        return {
+            "alerts": alerts,
+            "anomaly_monitoring": monitoring_result,
+            "system_health": {
+                "overall_status": alerts.get("system_status", "normal"),
+                "metrics_monitored": len(monitoring_result.get("metric_statuses", {})),
+                "active_anomalies": len(monitoring_result.get("current_anomalies", []))
+            },
+            "generated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Anomaly detection error: {e}")
+        return {
+            "alerts": {
+                "alert_summary": {"critical": 0, "high": 0, "medium": 0, "total": 0},
+                "system_status": "unknown",
+                "message": "Anomaly detection temporarily unavailable"
+            },
+            "error": str(e),
+            "generated_at": datetime.now().isoformat()
+        }
+
 @app.get("/")
 async def root():
     """Root endpoint"""
     return {
         "service": "ChatterFix Consolidated CMMS",
         "version": "1.0.0",
+        "ai_powered": True,
         "endpoints": {
             "work_orders": "/work_orders",
             "assets": "/assets", 
             "parts": "/parts",
             "health": "/health",
-            "validate": "/validate"
+            "validate": "/validate",
+            "predictive_maintenance": "/predictive_maintenance",
+            "ai_insights": "/insights/summary",
+            "anomaly_alerts": "/alerts",
+            "analytics": "/api/analytics/log"
         }
     }
 

@@ -2,10 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including curl for health check
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -14,8 +13,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Phase 6 enhanced application
-COPY phase6-enhanced-gateway.py main.py
+# Copy Phase 7 AI-enhanced application
+COPY phase7-ai-enhanced-gateway.py main.py
 
 # Expose port
 EXPOSE 8080

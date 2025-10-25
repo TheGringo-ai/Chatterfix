@@ -14,8 +14,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
-COPY phase6b-unified-gateway.py main.py
+# Copy Phase 6 enhanced application
+COPY phase6-enhanced-gateway.py main.py
 
 # Expose port
 EXPOSE 8080

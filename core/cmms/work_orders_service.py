@@ -126,7 +126,7 @@ async def work_orders_dashboard():
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 50%, #0d1117 100%);
             color: white;
             min-height: 100vh;
         }
@@ -139,7 +139,7 @@ async def work_orders_dashboard():
         .header h1 {
             margin: 0;
             font-size: 3rem;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            background: linear-gradient(45deg, #4a9eff, #2ecc71);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

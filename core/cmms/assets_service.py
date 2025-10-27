@@ -136,7 +136,7 @@ async def assets_dashboard():
         body {
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 50%, #0d1117 100%);
             color: white;
             min-height: 100vh;
         }
@@ -149,7 +149,7 @@ async def assets_dashboard():
         .header h1 {
             margin: 0;
             font-size: 3rem;
-            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            background: linear-gradient(45deg, #4a9eff, #2ecc71);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

@@ -5,21 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Collaboration Dashboard - ChatterFix CMMS</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/cmms-styles.css') }}">
+    <link rel="stylesheet" href="chatterfix_unified_theme.css">
     <style>
         /* AI Collaboration Dashboard Specific Styles */
         .ai-dashboard {
             padding: 20px;
             max-width: 1400px;
             margin: 0 auto;
+            background: var(--chatterfix-gradient-primary);
+            min-height: 100vh;
         }
         
         .dashboard-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--chatterfix-gradient-accent);
+            color: var(--chatterfix-text-primary);
             padding: 30px;
-            border-radius: 10px;
+            border-radius: var(--chatterfix-radius-lg);
             margin-bottom: 30px;
             text-align: center;
+            box-shadow: var(--chatterfix-shadow-lg);
         }
         
         .dashboard-header h1 {
@@ -41,17 +45,17 @@
         }
         
         .dashboard-card {
-            background: white;
-            border-radius: 10px;
+            background: var(--chatterfix-gradient-card);
+            border-radius: var(--chatterfix-radius-lg);
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border: 1px solid #e0e0e0;
+            box-shadow: var(--chatterfix-shadow-md);
+            border: 1px solid var(--chatterfix-border);
         }
         
         .dashboard-card h3 {
             margin: 0 0 15px 0;
-            color: #333;
-            border-bottom: 2px solid #667eea;
+            color: var(--chatterfix-text-primary);
+            border-bottom: 2px solid var(--chatterfix-blue);
             padding-bottom: 10px;
         }
         

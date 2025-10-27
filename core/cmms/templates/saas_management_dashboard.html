@@ -6,61 +6,9 @@
     <title>ChatterFix SaaS Management Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="chatterfix_unified_theme.css">
     <style>
-        /* ============ CSS VARIABLES ============ */
-        :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --accent-color: #f093fb;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
-            --info-color: #3b82f6;
-            
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --text-accent: #9ca3af;
-            
-            --bg-primary: #ffffff;
-            --bg-secondary: #f9fafb;
-            --bg-tertiary: #f3f4f6;
-            --bg-card: #ffffff;
-            
-            --border-color: #e5e7eb;
-            --border-hover: #d1d5db;
-            
-            --space-xs: 0.25rem;
-            --space-sm: 0.5rem;
-            --space-md: 1rem;
-            --space-lg: 1.5rem;
-            --space-xl: 2rem;
-            --space-2xl: 3rem;
-            
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-            --radius-xl: 1rem;
-            
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* ============ GLOBAL STYLES ============ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+        /* ============ SAAS MANAGEMENT DASHBOARD SPECIFIC STYLES ============ */
 
         /* ============ LAYOUT COMPONENTS ============ */
         .saas-platform {
@@ -71,14 +19,14 @@
 
         /* Header */
         .platform-header {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--chatterfix-gradient-card);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            padding: var(--space-md) var(--space-xl);
+            border-bottom: 1px solid var(--chatterfix-border);
+            padding: 1rem 2rem;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--chatterfix-shadow-sm);
         }
 
         .header-content {
@@ -98,12 +46,12 @@
         .platform-logo {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            border-radius: var(--radius-lg);
+            background: var(--chatterfix-gradient-accent);
+            border-radius: var(--chatterfix-radius-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--chatterfix-text-primary);
             font-size: 1.25rem;
             font-weight: 700;
         }
@@ -111,40 +59,47 @@
         .title-text h1 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--chatterfix-text-primary);
             margin: 0;
         }
 
         .title-text p {
             font-size: 0.875rem;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
             margin: 0;
         }
 
         .header-actions {
             display: flex;
             align-items: center;
-            gap: var(--space-md);
+            gap: 1rem;
         }
 
         .org-selector {
-            padding: var(--space-sm) var(--space-md);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            background: var(--bg-primary);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--chatterfix-border);
+            border-radius: var(--chatterfix-radius-md);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--chatterfix-text-primary);
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .org-selector:hover {
-            border-color: var(--primary-color);
+            border-color: var(--chatterfix-blue);
+        }
+
+        .org-selector:focus {
+            outline: none;
+            border-color: var(--chatterfix-blue);
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
         }
 
         /* Main Content */
         .platform-main {
             flex: 1;
-            padding: var(--space-xl);
+            padding: 2rem;
             max-width: 1400px;
             margin: 0 auto;
             width: 100%;
@@ -154,8 +109,8 @@
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: var(--space-xl);
-            margin-bottom: var(--space-2xl);
+            gap: 2rem;
+            margin-bottom: 3rem;
         }
 
         .dashboard-grid.two-col {
@@ -172,34 +127,34 @@
 
         /* Dashboard Cards */
         .dashboard-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--chatterfix-gradient-card);
             backdrop-filter: blur(20px);
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-lg);
+            border-radius: var(--chatterfix-radius-lg);
+            border: 1px solid var(--chatterfix-border);
+            box-shadow: var(--chatterfix-shadow-lg);
             overflow: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .dashboard-card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
-            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: var(--chatterfix-shadow-lg);
+            border-color: var(--chatterfix-blue);
         }
 
         .card-header {
-            padding: var(--space-lg) var(--space-xl);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--chatterfix-border);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .card-title {
             display: flex;
             align-items: center;
-            gap: var(--space-md);
+            gap: 1rem;
             font-size: 1.125rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: var(--chatterfix-text-primary);
             margin: 0;
         }
 
@@ -209,14 +164,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            border-radius: var(--radius-md);
-            color: white;
+            background: var(--chatterfix-gradient-accent);
+            border-radius: var(--chatterfix-radius-md);
+            color: var(--chatterfix-text-primary);
             font-size: 0.875rem;
         }
 
         .card-content {
-            padding: var(--space-xl);
+            padding: 2rem;
         }
 
         /* ============ SPECIFIC COMPONENTS ============ */
@@ -230,41 +185,41 @@
 
         .overview-metric {
             text-align: center;
-            padding: var(--space-lg);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--chatterfix-radius-lg);
+            border: 1px solid var(--chatterfix-border);
             transition: all 0.3s ease;
         }
 
         .overview-metric:hover {
             transform: translateY(-2px);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .metric-value {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--chatterfix-blue);
             display: block;
-            margin-bottom: var(--space-xs);
+            margin-bottom: 0.25rem;
         }
 
         .metric-label {
             font-size: 0.875rem;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
             font-weight: 500;
         }
 
         .metric-trend {
             font-size: 0.75rem;
-            margin-top: var(--space-xs);
+            margin-top: 0.25rem;
             font-weight: 600;
         }
 
-        .trend-up { color: var(--success-color); }
-        .trend-down { color: var(--error-color); }
-        .trend-stable { color: var(--text-secondary); }
+        .trend-up { color: var(--chatterfix-green); }
+        .trend-down { color: var(--chatterfix-orange); }
+        .trend-stable { color: var(--chatterfix-text-secondary); }
 
         /* GCP Services */
         .gcp-services-list {
@@ -277,44 +232,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--space-md);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: var(--radius-md);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--chatterfix-radius-md);
+            border: 1px solid var(--chatterfix-border);
             transition: all 0.3s ease;
         }
 
         .service-item:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            background: rgba(255, 255, 255, 0.08);
             transform: translateX(4px);
         }
 
         .service-info {
             display: flex;
             align-items: center;
-            gap: var(--space-md);
+            gap: 1rem;
         }
 
         .service-status {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: var(--success-color);
+            background: var(--chatterfix-green);
             animation: pulse 2s infinite;
         }
 
-        .service-status.warning { background: var(--warning-color); }
-        .service-status.error { background: var(--error-color); }
+        .service-status.warning { background: var(--chatterfix-orange); }
+        .service-status.error { background: var(--chatterfix-orange); }
 
         .service-details h4 {
             font-size: 0.875rem;
             font-weight: 600;
             margin: 0 0 2px 0;
+            color: var(--chatterfix-text-primary);
         }
 
         .service-details p {
             font-size: 0.75rem;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
             margin: 0;
         }
 
@@ -324,13 +280,13 @@
 
         .service-cost {
             font-weight: 600;
-            color: var(--primary-color);
+            color: var(--chatterfix-blue);
             font-size: 0.875rem;
         }
 
         .service-usage {
             font-size: 0.75rem;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
         }
 
         /* Customer Management */
@@ -341,16 +297,20 @@
 
         .customers-table th,
         .customers-table td {
-            padding: var(--space-md);
+            padding: 1rem;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--chatterfix-border);
         }
 
         .customers-table th {
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
             font-size: 0.875rem;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .customers-table td {
+            color: var(--chatterfix-text-primary);
         }
 
         .customers-table td {
@@ -361,30 +321,30 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            background: var(--chatterfix-gradient-accent);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: var(--chatterfix-text-primary);
             font-weight: 600;
             font-size: 0.75rem;
         }
 
         .customer-status {
-            padding: var(--space-xs) var(--space-sm);
-            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--chatterfix-radius-sm);
             font-size: 0.75rem;
             font-weight: 500;
         }
 
         .status-active {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success-color);
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--chatterfix-green);
         }
 
         .status-inactive {
-            background: rgba(107, 114, 128, 0.1);
-            color: var(--text-secondary);
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--chatterfix-orange);
         }
 
         /* Billing Dashboard */
@@ -396,39 +356,39 @@
         }
 
         .billing-card {
-            padding: var(--space-lg);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: var(--radius-lg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--chatterfix-radius-lg);
+            border: 1px solid var(--chatterfix-border);
             text-align: center;
         }
 
         .billing-amount {
             font-size: 1.75rem;
             font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: var(--space-xs);
+            color: var(--chatterfix-blue);
+            margin-bottom: 0.25rem;
         }
 
         .billing-label {
             font-size: 0.875rem;
-            color: var(--text-secondary);
+            color: var(--chatterfix-text-secondary);
         }
 
         /* Usage Charts */
         .chart-container {
             position: relative;
             height: 300px;
-            padding: var(--space-md);
+            padding: 1rem;
         }
 
         /* Action Buttons */
         .action-button {
-            padding: var(--space-sm) var(--space-md);
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
+            padding: 0.5rem 1rem;
+            background: var(--chatterfix-gradient-accent);
+            color: var(--chatterfix-text-primary);
             border: none;
-            border-radius: var(--radius-md);
+            border-radius: var(--chatterfix-radius-md);
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -437,29 +397,30 @@
 
         .action-button:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--chatterfix-shadow-md);
+            filter: brightness(1.1);
         }
 
         .action-button.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--chatterfix-text-primary);
+            border: 1px solid var(--chatterfix-border);
         }
 
         /* Real-time Indicators */
         .real-time-indicator {
             display: flex;
             align-items: center;
-            gap: var(--space-xs);
+            gap: 0.25rem;
             font-size: 0.75rem;
-            color: var(--success-color);
-            margin-bottom: var(--space-md);
+            color: var(--chatterfix-green);
+            margin-bottom: 1rem;
         }
 
         .live-dot {
             width: 8px;
             height: 8px;
-            background: var(--success-color);
+            background: var(--chatterfix-green);
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
@@ -488,12 +449,12 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .platform-main {
-                padding: var(--space-md);
+                padding: 1rem;
             }
             
             .dashboard-grid {
                 grid-template-columns: 1fr;
-                gap: var(--space-md);
+                gap: 1rem;
             }
             
             .dashboard-grid.two-col,
@@ -504,7 +465,7 @@
             
             .header-content {
                 flex-direction: column;
-                gap: var(--space-md);
+                gap: 1rem;
             }
             
             .customers-table {
@@ -514,10 +475,10 @@
 
         /* Loading States */
         .loading-skeleton {
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
-            border-radius: var(--radius-md);
+            border-radius: var(--chatterfix-radius-md);
             height: 20px;
         }
 
@@ -741,7 +702,7 @@
                                             <div class="customer-avatar">JD</div>
                                             <div>
                                                 <div style="font-weight: 600;">John Doe</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-secondary);">john@acme.com</div>
+                                                <div style="font-size: 0.75rem; color: var(--chatterfix-text-secondary);">john@acme.com</div>
                                             </div>
                                         </div>
                                     </td>
@@ -760,7 +721,7 @@
                                             <div class="customer-avatar">AS</div>
                                             <div>
                                                 <div style="font-weight: 600;">Alice Smith</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-secondary);">alice@techstart.com</div>
+                                                <div style="font-size: 0.75rem; color: var(--chatterfix-text-secondary);">alice@techstart.com</div>
                                             </div>
                                         </div>
                                     </td>

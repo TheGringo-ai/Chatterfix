@@ -11,7 +11,7 @@ Revolutionary maintenance management powered by AI:
 - Enterprise-grade security and multi-tenancy
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Depends, status, Request, BackgroundTasks, Header
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -30,6 +30,11 @@ import hashlib
 import hmac
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
+import jwt
+from functools import wraps
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +44,32 @@ logger = logging.getLogger(__name__)
 XAI_API_KEY = os.getenv("XAI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY", "chatterfix-enterprise-v3-ai-powerhouse")
+
+# Firebase Configuration
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "chatterfix-cmms")
+FIREBASE_PRIVATE_KEY = os.getenv("FIREBASE_PRIVATE_KEY", "").replace('\\n', '\n')
+FIREBASE_CLIENT_EMAIL = os.getenv("FIREBASE_CLIENT_EMAIL", "")
+
+# Initialize Firebase Admin SDK
+try:
+    if not firebase_admin._apps:
+        if FIREBASE_PRIVATE_KEY and FIREBASE_CLIENT_EMAIL:
+            cred = credentials.Certificate({
+                "type": "service_account",
+                "project_id": FIREBASE_PROJECT_ID,
+                "private_key": FIREBASE_PRIVATE_KEY,
+                "client_email": FIREBASE_CLIENT_EMAIL,
+            })
+            firebase_admin.initialize_app(cred)
+            logger.info("🔥 Firebase Admin SDK initialized")
+        else:
+            logger.warning("⚠️ Firebase credentials not found - running without Firebase")
+except Exception as e:
+    logger.warning(f"⚠️ Firebase initialization failed: {e}")
+
+# SaaS Configuration
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
+PUBLIC_DEMO_ORGANIZATION_ID = "demo_org_public"
 
 # Security helper
 security = HTTPBearer()
@@ -268,10 +299,98 @@ def init_database():
     conn.commit()
     conn.close()
 
+# SaaS Authentication Models
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    name: str
+    company_name: Optional[str] = None
+    
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class OrganizationCreate(BaseModel):
+    name: str
+    domain: str
+    admin_email: str
+    admin_password: str
+    admin_name: str
+
+# Multi-Tenant Security Middleware
+class TenantMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip authentication for public demo routes and auth endpoints
+        public_paths = ["/", "/api/auth/", "/api/demo/", "/health", "/docs", "/openapi.json"]
+        
+        if any(request.url.path.startswith(path) for path in public_paths):
+            # For demo mode, set demo organization context
+            if DEMO_MODE and not request.url.path.startswith("/api/auth/"):
+                request.state.organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+                request.state.is_demo = True
+            return await call_next(request)
+            
+        # Extract Firebase token from Authorization header
+        authorization = request.headers.get("Authorization")
+        if authorization and authorization.startswith("Bearer "):
+            token = authorization.split(" ")[1]
+            try:
+                # Verify Firebase token
+                decoded_token = firebase_auth.verify_id_token(token)
+                user_id = decoded_token.get("uid")
+                email = decoded_token.get("email")
+                
+                # Get user's organization from database
+                conn = sqlite3.connect(DATABASE_FILE)
+                cursor = conn.cursor()
+                cursor.execute("SELECT organization_id FROM users WHERE email = ?", (email,))
+                result = cursor.fetchone()
+                conn.close()
+                
+                if result:
+                    request.state.organization_id = result[0]
+                    request.state.user_id = user_id
+                    request.state.user_email = email
+                    request.state.is_demo = False
+                else:
+                    raise HTTPException(status_code=401, detail="User not found")
+                    
+            except Exception as e:
+                logger.warning(f"Token verification failed: {e}")
+                raise HTTPException(status_code=401, detail="Invalid token")
+        else:
+            raise HTTPException(status_code=401, detail="Authorization required")
+            
+        return await call_next(request)
+
+# Authentication Helper Functions
+async def verify_firebase_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        decoded_token = firebase_auth.verify_id_token(credentials.credentials)
+        return decoded_token
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(request: Request):
+    return {
+        "user_id": getattr(request.state, "user_id", None),
+        "email": getattr(request.state, "user_email", None),
+        "organization_id": getattr(request.state, "organization_id", None),
+        "is_demo": getattr(request.state, "is_demo", False)
+    }
+
+def filter_by_organization(query: str, organization_id: str) -> str:
+    """Add organization filter to SQL queries"""
+    if "WHERE" in query.upper():
+        return f"{query} AND organization_id = '{organization_id}'"
+    else:
+        return f"{query} WHERE organization_id = '{organization_id}'"
+
 # AI Models
 class VoiceCommandRequest(BaseModel):
-    audio_data: str
-    technician_id: str
+    audio_data: str = ""
+    command: Optional[str] = None
+    technician_id: Optional[str] = "test_technician"
     location: Optional[str] = None
     priority: Optional[str] = "medium"
 
@@ -287,6 +406,20 @@ class SmartPartRequest(BaseModel):
     image_data: str
     context: Optional[str] = "part_identification"
     confidence_threshold: float = 0.8
+
+class AssetRequest(BaseModel):
+    name: str
+    description: str = ""
+    location: str = ""
+    type: str = "equipment"  # accepts machinery, equipment, etc.
+    status: str = "operational"
+
+class PartRequest(BaseModel):
+    name: str
+    part_number: str
+    quantity: int
+    location: str = ""
+    status: str = "available"
 
 # Initialize app with AI context
 @asynccontextmanager
@@ -311,6 +444,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add Multi-Tenant Security Middleware
+app.add_middleware(TenantMiddleware)
 
 @app.get("/", response_class=HTMLResponse)
 async def ai_powerhouse_dashboard():
@@ -579,7 +715,94 @@ async def ai_powerhouse_dashboard():
         .notification-toast.show {
             transform: translateX(0);
         }
+        
+        /* SaaS Authentication Styles */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .auth-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            color: #333;
+        }
+        
+        .auth-form input {
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+        
+        .demo-banner {
+            background: linear-gradient(45deg, #00f5ff, #ff6b6b);
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-weight: 600;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 999;
+        }
         </style>
+        
+        <!-- Firebase SDK -->
+        <script type="module">
+          import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+          import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+          
+          // Firebase config - Replace with your actual config
+          const firebaseConfig = {
+            apiKey: "demo-key",
+            authDomain: "chatterfix-cmms.firebaseapp.com",
+            projectId: "chatterfix-cmms",
+            storageBucket: "chatterfix-cmms.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+          };
+          
+          // Initialize Firebase
+          const app = initializeApp(firebaseConfig);
+          const auth = getAuth(app);
+          
+          window.firebaseAuth = auth;
+          window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+          window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+          window.signOut = signOut;
+          window.onAuthStateChanged = onAuthStateChanged;
+        </script>
     </head>
     <body>
         <div class="ai-header">
@@ -596,6 +819,15 @@ async def ai_powerhouse_dashboard():
                     <div class="status-indicator">
                         <div class="status-dot"></div>
                         <span>Claude Active</span>
+                    </div>
+                    <!-- Authentication Controls -->
+                    <div id="auth-controls" style="margin-left: 2rem;">
+                        <button id="login-btn" class="ai-btn" onclick="showLoginModal()">Login</button>
+                        <button id="signup-btn" class="ai-btn" onclick="showSignupModal()">Start Free</button>
+                        <div id="user-info" style="display: none; color: white;">
+                            <span id="user-email"></span>
+                            <button class="ai-btn" onclick="logout()">Logout</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -765,11 +997,257 @@ async def ai_powerhouse_dashboard():
         // Initialize AI status
         document.addEventListener('DOMContentLoaded', () => {
             showNotification('AI Systems Online', 'Claude + Grok Partnership initialized. All enterprise features ready.', 'info');
+            initializeAuth();
         });
+        
+        // ========== SaaS Authentication JavaScript ==========
+        
+        // Authentication state management
+        let currentUser = null;
+        
+        function initializeAuth() {
+            // Check for demo mode
+            fetch('/api/demo/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.demo_mode) {
+                        showDemoBanner();
+                    }
+                });
+                
+            // Check authentication state
+            window.onAuthStateChanged(window.firebaseAuth, (user) => {
+                if (user) {
+                    handleAuthSuccess(user);
+                } else {
+                    handleAuthLogout();
+                }
+            });
+        }
+        
+        function showDemoBanner() {
+            const banner = document.createElement('div');
+            banner.className = 'demo-banner';
+            banner.innerHTML = '🚀 LIVE DEMO MODE - Explore ChatterFix CMMS features freely!';
+            document.body.insertBefore(banner, document.body.firstChild);
+            
+            // Adjust main container for banner
+            document.querySelector('.main-container').style.marginTop = '120px';
+        }
+        
+        function showLoginModal() {
+            document.getElementById('login-modal').style.display = 'block';
+        }
+        
+        function showSignupModal() {
+            document.getElementById('signup-modal').style.display = 'block';
+        }
+        
+        function hideAuthModals() {
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('signup-modal').style.display = 'none';
+        }
+        
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const userCredential = await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                hideAuthModals();
+                showNotification('Success', 'Logged in successfully!', 'success');
+            } catch (error) {
+                showNotification('Error', error.message, 'error');
+            }
+        }
+        
+        async function handleSignup() {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const name = document.getElementById('signup-name').value;
+            const company = document.getElementById('signup-company').value;
+            
+            try {
+                // Call backend to create organization and user
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: company,
+                        domain: company.toLowerCase().replace(/\s+/g, '') + '.com',
+                        admin_email: email,
+                        admin_password: password,
+                        admin_name: name
+                    })
+                });
+                
+                if (response.ok) {
+                    // Now sign in with Firebase
+                    await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                    hideAuthModals();
+                    showNotification('Success', 'Organization created successfully!', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification('Error', error.detail, 'error');
+                }
+            } catch (error) {
+                showNotification('Error', error.message, 'error');
+            }
+        }
+        
+        async function logout() {
+            try {
+                await window.signOut(window.firebaseAuth);
+                showNotification('Success', 'Logged out successfully!', 'success');
+            } catch (error) {
+                showNotification('Error', error.message, 'error');
+            }
+        }
+        
+        function handleAuthSuccess(user) {
+            currentUser = user;
+            document.getElementById('login-btn').style.display = 'none';
+            document.getElementById('signup-btn').style.display = 'none';
+            document.getElementById('user-info').style.display = 'block';
+            document.getElementById('user-email').textContent = user.email;
+            
+            // Set authorization header for future requests
+            user.getIdToken().then(token => {
+                // Store token for API calls
+                window.authToken = token;
+            });
+        }
+        
+        function handleAuthLogout() {
+            currentUser = null;
+            document.getElementById('login-btn').style.display = 'inline-block';
+            document.getElementById('signup-btn').style.display = 'inline-block';
+            document.getElementById('user-info').style.display = 'none';
+            window.authToken = null;
+        }
         </script>
+        
+        <!-- Authentication Modals -->
+        <div id="login-modal" class="auth-modal">
+            <div class="auth-container">
+                <h2>Login to ChatterFix</h2>
+                <div class="auth-form">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button class="auth-btn" onclick="handleLogin()">Login</button>
+                    <button class="auth-btn" onclick="hideAuthModals()" style="background: #ccc; color: #333;">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="signup-modal" class="auth-modal">
+            <div class="auth-container">
+                <h2>Start Your Free Trial</h2>
+                <div class="auth-form">
+                    <input type="text" id="signup-name" placeholder="Your Name" required>
+                    <input type="text" id="signup-company" placeholder="Company Name" required>
+                    <input type="email" id="signup-email" placeholder="Work Email" required>
+                    <input type="password" id="signup-password" placeholder="Password" required>
+                    <button class="auth-btn" onclick="handleSignup()">Create Organization</button>
+                    <button class="auth-btn" onclick="hideAuthModals()" style="background: #ccc; color: #333;">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
     </body>
     </html>
     """
+
+# ================== SaaS Authentication API ==================
+
+@app.post("/api/auth/signup")
+async def signup_organization(org_data: OrganizationCreate):
+    """Create new organization with admin user"""
+    try:
+        # Create Firebase user first
+        firebase_user = firebase_auth.create_user(
+            email=org_data.admin_email,
+            password=org_data.admin_password,
+            display_name=org_data.admin_name
+        )
+        
+        # Generate organization ID
+        org_id = f"org_{uuid.uuid4().hex[:8]}"
+        
+        # Create organization in database
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        INSERT INTO organizations (id, name, domain, created_at)
+        VALUES (?, ?, ?, ?)
+        """, (org_id, org_data.name, org_data.domain, datetime.now().isoformat()))
+        
+        # Create admin user
+        cursor.execute("""
+        INSERT INTO users (id, name, email, role, organization_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, (firebase_user.uid, org_data.admin_name, org_data.admin_email, 
+              "admin", org_id, datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "organization_id": org_id,
+            "user_id": firebase_user.uid,
+            "message": "Organization created successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Signup error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/auth/verify-token")
+async def verify_token(token_data: dict):
+    """Verify Firebase ID token"""
+    try:
+        token = token_data.get("token")
+        decoded_token = firebase_auth.verify_id_token(token)
+        
+        # Get user organization
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT u.organization_id, u.role, o.name as org_name
+        FROM users u 
+        JOIN organizations o ON u.organization_id = o.id
+        WHERE u.email = ?
+        """, (decoded_token['email'],))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return {
+                "valid": True,
+                "user_id": decoded_token['uid'],
+                "email": decoded_token['email'],
+                "organization_id": result[0],
+                "role": result[1],
+                "organization_name": result[2]
+            }
+        else:
+            raise HTTPException(status_code=404, detail="User not found in organization")
+            
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/demo/status")
+async def demo_status():
+    """Get demo mode status"""
+    return {
+        "demo_mode": DEMO_MODE,
+        "demo_organization_id": PUBLIC_DEMO_ORGANIZATION_ID
+    }
 
 # Voice Command API with Grok AI
 @app.post("/api/voice/command")
@@ -974,6 +1452,49 @@ async def get_ai_work_orders():
         "high_urgency": len([o for o in orders if o["ai_urgency_score"] > 0.7]),
         "ar_enabled": len([o for o in orders if o["ar_instructions"]])
     }
+
+@app.post("/api/work-orders")
+async def create_work_order(request: AIWorkOrderRequest):
+    """Create new AI-enhanced work order"""
+    import uuid
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    work_order_id = f"WO-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+    
+    try:
+        cursor.execute("""
+        INSERT INTO work_orders (id, title, description, asset_id, priority, status, created_by, organization_id, ai_category, ai_urgency_score, voice_created, ar_instructions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            work_order_id,
+            request.title,
+            request.description,
+            request.asset_id,
+            request.priority,
+            "open",
+            "ai_system",
+            "default_org",
+            "user_created",
+            0.5,  # Default urgency score
+            request.voice_created,
+            "AR instructions available" if request.ar_enabled else None
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return {
+            "success": True,
+            "work_order_id": work_order_id,
+            "message": "Work order created successfully",
+            "ar_enabled": request.ar_enabled
+        }
+        
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"Failed to create work order: {str(e)}")
 
 # AI Insights API
 @app.get("/api/ai/insights")
@@ -1391,197 +1912,225 @@ async def delete_schedule(schedule_id: int):
     
     return {"success": True, "message": "Schedule deleted successfully"}
 
+# Assets API Endpoints
+@app.get("/api/assets")
+async def get_assets():
+    """Get all assets"""
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT id, name, description, location, category, status, ai_health_score, 
+           next_maintenance_prediction, created_at
+    FROM assets 
+    ORDER BY created_at DESC
+    """)
+    
+    assets = []
+    for row in cursor.fetchall():
+        assets.append({
+            "id": row[0],
+            "name": row[1],
+            "description": row[2],
+            "location": row[3],
+            "category": row[4],
+            "status": row[5],
+            "ai_health_score": row[6],
+            "next_maintenance_prediction": row[7],
+            "created_at": row[8]
+        })
+    
+    conn.close()
+    return {"assets": assets, "count": len(assets)}
+
+@app.post("/api/assets")
+async def create_asset(asset: AssetRequest):
+    """Create new asset"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    asset_id = str(uuid.uuid4())
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    INSERT INTO assets (id, name, description, location, category, status, ai_health_score, 
+                       next_maintenance_prediction, organization_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (asset_id, asset.name, asset.description, asset.location, asset.type, asset.status, 0.95, "2024-12-01", organization_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "asset_id": asset_id, "message": "Asset created successfully"}
+
+@app.put("/api/assets/{asset_id}")
+async def update_asset(
+    asset_id: str,
+    name: str = None,
+    description: str = None,
+    location: str = None,
+    category: str = None,
+    status: str = None,
+    ):
+    """Update asset"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    # Build dynamic update query
+    updates = []
+    values = []
+    
+    if name: updates.append("name = ?"); values.append(name)
+    if description: updates.append("description = ?"); values.append(description)
+    if location: updates.append("location = ?"); values.append(location)
+    if category: updates.append("category = ?"); values.append(category)
+    if status: updates.append("status = ?"); values.append(status)
+    
+    if updates:
+        values.append(asset_id)
+        cursor.execute(f"""
+        UPDATE assets SET {', '.join(updates)}
+        WHERE id = ?         """, values)
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": "Asset updated successfully"}
+
+@app.delete("/api/assets/{asset_id}")
+async def delete_asset(asset_id: str):
+    """Delete asset"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("DELETE FROM assets WHERE id = ? AND organization_id = ?", (asset_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": "Asset deleted successfully"}
+
+# Parts API Endpoints  
+@app.get("/api/parts")
+async def get_parts():
+    """Get all parts for organization"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT id, name, part_number, category, stock_quantity, 
+           min_stock_level, ai_demand_forecast, organization_id, created_at, metadata
+    FROM parts 
+    WHERE 1=1
+    ORDER BY created_at DESC
+    """)
+    
+    parts = []
+    for row in cursor.fetchall():
+        parts.append({
+            "id": row[0],
+            "name": row[1],
+            "part_number": row[2],
+            "category": row[3],
+            "stock_quantity": row[4],
+            "min_stock_level": row[5],
+            "ai_demand_forecast": row[6],
+            "organization_id": row[7],
+            "created_at": row[8],
+            "metadata": row[9]
+        })
+    
+    conn.close()
+    return {"parts": parts, "count": len(parts)}
+
+@app.post("/api/parts")
+async def create_part(part: PartRequest):
+    """Create new part"""
+    try:
+        organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+        part_id = str(uuid.uuid4())
+        
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+        INSERT INTO parts (id, name, part_number, category, stock_quantity, min_stock_level, organization_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (part_id, part.name, part.part_number, "general", part.quantity, 5, organization_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return {"success": True, "part_id": part_id, "message": "Part created successfully"}
+    except Exception as e:
+        return {"success": False, "error": str(e), "message": "Failed to create part"}
+
+@app.put("/api/parts/{part_id}")
+async def update_part(
+    part_id: str,
+    name: str = None,
+    description: str = None,
+    part_number: str = None,
+    category: str = None,
+    location: str = None,
+    quantity_available: int = None,
+    unit_cost: float = None,
+    supplier: str = None,
+    minimum_stock_level: int = None,
+    ):
+    """Update part"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    # Build dynamic update query
+    updates = []
+    values = []
+    
+    if name: updates.append("name = ?"); values.append(name)
+    if description: updates.append("description = ?"); values.append(description)
+    if part_number: updates.append("part_number = ?"); values.append(part_number)
+    if category: updates.append("category = ?"); values.append(category)
+    if location: updates.append("location = ?"); values.append(location)
+    if quantity_available is not None: updates.append("quantity_available = ?"); values.append(quantity_available)
+    if unit_cost is not None: updates.append("unit_cost = ?"); values.append(unit_cost)
+    if supplier: updates.append("supplier = ?"); values.append(supplier)
+    if minimum_stock_level is not None: updates.append("minimum_stock_level = ?"); values.append(minimum_stock_level)
+    
+    if updates:
+        values.append(part_id)
+        cursor.execute(f"""
+        UPDATE parts SET {', '.join(updates)}
+        WHERE id = ?         """, values)
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": "Part updated successfully"}
+
+@app.delete("/api/parts/{part_id}")
+async def delete_part(part_id: str):
+    """Delete part"""
+    organization_id = PUBLIC_DEMO_ORGANIZATION_ID
+    
+    conn = sqlite3.connect(DATABASE_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("DELETE FROM parts WHERE id = ? AND organization_id = ?", (part_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "message": "Part deleted successfully"}
+
 # CMMS Frontend Routes
-@app.get("/work-orders", response_class=HTMLResponse)
-async def work_orders_page():
-    """Work Orders Management Page"""
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Work Orders - ChatterFix CMMS</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white; min-height: 100vh; padding: 2rem;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 3rem; }
-        .work-order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; }
-        .work-order-card { 
-            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            border-radius: 15px; padding: 2rem; border: 1px solid rgba(255,255,255,0.2);
-            transition: transform 0.3s ease;
-        }
-        .work-order-card:hover { transform: translateY(-5px); }
-        .priority-high { border-left: 5px solid #ff6b6b; }
-        .priority-medium { border-left: 5px solid #ffd93d; }
-        .priority-low { border-left: 5px solid #6bcf7f; }
-        .status-open { background: rgba(255, 107, 107, 0.2); }
-        .status-in_progress { background: rgba(255, 217, 61, 0.2); }
-        .status-completed { background: rgba(107, 207, 127, 0.2); }
-        .nav-buttons { margin-bottom: 2rem; text-align: center; }
-        .btn { 
-            background: linear-gradient(45deg, #00f5ff, #ff6b6b); border: none; 
-            padding: 0.75rem 1.5rem; border-radius: 8px; color: white; 
-            font-weight: 600; cursor: pointer; margin: 0 0.5rem;
-            text-decoration: none; display: inline-block;
-        }
-        .btn:hover { transform: translateY(-2px); }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🔧 Work Orders Management</h1>
-                <p>AI-powered maintenance task coordination</p>
-            </div>
-            
-            <div class="nav-buttons">
-                <a href="/" class="btn">🏠 Dashboard</a>
-                <a href="/assets" class="btn">🏭 Assets</a>
-                <a href="/inventory" class="btn">📦 Inventory</a>
-                <a href="/ai-assistant" class="btn">🤖 AI Assistant</a>
-            </div>
-            
-            <div id="workOrdersGrid" class="work-order-grid">
-                <div class="work-order-card">Loading work orders...</div>
-            </div>
-        </div>
-        
-        <script>
-        async function loadWorkOrders() {
-            try {
-                const response = await fetch('/api/work-orders');
-                const data = await response.json();
-                const workOrders = data.work_orders || [];
-                
-                const grid = document.getElementById('workOrdersGrid');
-                grid.innerHTML = workOrders.map(wo => `
-                    <div class="work-order-card priority-${wo.priority} status-${wo.status}">
-                        <h3>${wo.title}</h3>
-                        <p><strong>ID:</strong> ${wo.id}</p>
-                        <p><strong>Status:</strong> ${wo.status.replace('_', ' ').toUpperCase()}</p>
-                        <p><strong>Priority:</strong> ${wo.priority.toUpperCase()}</p>
-                        <p><strong>Description:</strong> ${wo.description}</p>
-                        <p><strong>AI Category:</strong> ${wo.ai_category}</p>
-                        <p><strong>Urgency Score:</strong> ${wo.ai_urgency_score || 'N/A'}</p>
-                        ${wo.ar_instructions ? '<p>🥽 AR Instructions Available</p>' : ''}
-                        ${wo.voice_created ? '<p>🗣️ Voice Created</p>' : ''}
-                    </div>
-                `).join('');
-            } catch (error) {
-                document.getElementById('workOrdersGrid').innerHTML = 
-                    '<div class="work-order-card"><p>Error loading work orders: ' + error.message + '</p></div>';
-            }
-        }
-        
-        loadWorkOrders();
-        </script>
-    </body>
-    </html>
-    """
-
-@app.get("/assets", response_class=HTMLResponse)
-async def assets_page():
-    """Assets Management Page"""
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Assets - ChatterFix CMMS</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white; min-height: 100vh; padding: 2rem;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 3rem; }
-        .nav-buttons { margin-bottom: 2rem; text-align: center; }
-        .btn { 
-            background: linear-gradient(45deg, #00f5ff, #ff6b6b); border: none; 
-            padding: 0.75rem 1.5rem; border-radius: 8px; color: white; 
-            font-weight: 600; cursor: pointer; margin: 0 0.5rem;
-            text-decoration: none; display: inline-block;
-        }
-        .btn:hover { transform: translateY(-2px); }
-        .assets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; }
-        .asset-card { 
-            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            border-radius: 15px; padding: 2rem; border: 1px solid rgba(255,255,255,0.2);
-        }
-        .health-excellent { border-left: 5px solid #6bcf7f; }
-        .health-good { border-left: 5px solid #ffd93d; }
-        .health-poor { border-left: 5px solid #ff6b6b; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🏭 Assets Management</h1>
-                <p>AI-monitored equipment and infrastructure</p>
-            </div>
-            
-            <div class="nav-buttons">
-                <a href="/" class="btn">🏠 Dashboard</a>
-                <a href="/work-orders" class="btn">🔧 Work Orders</a>
-                <a href="/inventory" class="btn">📦 Inventory</a>
-                <a href="/ai-assistant" class="btn">🤖 AI Assistant</a>
-            </div>
-            
-            <div id="assetsGrid" class="assets-grid">
-                <div class="asset-card">
-                    <h3>🤖 Loading AI-monitored assets...</h3>
-                    <p>Connecting to asset management system...</p>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-        // Simulate assets data since API endpoint needs to be implemented
-        const mockAssets = [
-            { id: 'ASSET-001', name: 'Primary Compressor Unit', location: 'Production Floor A', status: 'operational', health_score: 92.5, category: 'HVAC' },
-            { id: 'ASSET-002', name: 'Conveyor System #3', location: 'Assembly Line', status: 'maintenance_due', health_score: 78.2, category: 'Mechanical' },
-            { id: 'ASSET-003', name: 'Hydraulic Press', location: 'Manufacturing Bay 2', status: 'operational', health_score: 95.1, category: 'Hydraulic' },
-            { id: 'ASSET-004', name: 'Electrical Panel #12', location: 'Electrical Room', status: 'warning', health_score: 67.8, category: 'Electrical' },
-            { id: 'ASSET-005', name: 'Cooling Tower', location: 'Rooftop', status: 'operational', health_score: 88.9, category: 'HVAC' }
-        ];
-        
-        function getHealthClass(score) {
-            if (score >= 85) return 'health-excellent';
-            if (score >= 70) return 'health-good';
-            return 'health-poor';
-        }
-        
-        function loadAssets() {
-            const grid = document.getElementById('assetsGrid');
-            grid.innerHTML = mockAssets.map(asset => `
-                <div class="asset-card ${getHealthClass(asset.health_score)}">
-                    <h3>${asset.name}</h3>
-                    <p><strong>ID:</strong> ${asset.id}</p>
-                    <p><strong>Location:</strong> ${asset.location}</p>
-                    <p><strong>Category:</strong> ${asset.category}</p>
-                    <p><strong>Status:</strong> ${asset.status.replace('_', ' ').toUpperCase()}</p>
-                    <p><strong>AI Health Score:</strong> ${asset.health_score}%</p>
-                    <p><strong>Predictive Status:</strong> ${asset.health_score >= 85 ? '✅ Excellent' : asset.health_score >= 70 ? '⚠️ Needs Attention' : '🚨 Critical'}</p>
-                </div>
-            `).join('');
-        }
-        
-        loadAssets();
-        </script>
-    </body>
-    </html>
-    """
-
 @app.get("/inventory", response_class=HTMLResponse)
 async def inventory_page():
     """Inventory Management Page"""
@@ -1833,6 +2382,12 @@ async def ai_assistant_page():
     </body>
     </html>
     """
+
+# Parts redirect to inventory (fix for 404 error)
+@app.get("/parts")
+async def parts_redirect():
+    """Redirect /parts to /inventory - they serve the same purpose"""
+    return RedirectResponse(url="/inventory", status_code=301)
 
 # Health Check
 @app.get("/health")

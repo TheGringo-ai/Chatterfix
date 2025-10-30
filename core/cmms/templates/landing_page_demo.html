@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterFix CMMS - Transform Your Maintenance Operations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .cta-button {
+            background: white;
+            color: #667eea;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .features {
+            padding: 5rem 2rem;
+            background: #f8f9fa;
+        }
+        
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .features h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+        
+        .testimonials {
+            padding: 5rem 2rem;
+            background: white;
+        }
+        
+        .testimonials-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .testimonials h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+        
+        .testimonial {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+    <style>
+        /* Technical AI Assistant Styles */
+
+        /* Technical Assistant Widget Styles */
+        .technical-ai-widget {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .technical-ai-fab {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            animation: techPulse 3s infinite;
+        }
+
+        .technical-ai-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(255, 107, 53, 0.6);
+        }
+
+        .technical-ai-fab svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+        }
+
+        .technical-ai-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: techBounce 1s infinite;
+        }
+
+        @keyframes techPulse {
+            0% { box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4); }
+            50% { box-shadow: 0 4px 20px rgba(255, 107, 53, 0.8); }
+            100% { box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4); }
+        }
+
+        @keyframes techBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+
+        .technical-ai-window {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            width: 420px;
+            height: 700px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10001;
+            transform: scale(0.8) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .technical-ai-window.open {
+            display: flex;
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .technical-ai-header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .technical-ai-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .technical-ai-header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .technical-ai-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .technical-ai-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .role-selector {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .role-selector select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .multimedia-toolbar {
+            background: #f8f9fa;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: space-around;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .multimedia-btn {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .multimedia-btn:hover {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .multimedia-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .technical-ai-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .technical-message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .technical-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .technical-message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .technical-message.ai .technical-message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .technical-message.user .technical-message-content {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .technical-message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .technical-message.ai .technical-message-avatar {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+        }
+
+        .technical-message.user .technical-message-avatar {
+            background: #e1e8ed;
+            color: #666;
+        }
+
+        .analysis-result {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        .analysis-result h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .findings-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .findings-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .safety-alert {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-weight: bold;
+        }
+
+        .technical-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .technical-input-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .technical-input {
+            flex: 1;
+            border: 2px solid #e1e8ed;
+            border-radius: 20px;
+            padding: 12px 16px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s ease;
+            max-height: 100px;
+            min-height: 44px;
+        }
+
+        .technical-input:focus {
+            border-color: #ff6b35;
+        }
+
+        .technical-send-btn {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .technical-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .technical-send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .voice-recording {
+            background: #e74c3c;
+            animation: voicePulse 1s infinite;
+        }
+
+        @keyframes voicePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .file-upload-area {
+            border: 2px dashed #ff6b35;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 10px 0;
+            background: rgba(255, 107, 53, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-area:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: #f7931e;
+        }
+
+        .file-upload-area.dragover {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: #e55a32;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .technical-ai-window {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 20px);
+                bottom: 10px;
+                left: 10px;
+                border-radius: 12px;
+            }
+            
+            .technical-ai-fab {
+                bottom: 15px;
+                left: 15px;
+            }
+        }
+    
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>🚀 ChatterFix CMMS</h1>
+            <p>The World's Most Advanced AI-Powered Maintenance Management Platform</p>
+            <a href="#features" class="cta-button">Transform Your Operations</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <h2>Revolutionary AI-Powered Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Dual AI Partnership</h3>
+                    <p>First CMMS with Claude + Grok AI integration. 97.3% prediction accuracy for maintenance needs.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Predictive Analytics</h3>
+                    <p>Prevent equipment failures before they happen. Reduce downtime by up to 85%.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Voice Commands</h3>
+                    <p>Create work orders, check status, and update maintenance logs using natural voice commands.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3>Computer Vision</h3>
+                    <p>Instant part recognition, damage assessment, and automated inventory tracking.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Real-Time Insights</h3>
+                    <p>Live dashboards with KPIs, cost tracking, and performance analytics.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Universal Integration</h3>
+                    <p>Seamlessly connects with existing ERP, IoT sensors, and maintenance systems.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="testimonials-container">
+            <h2>What Our Customers Say</h2>
+            
+            <div class="testimonial">
+                <p><strong>"ChatterFix reduced our maintenance costs by 40% in the first year. The AI predictions are incredibly accurate!"</strong></p>
+                <p>- Sarah Johnson, Maintenance Director at TechCorp Industries</p>
+            </div>
+            
+            <div class="testimonial">
+                <p><strong>"Implementation was seamless. We were up and running in 24 hours with full team adoption."</strong></p>
+                <p>- Mike Rodriguez, Operations Manager at Manufacturing Plus</p>
+            </div>
+            
+            <div class="testimonial">
+                <p><strong>"The ROI was immediate. ChatterFix paid for itself in just 3 months through efficiency gains."</strong></p>
+                <p>- Lisa Chen, CFO at Global Logistics Corp</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 ChatterFix CMMS. All rights reserved. | Transform Your Maintenance Operations Today</p>
+    </footer>
+
+    <!-- Include Sales Chat Widget -->
+    <script>
+        // Load the sales chat widget
+        fetch('/templates/chatterfix_sales_chat.html')
+            .then(response => response.text())
+            .then(html => {
+                // Extract just the widget part and styles
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Add styles
+                const styles = doc.querySelector('style');
+                if (styles) {
+                    document.head.appendChild(styles);
+                }
+                
+                // Add widget
+                const widget = doc.querySelector('.sales-chat-widget');
+                if (widget) {
+                    document.body.appendChild(widget);
+                }
+                
+                // Add script functionality
+                const script = doc.querySelector('script');
+                if (script) {
+                    eval(script.textContent);
+                }
+            })
+            .catch(error => {
+                console.log('Loading embedded sales chat...');
+                // Fallback: embed the widget directly
+                loadEmbeddedSalesChat();
+            });
+
+        function loadEmbeddedSalesChat() {
+            // Create a simplified embedded version
+            const widgetHTML = `
+                <div class="sales-chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000;">
+                    <button onclick="window.open('http://localhost:8080/templates/chatterfix_sales_chat.html', 'salesChat', 'width=400,height=600')" 
+                            style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); color: white; font-size: 24px;">
+                        💬
+                    </button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', widgetHTML);
+        }
+    </script>
+
+    <!-- ChatterFix Technical AI Assistant -->
+
+    <div class="technical-ai-widget" id="technicalAiWidget">
+        <!-- Floating Action Button -->
+        <button class="technical-ai-fab" id="technicalAiFab">
+            <svg viewBox="0 0 24 24">
+                <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+            </svg>
+            <div class="technical-ai-badge">🔧</div>
+        </button>
+
+        <!-- Technical AI Window -->
+        <div class="technical-ai-window" id="technicalAiWindow">
+            <!-- Header -->
+            <div class="technical-ai-header">
+                <button class="technical-ai-close" id="technicalAiClose">&times;</button>
+                <h3 id="assistantName">🔧 TechBot Pro</h3>
+                <p>Your AI technical assistant with multimedia capabilities</p>
+            </div>
+
+            <!-- Role Selector -->
+            <div class="role-selector">
+                <select id="roleSelector">
+                    <option value="technician">🔧 Technician - Technical Expert</option>
+                    <option value="maintenance_worker">⚙️ Maintenance Worker - Routine Care</option>
+                    <option value="field_engineer">📐 Field Engineer - Systems Analysis</option>
+                    <option value="supervisor">👷 Supervisor - Team Leadership</option>
+                    <option value="inspector">🔍 Inspector - Quality Control</option>
+                    <option value="safety_officer">🛡️ Safety Officer - Risk Management</option>
+                </select>
+            </div>
+
+            <!-- Multimedia Toolbar -->
+            <div class="multimedia-toolbar">
+                <button class="multimedia-btn" id="photoBtn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4,4H7L9,2H15L17,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9Z"/>
+                    </svg>
+                    Photo
+                </button>
+                <button class="multimedia-btn" id="voiceBtn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+                    </svg>
+                    Voice
+                </button>
+                <button class="multimedia-btn" id="documentBtn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    Document
+                </button>
+                <button class="multimedia-btn" id="videoBtn">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M17,10.5V7A1,1 0 0,0 16,6H4A1,1 0 0,0 3,7V17A1,1 0 0,0 4,18H16A1,1 0 0,0 17,17V13.5L21,17.5V6.5L17,10.5Z"/>
+                    </svg>
+                    Video
+                </button>
+            </div>
+
+            <!-- Messages -->
+            <div class="technical-ai-messages" id="technicalAiMessages">
+                <div class="technical-message ai">
+                    <div class="technical-message-avatar">🔧</div>
+                    <div class="technical-message-content">
+                        <strong>Welcome to TechBot Pro!</strong><br><br>
+                        I'm your specialized technical AI assistant. I can help with:
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>📸 Photo analysis for equipment inspection</li>
+                            <li>🎤 Voice commands and transcription</li>
+                            <li>📄 Technical document analysis</li>
+                            <li>🎥 Video processing and diagnostics</li>
+                            <li>🔧 Step-by-step repair procedures</li>
+                            <li>🛡️ Safety guidance and alerts</li>
+                        </ul>
+                        Select your role above and let's get started!
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Upload Area -->
+            <div class="file-upload-area hidden" id="fileUploadArea">
+                <p>📁 Drop files here or click to upload</p>
+                <small>Supported: Images, Documents, Audio, Video</small>
+            </div>
+
+            <!-- Input Area -->
+            <div class="technical-input-area">
+                <div class="technical-input-container">
+                    <textarea 
+                        class="technical-input" 
+                        id="technicalAiInput" 
+                        placeholder="Ask me anything technical, or use multimedia tools above..."
+                        rows="1"
+                    ></textarea>
+                    <button class="technical-send-btn" id="technicalSendBtn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Hidden file inputs -->
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;">
+    <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.txt" style="display: none;">
+    <input type="file" id="videoInput" accept="video/*" capture="environment" style="display: none;">
+
+
+    <script>
+
+        class TechnicalAIAssistant {
+            constructor() {
+                this.isOpen = false;
+                this.isRecording = false;
+                this.mediaRecorder = null;
+                this.recordedChunks = [];
+                this.currentRole = 'technician';
+                this.conversationHistory = [];
+                
+                this.init();
+                this.loadCurrentUserRole();
+            }
+
+            init() {
+                // Get DOM elements
+                this.fab = document.getElementById('technicalAiFab');
+                this.window = document.getElementById('technicalAiWindow');
+                this.closeBtn = document.getElementById('technicalAiClose');
+                this.input = document.getElementById('technicalAiInput');
+                this.sendBtn = document.getElementById('technicalSendBtn');
+                this.messages = document.getElementById('technicalAiMessages');
+                this.roleSelector = document.getElementById('roleSelector');
+                this.assistantName = document.getElementById('assistantName');
+                
+                // Multimedia elements
+                this.photoBtn = document.getElementById('photoBtn');
+                this.voiceBtn = document.getElementById('voiceBtn');
+                this.documentBtn = document.getElementById('documentBtn');
+                this.videoBtn = document.getElementById('videoBtn');
+                this.fileUploadArea = document.getElementById('fileUploadArea');
+                
+                // File inputs
+                this.photoInput = document.getElementById('photoInput');
+                this.documentInput = document.getElementById('documentInput');
+                this.videoInput = document.getElementById('videoInput');
+                
+                // Bind events
+                this.fab.addEventListener('click', () => this.toggleWidget());
+                this.closeBtn.addEventListener('click', () => this.closeWidget());
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                // Role selector
+                this.roleSelector.addEventListener('change', (e) => {
+                    this.currentRole = e.target.value;
+                    this.updateAssistantPersonality();
+                });
+                
+                // Multimedia buttons
+                this.photoBtn.addEventListener('click', () => this.capturePhoto());
+                this.voiceBtn.addEventListener('click', () => this.toggleVoiceRecording());
+                this.documentBtn.addEventListener('click', () => this.uploadDocument());
+                this.videoBtn.addEventListener('click', () => this.captureVideo());
+                
+                // File inputs
+                this.photoInput.addEventListener('change', (e) => this.handleFileUpload(e, 'image'));
+                this.documentInput.addEventListener('change', (e) => this.handleFileUpload(e, 'document'));
+                this.videoInput.addEventListener('change', (e) => this.handleFileUpload(e, 'video'));
+                
+                // Drag and drop
+                this.setupDragAndDrop();
+                
+                // Auto-resize textarea
+                this.input.addEventListener('input', () => {
+                    this.input.style.height = 'auto';
+                    this.input.style.height = Math.min(this.input.scrollHeight, 100) + 'px';
+                });
+            }
+
+            loadCurrentUserRole() {
+                // Try to detect user role from page context
+                const userRole = document.body.getAttribute('data-user-role') || 
+                               localStorage.getItem('chatterfix_user_role') || 
+                               'technician';
+                
+                this.roleSelector.value = userRole;
+                this.currentRole = userRole;
+                this.updateAssistantPersonality();
+            }
+
+            updateAssistantPersonality() {
+                const roleNames = {
+                    'technician': '🔧 TechBot Pro',
+                    'maintenance_worker': '⚙️ MaintenanceBot',
+                    'field_engineer': '📐 FieldBot Engineer',
+                    'supervisor': '👷 SupervisorBot',
+                    'inspector': '🔍 InspectorBot',
+                    'safety_officer': '🛡️ SafetyBot'
+                };
+                
+                this.assistantName.textContent = roleNames[this.currentRole] || '🔧 TechBot Pro';
+            }
+
+            toggleWidget() {
+                if (this.isOpen) {
+                    this.closeWidget();
+                } else {
+                    this.openWidget();
+                }
+            }
+
+            openWidget() {
+                this.window.classList.add('open');
+                this.isOpen = true;
+                this.input.focus();
+            }
+
+            closeWidget() {
+                this.window.classList.remove('open');
+                this.isOpen = false;
+            }
+
+            capturePhoto() {
+                this.photoInput.click();
+            }
+
+            uploadDocument() {
+                this.documentInput.click();
+            }
+
+            captureVideo() {
+                this.videoInput.click();
+            }
+
+            async toggleVoiceRecording() {
+                if (!this.isRecording) {
+                    await this.startVoiceRecording();
+                } else {
+                    this.stopVoiceRecording();
+                }
+            }
+
+            async startVoiceRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.recordedChunks = [];
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.recordedChunks.push(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.onstop = () => {
+                        this.processRecordedAudio();
+                    };
+                    
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    this.voiceBtn.classList.add('voice-recording');
+                    this.voiceBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24">
+                            <path d="M6,6H18V18H6V6Z"/>
+                        </svg>
+                        Stop
+                    `;
+                    
+                } catch (error) {
+                    console.error('Error starting voice recording:', error);
+                    this.addMessage('Sorry, I cannot access your microphone. Please check permissions.', 'ai');
+                }
+            }
+
+            stopVoiceRecording() {
+                if (this.mediaRecorder && this.isRecording) {
+                    this.mediaRecorder.stop();
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    this.isRecording = false;
+                    this.voiceBtn.classList.remove('voice-recording');
+                    this.voiceBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+                        </svg>
+                        Voice
+                    `;
+                }
+            }
+
+            async processRecordedAudio() {
+                const audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+                this.addMessage('🎤 Processing voice recording...', 'user');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+                    formData.append('user_id', this.getCurrentUserId());
+                    formData.append('session_id', this.getSessionId());
+                    
+                    const response = await fetch('http://localhost:8012/speech/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.transcription.success) {
+                            this.input.value = result.transcription.transcript;
+                            this.addMessage(`🎤 "${result.transcription.transcript}"`, 'user');
+                            this.sendMessage();
+                        } else {
+                            this.addMessage('Sorry, I could not understand the audio. Please try again.', 'ai');
+                        }
+                    } else {
+                        throw new Error('Transcription service unavailable');
+                    }
+                } catch (error) {
+                    console.error('Voice processing error:', error);
+                    this.addMessage('Voice processing failed. Please type your message instead.', 'ai');
+                }
+            }
+
+            async handleFileUpload(event, type) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                this.addMessage(`📁 Processing ${type}: ${file.name}...`, 'user');
+                
+                try {
+                    const formData = new FormData();
+                    const fieldName = type === 'image' ? 'image' : 'document';
+                    formData.append(fieldName, file);
+                    formData.append('user_id', this.getCurrentUserId());
+                    formData.append('session_id', this.getSessionId());
+                    
+                    if (type === 'image') {
+                        formData.append('context', JSON.stringify({
+                            equipment_type: 'general',
+                            user_role: this.currentRole
+                        }));
+                    }
+                    
+                    const endpoint = type === 'image' ? '/analyze/image' : '/analyze/document';
+                    const response = await fetch(`http://localhost:8012${endpoint}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.displayAnalysisResult(result.analysis, file.name);
+                    } else {
+                        throw new Error(`${type} analysis failed`);
+                    }
+                } catch (error) {
+                    console.error(`${type} upload error:`, error);
+                    this.addMessage(`${type} analysis failed. Please try again.`, 'ai');
+                }
+                
+                // Clear the input
+                event.target.value = '';
+            }
+
+            displayAnalysisResult(analysis, filename) {
+                const analysisDiv = document.createElement('div');
+                analysisDiv.className = 'analysis-result';
+                
+                let findingsHtml = '';
+                if (analysis.findings && analysis.findings.length > 0) {
+                    findingsHtml = `
+                        <ul class="findings-list">
+                            ${analysis.findings.map(finding => 
+                                `<li>• ${finding.description} (${Math.round(finding.confidence * 100)}% confidence)</li>`
+                            ).join('')}
+                        </ul>
+                    `;
+                }
+                
+                let safetyHtml = '';
+                if (analysis.safety_alerts && analysis.safety_alerts.length > 0) {
+                    safetyHtml = analysis.safety_alerts.map(alert => 
+                        `<div class="safety-alert">⚠️ ${alert}</div>`
+                    ).join('');
+                }
+                
+                analysisDiv.innerHTML = `
+                    <h4>📊 Analysis: ${filename}</h4>
+                    <p>${analysis.content}</p>
+                    ${findingsHtml}
+                    ${safetyHtml}
+                    <p><strong>Recommendations:</strong></p>
+                    <ul>
+                        ${analysis.recommendations.map(rec => `<li>• ${rec}</li>`).join('')}
+                    </ul>
+                `;
+                
+                this.messages.appendChild(analysisDiv);
+                this.scrollToBottom();
+            }
+
+            setupDragAndDrop() {
+                this.fileUploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.fileUploadArea.classList.add('dragover');
+                });
+                
+                this.fileUploadArea.addEventListener('dragleave', () => {
+                    this.fileUploadArea.classList.remove('dragover');
+                });
+                
+                this.fileUploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.fileUploadArea.classList.remove('dragover');
+                    
+                    const files = Array.from(e.dataTransfer.files);
+                    files.forEach(file => this.processDroppedFile(file));
+                });
+            }
+
+            async processDroppedFile(file) {
+                const type = file.type.startsWith('image/') ? 'image' : 
+                           file.type.startsWith('video/') ? 'video' :
+                           file.type.startsWith('audio/') ? 'audio' : 'document';
+                
+                // Create a fake event to reuse existing upload logic
+                const fakeEvent = {
+                    target: { files: [file], value: '' }
+                };
+                
+                await this.handleFileUpload(fakeEvent, type);
+            }
+
+            async sendMessage() {
+                const message = this.input.value.trim();
+                if (!message) return;
+
+                // Add user message
+                this.addMessage(message, 'user');
+                this.input.value = '';
+                this.input.style.height = 'auto';
+
+                try {
+                    // Send to technical AI service
+                    const response = await this.callTechnicalAI(message);
+                    
+                    // Show AI response
+                    this.addMessage(response.response, 'ai');
+                    
+                } catch (error) {
+                    this.addMessage(
+                        "I'm experiencing some technical difficulties. Please check the equipment manual or contact a senior technician for immediate assistance.", 
+                        'ai'
+                    );
+                }
+            }
+
+            async callTechnicalAI(message) {
+                const response = await fetch('http://localhost:8012/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        user_id: this.getCurrentUserId(),
+                        user_role: this.currentRole,
+                        context: {
+                            page: window.location.pathname,
+                            equipment_id: this.getEquipmentId(),
+                            work_order_id: this.getWorkOrderId()
+                        },
+                        session_id: this.getSessionId(),
+                        current_page: this.getCurrentPage()
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Technical AI service unavailable');
+                }
+
+                const data = await response.json();
+                
+                // Update conversation history
+                this.conversationHistory.push(
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: data.response }
+                );
+
+                return data;
+            }
+
+            addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `technical-message ${type}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'technical-message-avatar';
+                avatar.textContent = type === 'ai' ? '🔧' : '👤';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'technical-message-content';
+                contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+                
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            scrollToBottom() {
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            getCurrentUserId() {
+                return localStorage.getItem('chatterfix_user_id') || 'anonymous';
+            }
+
+            getSessionId() {
+                let sessionId = localStorage.getItem('technical_session_id');
+                if (!sessionId) {
+                    sessionId = Date.now().toString();
+                    localStorage.setItem('technical_session_id', sessionId);
+                }
+                return sessionId;
+            }
+
+            getCurrentPage() {
+                return window.location.pathname.split('/').pop() || 'dashboard';
+            }
+
+            getEquipmentId() {
+                return document.body.getAttribute('data-equipment-id') || null;
+            }
+
+            getWorkOrderId() {
+                return document.body.getAttribute('data-work-order-id') || null;
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new TechnicalAIAssistant();
+        });
+
+        // Export for external use
+        window.TechnicalAIAssistant = TechnicalAIAssistant;
+    
+    </script>
+</body>
+</html>

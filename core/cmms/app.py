@@ -1529,6 +1529,166 @@ async def get_ai_insights():
         "action_required": len([i for i in insights if i["action_required"]])
     }
 
+# AI Assistant API Integration
+@app.post("/api/ai-assistant/ask")
+async def ai_assistant_ask(request: dict):
+    """Intelligent AI Assistant with role-based responses and memory"""
+    try:
+        # Import the AI assistant functions
+        from intelligent_ai_assistant import generate_role_based_response, AIAssistantRequest, UserRole
+        
+        # Create request object
+        ai_request = AIAssistantRequest(
+            message=request.get("message", ""),
+            user_id=request.get("user_id"),
+            user_role=request.get("user_role", "technician"),
+            context=request.get("context", {}),
+            session_id=request.get("session_id"),
+            current_page=request.get("current_page")
+        )
+        
+        # Generate AI response
+        response = await generate_role_based_response(ai_request)
+        return response
+        
+    except Exception as e:
+        logger.error(f"AI Assistant error: {str(e)}")
+        return {
+            "response": "I'm experiencing some technical difficulties. Please try again.",
+            "assistant_name": "ChatterFix AI",
+            "role": request.get("user_role", "technician"),
+            "error": True
+        }
+
+@app.get("/api/ai-assistant/memory/{user_id}")
+async def get_ai_assistant_memory(user_id: str, limit: int = 20):
+    """Get user's AI assistant interaction memory"""
+    try:
+        from intelligent_ai_assistant import get_user_memory
+        memory = await get_user_memory(user_id, limit)
+        return {"user_id": user_id, "memory": memory, "count": len(memory)}
+    except Exception as e:
+        logger.error(f"Memory retrieval error: {str(e)}")
+        return {"user_id": user_id, "memory": [], "count": 0, "error": str(e)}
+
+@app.get("/api/ai-assistant/patterns/{user_id}")
+async def get_ai_assistant_patterns(user_id: str):
+    """Get user's learned patterns"""
+    try:
+        from intelligent_ai_assistant import get_user_patterns
+        patterns = await get_user_patterns(user_id)
+        return {"user_id": user_id, "patterns": patterns, "count": len(patterns)}
+    except Exception as e:
+        logger.error(f"Pattern retrieval error: {str(e)}")
+        return {"user_id": user_id, "patterns": [], "count": 0, "error": str(e)}
+
+@app.get("/api/ai-assistant/roles")
+async def get_ai_assistant_roles():
+    """Get all role configurations for AI assistant"""
+    try:
+        from intelligent_ai_assistant import ROLE_CONFIGURATIONS
+        return {
+            "roles": {
+                role.value: {
+                    "name": config["name"],
+                    "expertise": config["expertise"],
+                    "default_actions": config["default_actions"],
+                    "personality": config["personality"][:100] + "..." if len(config["personality"]) > 100 else config["personality"]
+                }
+                for role, config in ROLE_CONFIGURATIONS.items()
+            }
+        }
+    except Exception as e:
+        logger.error(f"Role config error: {str(e)}")
+        return {"roles": {}, "error": str(e)}
+
+# Contextual AI Help API
+@app.post("/api/ai-assistant/contextual-help")
+async def get_contextual_help(request: dict):
+    """Get contextual AI help based on current page and user activity"""
+    try:
+        page = request.get("current_page", "dashboard")
+        user_role = request.get("user_role", "technician")
+        action = request.get("action", "general")
+        
+        # Define contextual help prompts
+        contextual_prompts = {
+            "dashboard": {
+                "manager": "Help me understand the key performance indicators and what actions I should take based on the current dashboard data.",
+                "supervisor": "Show me the most important tasks that need my attention and how to prioritize them based on current workload.",
+                "technician": "What equipment needs attention and what are the urgent maintenance tasks I should focus on?",
+                "buyer": "What inventory items need ordering and what are the cost optimization opportunities?",
+                "operator": "What operational procedures should I prioritize and are there any safety alerts?",
+                "admin": "What system issues need attention and how is overall platform performance?"
+            },
+            "work-orders": {
+                "manager": "Analyze work order trends and provide insights on team efficiency and resource allocation.",
+                "supervisor": "Help me prioritize and assign work orders effectively across my team.",
+                "technician": "Show me my assigned work orders and provide technical guidance for complex tasks.",
+                "buyer": "Identify parts needed for upcoming work orders and suggest procurement strategies.",
+                "operator": "Guide me through the work order process and operational requirements.",
+                "admin": "Analyze work order system performance and user activity patterns."
+            },
+            "assets": {
+                "manager": "Provide asset performance analysis and ROI insights for equipment investments.",
+                "supervisor": "Help me optimize asset utilization and maintenance scheduling.",
+                "technician": "Give me technical details and maintenance history for specific assets.",
+                "buyer": "Suggest asset replacement timelines and vendor recommendations.",
+                "operator": "Show me asset operational procedures and safety protocols.",
+                "admin": "Monitor asset data integrity and system performance metrics."
+            },
+            "parts": {
+                "manager": "Analyze inventory costs and optimize parts management strategy.",
+                "supervisor": "Help me ensure adequate stock levels for maintenance operations.",
+                "technician": "Help me find compatible parts and substitutes for repairs.",
+                "buyer": "Optimize purchasing decisions and vendor management for parts inventory.",
+                "operator": "Guide me through parts usage and inventory procedures.",
+                "admin": "Monitor parts database and integration with suppliers."
+            },
+            "reports": {
+                "manager": "Create executive reports and KPI dashboards for stakeholder presentations.",
+                "supervisor": "Generate operational reports and team performance analysis.",
+                "technician": "Help me document maintenance activities and create technical reports.",
+                "buyer": "Generate procurement reports and cost analysis documentation.",
+                "operator": "Create operational logs and compliance reports.",
+                "admin": "Generate system reports and user activity analytics."
+            },
+            "schedule": {
+                "manager": "Optimize resource allocation and long-term maintenance planning.",
+                "supervisor": "Balance workload and optimize team scheduling efficiency.",
+                "technician": "Help me plan my daily tasks and coordinate with team members.",
+                "buyer": "Schedule procurement activities and align with maintenance needs.",
+                "operator": "Plan operational tasks and coordinate with maintenance schedules.",
+                "admin": "Monitor scheduling system performance and user adoption."
+            }
+        }
+        
+        # Get contextual prompt
+        prompt = contextual_prompts.get(page, {}).get(user_role, f"Help me with {page} tasks as a {user_role}.")
+        
+        # Create AI request
+        from intelligent_ai_assistant import generate_role_based_response, AIAssistantRequest, UserRole
+        
+        ai_request = AIAssistantRequest(
+            message=prompt,
+            user_id=request.get("user_id"),
+            user_role=user_role,
+            context={"page": page, "action": action, "contextual_help": True},
+            current_page=page
+        )
+        
+        response = await generate_role_based_response(ai_request)
+        response["contextual"] = True
+        return response
+        
+    except Exception as e:
+        logger.error(f"Contextual help error: {str(e)}")
+        return {
+            "response": f"I can help you with {page} tasks. What specific assistance do you need?",
+            "contextual": True,
+            "error": True
+        }
+
 # Users Management API
 @app.get("/api/users")
 async def get_users():
@@ -7196,3 +7356,37 @@ if __name__ == "__main__":
     print("🤖 Claude + Grok Partnership - MAXIMUM POWER")
     print(f"🌐 Running on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+# Technical Assistant Integration
+@app.route('/api/technical-assistant/user-role')
+def get_user_role():
+    """Detect user role for technical assistant"""
+    # Try to get role from session, headers, or URL
+    user_role = (
+        session.get('user_role') or 
+        request.headers.get('X-User-Role') or 
+        request.args.get('role') or 
+        'technician'  # Default role
+    )
+    
+    return jsonify({
+        'role': user_role,
+        'capabilities': {
+            'technician': ['photo_analysis', 'video_diagnostics', 'document_reading'],
+            'maintenance_worker': ['photo_documentation', 'checklist_assistance'],
+            'field_engineer': ['technical_drawing_analysis', 'performance_data_analysis'],
+            'supervisor': ['team_coordination', 'progress_monitoring'],
+            'inspector': ['defect_detection', 'compliance_checking'],
+            'safety_officer': ['hazard_detection', 'safety_assessment']
+        }.get(user_role, ['photo_analysis', 'document_reading'])
+    })
+
+# Add technical assistant context to all templates
+@app.context_processor
+def inject_technical_assistant_context():
+    """Add technical assistant context to all templates"""
+    return {
+        'technical_assistant_enabled': True,
+        'technical_assistant_service_url': 'http://localhost:8012',
+        'user_role': session.get('user_role', 'technician')
+    }

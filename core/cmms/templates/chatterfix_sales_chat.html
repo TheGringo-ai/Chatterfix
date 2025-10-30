@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterFix Sales AI Assistant</title>
+    <style>
+        /* Sales Chat Widget Styles */
+        .sales-chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .sales-chat-fab {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .sales-chat-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .sales-chat-fab svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+        }
+
+        .sales-chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8); }
+            100% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+
+        .sales-chat-window {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 380px;
+            height: 600px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10001;
+            transform: scale(0.8) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .sales-chat-window.open {
+            display: flex;
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .sales-chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .sales-chat-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .sales-chat-header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .sales-chat-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .sales-chat-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .sales-chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .sales-message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .sales-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .sales-message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .sales-message.ai .sales-message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .sales-message.user .sales-message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .sales-message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .sales-message.ai .sales-message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sales-message.user .sales-message-avatar {
+            background: #e1e8ed;
+            color: #666;
+        }
+
+        .sales-quick-actions {
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .sales-quick-actions h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .sales-quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sales-quick-btn {
+            background: #f1f3f4;
+            border: 1px solid #e1e8ed;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #333;
+        }
+
+        .sales-quick-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .sales-input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .sales-input-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .sales-input {
+            flex: 1;
+            border: 2px solid #e1e8ed;
+            border-radius: 20px;
+            padding: 12px 16px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s ease;
+            max-height: 100px;
+            min-height: 44px;
+        }
+
+        .sales-input:focus {
+            border-color: #667eea;
+        }
+
+        .sales-send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .sales-send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .sales-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sales-send-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .sales-typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .sales-typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .sales-typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typingDots 1.4s infinite;
+        }
+
+        .sales-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .sales-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingDots {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .sales-roi-calculator {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+
+        .sales-roi-calculator h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .sales-roi-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sales-roi-stat {
+            text-align: center;
+        }
+
+        .sales-roi-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .sales-roi-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .sales-chat-window {
+                width: calc(100vw - 20px);
+                height: calc(100vh - 20px);
+                bottom: 10px;
+                right: 10px;
+                border-radius: 12px;
+            }
+            
+            .sales-chat-fab {
+                bottom: 15px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sales Chat Widget -->
+    <div class="sales-chat-widget" id="salesChatWidget">
+        <!-- Floating Action Button -->
+        <button class="sales-chat-fab" id="salesChatFab">
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+            </svg>
+            <div class="sales-chat-badge">!</div>
+        </button>
+
+        <!-- Chat Window -->
+        <div class="sales-chat-window" id="salesChatWindow">
+            <!-- Header -->
+            <div class="sales-chat-header">
+                <button class="sales-chat-close" id="salesChatClose">&times;</button>
+                <h3>🚀 Alex - Your ChatterFix Expert</h3>
+                <p>Let me show you how ChatterFix can transform your business</p>
+            </div>
+
+            <!-- Messages -->
+            <div class="sales-chat-messages" id="salesChatMessages">
+                <div class="sales-message ai">
+                    <div class="sales-message-avatar">🤖</div>
+                    <div class="sales-message-content">
+                        <strong>Welcome to ChatterFix!</strong><br><br>
+                        I'm Alex, your dedicated ChatterFix consultant. I'm here to show you exactly how our AI-powered CMMS can revolutionize your maintenance operations and save your company thousands of dollars.<br><br>
+                        <strong>What would you like to know?</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>ROI Calculator - See your potential savings</li>
+                            <li>Live Demo - Experience ChatterFix in action</li>
+                            <li>Custom Solution - Tailored to your industry</li>
+                            <li>Implementation - Get started in 24 hours</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="sales-typing-indicator" id="salesTypingIndicator">
+                <div class="sales-message-avatar">🤖</div>
+                <div class="sales-typing-dots">
+                    <div class="sales-typing-dot"></div>
+                    <div class="sales-typing-dot"></div>
+                    <div class="sales-typing-dot"></div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="sales-quick-actions">
+                <h4>Quick Actions:</h4>
+                <div class="sales-quick-buttons">
+                    <button class="sales-quick-btn" data-action="roi">💰 Calculate ROI</button>
+                    <button class="sales-quick-btn" data-action="demo">🎯 Request Demo</button>
+                    <button class="sales-quick-btn" data-action="pricing">💎 View Pricing</button>
+                    <button class="sales-quick-btn" data-action="features">⚡ Key Features</button>
+                    <button class="sales-quick-btn" data-action="implementation">🚀 Fast Setup</button>
+                    <button class="sales-quick-btn" data-action="support">🛡️ Enterprise Support</button>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="sales-input-area">
+                <div class="sales-input-container">
+                    <textarea 
+                        class="sales-input" 
+                        id="salesChatInput" 
+                        placeholder="Ask me anything about ChatterFix..."
+                        rows="1"
+                    ></textarea>
+                    <button class="sales-send-btn" id="salesSendBtn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ChatterFixSalesChat {
+            constructor() {
+                this.isOpen = false;
+                this.isTyping = false;
+                this.conversationHistory = [];
+                this.userInfo = {
+                    company_size: null,
+                    industry: null,
+                    pain_points: [],
+                    interested_features: []
+                };
+                
+                this.init();
+                this.startWelcomeSequence();
+            }
+
+            init() {
+                // Get DOM elements
+                this.fab = document.getElementById('salesChatFab');
+                this.window = document.getElementById('salesChatWindow');
+                this.closeBtn = document.getElementById('salesChatClose');
+                this.input = document.getElementById('salesChatInput');
+                this.sendBtn = document.getElementById('salesSendBtn');
+                this.messages = document.getElementById('salesChatMessages');
+                this.typingIndicator = document.getElementById('salesTypingIndicator');
+                
+                // Bind events
+                this.fab.addEventListener('click', () => this.toggleChat());
+                this.closeBtn.addEventListener('click', () => this.closeChat());
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                // Auto-resize textarea
+                this.input.addEventListener('input', () => {
+                    this.input.style.height = 'auto';
+                    this.input.style.height = Math.min(this.input.scrollHeight, 100) + 'px';
+                });
+                
+                // Quick action buttons
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('sales-quick-btn')) {
+                        const action = e.target.dataset.action;
+                        this.handleQuickAction(action);
+                    }
+                });
+            }
+
+            startWelcomeSequence() {
+                // Show notification after 3 seconds
+                setTimeout(() => {
+                    this.showNotification();
+                }, 3000);
+                
+                // Auto-open after 10 seconds if not opened
+                setTimeout(() => {
+                    if (!this.isOpen && !localStorage.getItem('salesChatDismissed')) {
+                        this.openChat();
+                    }
+                }, 10000);
+            }
+
+            showNotification() {
+                const badge = document.querySelector('.sales-chat-badge');
+                if (badge && !this.isOpen) {
+                    badge.style.display = 'flex';
+                }
+            }
+
+            hideNotification() {
+                const badge = document.querySelector('.sales-chat-badge');
+                if (badge) {
+                    badge.style.display = 'none';
+                }
+            }
+
+            toggleChat() {
+                if (this.isOpen) {
+                    this.closeChat();
+                } else {
+                    this.openChat();
+                }
+            }
+
+            openChat() {
+                this.window.classList.add('open');
+                this.isOpen = true;
+                this.hideNotification();
+                this.input.focus();
+                
+                // Track engagement
+                this.trackEvent('chat_opened');
+            }
+
+            closeChat() {
+                this.window.classList.remove('open');
+                this.isOpen = false;
+                localStorage.setItem('salesChatDismissed', 'true');
+                
+                // Track engagement
+                this.trackEvent('chat_closed');
+            }
+
+            async sendMessage() {
+                const message = this.input.value.trim();
+                if (!message || this.isTyping) return;
+
+                // Add user message
+                this.addMessage(message, 'user');
+                this.input.value = '';
+                this.input.style.height = 'auto';
+
+                // Show typing indicator
+                this.showTyping();
+
+                try {
+                    // Send to sales AI service
+                    const response = await this.callSalesAI(message);
+                    
+                    // Hide typing and show response
+                    this.hideTyping();
+                    this.addMessage(response.response, 'ai');
+                    
+                    // Handle special responses (ROI calculator, etc.)
+                    if (response.roi_calculation) {
+                        this.showROICalculator(response.roi_calculation);
+                    }
+                    
+                    if (response.suggested_actions) {
+                        this.updateQuickActions(response.suggested_actions);
+                    }
+                    
+                } catch (error) {
+                    this.hideTyping();
+                    this.addMessage(
+                        "I apologize, but I'm experiencing some technical difficulties. However, I'd love to help you discover how ChatterFix can transform your maintenance operations! Would you like to schedule a quick 15-minute demo with our team?", 
+                        'ai'
+                    );
+                }
+
+                // Track conversation
+                this.trackEvent('message_sent', { message_length: message.length });
+            }
+
+            async callSalesAI(message) {
+                const response = await fetch('http://localhost:8011/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_history: this.conversationHistory.slice(-5), // Last 5 messages
+                        user_info: this.userInfo,
+                        source: 'landing_page'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Sales AI service unavailable');
+                }
+
+                const data = await response.json();
+                
+                // Update conversation history
+                this.conversationHistory.push(
+                    { role: 'user', content: message },
+                    { role: 'assistant', content: data.response }
+                );
+                
+                // Update user info if provided
+                if (data.updated_user_info) {
+                    this.userInfo = { ...this.userInfo, ...data.updated_user_info };
+                }
+
+                return data;
+            }
+
+            handleQuickAction(action) {
+                const actionMessages = {
+                    roi: "I'd like to see how much money ChatterFix could save my company",
+                    demo: "Can you show me a live demo of ChatterFix?",
+                    pricing: "What are the pricing options for ChatterFix?",
+                    features: "What are the key features that make ChatterFix special?",
+                    implementation: "How quickly can we get ChatterFix up and running?",
+                    support: "What kind of support do you provide for enterprise customers?"
+                };
+
+                const message = actionMessages[action];
+                if (message) {
+                    this.input.value = message;
+                    this.sendMessage();
+                }
+            }
+
+            addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `sales-message ${type}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'sales-message-avatar';
+                avatar.textContent = type === 'ai' ? '🤖' : '👤';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'sales-message-content';
+                
+                // Parse content for special formatting
+                if (type === 'ai' && content.includes('ROI:')) {
+                    contentDiv.innerHTML = this.formatAIResponse(content);
+                } else {
+                    contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+                }
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+                
+                this.messages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            formatAIResponse(content) {
+                // Format bold text
+                content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Format bullet points
+                content = content.replace(/^- (.*?)$/gm, '<li>$1</li>');
+                content = content.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+                
+                // Format line breaks
+                content = content.replace(/\n/g, '<br>');
+                
+                return content;
+            }
+
+            showROICalculator(roiData) {
+                const calculatorDiv = document.createElement('div');
+                calculatorDiv.className = 'sales-roi-calculator';
+                calculatorDiv.innerHTML = `
+                    <h4>💰 Your Potential ChatterFix ROI</h4>
+                    <div class="sales-roi-stats">
+                        <div class="sales-roi-stat">
+                            <div class="sales-roi-value">$${roiData.annual_savings.toLocaleString()}</div>
+                            <div class="sales-roi-label">Annual Savings</div>
+                        </div>
+                        <div class="sales-roi-stat">
+                            <div class="sales-roi-value">${roiData.roi_percentage}%</div>
+                            <div class="sales-roi-label">ROI in Year 1</div>
+                        </div>
+                        <div class="sales-roi-stat">
+                            <div class="sales-roi-value">${roiData.payback_months} mo</div>
+                            <div class="sales-roi-label">Payback Period</div>
+                        </div>
+                        <div class="sales-roi-stat">
+                            <div class="sales-roi-value">${roiData.efficiency_gain}%</div>
+                            <div class="sales-roi-label">Efficiency Gain</div>
+                        </div>
+                    </div>
+                `;
+                
+                this.messages.appendChild(calculatorDiv);
+                this.scrollToBottom();
+            }
+
+            updateQuickActions(actions) {
+                const quickButtons = document.querySelector('.sales-quick-buttons');
+                quickButtons.innerHTML = '';
+                
+                actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.className = 'sales-quick-btn';
+                    button.dataset.action = action.id;
+                    button.textContent = action.label;
+                    quickButtons.appendChild(button);
+                });
+            }
+
+            showTyping() {
+                this.isTyping = true;
+                this.typingIndicator.style.display = 'flex';
+                this.scrollToBottom();
+            }
+
+            hideTyping() {
+                this.isTyping = false;
+                this.typingIndicator.style.display = 'none';
+            }
+
+            scrollToBottom() {
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            trackEvent(event, data = {}) {
+                // Track user engagement for analytics
+                console.log('Sales Chat Event:', event, data);
+                
+                // Send to analytics service if available
+                if (window.gtag) {
+                    window.gtag('event', event, {
+                        event_category: 'sales_chat',
+                        ...data
+                    });
+                }
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatterFixSalesChat();
+        });
+
+        // Export for external use
+        window.ChatterFixSalesChat = ChatterFixSalesChat;
+    </script>
+</body>
+</html>

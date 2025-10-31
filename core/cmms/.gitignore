@@ -222,3 +222,19 @@ node_modules/
 .env
 *.tmp
 *.temp
+
+# Claude Code specific
+.claude/
+.claudeignore
+
+# Test results and temporary files
+*test_results*.json
+memory_mapping.pkl
+memory_vectors.faiss
+
+# Process IDs
+pids/
+
+# Local development scripts
+start_local_dev.sh
+stop_local_dev.sh

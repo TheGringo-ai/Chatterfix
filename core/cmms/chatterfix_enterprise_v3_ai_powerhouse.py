@@ -7734,10 +7734,11 @@ async def enterprise_dashboard():
         <style>
         .ai-chat-widget {
             position: fixed;
-            z-index: 10000;
+            z-index: 99999;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             bottom: 20px;
             right: 20px;
+            pointer-events: auto;
         }
         
         .chat-toggle {

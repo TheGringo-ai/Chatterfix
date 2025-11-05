@@ -1152,6 +1152,304 @@ async def ai_powerhouse_dashboard():
             </div>
         </div>
         
+        <!-- AI Sales Chat Widget -->
+        <div id="ai-sales-chat" class="ai-chat-widget">
+            <div class="chat-toggle" onclick="toggleSalesChat()">
+                <div class="chat-icon">🤖</div>
+                <div class="chat-text">AI Sales Assistant</div>
+            </div>
+            <div class="chat-window" id="salesChatWindow" style="display: none;">
+                <div class="chat-header">
+                    <div class="chat-title">ChatterFix AI Sales</div>
+                    <button class="chat-close" onclick="toggleSalesChat()">×</button>
+                </div>
+                <div class="chat-messages" id="salesChatMessages">
+                    <div class="ai-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            Hi! I'm your ChatterFix AI Sales Assistant. I can help you learn about our CMMS platform, pricing, and answer any questions. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="salesChatInput" placeholder="Ask about ChatterFix CMMS..." onkeypress="handleSalesChatKeypress(event)">
+                    <button onclick="sendSalesMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .ai-chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .chat-toggle {
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        .chat-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 102, 255, 0.4);
+        }
+        
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3); }
+            50% { box-shadow: 0 4px 20px rgba(0, 245, 255, 0.5); }
+        }
+        
+        .chat-icon {
+            font-size: 24px;
+        }
+        
+        .chat-text {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .ai-message, .user-message {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .ai-message .message-avatar {
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+        }
+        
+        .user-message .message-avatar {
+            background: #f0f0f0;
+            order: 1;
+        }
+        
+        .message-content {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 250px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            color: white;
+        }
+        
+        .chat-input-container {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input-container input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .chat-input-container input:focus {
+            border-color: #00f5ff;
+        }
+        
+        .chat-input-container button {
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .chat-input-container button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .chat-window {
+                width: calc(100vw - 40px);
+                height: 60vh;
+                bottom: 90px;
+                right: 20px;
+                left: 20px;
+            }
+            
+            .chat-toggle .chat-text {
+                display: none;
+            }
+        }
+        </style>
+
+        <script>
+        function toggleSalesChat() {
+            const chatWindow = document.getElementById('salesChatWindow');
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'flex';
+                document.querySelector('.chat-toggle').style.display = 'none';
+            } else {
+                chatWindow.style.display = 'none';
+                document.querySelector('.chat-toggle').style.display = 'flex';
+            }
+        }
+        
+        function handleSalesChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendSalesMessage();
+            }
+        }
+        
+        async function sendSalesMessage() {
+            const input = document.getElementById('salesChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            addSalesMessage(message, 'user');
+            input.value = '';
+            
+            // Add typing indicator
+            const typingId = addSalesMessage('AI is typing...', 'ai', true);
+            
+            try {
+                // Call sales AI endpoint
+                const response = await fetch('/api/sales-ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator and add response
+                removeSalesMessage(typingId);
+                addSalesMessage(data.response || 'Sorry, I\'m having trouble right now. Please try again.', 'ai');
+                
+            } catch (error) {
+                removeSalesMessage(typingId);
+                addSalesMessage('I\'m currently offline. Please try the /ai-assistant page or contact sales directly.', 'ai');
+            }
+        }
+        
+        function addSalesMessage(content, sender, isTemporary = false) {
+            const messagesContainer = document.getElementById('salesChatMessages');
+            const messageDiv = document.createElement('div');
+            const messageId = 'msg-' + Date.now();
+            messageDiv.id = messageId;
+            messageDiv.className = sender === 'user' ? 'user-message' : 'ai-message';
+            
+            const avatar = sender === 'user' ? '👤' : '🤖';
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return isTemporary ? messageId : null;
+        }
+        
+        function removeSalesMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) message.remove();
+        }
+        </script>
+        
     </body>
     </html>
     """
@@ -1244,6 +1542,202 @@ async def demo_status():
         "demo_mode": DEMO_MODE,
         "demo_organization_id": PUBLIC_DEMO_ORGANIZATION_ID
     }
+
+# Sales AI Chat API
+@app.post("/api/sales-ai")
+async def sales_ai_chat(request: dict):
+    """Sales AI Assistant for ChatterFix CMMS"""
+    try:
+        user_message = request.get("message", "")
+        
+        # Sales AI prompt
+        sales_prompt = f"""You are the ChatterFix CMMS AI Sales Assistant. You're knowledgeable, friendly, and helpful.
+
+Key ChatterFix CMMS Features:
+- Enterprise-grade CMMS platform
+- AI-powered maintenance management
+- Grok & Claude AI integration
+- Real-time work order management
+- Smart inventory tracking
+- Predictive maintenance analytics
+- Mobile-responsive interface
+- Multi-tenant SaaS architecture
+
+Pricing: Enterprise plans starting at $99/month per organization
+Free trial: 30-day full-featured trial available
+
+Be conversational, helpful, and focused on how ChatterFix can solve maintenance management challenges.
+
+User: {user_message}
+
+Sales Assistant: """
+
+        # Try to use AI team coordinator first (Grok-powered)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post("http://localhost:8013/ai-team/ask",
+                    json={
+                        "message": user_message,
+                        "context": "sales",
+                        "preferred_provider": "grok"
+                    },
+                    timeout=15.0
+                )
+            if response.status_code == 200:
+                result = response.json()
+                return {"response": result["response"], "provider": result.get("provider", "ai_team")}
+        except Exception as e:
+            logger.warning(f"AI Team Coordinator request failed: {e}")
+        
+        # Fallback: Try dedicated sales AI service
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post("http://localhost:8011/sales", 
+                    json={"message": user_message}, 
+                    timeout=10.0)
+                if response.status_code == 200:
+                    result = response.json()
+                    return {"response": result.get("response", "Hello! How can I help you learn about ChatterFix CMMS today?")}
+        except Exception as e:
+            logger.warning(f"Sales AI service unavailable: {e}")
+        
+        # Fallback to Grok if available
+        if XAI_API_KEY:
+            try:
+                async with httpx.AsyncClient() as client:
+                    headers = {
+                        "Authorization": f"Bearer {XAI_API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": "grok-beta",
+                        "messages": [
+                            {"role": "system", "content": sales_prompt},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "temperature": 0.7,
+                        "max_tokens": 300
+                    }
+                    
+                    response = await client.post("https://api.x.ai/v1/chat/completions", 
+                        headers=headers, json=payload, timeout=10.0)
+                    if response.status_code == 200:
+                        result = response.json()
+                        ai_response = result["choices"][0]["message"]["content"]
+                        return {"response": ai_response}
+            except Exception as e:
+                logger.warning(f"Grok AI request failed: {e}")
+        
+        # Default fallback response
+        return {
+            "response": "Hello! I'm the ChatterFix CMMS AI Sales Assistant. I can help you learn about our enterprise maintenance management platform. What would you like to know about ChatterFix?"
+        }
+        
+    except Exception as e:
+        logger.error(f"Sales AI error: {e}")
+        return {
+            "response": "I'm having trouble right now. Please try again or contact our sales team directly!"
+        }
+
+# Tech Support AI Chat API
+@app.post("/api/tech-support")
+async def tech_support_chat(request: dict):
+    """Tech Support AI Assistant for ChatterFix CMMS"""
+    try:
+        user_message = request.get("message", "")
+        
+        # Tech Support AI prompt
+        tech_prompt = f"""You are the ChatterFix CMMS AI Tech Support Assistant. You're technical, helpful, and solution-oriented.
+        
+You help users with:
+- Technical troubleshooting for ChatterFix CMMS
+- System configuration and setup issues
+- Database and data management questions
+- API integration problems
+- User interface issues
+- Performance optimization
+- Mobile app troubleshooting
+- AI features configuration
+- Work order system issues
+- Asset management problems
+
+Always provide step-by-step solutions when possible. Be concise but thorough.
+If you need more information, ask specific diagnostic questions.
+Always recommend checking the system logs if there are errors.
+
+User technical issue: {user_message}
+Tech Support: """
+
+        # Try Grok AI for technical support
+        if XAI_API_KEY:
+            try:
+                async with httpx.AsyncClient() as client:
+                    headers = {
+                        "Authorization": f"Bearer {XAI_API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": "grok-beta",
+                        "messages": [
+                            {"role": "system", "content": tech_prompt},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "temperature": 0.3,
+                        "max_tokens": 500
+                    }
+                    
+                    response = await client.post("https://api.x.ai/v1/chat/completions", 
+                        headers=headers, json=payload, timeout=10.0)
+                    if response.status_code == 200:
+                        result = response.json()
+                        ai_response = result["choices"][0]["message"]["content"]
+                        return {"response": f"🔧 {ai_response}"}
+            except Exception as e:
+                logger.warning(f"Grok AI request failed: {e}")
+        
+        # Fallback to OpenAI if available
+        if OPENAI_API_KEY:
+            try:
+                async with httpx.AsyncClient() as client:
+                    headers = {
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+                    payload = {
+                        "model": "gpt-4o-mini",
+                        "messages": [
+                            {"role": "system", "content": tech_prompt},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "temperature": 0.3,
+                        "max_tokens": 500
+                    }
+                    
+                    response = await client.post("https://api.openai.com/v1/chat/completions", 
+                        headers=headers, json=payload, timeout=10.0)
+                    if response.status_code == 200:
+                        result = response.json()
+                        ai_response = result["choices"][0]["message"]["content"]
+                        return {"response": f"🔧 {ai_response}"}
+            except Exception as e:
+                logger.warning(f"OpenAI request failed: {e}")
+        
+        # Default fallback responses based on keywords
+        message_lower = user_message.lower()
+        if "login" in message_lower or "password" in message_lower:
+            return {"response": "🔧 For login issues: 1) Clear browser cache 2) Check if caps lock is on 3) Try password reset 4) Contact admin if using SSO"}
+        elif "slow" in message_lower or "performance" in message_lower:
+            return {"response": "🔧 For performance issues: 1) Check internet connection 2) Clear browser cache 3) Close other browser tabs 4) Try refreshing the page 5) Check system status"}
+        elif "error" in message_lower or "bug" in message_lower:
+            return {"response": "🔧 For errors: 1) Note the exact error message 2) Check browser console (F12) 3) Try refreshing 4) Screenshot the error 5) Contact support with details"}
+        else:
+            return {"response": "🔧 I'm here to help with technical issues! Please describe your problem in detail. Include any error messages you're seeing and what you were trying to do when the issue occurred."}
+        
+    except Exception as e:
+        logger.error(f"Tech Support AI error: {e}")
+        return {
+            "response": "🔧 I'm having technical difficulties myself! Please try again or contact our support team directly for immediate assistance."
+        }
 
 # Voice Command API with Grok AI
 @app.post("/api/voice/command")
@@ -7180,6 +7674,378 @@ async def enterprise_dashboard():
                 showRoleSelection();
             }
         });
+        </script>
+        
+        <!-- Tech Support Chat Widget (CMMS Only) -->
+        <div id="ai-tech-chat" class="ai-chat-widget tech-widget">
+            <div class="chat-toggle" onclick="toggleTechChat()">
+                <div class="chat-icon">🔧</div>
+                <div class="chat-text">Tech Support</div>
+                <div class="chat-status"></div>
+            </div>
+            <div class="chat-window" id="techChatWindow" style="display: none;">
+                <div class="chat-header">
+                    <div class="chat-title">🔧 ChatterFix Tech Support</div>
+                    <button class="chat-close" onclick="toggleTechChat()">×</button>
+                </div>
+                <div class="chat-messages" id="techChatMessages">
+                    <div class="ai-message">
+                        <div class="message-avatar">🔧</div>
+                        <div class="message-content">
+                            Hello! I'm your ChatterFix Tech Support AI. I can help with technical issues, troubleshooting, and system questions. How can I assist you?
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="techChatInput" placeholder="Describe your technical issue..." onkeypress="handleTechChatKeypress(event)">
+                    <button onclick="sendTechMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .ai-chat-widget {
+            position: fixed;
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            bottom: 20px;
+            right: 20px;
+        }
+        
+        .chat-toggle {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            animation: glow 3s ease-in-out infinite alternate;
+            position: relative;
+            border: none;
+            outline: none;
+        }
+        
+        .chat-toggle:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+        
+        .chat-toggle:active {
+            transform: translateY(-1px);
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
+            100% { box-shadow: 0 4px 25px rgba(255, 107, 53, 0.4); }
+        }
+        
+        .chat-icon {
+            font-size: 24px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+        
+        .chat-text {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .chat-status {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+        
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 520px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+        
+        .ai-message, .user-message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ai-message .message-avatar {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+        
+        .user-message .message-avatar {
+            background: #6c757d;
+            color: white;
+            order: 1;
+        }
+        
+        .message-content {
+            background: white;
+            padding: 14px 18px;
+            border-radius: 20px;
+            max-width: 270px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            color: #333;
+        }
+        
+        .user-message .message-content {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .message-content.typing {
+            background: #e9ecef;
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 12px;
+            background: white;
+        }
+        
+        .chat-input-container input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .chat-input-container input:focus {
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+        
+        .chat-input-container button {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            min-width: 70px;
+        }
+        
+        .chat-input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+        }
+        
+        .chat-input-container button:active {
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 768px) {
+            .chat-window {
+                width: calc(100vw - 40px);
+                height: 60vh;
+                bottom: 90px;
+                right: 20px;
+                left: 20px;
+            }
+            
+            .chat-toggle .chat-text {
+                display: none;
+            }
+        }
+        </style>
+        
+        <script>
+        function toggleTechChat() {
+            const chatWindow = document.getElementById('techChatWindow');
+            const techToggle = document.querySelector('.tech-widget .chat-toggle');
+            
+            if (chatWindow.style.display === 'none' || !chatWindow.style.display) {
+                chatWindow.style.display = 'flex';
+                techToggle.style.display = 'none';
+                chatWindow.style.animation = 'slideUp 0.3s ease-out';
+            } else {
+                chatWindow.style.display = 'none';
+                techToggle.style.display = 'flex';
+            }
+        }
+        
+        function handleTechChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendTechMessage();
+            }
+        }
+        
+        async function sendTechMessage() {
+            const input = document.getElementById('techChatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            addTechMessage(message, 'user');
+            input.value = '';
+            
+            // Add typing indicator
+            const typingId = addTechMessage('🔧 Analyzing your issue...', 'ai', true);
+            
+            try {
+                const response = await fetch('/api/tech-support', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator and add response
+                removeTechMessage(typingId);
+                addTechMessage(data.response || 'Sorry, I\'m having trouble right now. Please try again.', 'ai');
+                
+            } catch (error) {
+                removeTechMessage(typingId);
+                addTechMessage('I\'m having technical difficulties. Please try again or contact our support team directly!', 'ai');
+            }
+        }
+        
+        function addTechMessage(content, sender, isTemporary = false) {
+            const messagesContainer = document.getElementById('techChatMessages');
+            const messageDiv = document.createElement('div');
+            const messageId = 'tech-msg-' + Date.now();
+            messageDiv.id = messageId;
+            messageDiv.className = sender === 'user' ? 'user-message' : 'ai-message';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'user' ? '👤' : '🔧';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            if (isTemporary) messageContent.style.fontStyle = 'italic';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageId;
+        }
+        
+        function removeTechMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) message.remove();
+        }
+        
+        // Add CSS animation
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(styleSheet);
         </script>
     </body>
     </html>

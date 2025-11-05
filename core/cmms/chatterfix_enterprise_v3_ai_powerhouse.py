@@ -1380,23 +1380,49 @@ async def ai_powerhouse_dashboard():
 
         <script>
         function toggleSalesChat() {
-            console.log('🤖 Sales chat toggle clicked');
+            console.log('🤖 SALES CHAT CLICKED - DEBUGGING');
+            
             const chatWindow = document.getElementById('salesChatWindow');
-            const chatToggle = document.querySelector('.chat-toggle');
+            const chatWidget = document.getElementById('ai-sales-chat');
+            
+            console.log('Chat window found:', !!chatWindow);
+            console.log('Chat widget found:', !!chatWidget);
             
             if (!chatWindow) {
-                console.error('Sales chat window not found');
+                console.error('❌ Sales chat window not found!');
+                alert('Sales chat window not found. Please refresh the page.');
                 return;
             }
             
-            if (chatWindow.style.display === 'none' || !chatWindow.style.display) {
+            const isHidden = chatWindow.style.display === 'none' || !chatWindow.style.display;
+            console.log('Chat currently hidden:', isHidden);
+            
+            if (isHidden) {
                 chatWindow.style.display = 'flex';
-                if (chatToggle) chatToggle.style.display = 'none';
-                console.log('✅ Sales chat opened');
+                chatWindow.style.flexDirection = 'column';
+                chatWindow.style.position = 'fixed';
+                chatWindow.style.bottom = '80px';
+                chatWindow.style.right = '20px';
+                chatWindow.style.zIndex = '99999';
+                chatWindow.style.background = 'white';
+                chatWindow.style.border = '1px solid #ccc';
+                chatWindow.style.borderRadius = '8px';
+                chatWindow.style.width = '350px';
+                chatWindow.style.height = '500px';
+                
+                // Hide toggle button
+                const toggleBtn = chatWidget.querySelector('.chat-toggle');
+                if (toggleBtn) toggleBtn.style.display = 'none';
+                
+                console.log('✅ Sales chat OPENED');
             } else {
                 chatWindow.style.display = 'none';
-                if (chatToggle) chatToggle.style.display = 'flex';
-                console.log('✅ Sales chat closed');
+                
+                // Show toggle button
+                const toggleBtn = chatWidget.querySelector('.chat-toggle');
+                if (toggleBtn) toggleBtn.style.display = 'flex';
+                
+                console.log('✅ Sales chat CLOSED');
             }
         }
         

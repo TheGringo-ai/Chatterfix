@@ -1183,8 +1183,9 @@ async def ai_powerhouse_dashboard():
             position: fixed;
             bottom: 20px;
             right: 20px;
-            z-index: 10000;
+            z-index: 99999;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            pointer-events: auto;
         }
         
         .chat-toggle {
@@ -1199,6 +1200,10 @@ async def ai_powerhouse_dashboard():
             box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
             transition: all 0.3s ease;
             animation: pulse 2s infinite;
+            border: none;
+            outline: none;
+            user-select: none;
+            pointer-events: auto;
         }
         
         .chat-toggle:hover {
@@ -1375,15 +1380,38 @@ async def ai_powerhouse_dashboard():
 
         <script>
         function toggleSalesChat() {
+            console.log('🤖 Sales chat toggle clicked');
             const chatWindow = document.getElementById('salesChatWindow');
-            if (chatWindow.style.display === 'none') {
+            const chatToggle = document.querySelector('.chat-toggle');
+            
+            if (!chatWindow) {
+                console.error('Sales chat window not found');
+                return;
+            }
+            
+            if (chatWindow.style.display === 'none' || !chatWindow.style.display) {
                 chatWindow.style.display = 'flex';
-                document.querySelector('.chat-toggle').style.display = 'none';
+                if (chatToggle) chatToggle.style.display = 'none';
+                console.log('✅ Sales chat opened');
             } else {
                 chatWindow.style.display = 'none';
-                document.querySelector('.chat-toggle').style.display = 'flex';
+                if (chatToggle) chatToggle.style.display = 'flex';
+                console.log('✅ Sales chat closed');
             }
         }
+        
+        // Backup event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatToggle = document.querySelector('.chat-toggle');
+            if (chatToggle) {
+                chatToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSalesChat();
+                });
+                console.log('🔧 Sales chat backup event listener added');
+            }
+        });
         
         function handleSalesChatKeypress(event) {
             if (event.key === 'Enter') {

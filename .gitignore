@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 venv/
 *.db
+.pytest_cache/
+*.egg-info/
 
 # Development scripts (may contain secrets)
 deploy_*.sh

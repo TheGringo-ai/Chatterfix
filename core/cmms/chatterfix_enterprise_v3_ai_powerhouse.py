@@ -35,16 +35,76 @@ from pydantic import BaseModel, Field
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# AI Service configurations
-XAI_API_KEY = os.getenv("XAI_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SECRET_KEY = os.getenv("SECRET_KEY", "chatterfix-enterprise-v3-ai-powerhouse")
+# Configuration class for environment validation
+class Config:
+    """Application configuration with validation"""
+    def __init__(self):
+        self.XAI_API_KEY = os.getenv("XAI_API_KEY")
+        self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+        self.SECRET_KEY = os.getenv("SECRET_KEY", "chatterfix-enterprise-v3-ai-powerhouse")
+        self.DATABASE_FILE = os.getenv("DATABASE_FILE", "chatterfix_enterprise_v3.db")
+        self.PORT = int(os.getenv("PORT", "8080"))
+        self.HOST = os.getenv("HOST", "0.0.0.0")
+        self.ENV = os.getenv("ENV", "development")
+        self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+        
+        # Validate configuration
+        self.validate()
+    
+    def validate(self):
+        """Validate configuration settings"""
+        if self.PORT < 1 or self.PORT > 65535:
+            raise ValueError(f"Invalid PORT: {self.PORT}. Must be between 1 and 65535")
+        
+        if self.LOG_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+            logger.warning(f"Invalid LOG_LEVEL: {self.LOG_LEVEL}. Using INFO")
+            self.LOG_LEVEL = "INFO"
+        
+        # Warn if API keys are missing
+        if not self.XAI_API_KEY:
+            logger.warning("XAI_API_KEY not set. Grok AI features will be limited.")
+        if not self.OPENAI_API_KEY:
+            logger.warning("OPENAI_API_KEY not set. OpenAI features will be limited.")
+        
+        logger.info(f"Configuration loaded: ENV={self.ENV}, PORT={self.PORT}")
+
+# Initialize configuration
+config = Config()
+
+# AI Service configurations (for backward compatibility)
+XAI_API_KEY = config.XAI_API_KEY
+OPENAI_API_KEY = config.OPENAI_API_KEY
+SECRET_KEY = config.SECRET_KEY
 
 # Security helper
 security = HTTPBearer()
 
 # Database initialization
-DATABASE_FILE = os.getenv("DATABASE_FILE", "chatterfix_enterprise_v3.db")
+DATABASE_FILE = config.DATABASE_FILE
+
+# Database connection context manager
+class DatabaseConnection:
+    """Context manager for database connections"""
+    def __init__(self, db_file: str = DATABASE_FILE):
+        self.db_file = db_file
+        self.conn = None
+        self.cursor = None
+    
+    def __enter__(self):
+        self.conn = sqlite3.connect(self.db_file)
+        self.conn.row_factory = sqlite3.Row  # Enable column access by name
+        self.cursor = self.conn.cursor()
+        return self.conn, self.cursor
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self.conn.rollback()
+            logger.error(f"Database error: {exc_val}")
+        else:
+            self.conn.commit()
+        self.cursor.close()
+        self.conn.close()
+        return False
 
 def init_database():
     """Initialize AI-powered CMMS database"""
@@ -298,9 +358,39 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ChatterFix Enterprise v3.0 - AI Powerhouse",
-    description="Revolutionary CMMS powered by Claude + Grok AI Partnership",
+    description="""
+    Revolutionary CMMS powered by Claude + Grok AI Partnership
+    
+    ## Features
+    * 🤖 AI-Enhanced Maintenance Management
+    * 🎤 Voice Command Processing
+    * 📊 Real-time Analytics Dashboard
+    * 🔧 Smart Work Order Management
+    * 📦 Intelligent Parts Recognition
+    * 🔮 Predictive Maintenance Insights
+    * 🏢 Multi-tenant Organization Support
+    
+    ## API Endpoints
+    * Health & Status: `/health`, `/ready`
+    * Voice Commands: `/api/voice/command`
+    * Work Orders: `/api/work-orders`
+    * AI Insights: `/api/ai/insights`, `/api/ai/dashboard`
+    * Smart Scanning: `/api/smart-scan/part`
+    
+    ## Authentication
+    Uses bearer token authentication for protected endpoints.
+    """,
     version="3.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_tags=[
+        {"name": "health", "description": "Health and readiness checks"},
+        {"name": "ai", "description": "AI-powered features and insights"},
+        {"name": "voice", "description": "Voice command processing"},
+        {"name": "work-orders", "description": "Work order management"},
+        {"name": "dashboard", "description": "Dashboard and UI endpoints"},
+    ]
 )
 
 # Enhanced CORS
@@ -313,7 +403,7 @@ app.add_middleware(
 )
 
 # Health Check Endpoint
-@app.get("/health")
+@app.get("/health", tags=["health"])
 async def health_check():
     """Health check endpoint for monitoring and load balancers"""
     try:
@@ -338,7 +428,7 @@ async def health_check():
     }
 
 # Readiness Check Endpoint
-@app.get("/ready")
+@app.get("/ready", tags=["health"])
 async def readiness_check():
     """Readiness check for kubernetes/orchestration"""
     try:
@@ -815,7 +905,7 @@ async def ai_powerhouse_dashboard():
     """
 
 # Voice Command API with Grok AI
-@app.post("/api/voice/command")
+@app.post("/api/voice/command", tags=["voice"])
 async def process_voice_command(request: VoiceCommandRequest):
     """Process voice commands with Grok AI intelligence"""
     try:
@@ -896,7 +986,7 @@ async def process_voice_command(request: VoiceCommandRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Smart Part Recognition API
-@app.post("/api/smart-scan/part")
+@app.post("/api/smart-scan/part", tags=["ai"])
 async def recognize_part(request: SmartPartRequest):
     """AI-powered part recognition and inventory integration"""
     try:
@@ -941,7 +1031,7 @@ async def recognize_part(request: SmartPartRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 # AI Analytics Dashboard
-@app.get("/api/ai/dashboard")
+@app.get("/api/ai/dashboard", tags=["ai"])
 async def ai_dashboard_data():
     """Real-time AI analytics and insights"""
     conn = sqlite3.connect(DATABASE_FILE)
@@ -983,7 +1073,7 @@ async def ai_dashboard_data():
     }
 
 # Enhanced Work Orders API
-@app.get("/api/work-orders")
+@app.get("/api/work-orders", tags=["work-orders"])
 async def get_ai_work_orders():
     """Get AI-enhanced work orders"""
     conn = sqlite3.connect(DATABASE_FILE)
@@ -1024,7 +1114,7 @@ async def get_ai_work_orders():
     }
 
 # AI Insights API
-@app.get("/api/ai/insights")
+@app.get("/api/ai/insights", tags=["ai"])
 async def get_ai_insights():
     """Get AI-generated insights and recommendations"""
     conn = sqlite3.connect(DATABASE_FILE)

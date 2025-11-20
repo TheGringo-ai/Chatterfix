@@ -12,7 +12,7 @@ Revolutionary maintenance management powered by AI:
 """
 
 from fastapi import FastAPI, HTTPException, Depends, status, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Dict, List, Any, Union
@@ -104,6 +104,26 @@ class DatabaseConnection:
             self.conn.commit()
         self.cursor.close()
         self.conn.close()
+        return False
+
+# Input sanitization utilities
+def sanitize_string(value: str, max_length: int = 1000) -> str:
+    """Sanitize string input to prevent injection attacks"""
+    if not value:
+        return ""
+    # Remove null bytes and control characters
+    sanitized = value.replace('\x00', '').replace('\r', '').replace('\n', ' ')
+    # Trim to max length
+    sanitized = sanitized[:max_length]
+    # Strip leading/trailing whitespace
+    return sanitized.strip()
+
+def validate_uuid(value: str) -> bool:
+    """Validate UUID format"""
+    try:
+        uuid.UUID(value)
+        return True
+    except (ValueError, AttributeError):
         return False
 
 def init_database():
@@ -402,6 +422,58 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting storage (in-memory, for production use Redis)
+rate_limit_storage = {}
+
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Add security headers to all responses"""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src 'self' data: https:;"
+    return response
+
+# Simple Rate Limiting Middleware
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Simple rate limiting middleware (60 requests per minute per IP)"""
+    # Skip rate limiting for health checks
+    if request.url.path in ["/health", "/ready"]:
+        return await call_next(request)
+    
+    client_ip = request.client.host
+    current_time = datetime.now()
+    
+    # Clean old entries (older than 1 minute)
+    expired_keys = [ip for ip, (_, timestamp) in rate_limit_storage.items() 
+                    if (current_time - timestamp).total_seconds() > 60]
+    for key in expired_keys:
+        del rate_limit_storage[key]
+    
+    # Check rate limit
+    if client_ip in rate_limit_storage:
+        count, timestamp = rate_limit_storage[client_ip]
+        if (current_time - timestamp).total_seconds() < 60:
+            if count >= 60:  # 60 requests per minute
+                return JSONResponse(
+                    status_code=429,
+                    content={"error": "Rate limit exceeded. Please try again later."}
+                )
+            rate_limit_storage[client_ip] = (count + 1, timestamp)
+        else:
+            rate_limit_storage[client_ip] = (1, current_time)
+    else:
+        rate_limit_storage[client_ip] = (1, current_time)
+    
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = "60"
+    response.headers["X-RateLimit-Remaining"] = str(60 - rate_limit_storage[client_ip][0])
+    return response
+
 # Health Check Endpoint
 @app.get("/health", tags=["health"])
 async def health_check():
@@ -444,6 +516,58 @@ async def readiness_check():
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
         return {"ready": False, "message": str(e)}
+
+# Metrics Endpoint
+@app.get("/metrics", tags=["health"])
+async def get_metrics():
+    """Prometheus-compatible metrics endpoint"""
+    try:
+        with DatabaseConnection() as (conn, cursor):
+            # Get various counts
+            cursor.execute("SELECT COUNT(*) FROM work_orders")
+            total_work_orders = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM work_orders WHERE status = 'open'")
+            open_work_orders = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM assets")
+            total_assets = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM users")
+            total_users = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(ai_health_score) FROM assets")
+            avg_health = cursor.fetchone()[0] or 0.0
+        
+        # Format as Prometheus metrics
+        metrics_text = f"""# HELP chatterfix_work_orders_total Total number of work orders
+# TYPE chatterfix_work_orders_total gauge
+chatterfix_work_orders_total {total_work_orders}
+
+# HELP chatterfix_work_orders_open Number of open work orders
+# TYPE chatterfix_work_orders_open gauge
+chatterfix_work_orders_open {open_work_orders}
+
+# HELP chatterfix_assets_total Total number of assets
+# TYPE chatterfix_assets_total gauge
+chatterfix_assets_total {total_assets}
+
+# HELP chatterfix_users_total Total number of users
+# TYPE chatterfix_users_total gauge
+chatterfix_users_total {total_users}
+
+# HELP chatterfix_asset_health_avg Average asset health score
+# TYPE chatterfix_asset_health_avg gauge
+chatterfix_asset_health_avg {avg_health:.2f}
+
+# HELP chatterfix_api_rate_limit_requests Rate limit request count
+# TYPE chatterfix_api_rate_limit_requests gauge
+chatterfix_api_rate_limit_requests {len(rate_limit_storage)}
+"""
+        return Response(content=metrics_text, media_type="text/plain")
+    except Exception as e:
+        logger.error(f"Metrics endpoint failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve metrics")
 
 @app.get("/", response_class=HTMLResponse)
 async def ai_powerhouse_dashboard():

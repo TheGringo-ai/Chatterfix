@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi.testclient import TestClient
-from chatterfix_enterprise_v3_ai_powerhouse import app, init_database, DatabaseConnection, config
+from chatterfix_enterprise_v3_ai_powerhouse import app, init_database, DatabaseConnection, config, sanitize_string, validate_uuid
 
 # Use test database
 TEST_DB = "test_chatterfix.db"
@@ -51,6 +51,35 @@ class TestHealthEndpoints:
         data = response.json()
         assert "ready" in data
         assert "message" in data
+    
+    def test_metrics_endpoint(self, client):
+        """Test /metrics endpoint returns Prometheus format"""
+        response = client.get("/metrics")
+        assert response.status_code == 200
+        assert "text/plain" in response.headers["content-type"]
+        content = response.text
+        assert "chatterfix_work_orders_total" in content
+        assert "chatterfix_assets_total" in content
+        assert "# HELP" in content
+
+
+class TestSecurityMiddleware:
+    """Test security headers and rate limiting"""
+    
+    def test_security_headers(self, client):
+        """Test security headers are present"""
+        response = client.get("/health")
+        assert "x-content-type-options" in response.headers
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert "x-frame-options" in response.headers
+        assert response.headers["x-frame-options"] == "DENY"
+        assert "strict-transport-security" in response.headers
+    
+    def test_rate_limiting_headers(self, client):
+        """Test rate limit headers are present"""
+        response = client.get("/api/work-orders")
+        assert "x-ratelimit-limit" in response.headers
+        assert response.headers["x-ratelimit-limit"] == "60"
 
 
 class TestAIEndpoints:
@@ -176,6 +205,37 @@ class TestConfiguration:
         assert 1 <= config.PORT <= 65535
         # Environment should be set
         assert config.ENV in ["development", "staging", "production"]
+
+
+class TestUtilityFunctions:
+    """Test utility functions"""
+    
+    def test_sanitize_string(self):
+        """Test string sanitization"""
+        # Test normal string
+        assert sanitize_string("Hello World") == "Hello World"
+        
+        # Test string with control characters
+        assert sanitize_string("Hello\x00World") == "HelloWorld"
+        assert sanitize_string("Hello\nWorld") == "Hello World"
+        
+        # Test max length
+        long_string = "a" * 2000
+        assert len(sanitize_string(long_string, max_length=100)) == 100
+        
+        # Test empty string
+        assert sanitize_string("") == ""
+        assert sanitize_string("   ") == ""
+    
+    def test_validate_uuid(self):
+        """Test UUID validation"""
+        # Valid UUID
+        assert validate_uuid("550e8400-e29b-41d4-a716-446655440000") is True
+        
+        # Invalid UUIDs
+        assert validate_uuid("not-a-uuid") is False
+        assert validate_uuid("") is False
+        assert validate_uuid("123") is False
 
 
 if __name__ == "__main__":

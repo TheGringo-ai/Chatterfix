@@ -268,25 +268,25 @@ def init_database():
     conn.commit()
     conn.close()
 
-# AI Models
+# AI Models with validation
 class VoiceCommandRequest(BaseModel):
-    audio_data: str
-    technician_id: str
-    location: Optional[str] = None
-    priority: Optional[str] = "medium"
+    audio_data: str = Field(..., min_length=1, description="Base64 encoded audio data")
+    technician_id: str = Field(..., min_length=1, max_length=100, description="Technician identifier")
+    location: Optional[str] = Field(None, max_length=200, description="Location of the technician")
+    priority: Optional[str] = Field("medium", pattern="^(low|medium|high|critical)$", description="Priority level")
 
 class AIWorkOrderRequest(BaseModel):
-    title: str
-    description: str
-    asset_id: Optional[str] = None
-    priority: str = "medium"
-    voice_created: bool = False
-    ar_enabled: bool = True
+    title: str = Field(..., min_length=1, max_length=200, description="Work order title")
+    description: str = Field(..., min_length=1, max_length=2000, description="Work order description")
+    asset_id: Optional[str] = Field(None, max_length=100, description="Associated asset ID")
+    priority: str = Field("medium", pattern="^(low|medium|high|critical)$", description="Priority level")
+    voice_created: bool = Field(False, description="Whether created via voice command")
+    ar_enabled: bool = Field(True, description="Whether AR instructions are enabled")
 
 class SmartPartRequest(BaseModel):
-    image_data: str
-    context: Optional[str] = "part_identification"
-    confidence_threshold: float = 0.8
+    image_data: str = Field(..., min_length=1, description="Base64 encoded image data")
+    context: Optional[str] = Field("part_identification", max_length=100, description="Context for scanning")
+    confidence_threshold: float = Field(0.8, ge=0.0, le=1.0, description="Minimum confidence threshold")
 
 # Initialize app with AI context
 @asynccontextmanager
@@ -311,6 +311,49 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health Check Endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and load balancers"""
+    try:
+        # Check database connectivity
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        conn.close()
+        db_status = "healthy"
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        db_status = "unhealthy"
+        
+    return {
+        "status": "healthy" if db_status == "healthy" else "degraded",
+        "version": "3.0.0",
+        "service": "ChatterFix Enterprise AI Powerhouse",
+        "database": db_status,
+        "ai_features": "enabled",
+        "timestamp": datetime.now().isoformat()
+    }
+
+# Readiness Check Endpoint
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check for kubernetes/orchestration"""
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        cursor = conn.cursor()
+        # Check if tables exist
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='organizations'")
+        if cursor.fetchone():
+            conn.close()
+            return {"ready": True, "message": "Service is ready to accept traffic"}
+        conn.close()
+        return {"ready": False, "message": "Database not initialized"}
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return {"ready": False, "message": str(e)}
 
 @app.get("/", response_class=HTMLResponse)
 async def ai_powerhouse_dashboard():
@@ -810,6 +853,11 @@ async def process_voice_command(request: VoiceCommandRequest):
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
         
+        # Get default organization
+        cursor.execute("SELECT id FROM organizations LIMIT 1")
+        org_result = cursor.fetchone()
+        org_id = org_result[0] if org_result else "default"
+        
         work_order_id = f"AI-WO-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
         
         cursor.execute("""
@@ -822,7 +870,7 @@ async def process_voice_command(request: VoiceCommandRequest):
             "high",
             "open",
             request.technician_id,
-            "chatterfix.com",  # Default org
+            org_id,
             "ai_generated",
             0.85,
             True,

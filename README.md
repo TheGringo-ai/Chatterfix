@@ -37,7 +37,7 @@ A comprehensive Computerized Maintenance Management System (CMMS) with AI-powere
 1. **Clone the repository**
    ```bash
    git clone https://github.com/TheGringo-ai/Chatterfix.git
-   cd CXhatterfix
+   cd Chatterfix
    ```
 
 2. **Set up development environment**

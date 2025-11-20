@@ -1,4 +1,4 @@
-# CXhatterfix CMMS
+# Chatterfix CMMS
 
 ![CI](https://github.com/TheGringo-ai/CXhatterfix/actions/workflows/ci-cd.yml/badge.svg)
 ![Deploy](https://github.com/TheGringo-ai/CXhatterfix/actions/workflows/deploy.yml/badge.svg)

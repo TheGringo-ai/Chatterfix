@@ -1,7 +1,7 @@
 # Chatterfix CMMS
 
-![CI](https://github.com/TheGringo-ai/CXhatterfix/actions/workflows/ci-cd.yml/badge.svg)
-![Deploy](https://github.com/TheGringo-ai/CXhatterfix/actions/workflows/deploy.yml/badge.svg)
+![CI](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/ci-cd.yml/badge.svg)
+![Deploy](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml/badge.svg)
 
 A comprehensive Computerized Maintenance Management System (CMMS) with AI-powered features and full DevOps automation.
 
@@ -36,7 +36,7 @@ A comprehensive Computerized Maintenance Management System (CMMS) with AI-powere
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/TheGringo-ai/CXhatterfix.git
+   git clone https://github.com/TheGringo-ai/Chatterfix.git
    cd CXhatterfix
    ```
 

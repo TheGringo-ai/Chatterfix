@@ -38,12 +38,12 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
-app.include_router(landing.router)  # Landing page should be first for root route
-app.include_router(demo.router)     # Demo routes for app exploration
+app.include_router(dashboard.router)  # Dashboard is now the main landing page
+app.include_router(landing.router)    # Landing page becomes signup page
+app.include_router(demo.router)       # Demo routes for app exploration
 app.include_router(auth.router)
 app.include_router(signup.router)
 app.include_router(settings.router)
-app.include_router(dashboard.router)
 app.include_router(work_orders.router)
 app.include_router(assets.router)
 app.include_router(inventory.router)

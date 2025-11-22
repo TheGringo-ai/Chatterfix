@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect, Cookie
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional, List
 from pydantic import BaseModel
@@ -22,6 +22,17 @@ class DashboardLayoutUpdate(BaseModel):
     widgets: List[WidgetConfigUpdate]
 
 @router.get("/", response_class=HTMLResponse)
+async def root_dashboard(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Root route - show dashboard if logged in, redirect to landing if not"""
+    # Check if user has a session token
+    if not session_token:
+        return RedirectResponse(url="/landing", status_code=302)
+    
+    # For demo purposes, proceed with dashboard
+    # In production, you'd validate the session token here
+    return await dashboard(request, user_id=1)
+
+@router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, user_id: int = 1):
     """Render the AI Command Center dashboard"""
     # Get real-time stats for the dashboard

@@ -61,9 +61,9 @@ async def send_welcome_email(user_data: dict, password: str):
     except Exception as e:
         logger.error(f"Failed to log welcome email: {str(e)}")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/landing", response_class=HTMLResponse)
 async def landing_page(request: Request):
-    """Serve the landing page"""
+    """Serve the landing page (now signup page)"""
     return templates.TemplateResponse("landing.html", {"request": request})
 
 @router.post("/api/landing/signup")

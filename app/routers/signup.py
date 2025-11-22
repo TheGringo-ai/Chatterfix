@@ -16,8 +16,8 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("", response_class=HTMLResponse)
 async def signup_page(request: Request):
-    """Signup page"""
-    return templates.TemplateResponse("signup.html", {"request": request})
+    """Redirect to main signup page (landing)"""
+    return RedirectResponse(url="/landing", status_code=302)
 
 
 @router.post("")

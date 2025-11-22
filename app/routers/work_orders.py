@@ -17,7 +17,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def work_orders_list(request: Request):
     """Render the work orders list"""
     conn = get_db_connection()
-    work_orders = conn.execute("SELECT * FROM work_orders ORDER BY created_date DESC").fetchall()
+    work_orders = conn.execute("""
+        SELECT wo.*, a.image_url as asset_image_url 
+        FROM work_orders wo 
+        LEFT JOIN assets a ON wo.asset_id = a.id 
+        ORDER BY wo.created_date DESC
+    """).fetchall()
     conn.close()
     return templates.TemplateResponse("work_orders.html", {"request": request, "work_orders": work_orders})
 

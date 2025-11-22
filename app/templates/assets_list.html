@@ -76,16 +76,22 @@
     {% for asset in assets %}
     <div class="asset-card {{ asset.criticality|lower }}" data-status="{{ asset.status }}"
         data-criticality="{{ asset.criticality }}" onclick="window.location.href='/assets/{{ asset.id }}'">
+        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #000; position: relative;">
+            <img src="{{ asset.image_url or 'https://placehold.co/600x400?text=Asset' }}" alt="{{ asset.name }}"
+                style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; top: 10px; right: 10px;">
+                <span
+                    class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Maintenance' %}badge-maintenance{% else %}badge-down{% endif %}">
+                    {{ asset.status }}
+                </span>
+            </div>
+        </div>
         <div class="asset-card-header">
             <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div>
                     <h3 style="margin: 0;">{{ asset.name }}</h3>
                     <small style="opacity: 0.7;">{{ asset.asset_tag or 'No Tag' }}</small>
                 </div>
-                <span
-                    class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Maintenance' %}badge-maintenance{% else %}badge-down{% endif %}">
-                    {{ asset.status }}
-                </span>
             </div>
         </div>
 

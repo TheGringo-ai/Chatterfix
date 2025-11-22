@@ -43,6 +43,7 @@ def init_database():
                 serial_number TEXT,
                 model TEXT,
                 manufacturer TEXT,
+                image_url TEXT,
                 
                 -- Location & Hierarchy
                 location TEXT,

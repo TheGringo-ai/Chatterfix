@@ -84,12 +84,21 @@
     {% for wo in work_orders %}
     <div class="item-card {{ wo.priority|lower }}" data-status="{{ wo.status }}" data-priority="{{ wo.priority }}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <h3 style="margin: 0 0 0.5rem 0;">#{{ wo.id }} {{ wo.title }}</h3>
-                <p style="opacity: 0.8; margin: 0 0 1rem 0;">{{ wo.description }}</p>
-                <div style="display: flex; gap: 1rem; font-size: 0.9rem; opacity: 0.7;">
-                    <span>👤 {{ wo.assigned_to or 'Unassigned' }}</span>
-                    <span>📅 Due: {{ wo.due_date or 'No date' }}</span>
+            <div style="display: flex; gap: 1rem; flex: 1;">
+                {% if wo.asset_image_url %}
+                <div
+                    style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                    <img src="{{ wo.asset_image_url }}" alt="Asset"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                {% endif %}
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0;">#{{ wo.id }} {{ wo.title }}</h3>
+                    <p style="opacity: 0.8; margin: 0 0 1rem 0;">{{ wo.description }}</p>
+                    <div style="display: flex; gap: 1rem; font-size: 0.9rem; opacity: 0.7;">
+                        <span>👤 {{ wo.assigned_to or 'Unassigned' }}</span>
+                        <span>📅 Due: {{ wo.due_date or 'No date' }}</span>
+                    </div>
                 </div>
             </div>
             <div style="text-align: right;">

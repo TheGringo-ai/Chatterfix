@@ -72,21 +72,24 @@ body {
     font-size: 1.1rem;
 }
 
-/* Enhanced Cards */
+/* Enhanced Cards with Glassmorphism */
 .cmms-card {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 15px;
     padding: 2rem;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     margin-bottom: 2rem;
     transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .cmms-card:hover {
     transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Stats and Metrics */
@@ -101,8 +104,18 @@ body {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     padding: 1.5rem;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .stat-item {
@@ -141,15 +154,18 @@ body {
     color: #ffa726;
 }
 
-/* Enhanced Tables */
+/* Enhanced Tables with Glassmorphism */
 .cmms-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 15px;
     overflow: hidden;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .cmms-table th,
@@ -165,18 +181,26 @@ body {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Filter and Search */
+/* Filter and Search with Enhanced Glassmorphism */
 .filter-bar {
     background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: 15px;
     margin-bottom: 2rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     align-items: center;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.filter-bar:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .filter-bar label {
@@ -190,9 +214,21 @@ body {
     padding: 0.5rem 1rem;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.filter-bar select:focus,
+.filter-bar input:focus {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    outline: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
 .filter-bar select option {
@@ -204,13 +240,13 @@ body {
     color: rgba(255, 255, 255, 0.7);
 }
 
-/* Enhanced Buttons */
+/* Enhanced Buttons with Glassmorphism */
 .cmms-btn {
     background: linear-gradient(135deg, #38ef7d, #11998e);
     color: white;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
@@ -219,12 +255,16 @@ body {
     display: inline-block;
     margin: 0.25rem;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+    box-shadow: 0 6px 24px rgba(56, 239, 125, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .cmms-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(56, 239, 125, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #44f47f, #13a294);
 }
 
 .cmms-btn-success {

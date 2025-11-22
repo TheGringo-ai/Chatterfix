@@ -62,21 +62,28 @@ def init_database():
                 
                 -- Operational Dates
                 installation_date DATE,
-                last_service_date DATE,
-                next_service_date DATE,
                 
-                -- Metrics
-                total_downtime_hours REAL DEFAULT 0,
+                -- Maintenance Stats (Cached/Calculated)
+                last_maintenance_date DATE,
+                next_maintenance_due DATE,
                 total_maintenance_cost REAL DEFAULT 0,
-                mtbf REAL, -- Mean Time Between Failures (hours)
+                total_downtime_hours REAL DEFAULT 0,
                 
-                -- Timestamps
-                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(parent_asset_id) REFERENCES assets(id)
             )
         """)
+
+        # Migration: Check for image_url column in assets table and add if missing
+        try:
+            cur.execute("PRAGMA table_info(assets)")
+            columns = [info[1] for info in cur.fetchall()]
+            if 'image_url' not in columns:
+                logger.info("Adding image_url column to assets table")
+                cur.execute("ALTER TABLE assets ADD COLUMN image_url TEXT")
+        except Exception as e:
+            logger.error(f"Error checking/adding image_url column: {e}")
         
         # Asset Media Table (photos, videos, documents)
         cur.execute("""

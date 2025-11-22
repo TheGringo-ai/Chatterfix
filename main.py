@@ -19,6 +19,7 @@ from app.routers import (
     planner,
     purchasing,
     settings,
+    signup,
     team,
     training,
     work_orders
@@ -36,6 +37,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
 app.include_router(auth.router)
+app.include_router(signup.router)
 app.include_router(settings.router)
 app.include_router(dashboard.router)
 app.include_router(work_orders.router)

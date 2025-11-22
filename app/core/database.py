@@ -24,8 +24,10 @@ def init_database():
                 status TEXT DEFAULT 'Open',
                 priority TEXT DEFAULT 'Medium',
                 assigned_to TEXT,
+                asset_id INTEGER,
                 created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                due_date TIMESTAMP
+                due_date TIMESTAMP,
+                FOREIGN KEY(asset_id) REFERENCES assets(id)
             )
         """)
         

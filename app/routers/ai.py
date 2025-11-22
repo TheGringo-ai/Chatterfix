@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import JSONResponse
 from app.services.ai_assistant import chatterfix_ai
+from app.services.voice_commands import process_voice_command
+from app.services.computer_vision import recognize_part, analyze_asset_condition
 from app.core.database import get_db_connection
 import shutil
 import os
@@ -77,3 +79,48 @@ async def assist(message: str = Form(...), context: str = Form("")):
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse({"response": f"I encountered an error: {str(e)}"})
+
+@router.post("/voice-command")
+async def voice_command(voice_text: str = Form(...), technician_id: int = Form(None)):
+    """Process voice commands with AI"""
+    result = await process_voice_command(voice_text, technician_id)
+    return JSONResponse(result)
+
+@router.post("/recognize-part")
+async def recognize_part_endpoint(image: UploadFile = File(...)):
+    """AI-powered part recognition from image"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+        
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await recognize_part(image_data=image_data)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            
+    return JSONResponse(result)
+
+@router.post("/analyze-condition")
+async def analyze_condition_endpoint(
+    image: UploadFile = File(...), 
+    asset_id: int = Form(None)
+):
+    """Analyze asset condition from visual inspection"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+        
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await analyze_asset_condition(image_data=image_data, asset_id=asset_id)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            
+    return JSONResponse(result)

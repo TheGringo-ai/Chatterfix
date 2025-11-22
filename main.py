@@ -15,6 +15,7 @@ from app.routers import (
     feedback,
     geolocation,
     inventory,
+    landing,
     onboarding,
     planner,
     purchasing,
@@ -36,6 +37,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
+app.include_router(landing.router)  # Landing page should be first for root route
 app.include_router(auth.router)
 app.include_router(signup.router)
 app.include_router(settings.router)
@@ -52,12 +54,6 @@ app.include_router(ai.router)
 app.include_router(ar.router)
 app.include_router(geolocation.router)
 app.include_router(onboarding.router)
-
-# Root route - redirect to dashboard
-@app.get("/")
-async def root():
-    """Redirect to dashboard"""
-    return RedirectResponse(url="/dashboard")
 
 # Startup event - initialize database
 @app.on_event("startup")

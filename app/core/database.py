@@ -632,6 +632,19 @@ def init_database():
         except:
             pass
 
+        # Company Information Table for Landing Page Signups
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                industry TEXT,
+                company_size TEXT,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        """)
+
         conn.commit()
         conn.close()
         logger.info(f"Database initialized at {DATABASE_PATH}")

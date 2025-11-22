@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterFix CMMS - Enterprise Maintenance Management</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+        
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+        
+        .hero-section {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+            padding: 4rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+        
+        .logo-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .logo-icon {
+            font-size: 4rem;
+            background: linear-gradient(45deg, #00f5ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .company-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ffffff, #00f5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 2rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        
+        .feature-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-desc {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .signup-form {
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .form-title {
+            color: #333;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .form-control {
+            border: 2px solid #e5e5e5;
+            border-radius: 10px;
+            padding: 1rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .signup-btn {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 1rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .benefits-section {
+            margin-top: 3rem;
+            text-align: center;
+        }
+        
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+        
+        .benefit-icon {
+            color: var(--success-color);
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .success-message {
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success-color);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .error-message {
+            display: none;
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid rgba(245, 101, 101, 0.3);
+            color: #f56565;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .trust-indicators {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .trust-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 2rem;
+            }
+            
+            .company-title {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .powered-by {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid landing-container">
+        <div class="row w-100 justify-content-center">
+            <div class="col-xl-10 col-xxl-8">
+                <div class="row">
+                    <!-- Left Column - Hero Section -->
+                    <div class="col-lg-7">
+                        <div class="hero-section h-100">
+                            <div class="logo-section">
+                                <div class="logo-icon">🤖</div>
+                                <h1 class="company-title">ChatterFix CMMS</h1>
+                                <p class="tagline">AI-Powered Enterprise Maintenance Management</p>
+                            </div>
+                            
+                            <div class="features-grid">
+                                <div class="feature-item">
+                                    <span class="feature-icon">🗣️</span>
+                                    <h4 class="feature-title">Voice Commands</h4>
+                                    <p class="feature-desc">Natural language work order creation</p>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">📱</span>
+                                    <h4 class="feature-title">Smart Scanning</h4>
+                                    <p class="feature-desc">Instant equipment identification</p>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">🔮</span>
+                                    <h4 class="feature-title">Predictive Analytics</h4>
+                                    <p class="feature-desc">AI-driven maintenance forecasting</p>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">🥽</span>
+                                    <h4 class="feature-title">AR Guidance</h4>
+                                    <p class="feature-desc">Step-by-step repair instructions</p>
+                                </div>
+                            </div>
+                            
+                            <div class="benefits-section">
+                                <div class="benefit-item">
+                                    <i class="fas fa-check benefit-icon"></i>
+                                    <span>Reduce downtime by 40%</span>
+                                </div>
+                                <div class="benefit-item">
+                                    <i class="fas fa-check benefit-icon"></i>
+                                    <span>Cut maintenance costs by 30%</span>
+                                </div>
+                                <div class="benefit-item">
+                                    <i class="fas fa-check benefit-icon"></i>
+                                    <span>Increase equipment lifespan by 25%</span>
+                                </div>
+                                <div class="benefit-item">
+                                    <i class="fas fa-check benefit-icon"></i>
+                                    <span>Real-time collaboration & insights</span>
+                                </div>
+                            </div>
+                            
+                            <div class="trust-indicators">
+                                <span class="trust-badge">🔒 Enterprise Security</span>
+                                <span class="trust-badge">☁️ Cloud-First</span>
+                                <span class="trust-badge">📊 Real-time Analytics</span>
+                                <span class="trust-badge">🤝 24/7 Support</span>
+                            </div>
+                            
+                            <div class="powered-by">
+                                <p><strong>Powered by Claude AI + Grok Partnership</strong></p>
+                                <p>The most advanced AI collaboration in maintenance management</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column - Signup Form -->
+                    <div class="col-lg-5">
+                        <div class="signup-form">
+                            <h2 class="form-title">Get Instant Access</h2>
+                            <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+                                Join thousands of companies revolutionizing their maintenance operations
+                            </p>
+                            
+                            <form id="signupForm">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="fullName" name="fullName" 
+                                           placeholder="Your Full Name *" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="Work Email Address *" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="company" name="company" 
+                                           placeholder="Company Name *" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           placeholder="Phone Number (Optional)">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <select class="form-control" id="industry" name="industry" required>
+                                        <option value="">Select Your Industry *</option>
+                                        <option value="manufacturing">Manufacturing</option>
+                                        <option value="healthcare">Healthcare</option>
+                                        <option value="education">Education</option>
+                                        <option value="retail">Retail</option>
+                                        <option value="transportation">Transportation</option>
+                                        <option value="energy">Energy & Utilities</option>
+                                        <option value="food_beverage">Food & Beverage</option>
+                                        <option value="hospitality">Hospitality</option>
+                                        <option value="real_estate">Real Estate</option>
+                                        <option value="government">Government</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <select class="form-control" id="company_size" name="company_size" required>
+                                        <option value="">Company Size *</option>
+                                        <option value="1-10">1-10 employees</option>
+                                        <option value="11-50">11-50 employees</option>
+                                        <option value="51-200">51-200 employees</option>
+                                        <option value="201-500">201-500 employees</option>
+                                        <option value="501-1000">501-1000 employees</option>
+                                        <option value="1000+">1000+ employees</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="signup-btn">
+                                    <i class="fas fa-rocket"></i> Start Free Trial
+                                </button>
+                                
+                                <div class="loading-spinner" id="loadingSpinner">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Creating your account...</span>
+                                    </div>
+                                    <p style="margin-top: 1rem; color: #666;">Setting up your ChatterFix workspace...</p>
+                                </div>
+                                
+                                <div class="success-message" id="successMessage">
+                                    <i class="fas fa-check-circle"></i>
+                                    <strong>Welcome to ChatterFix!</strong><br>
+                                    Check your email for login credentials and next steps.
+                                </div>
+                                
+                                <div class="error-message" id="errorMessage">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span id="errorText">Something went wrong. Please try again.</span>
+                                </div>
+                            </form>
+                            
+                            <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e5e5;">
+                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                                    No credit card required • 14-day free trial • Cancel anytime
+                                </p>
+                                <p style="font-size: 0.8rem; color: #999;">
+                                    By signing up, you agree to our Terms of Service and Privacy Policy
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.querySelector('.signup-btn').disabled = true;
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/landing/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Show success message
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    
+                    // Reset form
+                    this.reset();
+                    
+                    // Redirect to dashboard after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                    
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Signup failed');
+                }
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                document.getElementById('errorText').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.querySelector('.signup-btn').disabled = false;
+            }
+        });
+        
+        // Add some interactive effects
+        document.querySelectorAll('.feature-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

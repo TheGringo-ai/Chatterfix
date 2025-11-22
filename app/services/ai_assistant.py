@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from typing import Optional
 from .predictive_engine import PredictiveMaintenanceEngine
 from .health_monitor import HealthMonitor
 from .gemini_service import gemini_service
@@ -27,10 +28,10 @@ class ChatterFixAIClient:
             await self.predictive_engine.start()
         # Health monitor start logic if needed
 
-    async def process_message(self, message: str, context: str = "") -> str:
+    async def process_message(self, message: str, context: str = "", user_id: int = None) -> str:
         """Process a user message and return an AI response"""
         if self.gemini:
-            return await self.gemini.generate_response(message, context)
+            return await self.gemini.generate_response(message, context, user_id=user_id)
         return "AI features are currently unavailable."
 
 # Global instance

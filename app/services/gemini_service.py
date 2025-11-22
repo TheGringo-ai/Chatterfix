@@ -3,60 +3,122 @@ import logging
 import google.generativeai as genai
 from typing import Optional, List, Dict, Any
 import json
+import sqlite3
 
 logger = logging.getLogger(__name__)
 
 class GeminiService:
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            logger.warning("⚠️ GEMINI_API_KEY not found. AI features will be disabled.")
-            self.model = None
-            self.vision_model = None
-        else:
+        # We no longer initialize a global model here because keys can be user-specific
+        self.default_api_key = os.getenv("GEMINI_API_KEY")
+        if self.default_api_key:
             try:
-                genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
-                self.vision_model = genai.GenerativeModel('gemini-1.5-flash')
-                logger.info("✨ Gemini AI initialized successfully (Model: gemini-1.5-flash)")
+                genai.configure(api_key=self.default_api_key)
+                logger.info("✨ Gemini AI initialized with default system key")
             except Exception as e:
-                logger.error(f"❌ Failed to initialize Gemini AI: {e}")
-                self.model = None
-                self.vision_model = None
+                logger.error(f"❌ Failed to initialize Gemini AI with default key: {e}")
 
-    async def generate_response(self, prompt: str, context: str = "") -> str:
+    def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
+        """
+        Resolve API key in order:
+        1. User-specific key from DB
+        2. System-wide setting from DB
+        3. Environment variable
+        """
+        conn = sqlite3.connect("./data/cmms.db")
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        api_key = None
+        
+        # 1. Check user settings
+        if user_id:
+            try:
+                row = cursor.execute(
+                    "SELECT setting_value FROM user_api_settings WHERE user_id = ? AND setting_key = 'gemini_api_key'",
+                    (user_id,)
+                ).fetchone()
+                if row and row['setting_value']:
+                    api_key = row['setting_value']
+            except Exception:
+                pass
+
+        # 2. Check system settings
+        if not api_key:
+            try:
+                row = cursor.execute(
+                    "SELECT setting_value FROM system_settings WHERE setting_key = 'gemini_api_key'"
+                ).fetchone()
+                if row and row['setting_value']:
+                    api_key = row['setting_value']
+            except Exception:
+                pass
+        
+        conn.close()
+
+        # 3. Fallback to env var
+        if not api_key:
+            api_key = self.default_api_key
+            
+        return api_key
+
+    def _get_model(self, user_id: Optional[int] = None) -> Optional[genai.GenerativeModel]:
+        """Get a configured model instance for the user"""
+        api_key = self._get_api_key(user_id)
+        if not api_key:
+            return None
+            
+        # Configure genai with the specific key
+        # Note: This changes the global configuration for the library. 
+        # In a high-concurrency async environment, this could be race-condition prone if different keys are used simultaneously.
+        # However, for this implementation scope, it's acceptable. A more robust solution would use client instances if supported.
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel('gemini-1.5-flash')
+
+    def _get_vision_model(self, user_id: Optional[int] = None) -> Optional[genai.GenerativeModel]:
+        """Get a configured vision model instance for the user"""
+        api_key = self._get_api_key(user_id)
+        if not api_key:
+            return None
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel('gemini-1.5-flash')
+
+    async def generate_response(self, prompt: str, context: str = "", user_id: Optional[int] = None) -> str:
         """Generate a text response using Gemini"""
-        if not self.model:
-            return "AI Assistant is currently unavailable. Please configure the API key."
+        model = self._get_model(user_id)
+        if not model:
+            return "AI Assistant is currently unavailable. Please configure your Gemini API Key in Settings."
 
         try:
             full_prompt = f"{context}\n\nUser: {prompt}\nAssistant:"
-            response = await self.model.generate_content_async(full_prompt)
+            response = await model.generate_content_async(full_prompt)
             return response.text
         except Exception as e:
             logger.error(f"Error generating response: {e}")
-            return "I encountered an error processing your request."
+            return f"I encountered an error processing your request: {str(e)}"
 
-    async def analyze_image(self, image_path: str, prompt: str) -> str:
+    async def analyze_image(self, image_path: str, prompt: str, user_id: Optional[int] = None) -> str:
         """Analyze an image using Gemini Vision"""
-        if not self.vision_model:
-            return "Image analysis is unavailable."
+        model = self._get_vision_model(user_id)
+        if not model:
+            return "Image analysis is unavailable. Please configure your Gemini API Key in Settings."
 
         try:
             # Load image data
             import PIL.Image
             img = PIL.Image.open(image_path)
             
-            response = await self.vision_model.generate_content_async([prompt, img])
+            response = await model.generate_content_async([prompt, img])
             return response.text
         except Exception as e:
             logger.error(f"Error analyzing image: {e}")
             return f"Error analyzing image: {str(e)}"
 
-    async def generate_kpi_report(self, data: Dict[str, Any]) -> str:
+    async def generate_kpi_report(self, data: Dict[str, Any], user_id: Optional[int] = None) -> str:
         """Generate a KPI report based on provided data"""
-        if not self.model:
-            return "KPI reporting unavailable."
+        model = self._get_model(user_id)
+        if not model:
+            return "KPI reporting unavailable. Please configure API Key."
 
         prompt = f"""
         Act as a Maintenance Manager. Analyze the following CMMS data and generate a concise executive summary 
@@ -67,9 +129,9 @@ class GeminiService:
         
         Format the response as HTML with <h3> headers and bullet points.
         """
-        return await self.generate_response(prompt)
+        return await self.generate_response(prompt, user_id=user_id)
 
-    async def get_troubleshooting_advice(self, asset_info: str, issue_description: str) -> str:
+    async def get_troubleshooting_advice(self, asset_info: str, issue_description: str, user_id: Optional[int] = None) -> str:
         """Provide troubleshooting advice for a technician"""
         context = f"""
         You are an expert industrial maintenance technician assistant. 
@@ -77,15 +139,16 @@ class GeminiService:
         Prioritize safety first.
         """
         prompt = f"Asset: {asset_info}\nIssue: {issue_description}\n\nPlease provide troubleshooting steps."
-        return await self.generate_response(prompt, context)
+        return await self.generate_response(prompt, context, user_id=user_id)
 
-    async def run_assistant_agent(self, message: str, context: str) -> Dict[str, Any]:
+    async def run_assistant_agent(self, message: str, context: str, user_id: Optional[int] = None) -> Dict[str, Any]:
         """
         Main entry point for the Global AI Assistant.
         Uses a ReAct-like loop or structured prompting to handle user requests.
         """
-        if not self.model:
-            return {"response": "AI Service is unavailable."}
+        model = self._get_model(user_id)
+        if not model:
+            return {"response": "AI Service is unavailable. Please configure your Gemini API Key in Settings."}
 
         # 1. Construct the System Prompt with Tool Definitions
         system_prompt = f"""
@@ -129,7 +192,7 @@ class GeminiService:
         try:
             # 2. Get response from Gemini
             full_prompt = f"{system_prompt}\n\nUser: {message}\nAssistant:"
-            response = await self.model.generate_content_async(full_prompt)
+            response = await model.generate_content_async(full_prompt)
             text_response = response.text.strip()
             
             # 3. Check for Tool Execution (JSON)

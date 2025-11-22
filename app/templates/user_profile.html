@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.full_name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="/team" class="btn btn-outline-secondary mb-3">← Back to Team</a>
+            <div class="d-flex align-items-center">
+                {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}" class="rounded-circle me-3" width="80" height="80">
+                {% else %}
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                    style="width: 80px; height: 80px; font-size: 2rem;">
+                    {{ user.full_name[0] if user.full_name else user.username[0] }}
+                </div>
+                {% endif %}
+                <div>
+                    <h1 class="mb-1">{{ user.full_name or user.username }}</h1>
+                    <p class="text-muted mb-0">{{ user.role }} • {{ user.email }}</p>
+                    {% if user.phone %}
+                    <p class="text-muted mb-0">📞 {{ user.phone }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ wo_stats.completed or 0 }}</h3>
+                    <p class="mb-0">Work Orders Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ "%.1f"|format(wo_stats.avg_completion_days or 0) }}</h3>
+                    <p class="mb-0">Avg Days to Complete</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ skills|length }}</h3>
+                    <p class="mb-0">Skills & Certifications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h3>{{ training|length }}</h3>
+                    <p class="mb-0">Training Modules</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Skills & Certifications -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🛠️ Skills & Certifications</h5>
+                </div>
+                <div class="card-body">
+                    {% if skills %}
+                    {% for skill in skills %}
+                    <div class="mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>{{ skill.skill_name }}</strong>
+                            {% if skill.certified %}
+                            <span class="badge bg-success">✓ Certified</span>
+                            {% endif %}
+                        </div>
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar"
+                                style="width: {{ skill.proficiency_level * 20 }}%"
+                                aria-valuenow="{{ skill.proficiency_level }}" aria-valuemin="0" aria-valuemax="5">
+                                Level {{ skill.proficiency_level }}/5
+                            </div>
+                        </div>
+                        {% if skill.certification_expiry %}
+                        <small class="text-muted">
+                            Expires: {{ skill.certification_expiry }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted">No skills recorded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Training History -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎓 Training History</h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    {% if training %}
+                    {% for t in training %}
+                    <div class="mb-3 p-2 border-bottom">
+                        <strong>{{ t.title }}</strong>
+                        <br>
+                        <span class="badge 
+                            {% if t.status == 'completed' %}bg-success
+                            {% elif t.status == 'in_progress' %}bg-warning
+                            {% else %}bg-secondary{% endif %}">
+                            {{ t.status }}
+                        </span>
+                        {% if t.score %}
+                        <span class="badge bg-info">Score: {{ "%.0f"|format(t.score) }}%</span>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">{{ t.estimated_duration_minutes }} minutes</small>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted">No training history.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends -->
+    {% if performance %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Performance Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>WOs Completed</th>
+                                    <th>Avg Time (days)</th>
+                                    <th>Quality Score</th>
+                                    <th>Training Hours</th>
+                                    <th>Safety Incidents</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in performance %}
+                                <tr>
+                                    <td>{{ p.period }} ({{ p.period_start }} - {{ p.period_end }})</td>
+                                    <td>{{ p.work_orders_completed }}</td>
+                                    <td>{{ "%.1f"|format(p.avg_completion_time or 0) }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if p.quality_score >= 90 %}bg-success
+                                            {% elif p.quality_score >= 70 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ "%.0f"|format(p.quality_score or 0) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ "%.1f"|format(p.training_hours or 0) }}</td>
+                                    <td>
+                                        {% if p.safety_incidents == 0 %}
+                                        <span class="badge bg-success">0</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ p.safety_incidents }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

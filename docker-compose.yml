@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  chatterfix:
+    build: .
+    image: chatterfix-cmms:latest
+    container_name: chatterfix_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - CMMS_DB_DIR=/app/data
+      - CMMS_DB_NAME=cmms.db
+      - LOG_LEVEL=info
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3

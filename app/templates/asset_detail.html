@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }} - Asset Details{% endblock %}
+
+{% block head %}
+<style>
+    .asset-detail-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .section-card {
+        background: linear-gradient(135deg, rgba(30, 60, 114, 0.6) 0%, rgba(42, 82, 152, 0.6) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .media-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .media-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        aspect-ratio: 1;
+        background: rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .media-item:hover {
+        transform: scale(1.05);
+    }
+
+    .media-item img,
+    .media-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+        border-left: 2px solid rgba(255, 255, 255, 0.2);
+        padding-left: 1.5rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3498db;
+    }
+
+    .health-score {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .health-score-circle {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        position: relative;
+    }
+
+    .spec-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .spec-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .spec-label {
+        font-size: 0.85rem;
+        opacity: 0.7;
+        margin-bottom: 0.3rem;
+    }
+
+    .spec-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 1024px) {
+        .asset-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Asset Header -->
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <h1>{{ asset.name }}</h1>
+                <span
+                    class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Maintenance' %}badge-maintenance{% else %}badge-down{% endif %}">
+                    {{ asset.status }}
+                </span>
+                <span
+                    style="color: {% if asset.criticality == 'Critical' %}#e74c3c{% elif asset.criticality == 'High' %}#f39c12{% else %}#3498db{% endif %};">
+                    <i class="fas fa-exclamation-triangle"></i> {{ asset.criticality }}
+                </span>
+            </div>
+            <p>{{ asset.description or 'No description' }}</p>
+            <div style="font-size: 0.9rem; opacity: 0.8;">
+                <span>📍 {{ asset.location or 'No Location' }}</span> •
+                <span>🏷️ {{ asset.asset_tag or 'No Tag' }}</span> •
+                <span>🔢 {{ asset.serial_number or 'No Serial' }}</span>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <button class="cmms-btn" onclick="window.location.href='/assets'">
+                <i class="fas fa-arrow-left"></i> Back to Assets
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="asset-detail-grid">
+    <!-- Left Column -->
+    <div>
+        <!-- AI Health Dashboard -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-robot"></i> AI Health Analysis</h3>
+                <button class="cmms-btn cmms-btn-sm" onclick="refreshHealthScore()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div class="health-score">
+                <div id="health-score-display" class="health-score-circle"
+                    style="background: conic-gradient(#27ae60 0% 75%, rgba(255,255,255,0.1) 75% 100%);">
+                    <span id="health-score-value">75</span>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <div id="health-risk" style="font-size: 1.2rem; font-weight: 600;">Medium Risk</div>
+                    <div id="health-analysis" style="margin-top: 0.5rem; opacity: 0.8;">Loading AI analysis...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Gallery -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-images"></i> Media Gallery ({{ media|length }})</h3>
+                <button class="cmms-btn cmms-btn-sm"
+                    onclick="document.getElementById('uploadMediaModal').style.display='block'">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+            <div class="media-gallery">
+                {% for item in media %}
+                <div class="media-item" onclick="viewMedia('{{ item.file_path }}', '{{ item.file_type }}')">
+                    {% if item.file_type == 'image' %}
+                    <img src="/{{ item.file_path }}" alt="{{ item.title }}">
+                    {% elif item.file_type == 'video' %}
+                    <video src="/{{ item.file_path }}"></video>
+                    <div
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem;">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    {% else %}
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <i class="fas fa-file-pdf" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if not media %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; opacity: 0.5;">
+                    No media uploaded yet
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Specifications -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-info-circle"></i> Specifications</h3>
+            </div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-label">Model</div>
+                    <div class="spec-value">{{ asset.model or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Manufacturer</div>
+                    <div class="spec-value">{{ asset.manufacturer or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Serial Number</div>
+                    <div class="spec-value">{{ asset.serial_number or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Asset Tag</div>
+                    <div class="spec-value">{{ asset.asset_tag or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Department</div>
+                    <div class="spec-value">{{ asset.department or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Condition Rating</div>
+                    <div class="spec-value">{{ asset.condition_rating or 5 }}/10</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Purchase Date</div>
+                    <div class="spec-value">{{ asset.purchase_date or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Warranty Expiry</div>
+                    <div class="spec-value">{{ asset.warranty_expiry or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Purchase Cost</div>
+                    <div class="spec-value">${{ asset.purchase_cost or 0 }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Installation Date</div>
+                    <div class="spec-value">{{ asset.installation_date or 'N/A' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Last Service</div>
+                    <div class="spec-value">{{ asset.last_service_date or 'Never' }}</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Next Service</div>
+                    <div class="spec-value">{{ asset.next_service_date or 'Not Scheduled' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Associated Parts -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-cog"></i> Associated Parts ({{ parts|length }})</h3>
+                <button class="cmms-btn cmms-btn-sm" onclick="alert('Add parts feature coming soon')">
+                    <i class="fas fa-plus"></i> Add Part
+                </button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="cmms-table">
+                    <thead>
+                        <tr>
+                            <th>Part Name</th>
+                            <th>Part Number</th>
+                            <th>Stock</th>
+                            <th>Last Replaced</th>
+                            <th>Interval (days)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for part in parts %}
+                        <tr>
+                            <td>{{ part.name }}</td>
+                            <td>{{ part.part_number }}</td>
+                            <td>
+                                <span
+                                    style="color: {% if part.current_stock <= part.minimum_stock %}#e74c3c{% else %}#27ae60{% endif %};">
+                                    {{ part.current_stock }}
+                                </span>
+                            </td>
+                            <td>{{ part.last_replaced or 'Never' }}</td>
+                            <td>{{ part.replacement_interval_days or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not parts %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; opacity: 0.5;">No parts associated</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Maintenance History -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-history"></i> Maintenance History ({{ history|length }})</h3>
+                <button class="cmms-btn cmms-btn-sm"
+                    onclick="document.getElementById('logMaintenanceModal').style.display='block'">
+                    <i class="fas fa-plus"></i> Log Event
+                </button>
+            </div>
+            <div class="timeline">
+                {% for event in history %}
+                <div class="timeline-item">
+                    <div style="font-weight: 600; margin-bottom: 0.3rem;">
+                        {{ event.maintenance_type }} - {{ event.description }}
+                    </div>
+                    <div style="font-size: 0.85rem; opacity: 0.7;">
+                        <div>👤 {{ event.technician or 'Unknown' }}</div>
+                        <div>💰 Cost: ${{ event.total_cost or 0 }} (Labor: ${{ event.labor_cost or 0 }}, Parts: ${{
+                            event.parts_cost or 0 }})</div>
+                        <div>⏱️ Downtime: {{ event.downtime_hours or 0 }} hours</div>
+                        <div>📅 {{ event.created_date }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not history %}
+                <div style="text-align: center; padding: 2rem; opacity: 0.5;">
+                    No maintenance history recorded
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div>
+        <!-- Cost Analytics -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-chart-line"></i> Cost Analytics</h3>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 2.5rem; font-weight: bold; color: #e74c3c;">
+                    ${{ cost_data.total_cost or 0 }}
+                </div>
+                <div style="opacity: 0.7; margin-bottom: 1.5rem;">Total Maintenance Cost</div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">${{ cost_data.labor_cost or 0 }}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Labor</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">${{ cost_data.parts_cost or 0 }}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Parts</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; grid-column: 1 / -1;">
+                        <div style="font-size: 1.5rem; font-weight: bold;">{{ cost_data.total_downtime or 0 }}h</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Total Downtime</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-lightbulb"></i> AI Recommendations</h3>
+                <button class="cmms-btn cmms-btn-sm" onclick="loadRecommendations()">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+            <div id="ai-recommendations">
+                <div style="text-align: center; padding: 2rem; opacity: 0.5;">
+                    Click refresh to generate AI recommendations
+                </div>
+            </div>
+        </div>
+
+        <!-- Child Assets -->
+        {% if children %}
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-sitemap"></i> Child Assets ({{ children|length }})</h3>
+            </div>
+            <div>
+                {% for child in children %}
+                <div class="item-card" onclick="window.location.href='/assets/{{ child.id }}'"
+                    style="margin-bottom: 0.5rem; cursor: pointer;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>{{ child.name }}</strong>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">{{ child.location }}</div>
+                        </div>
+                        <span
+                            class="cmms-badge {% if child.status == 'Active' %}badge-operational{% else %}badge-down{% endif %}">
+                            {{ child.status }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Related Work Orders -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-tasks"></i> Work Orders ({{ work_orders|length }})</h3>
+            </div>
+            <div>
+                {% for wo in work_orders[:5] %}
+                <div class="item-card" style="margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>#{{ wo.id }} {{ wo.title }}</strong>
+                            <div style="font-size: 0.85rem; opacity: 0.7;">{{ wo.created_date }}</div>
+                        </div>
+                        <span
+                            class="cmms-badge {% if wo.status == 'Completed' %}badge-operational{% else %}badge-maintenance{% endif %}">
+                            {{ wo.status }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not work_orders %}
+                <div style="text-align: center; padding: 1rem; opacity: 0.5;">
+                    No related work orders
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Media Modal -->
+<div id="uploadMediaModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 10% auto; width: 500px; padding: 30px;">
+        <h2><i class="fas fa-upload"></i> Upload Media</h2>
+        <form action="/assets/{{ asset.id }}/media" method="post" enctype="multipart/form-data"
+            style="margin-top: 20px;">
+            <div style="margin-bottom: 1rem;">
+                <label>File</label>
+                <input type="file" name="file" class="form-control" required accept="image/*,video/*,.pdf">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label>Type</label>
+                <select name="file_type" class="form-control">
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                    <option value="document">Document</option>
+                    <option value="manual">Manual</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label>Title</label>
+                <input type="text" name="title" class="form-control">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label>Description</label>
+                <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="cmms-btn">Upload</button>
+                <button type="button" class="cmms-btn" style="background: #555;"
+                    onclick="document.getElementById('uploadMediaModal').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Log Maintenance Modal -->
+<div id="logMaintenanceModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 5% auto; width: 600px; padding: 30px;">
+        <h2><i class="fas fa-wrench"></i> Log Maintenance Event</h2>
+        <form action="/assets/{{ asset.id }}/maintenance" method="post" style="margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label>Maintenance Type *</label>
+                    <select name="maintenance_type" class="form-control" required>
+                        <option value="Preventive">Preventive</option>
+                        <option value="Corrective">Corrective</option>
+                        <option value="Predictive">Predictive</option>
+                        <option value="Emergency">Emergency</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Technician</label>
+                    <input type="text" name="technician" class="form-control">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Description *</label>
+                    <textarea name="description" class="form-control" rows="3" required></textarea>
+                </div>
+                <div>
+                    <label>Downtime (hours)</label>
+                    <input type="number" step="0.1" name="downtime_hours" class="form-control" value="0">
+                </div>
+                <div>
+                    <label>Labor Cost ($)</label>
+                    <input type="number" step="0.01" name="labor_cost" class="form-control" value="0">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Parts Cost ($)</label>
+                    <input type="number" step="0.01" name="parts_cost" class="form-control" value="0">
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 20px;">
+                <button type="submit" class="cmms-btn">Log Event</button>
+                <button type="button" class="cmms-btn" style="background: #555;"
+                    onclick="document.getElementById('logMaintenanceModal').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Load AI Health Score
+    async function refreshHealthScore() {
+        const scoreDisplay = document.getElementById('health-score-display');
+        const scoreValue = document.getElementById('health-score-value');
+        const riskDisplay = document.getElementById('health-risk');
+        const analysisDisplay = document.getElementById('health-analysis');
+
+        scoreValue.textContent = '...';
+        analysisDisplay.textContent = 'Analyzing...';
+
+        try {
+            const response = await fetch('/assets/{{ asset.id }}/ai-health');
+            const data = await response.json();
+
+            scoreValue.textContent = data.health_score;
+            riskDisplay.textContent = data.risk_level + ' Risk';
+            analysisDisplay.textContent = data.analysis;
+
+            // Update circle gradient
+            const percentage = data.health_score;
+            let color = '#27ae60';
+            if (percentage < 50) color = '#e74c3c';
+            else if (percentage < 75) color = '#f39c12';
+
+            scoreDisplay.style.background = `conic-gradient(${color} 0% ${percentage}%, rgba(255,255,255,0.1) ${percentage}% 100%)`;
+
+            // Update risk color
+            if (data.risk_level === 'High') riskDisplay.style.color = '#e74c3c';
+            else if (data.risk_level === 'Medium') riskDisplay.style.color = '#f39c12';
+            else riskDisplay.style.color = '#27ae60';
+        } catch (error) {
+            console.error('Error loading health score:', error);
+            analysisDisplay.textContent = 'Error loading AI analysis';
+        }
+    }
+
+    // Load AI Recommendations
+    async function loadRecommendations() {
+        const container = document.getElementById('ai-recommendations');
+        container.innerHTML = '<div style="text-align: center; padding: 2rem;">Loading recommendations...</div>';
+
+        try {
+            const response = await fetch('/assets/{{ asset.id }}/ai-recommendations');
+            const data = await response.json();
+
+            let html = '';
+            if (Array.isArray(data.recommendations)) {
+                data.recommendations.forEach(rec => {
+                    html += `
+                    <div class="item-card" style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: between; align-items: start;">
+                            <div style="flex: 1;">
+                                <strong>${rec.task || rec}</strong>
+                                ${rec.estimated_cost ? `<div style="font-size: 0.85rem; opacity: 0.7;">Est. Cost: $${rec.estimated_cost}</div>` : ''}
+                            </div>
+                            ${rec.priority ? `<span class="cmms-badge badge-${rec.priority.toLowerCase()}">${rec.priority}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                });
+            } else {
+                html = `<div style="padding: 1rem; opacity: 0.8;">${data.recommendations}</div>`;
+            }
+
+            container.innerHTML = html || '<div style="text-align: center; padding: 2rem; opacity: 0.5;">No recommendations available</div>';
+        } catch (error) {
+            console.error('Error loading recommendations:', error);
+            container.innerHTML = '<div style="text-align: center; padding: 2rem; opacity: 0.5;">Error loading recommendations</div>';
+        }
+    }
+
+    // View media in modal
+    function viewMedia(path, type) {
+        // TODO: Implement media viewer modal
+        window.open('/' + path, '_blank');
+    }
+
+    // Auto-load AI features on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        refreshHealthScore();
+        loadRecommendations();
+    });
+</script>
+{% endblock %}

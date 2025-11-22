@@ -17,3 +17,7 @@ google-generativeai
 python-dotenv
 duckduckgo-search
 httpx
+bcrypt
+passlib
+python-jose[cryptography]
+cryptography

@@ -181,18 +181,23 @@ def init_database():
 
         # ========== TEAM COLLABORATION TABLES ==========
         
-        # Users Table
+        # Users Table with Authentication
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
+                password_hash TEXT,
                 full_name TEXT,
-                role TEXT, -- technician, parts_manager, supervisor, manager
+                role TEXT DEFAULT 'technician', -- requestor, technician, planner, supervisor, parts_manager, manager
                 phone TEXT,
                 avatar_url TEXT,
                 status TEXT DEFAULT 'available', -- available, busy, offline
+                is_active BOOLEAN DEFAULT 1,
                 last_seen TIMESTAMP,
+                last_password_change TIMESTAMP,
+                failed_login_attempts INTEGER DEFAULT 0,
+                locked_until TIMESTAMP,
                 created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -401,6 +406,51 @@ def init_database():
                 file_path TEXT,
                 asset_type TEXT,
                 uploaded_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # ========== AUTHENTICATION & SETTINGS TABLES ==========
+        
+        # User Sessions Table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        """)
+        
+        # User API Settings Table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_api_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                setting_key TEXT NOT NULL,
+                setting_value TEXT,
+                is_encrypted BOOLEAN DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                UNIQUE(user_id, setting_key)
+            )
+        """)
+        
+        # System Settings Table (for managers)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                setting_key TEXT UNIQUE NOT NULL,
+                setting_value TEXT,
+                setting_type TEXT, -- api_key, endpoint, config
+                is_encrypted BOOLEAN DEFAULT 1,
+                updated_by INTEGER,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(updated_by) REFERENCES users(id)
             )
         """)
         

@@ -10,6 +10,7 @@ from app.routers import (
     ai,
     ar,
     assets,
+    auth,
     dashboard,
     feedback,
     geolocation,
@@ -17,6 +18,7 @@ from app.routers import (
     onboarding,
     planner,
     purchasing,
+    settings,
     team,
     training,
     work_orders
@@ -33,6 +35,8 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
+app.include_router(auth.router)
+app.include_router(settings.router)
 app.include_router(dashboard.router)
 app.include_router(work_orders.router)
 app.include_router(assets.router)

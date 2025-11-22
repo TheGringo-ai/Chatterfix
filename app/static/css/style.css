@@ -26,6 +26,8 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .nav-brand {
@@ -689,5 +691,96 @@ body {
     .ai-fab {
         bottom: 20px;
         right: 20px;
+    }
+}
+
+/* Demo Mode Styles */
+.demo-signup-cta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.demo-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.demo-features-list,
+.premium-features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.demo-features-list li,
+.premium-features-list li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.demo-features-list i {
+    width: 16px;
+}
+
+.premium-features-list i {
+    width: 16px;
+}
+
+.demo-banner {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.demo-banner h4 {
+    margin-bottom: 0.5rem;
+    color: #667eea;
+}
+
+.demo-banner p {
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+/* Mobile responsiveness for demo elements */
+@media (max-width: 768px) {
+    .demo-signup-cta {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .demo-badge {
+        text-align: center;
+        align-self: center;
+    }
+    
+    .navbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .nav-links {
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }

@@ -26,20 +26,41 @@
     <div class="navbar">
         <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
         <div class="nav-links">
-            <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
-            <a href="/work-orders" class="nav-link {% if request.url.path == '/work-orders' %}active{% endif %}">Work
+            <a href="/demo" class="nav-link {% if request.url.path == '/demo' %}active{% endif %}">Dashboard</a>
+            <a href="/demo/work-orders" class="nav-link {% if request.url.path == '/demo/work-orders' %}active{% endif %}">Work
                 Orders</a>
-            <a href="/assets" class="nav-link {% if request.url.path == '/assets' %}active{% endif %}">Assets</a>
-            <a href="/planner"
-                class="nav-link {% if request.url.path.startswith('/planner') %}active{% endif %}">Planner</a>
-            <a href="/purchasing"
-                class="nav-link {% if request.url.path.startswith('/purchasing') %}active{% endif %}">Purchasing</a>
-            <a href="/team" class="nav-link {% if request.url.path.startswith('/team') %}active{% endif %}">Team</a>
-            <a href="/training"
-                class="nav-link {% if request.url.path.startswith('/training') %}active{% endif %}">Training</a>
-            <a href="/ar-mode" class="nav-link">AR Mode</a>
+            <a href="/demo/assets" class="nav-link {% if request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
+            <a href="/demo/planner"
+                class="nav-link {% if request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
+            <a href="/demo/purchasing"
+                class="nav-link {% if request.url.path.startswith('/demo/purchasing') %}active{% endif %}">Purchasing</a>
+            <a href="/demo/team" class="nav-link {% if request.url.path.startswith('/demo/team') %}active{% endif %}">Team</a>
+            <a href="/demo/training"
+                class="nav-link {% if request.url.path.startswith('/demo/training') %}active{% endif %}">Training</a>
+            <a href="/demo/ar-mode" class="nav-link">AR Mode</a>
+        </div>
+        <div class="demo-signup-cta">
+            <span class="demo-badge">Demo Mode</span>
+            <button class="cmms-btn cmms-btn-sm" onclick="showSignupModal()">
+                <i class="fas fa-user-plus"></i> Sign Up for Full Access
+            </button>
         </div>
     </div>
+
+    {% if is_demo %}
+    <!-- Demo Mode Banner -->
+    <div class="demo-banner">
+        <h4><i class="fas fa-play-circle"></i> You're exploring ChatterFix in Demo Mode</h4>
+        <p>This is a fully functional preview with sample data. Ready to set up your own workspace?</p>
+        <button class="cmms-btn" onclick="showSignupModal()">
+            <i class="fas fa-user-plus"></i> Create Your Free Account
+        </button>
+        <span style="margin: 0 1rem; color: rgba(255,255,255,0.6);">or</span>
+        <a href="/" class="cmms-btn" style="background: linear-gradient(135deg, #6c757d, #495057);">
+            <i class="fas fa-home"></i> Back to Landing Page
+        </a>
+    </div>
+    {% endif %}
 
     <div class="container">
         {% block content %}{% endblock %}
@@ -106,7 +127,58 @@
         </div>
     </div>
 
+    <!-- Demo Signup Modal -->
+    <div id="demoSignupModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-rocket"></i> Ready to get started with ChatterFix?
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">🎯 What you've explored:</h6>
+                            <ul class="demo-features-list">
+                                <li><i class="fas fa-check text-success"></i> Asset management dashboard</li>
+                                <li><i class="fas fa-check text-success"></i> Work order tracking</li>
+                                <li><i class="fas fa-check text-success"></i> Maintenance planning</li>
+                                <li><i class="fas fa-check text-success"></i> Team collaboration tools</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">🚀 Get full access to:</h6>
+                            <ul class="premium-features-list">
+                                <li><i class="fas fa-star text-warning"></i> Unlimited assets & work orders</li>
+                                <li><i class="fas fa-star text-warning"></i> Advanced AI assistance</li>
+                                <li><i class="fas fa-star text-warning"></i> Custom reporting & analytics</li>
+                                <li><i class="fas fa-star text-warning"></i> Team management features</li>
+                                <li><i class="fas fa-star text-warning"></i> Mobile app access</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="cmms-btn" onclick="window.location.href='/#signup'">
+                            <i class="fas fa-user-plus"></i> Create Free Account
+                        </button>
+                        <p class="mt-2 text-muted small">
+                            <i class="fas fa-shield-alt"></i> No credit card required • 14-day free trial
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Demo Signup Modal Logic
+        function showSignupModal() {
+            const modal = new bootstrap.Modal(document.getElementById('demoSignupModal'));
+            modal.show();
+        }
+
         // AI Assistant Logic
         function toggleAIChat() {
             const chatWindow = document.getElementById('ai-chat-window');

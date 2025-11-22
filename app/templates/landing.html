@@ -12,17 +12,23 @@
     
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
+            --primary-color: #3498db;
+            --primary-gradient: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            --card-background: rgba(255, 255, 255, 0.15);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --success-color: #38ef7d;
+            --warning-color: #fbbf24;
+            --error-color: #ff6b6b;
+            --backdrop-blur: blur(10px);
         }
         
         body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--primary-gradient);
             min-height: 100vh;
             color: #ffffff;
+            margin: 0;
+            padding: 0;
         }
         
         .landing-container {
@@ -33,12 +39,12 @@
         }
         
         .hero-section {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 30px;
-            backdrop-filter: blur(20px);
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            backdrop-filter: var(--backdrop-blur);
             padding: 4rem;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         }
         
         .logo-section {
@@ -48,21 +54,17 @@
         
         .logo-icon {
             font-size: 4rem;
-            background: linear-gradient(45deg, #00f5ff, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-color);
             margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .company-title {
             font-size: 3rem;
             font-weight: 700;
-            background: linear-gradient(45deg, #ffffff, #00f5ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #ffffff;
             margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .tagline {
@@ -81,15 +83,18 @@
         .feature-item {
             text-align: center;
             padding: 1.5rem;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--card-background);
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: var(--backdrop-blur);
+            transition: all 0.3s ease;
         }
         
         .feature-icon {
             font-size: 2.5rem;
             margin-bottom: 1rem;
             display: block;
+            color: var(--primary-color);
         }
         
         .feature-title {
@@ -104,51 +109,65 @@
         }
         
         .signup-form {
-            background: rgba(255,255,255,0.95);
-            color: #333;
+            background: var(--card-background);
+            color: #ffffff;
             padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: var(--backdrop-blur);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         }
         
         .form-title {
-            color: #333;
+            color: #ffffff;
             font-size: 1.8rem;
             font-weight: 600;
             margin-bottom: 1.5rem;
             text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
         
         .form-control {
-            border: 2px solid #e5e5e5;
-            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
             padding: 1rem;
             font-size: 1rem;
             margin-bottom: 1rem;
-            transition: border-color 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
         
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
         
         .signup-btn {
-            background: var(--primary-gradient);
+            background: var(--primary-color);
             border: none;
             color: white;
             padding: 1rem 2rem;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 1.1rem;
             font-weight: 600;
             width: 100%;
             margin-top: 1rem;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
         
         .signup-btn:hover {
+            background: #2980b9;
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.4);
         }
         
         .benefits-section {
@@ -244,7 +263,7 @@
         }
         
         .chat-toggle {
-            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            background: var(--primary-color);
             color: white;
             padding: 15px 20px;
             border-radius: 50px;
@@ -252,11 +271,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
             transition: all 0.3s ease;
             animation: chatPulse 3s infinite;
             position: relative;
             overflow: hidden;
+            border: 1px solid var(--card-border);
+            backdrop-filter: var(--backdrop-blur);
         }
         
         .chat-toggle:hover {
@@ -307,22 +328,25 @@
             width: 380px;
             max-width: 90vw;
             height: 500px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--card-border);
+            backdrop-filter: var(--backdrop-blur);
         }
         
         .chat-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
             color: white;
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid var(--card-border);
         }
         
         .chat-title {
@@ -359,7 +383,7 @@
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            background: #f8f9fa;
+            background: rgba(0, 0, 0, 0.1);
         }
         
         .ai-message {
@@ -379,7 +403,7 @@
             width: 35px;
             height: 35px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--primary-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -392,72 +416,81 @@
         }
         
         .message-content {
-            background: white;
+            background: var(--card-background);
             padding: 12px 15px;
-            border-radius: 18px;
-            border: 1px solid #e0e0e0;
-            color: #333;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            color: #ffffff;
             font-size: 14px;
             line-height: 1.4;
             max-width: 260px;
+            backdrop-filter: blur(5px);
         }
         
         .user-message .message-content {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--primary-color);
             color: white;
-            border: none;
+            border: 1px solid var(--card-border);
         }
         
         .quick-questions {
             padding: 15px 20px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--card-border);
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
         }
         
         .quick-btn {
-            background: #f1f3f4;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
             padding: 6px 12px;
             font-size: 12px;
-            color: #333;
+            color: #ffffff;
             cursor: pointer;
             transition: all 0.3s;
             flex: 1;
             min-width: 120px;
+            backdrop-filter: blur(5px);
         }
         
         .quick-btn:hover {
-            background: #667eea;
+            background: var(--primary-color);
             color: white;
-            border-color: #667eea;
+            border-color: var(--primary-color);
         }
         
         .chat-input-container {
             padding: 15px 20px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--card-border);
             display: flex;
             gap: 10px;
-            background: white;
+            background: rgba(0, 0, 0, 0.1);
         }
         
         .chat-input-container input {
             flex: 1;
-            border: 1px solid #e0e0e0;
-            border-radius: 25px;
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
             padding: 10px 15px;
             font-size: 14px;
             outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            backdrop-filter: blur(5px);
         }
         
         .chat-input-container input:focus {
-            border-color: #667eea;
+            border-color: var(--primary-color);
+        }
+        
+        .chat-input-container input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
         
         .send-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--primary-color);
             border: none;
             border-radius: 50%;
             width: 40px;
@@ -628,7 +661,7 @@
                                     🔥 47 companies signed up this week
                                 </div>
                                 <h2 class="form-title" style="margin-bottom: 0.5rem;">Start Saving $10K+ Per Month</h2>
-                                <p style="color: #666; margin-bottom: 0; font-size: 0.95rem;">
+                                <p style="color: rgba(255,255,255,0.8); margin-bottom: 0; font-size: 0.95rem;">
                                     <strong>No credit card required</strong> • Setup in 5 minutes • Cancel anytime
                                 </p>
                             </div>
@@ -712,11 +745,11 @@
                                 </div>
                             </form>
                             
-                            <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e5e5;">
-                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                            <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border);">
+                                <p style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.5rem;">
                                     No credit card required • 14-day free trial • Cancel anytime
                                 </p>
-                                <p style="font-size: 0.8rem; color: #999;">
+                                <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">
                                     By signing up, you agree to our Terms of Service and Privacy Policy
                                 </p>
                             </div>

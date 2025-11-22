@@ -489,6 +489,16 @@ def init_database():
             pass
         
         try:
+            cur.execute("ALTER TABLE work_orders ADD COLUMN actual_start TIMESTAMP")
+        except:
+            pass
+        
+        try:
+            cur.execute("ALTER TABLE work_orders ADD COLUMN actual_end TIMESTAMP")
+        except:
+            pass
+        
+        try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN blocked_reason TEXT")
         except:
             pass

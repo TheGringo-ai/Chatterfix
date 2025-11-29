@@ -224,6 +224,44 @@ class FirebaseAuthService:
             logger.error(f"Error updating user profile: {e}")
             return False
 
+    async def create_user_with_email_password(self, email: str, password: str, display_name: str = None):
+        """Create a new Firebase user with email and password"""
+        if not self.is_available:
+            raise Exception("Firebase not available")
+        
+        try:
+            user_record = auth.create_user(
+                email=email,
+                password=password,
+                display_name=display_name,
+                email_verified=False
+            )
+            logger.info(f"Created Firebase user: {email}")
+            return user_record
+        except Exception as e:
+            logger.error(f"Error creating Firebase user: {e}")
+            raise Exception(f"Failed to create user: {str(e)}")
+
+    async def create_custom_token(self, uid: str) -> str:
+        """Create a custom token for user authentication"""
+        if not self.is_available:
+            raise Exception("Firebase not available")
+        
+        try:
+            custom_token = auth.create_custom_token(uid)
+            # Convert bytes to string if needed
+            if isinstance(custom_token, bytes):
+                custom_token = custom_token.decode('utf-8')
+            return custom_token
+        except Exception as e:
+            logger.error(f"Error creating custom token: {e}")
+            raise Exception(f"Failed to create session token: {str(e)}")
+
+    @property
+    def is_available(self) -> bool:
+        """Check if Firebase is properly initialized"""
+        return self._initialized and self.app is not None and FIREBASE_AVAILABLE
+
 
 # Global Firebase auth service
 firebase_auth_service = FirebaseAuthService()

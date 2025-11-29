@@ -24,6 +24,43 @@ echo "🎯 Target Domain: $DOMAIN"
 echo "🎯 Image Name: $IMAGE_NAME"
 echo
 
+# ============================================================================
+# PRE-DEPLOYMENT SYNC CHECK
+# ============================================================================
+echo "🔍 Running sync verification..."
+if [ -f "./sync-check.sh" ]; then
+    if ./sync-check.sh; then
+        echo "✅ Sync verification passed"
+    else
+        echo "❌ Sync verification failed"
+        echo "   Please fix sync issues before deploying"
+        exit 1
+    fi
+else
+    echo "⚠️  sync-check.sh not found, proceeding without full verification"
+    
+    # Basic git status check
+    if ! git diff --quiet; then
+        echo "❌ ERROR: Uncommitted changes detected!"
+        echo "   Please commit your changes before deploying"
+        git status --porcelain
+        exit 1
+    fi
+    
+    # Check if local is behind remote
+    git fetch origin --quiet
+    LOCAL=$(git rev-parse @)
+    REMOTE=$(git rev-parse @{u} 2>/dev/null || echo "")
+    if [ -n "$REMOTE" ] && [ "$LOCAL" != "$REMOTE" ]; then
+        echo "❌ ERROR: Local repository not in sync with remote!"
+        echo "   Please run 'git pull' or 'git push' to sync"
+        exit 1
+    fi
+    
+    echo "✅ Basic sync checks passed"
+fi
+echo
+
 # Safety check - confirm this is the right project
 CURRENT_PROJECT=$(gcloud config get-value project)
 if [ "$CURRENT_PROJECT" != "$PROJECT_ID" ]; then

@@ -454,16 +454,31 @@ class IoTSensorService:
         finally:
             conn.close()
     
-    def _create_automated_work_order(self, conn, data: Dict[str, Any], alert: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_automated_work_order(self, conn, data: Dict[str, Any], alert: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create automated work order based on critical sensor alert"""
+        # Validate input data
+        asset_id = data.get('asset_id')
+        if not asset_id:
+            logger.error("Cannot create automated work order: missing asset_id")
+            return None
+        
+        severity = alert.get('severity', '').lower()
+        if severity not in ['warning', 'critical']:
+            logger.error(f"Invalid alert severity: {severity}")
+            return None
+        
         try:
-            # Get asset name
+            # Get asset name and validate asset exists
             asset = conn.execute(
-                "SELECT name FROM assets WHERE id = ?", 
-                (data.get('asset_id'),)
+                "SELECT id, name FROM assets WHERE id = ?", 
+                (asset_id,)
             ).fetchone()
             
-            asset_name = asset['name'] if asset else f"Asset #{data.get('asset_id')}"
+            if not asset:
+                logger.error(f"Asset {asset_id} not found - cannot create automated work order")
+                return None
+            
+            asset_name = asset['name']
             
             work_order = {
                 "title": f"[AUTO] {alert.get('severity').upper()}: {data.get('sensor_type').title()} Alert - {asset_name}",

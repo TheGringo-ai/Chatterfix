@@ -28,7 +28,8 @@ from app.routers import (
     training,
     work_orders,
     analytics,
-    iot
+    iot,
+    push
 )
 
 # Initialize FastAPI application
@@ -63,6 +64,7 @@ app.include_router(geolocation.router)
 app.include_router(onboarding.router)
 app.include_router(analytics.router)  # Advanced analytics dashboard
 app.include_router(iot.router)        # IoT sensor integration
+app.include_router(push.router)       # Push notifications
 
 # Startup event - initialize database
 @app.on_event("startup")

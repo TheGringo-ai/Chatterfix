@@ -523,11 +523,84 @@ class AnalyticsService:
         ]
     
     def _calculate_trend(self, metric: str, current_value: float, days: int) -> str:
-        """Calculate trend direction compared to previous period"""
-        # Simplified trend calculation - in production this would compare to historical data
-        if current_value > 0:
-            return "improving" if metric in ["mtbf", "utilization"] else "stable"
-        return "stable"
+        """
+        Calculate trend direction compared to previous period
+        Compares current period vs previous period of same length
+        """
+        conn = get_db_connection()
+        try:
+            # Get previous period value based on metric
+            if metric == "mttr":
+                prev_result = conn.execute("""
+                    SELECT AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as value
+                    FROM work_orders
+                    WHERE status = 'Completed'
+                    AND actual_start IS NOT NULL
+                    AND actual_end IS NOT NULL
+                    AND DATE(actual_end) >= DATE('now', ?)
+                    AND DATE(actual_end) < DATE('now', ?)
+                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
+                
+            elif metric == "mtbf":
+                prev_result = conn.execute("""
+                    SELECT COUNT(*) as failure_count
+                    FROM maintenance_history
+                    WHERE maintenance_type IN ('Corrective', 'Emergency')
+                    AND DATE(created_date) >= DATE('now', ?)
+                    AND DATE(created_date) < DATE('now', ?)
+                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
+                
+            elif metric == "cost":
+                prev_result = conn.execute("""
+                    SELECT SUM(total_cost) as value
+                    FROM maintenance_history
+                    WHERE DATE(created_date) >= DATE('now', ?)
+                    AND DATE(created_date) < DATE('now', ?)
+                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
+                
+            elif metric == "utilization":
+                # For utilization, use current vs previous downtime
+                prev_result = conn.execute("""
+                    SELECT SUM(downtime_hours) as value
+                    FROM maintenance_history
+                    WHERE DATE(created_date) >= DATE('now', ?)
+                    AND DATE(created_date) < DATE('now', ?)
+                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
+                
+            else:
+                return "stable"
+            
+            prev_value = prev_result['value'] if prev_result and prev_result['value'] else 0
+            
+            # Calculate change percentage
+            if prev_value > 0:
+                change_pct = ((current_value - prev_value) / prev_value) * 100
+            elif current_value > 0:
+                change_pct = 100  # New data, assume improving
+            else:
+                return "stable"
+            
+            # Determine trend based on metric type
+            # For MTTR and cost, lower is better (decreasing = improving)
+            # For MTBF and utilization, higher is better (increasing = improving)
+            if metric in ["mttr", "cost"]:
+                if change_pct < -10:
+                    return "improving"
+                elif change_pct > 10:
+                    return "declining"
+            elif metric in ["mtbf", "utilization"]:
+                if change_pct > 10:
+                    return "improving"
+                elif change_pct < -10:
+                    return "declining"
+            
+            return "stable"
+            
+        except Exception as e:
+            logger.error(f"Error calculating trend for {metric}: {e}")
+            return "stable"
+        finally:
+            conn.close()
     
     def _get_mttr_status(self, mttr_hours: float) -> str:
         """Get status based on MTTR value"""

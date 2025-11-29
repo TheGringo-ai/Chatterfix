@@ -421,26 +421,89 @@ async function syncWorkOrders() {
 async function syncSensorData() {
     console.log('[SW] Syncing sensor data...');
     
+    const results = {
+        total: 0,
+        synced: 0,
+        failed: 0,
+        errors: []
+    };
+    
     try {
         const unsyncedReadings = await getAllFromStore('sensorReadings', 'synced', false);
+        results.total = unsyncedReadings.length;
         
         if (unsyncedReadings.length > 0) {
-            const response = await fetch('/iot/sensors/data/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ readings: unsyncedReadings })
-            });
-            
-            if (response.ok) {
-                for (const reading of unsyncedReadings) {
-                    reading.synced = true;
-                    await saveToStore('sensorReadings', reading);
+            try {
+                const response = await fetch('/iot/sensors/data/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ readings: unsyncedReadings })
+                });
+                
+                if (response.ok) {
+                    const responseData = await response.json();
+                    
+                    // Mark successfully synced readings
+                    for (const reading of unsyncedReadings) {
+                        try {
+                            reading.synced = true;
+                            await saveToStore('sensorReadings', reading);
+                            results.synced++;
+                        } catch (e) {
+                            results.failed++;
+                            results.errors.push(`Failed to update reading ${reading.id}: ${e.message}`);
+                        }
+                    }
+                    
+                    console.log(`[SW] Sensor sync complete: ${results.synced}/${results.total} synced`);
+                } else {
+                    // Server error - try individual syncs
+                    console.log('[SW] Batch sync failed, trying individual readings...');
+                    
+                    for (const reading of unsyncedReadings) {
+                        try {
+                            const individualResponse = await fetch('/iot/sensors/data', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(reading)
+                            });
+                            
+                            if (individualResponse.ok) {
+                                reading.synced = true;
+                                await saveToStore('sensorReadings', reading);
+                                results.synced++;
+                            } else {
+                                results.failed++;
+                                results.errors.push(`Reading ${reading.id}: HTTP ${individualResponse.status}`);
+                            }
+                        } catch (e) {
+                            results.failed++;
+                            results.errors.push(`Reading ${reading.id}: ${e.message}`);
+                        }
+                    }
                 }
+            } catch (networkError) {
+                results.failed = results.total;
+                results.errors.push(`Network error: ${networkError.message}`);
+                console.error('[SW] Network error during sensor sync:', networkError);
             }
         }
+        
+        // Notify clients of sync results
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'SENSOR_SYNC_COMPLETE',
+                results: results
+            });
+        });
+        
     } catch (e) {
         console.error('[SW] Sensor data sync failed:', e);
+        results.errors.push(`Sync error: ${e.message}`);
     }
+    
+    return results;
 }
 
 // ========== Push Notifications ==========

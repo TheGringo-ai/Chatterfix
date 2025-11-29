@@ -372,3 +372,208 @@ async def demo_ar_mode(request: Request):
     return templates.TemplateResponse(
         "ar/dashboard.html", {"request": request, "is_demo": True}
     )
+
+
+@router.get("/demo/analytics", response_class=HTMLResponse)
+async def demo_analytics(request: Request):
+    """Demo analytics dashboard with predictive insights"""
+    from datetime import datetime, timedelta
+    import random
+    
+    # Generate sample predictions
+    predictions = [
+        {
+            "asset_id": 2,
+            "asset_name": "HVAC Unit B-2",
+            "issue": "Filter clogging and reduced airflow",
+            "days_until": 5,
+            "date": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
+            "confidence": 87,
+            "severity": "warning",
+            "recommendation": "Schedule filter replacement within 3 days to prevent system strain and maintain air quality"
+        },
+        {
+            "asset_id": 4,
+            "asset_name": "Compressor C-5",
+            "issue": "Oil contamination and overheating risk",
+            "days_until": 2,
+            "date": (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d"),
+            "confidence": 91,
+            "severity": "critical",
+            "recommendation": "Immediate oil change and cooling system inspection required to prevent catastrophic failure"
+        },
+        {
+            "asset_id": 1,
+            "asset_name": "Production Line A",
+            "issue": "Belt wear detected",
+            "days_until": 12,
+            "date": (datetime.now() + timedelta(days=12)).strftime("%Y-%m-%d"),
+            "confidence": 73,
+            "severity": "warning",
+            "recommendation": "Inspect drive belts and order replacements. Schedule maintenance during next planned downtime"
+        },
+        {
+            "asset_id": 3,
+            "asset_name": "Forklift FL-001",
+            "issue": "Battery performance degradation",
+            "days_until": 18,
+            "date": (datetime.now() + timedelta(days=18)).strftime("%Y-%m-%d"),
+            "confidence": 65,
+            "severity": "good",
+            "recommendation": "Monitor battery health. Consider battery replacement in next quarter"
+        }
+    ]
+    
+    return templates.TemplateResponse(
+        "analytics_dashboard.html",
+        {
+            "request": request,
+            "predictions": predictions,
+            "predictions_count": len(predictions),
+            "accuracy": 89,
+            "cost_savings": 24750,
+            "prevented_failures": 12,
+            "correct_predictions": 34,
+            "early_warnings": 8,
+            "total_predictions": 38,
+            "downtime_hours": 156,
+            "downtime_cost": 78000,
+            "roi": 4.2,
+            "is_demo": True,
+        },
+    )
+
+
+@router.get("/demo/diagnostics", response_class=HTMLResponse)
+async def demo_diagnostics(request: Request):
+    """Demo equipment diagnostics tool"""
+    return templates.TemplateResponse(
+        "diagnostics_tool.html",
+        {
+            "request": request,
+            "assets": DEMO_ASSETS,
+            "is_demo": True,
+        },
+    )
+
+
+@router.get("/demo/inventory", response_class=HTMLResponse)
+async def demo_inventory(request: Request):
+    """Demo intelligent parts/inventory page"""
+    demo_parts = [
+        {
+            "id": 1,
+            "part_number": "FLT-001",
+            "name": "HVAC Air Filter - 20x25x1",
+            "category": "Filters",
+            "quantity": 15,
+            "reorder_point": 10,
+            "cost": 12.50,
+            "supplier": "FilterPro Inc",
+            "status": "In Stock",
+            "compatible_assets": ["HVAC Unit B-2", "HVAC Unit C-1"],
+            "monthly_usage": 4,
+            "ai_recommendation": "Current stock sufficient for 3.75 months"
+        },
+        {
+            "id": 2,
+            "part_number": "OIL-COMP-5W30",
+            "name": "Compressor Oil 5W-30 - 5L",
+            "category": "Lubricants",
+            "quantity": 3,
+            "reorder_point": 5,
+            "cost": 85.00,
+            "supplier": "Industrial Lubricants",
+            "status": "Low Stock",
+            "compatible_assets": ["Compressor C-5", "Compressor D-2"],
+            "monthly_usage": 2,
+            "ai_recommendation": "⚠️ Reorder recommended - only 1.5 months supply remaining"
+        },
+        {
+            "id": 3,
+            "part_number": "BELT-V001",
+            "name": "V-Belt - Industrial Grade",
+            "category": "Belts",
+            "quantity": 0,
+            "reorder_point": 2,
+            "cost": 45.00,
+            "supplier": "PowerTrans Supply",
+            "status": "Out of Stock",
+            "compatible_assets": ["Production Line A", "Conveyor System"],
+            "monthly_usage": 1,
+            "ai_recommendation": "🚨 Critical - Order immediately! Predicted need in 12 days"
+        },
+        {
+            "id": 4,
+            "part_number": "BRG-6205",
+            "name": "Deep Groove Ball Bearing 6205",
+            "category": "Bearings",
+            "quantity": 8,
+            "reorder_point": 4,
+            "cost": 15.75,
+            "supplier": "Bearing Depot",
+            "status": "In Stock",
+            "compatible_assets": ["Production Line A", "Forklift FL-001"],
+            "monthly_usage": 1,
+            "ai_recommendation": "Stock level optimal for 8 months"
+        }
+    ]
+    
+    return templates.TemplateResponse(
+        "parts_catalog.html",
+        {
+            "request": request,
+            "parts": demo_parts,
+            "low_stock_count": len([p for p in demo_parts if p["quantity"] <= p["reorder_point"]]),
+            "total_value": sum(p["quantity"] * p["cost"] for p in demo_parts),
+            "is_demo": True,
+        },
+    )
+
+
+@router.get("/demo/reports", response_class=HTMLResponse)
+async def demo_reports(request: Request):
+    """Demo reports dashboard"""
+    report_templates = [
+        {
+            "id": 1,
+            "name": "Executive KPI Summary",
+            "description": "High-level overview of key performance indicators",
+            "category": "Executive",
+            "frequency": "Weekly",
+            "last_generated": "2 days ago"
+        },
+        {
+            "id": 2,
+            "name": "Maintenance Cost Analysis",
+            "description": "Detailed breakdown of maintenance costs by asset and type",
+            "category": "Financial",
+            "frequency": "Monthly",
+            "last_generated": "5 days ago"
+        },
+        {
+            "id": 3,
+            "name": "Asset Performance Report",
+            "description": "Individual asset health, utilization, and maintenance history",
+            "category": "Operations",
+            "frequency": "Monthly",
+            "last_generated": "1 week ago"
+        },
+        {
+            "id": 4,
+            "name": "Compliance Audit Report",
+            "description": "PM compliance, safety certifications, and regulatory status",
+            "category": "Compliance",
+            "frequency": "Quarterly",
+            "last_generated": "3 weeks ago"
+        }
+    ]
+    
+    return templates.TemplateResponse(
+        "reports_dashboard.html",
+        {
+            "request": request,
+            "report_templates": report_templates,
+            "is_demo": True,
+        },
+    )

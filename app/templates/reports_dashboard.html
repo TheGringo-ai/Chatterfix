@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Dashboard - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Intelligent Reports</h1>
+    <p>AI-generated insights and analytics</p>
+</div>
+
+<!-- Report Templates -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem;">
+    {% for report in report_templates %}
+    <div class="cmms-card" style="cursor: pointer; transition: all 0.3s ease;" onclick="generateReport('{{ report.name }}')">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+            <h3 style="margin: 0;">{{ report.name }}</h3>
+            <span class="status-badge low">{{ report.category }}</span>
+        </div>
+        <p style="opacity: 0.8;">{{ report.description }}</p>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span>📅 {{ report.frequency }}</span>
+                <span style="opacity: 0.7;">Last: {{ report.last_generated }}</span>
+            </div>
+        </div>
+        <button class="cmms-btn" style="width: 100%; margin-top: 1rem;" onclick="event.stopPropagation(); generateReport('{{ report.name }}')">
+            📥 Generate Report
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Custom Report Builder -->
+<div class="cmms-card" style="margin-top: 2rem;">
+    <h2>🎨 Custom Report Builder</h2>
+    <p>Create custom reports with AI assistance</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+        <div>
+            <label class="cmms-label">Report Type</label>
+            <select class="cmms-input">
+                <option>KPI Summary</option>
+                <option>Cost Analysis</option>
+                <option>Asset Performance</option>
+                <option>Work Order Analysis</option>
+                <option>Compliance Report</option>
+            </select>
+        </div>
+        <div>
+            <label class="cmms-label">Time Period</label>
+            <select class="cmms-input">
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>Last 90 Days</option>
+                <option>Last Year</option>
+                <option>Custom Range</option>
+            </select>
+        </div>
+    </div>
+    
+    <div style="margin-top: 1.5rem;">
+        <label class="cmms-label">Export Format</label>
+        <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+            <button class="cmms-btn" onclick="exportReport('pdf')">
+                📄 PDF
+            </button>
+            <button class="cmms-btn" onclick="exportReport('excel')">
+                📊 Excel
+            </button>
+            <button class="cmms-btn" onclick="exportReport('csv')">
+                📋 CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports -->
+<div class="cmms-card" style="margin-top: 2rem;">
+    <h2>📚 Recent Reports</h2>
+    <div class="cmms-table-container">
+        <table class="cmms-table">
+            <thead>
+                <tr>
+                    <th>Report Name</th>
+                    <th>Generated</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in report_templates %}
+                <tr>
+                    <td><strong>{{ report.name }}</strong></td>
+                    <td>{{ report.last_generated }}</td>
+                    <td><span class="status-badge low">{{ report.category }}</span></td>
+                    <td>
+                        <button class="cmms-btn cmms-btn-sm" onclick="viewReport('{{ report.name }}')">
+                            👁️ View
+                        </button>
+                        <button class="cmms-btn cmms-btn-sm" onclick="downloadReport('{{ report.name }}')">
+                            📥 Download
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generateReport(reportName) {
+    alert(`🤖 Generating ${reportName}...\n\nAI is analyzing data and creating your report.\n\nThis would take you to the report generation page in a real system.`);
+    // In real system: window.location.href = `/reports/generate?template=${reportName}`;
+}
+
+function exportReport(format) {
+    alert(`📥 Exporting report as ${format.toUpperCase()}...\n\nThis would download the file in a real system.`);
+}
+
+function viewReport(reportName) {
+    alert(`👁️ Opening ${reportName}...\n\nThis would display the full report in a real system.`);
+}
+
+function downloadReport(reportName) {
+    alert(`📥 Downloading ${reportName}...\n\nThis would download the report file in a real system.`);
+}
+</script>
+{% endblock %}

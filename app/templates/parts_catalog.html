@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Parts Catalog - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔩 Intelligent Parts Catalog</h1>
+    <p>AI-powered inventory management and parts recommendations</p>
+</div>
+
+<!-- Summary Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; color: #3498db;">{{ parts|length }}</div>
+        <div>Total Parts</div>
+    </div>
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; color: #e74c3c;">{{ low_stock_count }}</div>
+        <div>Low Stock Items</div>
+    </div>
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; color: #27ae60;">${{ "%.2f"|format(total_value) }}</div>
+        <div>Total Inventory Value</div>
+    </div>
+</div>
+
+<!-- Parts List -->
+<div class="cmms-card">
+    <h2>📦 Parts Inventory</h2>
+    <div class="cmms-table-container">
+        <table class="cmms-table">
+            <thead>
+                <tr>
+                    <th>Part Number</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Cost</th>
+                    <th>AI Recommendation</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for part in parts %}
+                <tr>
+                    <td><strong>{{ part.part_number }}</strong></td>
+                    <td>{{ part.name }}</td>
+                    <td>{{ part.category }}</td>
+                    <td>
+                        <span style="font-size: 1.2rem; font-weight: bold;">{{ part.quantity }}</span>
+                        <small style="opacity: 0.7;">(Min: {{ part.reorder_point }})</small>
+                    </td>
+                    <td>
+                        {% if part.status == 'Out of Stock' %}
+                        <span class="status-badge critical">{{ part.status }}</span>
+                        {% elif part.status == 'Low Stock' %}
+                        <span class="status-badge high">{{ part.status }}</span>
+                        {% else %}
+                        <span class="status-badge low">{{ part.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>${{ "%.2f"|format(part.cost) }}</td>
+                    <td style="max-width: 300px;">
+                        <small>{{ part.ai_recommendation }}</small>
+                    </td>
+                    <td>
+                        <button class="cmms-btn cmms-btn-sm" onclick="orderPart('{{ part.name }}')">
+                            📦 Order
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Compatible Assets -->
+<div class="cmms-card" style="margin-top: 2rem;">
+    <h2>🔧 Part Compatibility</h2>
+    <p>AI-powered compatibility checker helps you find the right parts for your equipment</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        {% for part in parts[:3] %}
+        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
+            <h3 style="margin-top: 0;">{{ part.name }}</h3>
+            <p><strong>Compatible with:</strong></p>
+            <ul style="margin: 0.5rem 0;">
+                {% for asset in part.compatible_assets %}
+                <li>{{ asset }}</li>
+                {% endfor %}
+            </ul>
+            <p style="margin-top: 1rem;"><strong>Monthly Usage:</strong> {{ part.monthly_usage }} units</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function orderPart(partName) {
+    alert(`📦 Ordering ${partName}\n\nThis would open the purchase order form in a real system.`);
+}
+</script>
+{% endblock %}

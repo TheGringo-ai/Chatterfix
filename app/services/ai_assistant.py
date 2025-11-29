@@ -3,7 +3,7 @@ import asyncio
 from typing import Optional
 from .predictive_engine import PredictiveMaintenanceEngine
 from .health_monitor import HealthMonitor
-from .gemini_service import gemini_service
+from .openai_service import openai_service
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +14,13 @@ class ChatterFixAIClient:
         try:
             self.predictive_engine = PredictiveMaintenanceEngine()
             self.health_monitor = HealthMonitor()
-            self.gemini = gemini_service
+            self.openai = openai_service
             logger.info("🤖 Advanced AI features initialized")
         except Exception as e:
             logger.warning(f"Failed to initialize advanced features: {e}")
             self.predictive_engine = None
             self.health_monitor = None
-            self.gemini = None
+            self.openai = None
 
     async def start(self):
         """Start background tasks"""
@@ -30,8 +30,8 @@ class ChatterFixAIClient:
 
     async def process_message(self, message: str, context: str = "", user_id: int = None) -> str:
         """Process a user message and return an AI response"""
-        if self.gemini:
-            return await self.gemini.generate_response(message, context, user_id=user_id)
+        if self.openai:
+            return await self.openai.generate_response(message, context, user_id=user_id)
         return "AI features are currently unavailable."
 
 # Global instance

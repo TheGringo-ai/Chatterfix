@@ -3,11 +3,13 @@ Authentication Routes
 Login, logout, and user authentication endpoints
 """
 
-from fastapi import APIRouter, Request, Form, Cookie, Response
+from fastapi import APIRouter, Request, Form, Cookie, Response, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.services import auth_service
-from typing import Optional
+from app.services.firebase_auth import get_current_user, get_optional_user, firebase_auth_service
+from typing import Optional, Dict, Any
+import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")
@@ -108,3 +110,107 @@ async def change_password(
         return JSONResponse({"success": True, "message": "Password changed successfully"})
     else:
         return JSONResponse({"success": False, "message": "Invalid old password"}, status_code=400)
+
+
+# ===== FIREBASE AUTHENTICATION ENDPOINTS =====
+
+@router.post("/firebase/verify")
+async def verify_firebase_token(
+    token: str = Form(...),
+    request: Request = None
+):
+    """Verify Firebase ID token and create session"""
+    try:
+        # Verify the Firebase token
+        user_data = await firebase_auth_service.verify_token(token)
+        
+        return JSONResponse({
+            "success": True,
+            "user": {
+                "uid": user_data['uid'],
+                "email": user_data['email'],
+                "name": user_data['name'],
+                "verified": user_data['verified'],
+                "role": user_data['user_data'].get('role', 'technician')
+            }
+        })
+        
+    except HTTPException as e:
+        return JSONResponse(
+            {"success": False, "message": str(e.detail)},
+            status_code=e.status_code
+        )
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "message": "Authentication failed"},
+            status_code=401
+        )
+
+@router.get("/firebase/user")
+async def get_firebase_user(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Get current Firebase user data"""
+    return JSONResponse({
+        "success": True,
+        "user": {
+            "uid": current_user['uid'],
+            "email": current_user['email'],
+            "name": current_user['name'],
+            "verified": current_user['verified'],
+            "user_data": current_user['user_data']
+        }
+    })
+
+@router.put("/firebase/profile")
+async def update_firebase_profile(
+    display_name: Optional[str] = Form(None),
+    phone: Optional[str] = Form(None),
+    role: Optional[str] = Form(None),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Update Firebase user profile"""
+    try:
+        profile_data = {}
+        if display_name:
+            profile_data['display_name'] = display_name
+        if phone:
+            profile_data['profile.phone'] = phone
+        if role and current_user['user_data'].get('role') in ['manager', 'supervisor']:
+            profile_data['role'] = role
+        
+        success = await firebase_auth_service.update_user_profile(
+            current_user['uid'], 
+            profile_data
+        )
+        
+        if success:
+            return JSONResponse({"success": True, "message": "Profile updated successfully"})
+        else:
+            return JSONResponse({"success": False, "message": "Profile update failed"}, status_code=400)
+            
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "message": "Profile update failed"},
+            status_code=500
+        )
+
+@router.get("/config")
+async def get_auth_config():
+    """Get authentication configuration for frontend"""
+    use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
+    
+    config = {
+        "use_firebase": use_firebase,
+        "firebase_config": None
+    }
+    
+    if use_firebase:
+        config["firebase_config"] = {
+            "apiKey": os.getenv("FIREBASE_API_KEY", ""),
+            "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
+            "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
+            "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
+            "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
+            "appId": os.getenv("FIREBASE_APP_ID", ""),
+        }
+    
+    return JSONResponse(config)

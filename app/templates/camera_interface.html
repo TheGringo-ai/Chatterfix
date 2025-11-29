@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% block title %}Camera Interface - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    .camera-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .camera-preview {
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    #video {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        display: block;
+    }
+
+    #canvas {
+        display: none;
+    }
+
+    .camera-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+
+    .camera-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .camera-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn-capture {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        min-width: 120px;
+    }
+
+    .btn-record {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .btn-switch {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+    }
+
+    .btn-gallery {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+
+    .recording {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .capture-preview {
+        margin: 2rem 0;
+        display: none;
+    }
+
+    .captured-image, .recorded-video {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .media-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .status-message {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .status-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .upload-form {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin: 2rem 0;
+        display: none;
+    }
+
+    .form-group {
+        margin: 1rem 0;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: #6366f1;
+    }
+
+    .permission-request {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        color: #92400e;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="camera-container">
+    <h1>📸 Camera Interface</h1>
+    <p>Take photos or record videos for work orders, parts documentation, and more.</p>
+
+    <!-- Permission Request -->
+    <div id="permission-request" class="permission-request" style="display: none;">
+        <p>🔒 Camera access required. Please allow camera permissions to continue.</p>
+        <button class="camera-btn btn-capture" onclick="requestCameraAccess()">Grant Camera Access</button>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Camera Controls -->
+    <div class="camera-controls">
+        <button id="capture-btn" class="camera-btn btn-capture" onclick="capturePhoto()">
+            📸 Capture Photo
+        </button>
+        <button id="record-btn" class="camera-btn btn-record" onclick="toggleRecording()">
+            🎥 Start Recording
+        </button>
+        <button class="camera-btn btn-switch" onclick="switchCamera()">
+            🔄 Switch Camera
+        </button>
+        <button class="camera-btn btn-gallery" onclick="openGallery()">
+            🖼️ Gallery
+        </button>
+    </div>
+
+    <!-- Recording Timer -->
+    <div id="recording-timer" style="display: none; font-size: 1.2rem; color: #ef4444; font-weight: bold;">
+        Recording: <span id="timer">00:00</span>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message"></div>
+
+    <!-- Capture Preview -->
+    <div id="capture-preview" class="capture-preview">
+        <h3>Captured Media</h3>
+        <div id="media-content"></div>
+        
+        <!-- Upload Form -->
+        <div id="upload-form" class="upload-form">
+            <h4>Add to Work Order</h4>
+            <form onsubmit="uploadMedia(event)">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="category" class="form-select">
+                        <option value="work_orders">Work Orders</option>
+                        <option value="parts">Parts</option>
+                        <option value="assets">Assets</option>
+                        <option value="documents">Documents</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Work Order ID (if applicable)</label>
+                    <input type="text" id="work_order_id" class="form-input" placeholder="WO-12345">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="description" class="form-input" placeholder="Brief description of the media">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma separated)</label>
+                    <input type="text" id="tags" class="form-input" placeholder="repair, before, equipment">
+                </div>
+                
+                <div class="media-actions">
+                    <button type="submit" class="camera-btn btn-capture">💾 Save Media</button>
+                    <button type="button" class="camera-btn btn-record" onclick="retakeMedia()">📸 Retake</button>
+                    <button type="button" class="camera-btn btn-switch" onclick="discardMedia()">🗑️ Discard</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let video, canvas, ctx;
+let mediaRecorder;
+let recordedChunks = [];
+let stream;
+let isRecording = false;
+let currentFacingMode = 'environment'; // Start with back camera
+let recordingStartTime;
+let timerInterval;
+let currentMediaBlob;
+let currentMediaType;
+
+// Initialize camera
+async function initCamera() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+
+    try {
+        await requestCameraAccess();
+    } catch (error) {
+        showPermissionRequest();
+    }
+}
+
+// Request camera access
+async function requestCameraAccess() {
+    try {
+        const constraints = {
+            video: { 
+                facingMode: currentFacingMode,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: true
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        
+        hidePermissionRequest();
+        showStatus('Camera ready!', 'success');
+        
+        // Set up MediaRecorder for video recording
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = handleDataAvailable;
+        mediaRecorder.onstop = handleRecordingStop;
+        
+    } catch (error) {
+        console.error('Camera access error:', error);
+        showPermissionRequest();
+        showStatus('Camera access denied or not available', 'error');
+    }
+}
+
+// Show permission request
+function showPermissionRequest() {
+    document.getElementById('permission-request').style.display = 'block';
+}
+
+// Hide permission request
+function hidePermissionRequest() {
+    document.getElementById('permission-request').style.display = 'none';
+}
+
+// Capture photo
+function capturePhoto() {
+    if (!video.videoWidth) {
+        showStatus('Camera not ready', 'error');
+        return;
+    }
+
+    // Set canvas dimensions to video dimensions
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert canvas to blob
+    canvas.toBlob(blob => {
+        currentMediaBlob = blob;
+        currentMediaType = 'image';
+        
+        const imageUrl = URL.createObjectURL(blob);
+        showCapturedMedia('image', imageUrl);
+        
+        showStatus('Photo captured!', 'success');
+    }, 'image/jpeg', 0.8);
+}
+
+// Toggle video recording
+function toggleRecording() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}
+
+// Start recording
+function startRecording() {
+    if (!mediaRecorder || mediaRecorder.state === 'recording') return;
+    
+    recordedChunks = [];
+    mediaRecorder.start();
+    isRecording = true;
+    recordingStartTime = Date.now();
+    
+    // Update UI
+    const recordBtn = document.getElementById('record-btn');
+    recordBtn.textContent = '⏹️ Stop Recording';
+    recordBtn.classList.add('recording');
+    
+    // Show timer
+    document.getElementById('recording-timer').style.display = 'block';
+    timerInterval = setInterval(updateTimer, 1000);
+    
+    showStatus('Recording started...', 'success');
+}
+
+// Stop recording
+function stopRecording() {
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    // Update UI
+    const recordBtn = document.getElementById('record-btn');
+    recordBtn.textContent = '🎥 Start Recording';
+    recordBtn.classList.remove('recording');
+    
+    // Hide timer
+    document.getElementById('recording-timer').style.display = 'none';
+    clearInterval(timerInterval);
+    
+    showStatus('Recording stopped', 'success');
+}
+
+// Handle recorded data
+function handleDataAvailable(event) {
+    if (event.data.size > 0) {
+        recordedChunks.push(event.data);
+    }
+}
+
+// Handle recording stop
+function handleRecordingStop() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    currentMediaBlob = blob;
+    currentMediaType = 'video';
+    
+    const videoUrl = URL.createObjectURL(blob);
+    showCapturedMedia('video', videoUrl);
+}
+
+// Update recording timer
+function updateTimer() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Show captured media
+function showCapturedMedia(type, url) {
+    const mediaContent = document.getElementById('media-content');
+    const capturePreview = document.getElementById('capture-preview');
+    const uploadForm = document.getElementById('upload-form');
+    
+    if (type === 'image') {
+        mediaContent.innerHTML = `<img src="${url}" alt="Captured photo" class="captured-image">`;
+    } else if (type === 'video') {
+        mediaContent.innerHTML = `<video src="${url}" controls class="recorded-video"></video>`;
+    }
+    
+    capturePreview.style.display = 'block';
+    uploadForm.style.display = 'block';
+}
+
+// Switch camera (front/back)
+async function switchCamera() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    
+    // Stop current stream
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Request new stream
+    await requestCameraAccess();
+    
+    showStatus(`Switched to ${currentFacingMode === 'user' ? 'front' : 'back'} camera`, 'success');
+}
+
+// Upload media
+async function uploadMedia(event) {
+    event.preventDefault();
+    
+    if (!currentMediaBlob) {
+        showStatus('No media to upload', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    
+    // Create filename based on type and timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${currentMediaType}_${timestamp}.${currentMediaType === 'image' ? 'jpg' : 'webm'}`;
+    
+    formData.append('files', currentMediaBlob, filename);
+    formData.append('category', document.getElementById('category').value);
+    formData.append('work_order_id', document.getElementById('work_order_id').value);
+    formData.append('description', document.getElementById('description').value);
+    formData.append('tags', document.getElementById('tags').value);
+    
+    try {
+        showStatus('Uploading media...', 'success');
+        
+        const response = await fetch('/media/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showStatus('Media uploaded successfully!', 'success');
+            setTimeout(() => {
+                discardMedia();
+            }, 2000);
+        } else {
+            showStatus('Upload failed: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showStatus('Upload error: ' + error.message, 'error');
+    }
+}
+
+// Retake media
+function retakeMedia() {
+    discardMedia();
+}
+
+// Discard media
+function discardMedia() {
+    document.getElementById('capture-preview').style.display = 'none';
+    document.getElementById('upload-form').style.display = 'none';
+    currentMediaBlob = null;
+    currentMediaType = null;
+    
+    // Clear form
+    document.getElementById('work_order_id').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('tags').value = '';
+}
+
+// Open gallery (placeholder)
+function openGallery() {
+    alert('Gallery feature will open a list of all uploaded media');
+}
+
+// Show status message
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message status-${type}`;
+    statusDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 3000);
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', initCamera);
+
+// Clean up when leaving page
+window.addEventListener('beforeunload', () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+# Additional requirements for media and barcode functionality
+# Add these to your main requirements.txt
+
+# Image and video processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Barcode generation and scanning
+qrcode[pil]>=7.4.2
+pyzbar>=0.1.9
+
+# OCR (optional, for document scanning)
+# pytesseract>=0.3.10
+
+# Additional imaging support (optional)
+# imageio>=2.31.0
+# scikit-image>=0.21.0

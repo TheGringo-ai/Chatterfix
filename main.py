@@ -29,7 +29,8 @@ from app.routers import (
     work_orders,
     analytics,
     iot,
-    push
+    push,
+    media
 )
 
 # Initialize FastAPI application
@@ -65,6 +66,7 @@ app.include_router(onboarding.router)
 app.include_router(analytics.router)  # Advanced analytics dashboard
 app.include_router(iot.router)        # IoT sensor integration
 app.include_router(push.router)       # Push notifications
+app.include_router(media.router)      # Media upload and barcode functionality
 
 # Startup event - initialize database
 @app.on_event("startup")

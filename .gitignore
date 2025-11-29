@@ -24,6 +24,9 @@ archive/
 uploads/
 customer-data/
 
+# Secrets and credentials
+secrets/
+
 # IDE
 .vscode/
 

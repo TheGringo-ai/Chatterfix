@@ -18,8 +18,8 @@ class ApprovalRequest(BaseModel):
 
 @router.get("/", response_class=HTMLResponse)
 async def purchasing_dashboard(request: Request):
-    """Render purchasing dashboard"""
-    return templates.TemplateResponse("purchasing_dashboard.html", {"request": request})
+    """Enhanced purchasing dashboard with media and barcode capabilities"""
+    return templates.TemplateResponse("enhanced_purchasing.html", {"request": request})
 
 
 @router.get("/purchase-orders")

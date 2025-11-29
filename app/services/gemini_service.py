@@ -1,15 +1,28 @@
 import os
 import logging
-import google.generativeai as genai
 from typing import Optional, List, Dict, Any
 import json
 import sqlite3
+
+# Import Google Generative AI with error handling
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Google Generative AI not available: {e}")
+    genai = None
+    GENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
 
 class GeminiService:
     def __init__(self):
+        # Check if GenAI is available
+        if not GENAI_AVAILABLE:
+            logger.info("🤖 Gemini AI not available - service disabled")
+            return
+            
         # We no longer initialize a global model here because keys can be user-specific
         self.default_api_key = os.getenv("GEMINI_API_KEY")
         if self.default_api_key:

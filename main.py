@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from app.core.database import init_database
+from app.core.db_adapter import get_db_adapter
 
 # Import all routers
 from app.routers import (
@@ -15,6 +16,7 @@ from app.routers import (
     demo,
     feedback,
     geolocation,
+    health,
     inventory,
     landing,
     onboarding,
@@ -38,6 +40,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
+app.include_router(health.router)     # Health checks (no prefix)
 app.include_router(dashboard.router)  # Dashboard is now the main landing page
 app.include_router(landing.router)    # Landing page becomes signup page
 app.include_router(demo.router)       # Demo routes for app exploration
@@ -62,9 +65,26 @@ app.include_router(onboarding.router)
 async def startup_event():
     """Initialize database on startup"""
     init_database()
+    db_adapter = get_db_adapter()
     print("✅ ChatterFix CMMS started successfully!")
-    print("📊 Database initialized")
-    print("🌐 Access the application at: http://localhost:8000")
+    print(f"📊 Database initialized ({db_adapter.db_type})")
+    
+    # Auto-populate demo data if database is empty
+    try:
+        import sqlite3
+        conn = sqlite3.connect("./data/cmms.db")
+        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        conn.close()
+        
+        if user_count == 0:
+            print("🔄 Populating demo data...")
+            import subprocess
+            subprocess.run(["python", "populate_demo_data.py"], check=True)
+            print("✨ Demo data populated successfully!")
+    except Exception as e:
+        print(f"⚠️ Demo data population failed: {e}")
+    
+    print("🌐 ChatterFix ready for use!")
 
 # Main entry point
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from app.core.database import get_db_connection
+from app.core.db_adapter import get_db_adapter
 
 class DashboardService:
     """Service for managing dashboard widgets and data"""
@@ -684,6 +685,31 @@ class DashboardService:
             conn.close()
         
         return success
+
+    async def get_dashboard_data_async(self, user_id: str = None) -> Dict[str, Any]:
+        """Get dashboard data using the database adapter (async)"""
+        db = get_db_adapter()
+        return await db.get_dashboard_data(user_id)
+    
+    async def create_work_order_async(self, work_order_data: Dict[str, Any]) -> str:
+        """Create work order using the database adapter (async)"""
+        db = get_db_adapter()
+        return await db.create_work_order(work_order_data)
+    
+    async def get_work_orders_async(self, status: str = None, assigned_to: str = None) -> List[Dict[str, Any]]:
+        """Get work orders using the database adapter (async)"""
+        db = get_db_adapter()
+        return await db.get_work_orders(status, assigned_to)
+    
+    async def create_asset_async(self, asset_data: Dict[str, Any]) -> str:
+        """Create asset using the database adapter (async)"""
+        db = get_db_adapter()
+        return await db.create_asset(asset_data)
+    
+    async def get_assets_async(self, status: str = None, location: str = None) -> List[Dict[str, Any]]:
+        """Get assets using the database adapter (async)"""
+        db = get_db_adapter()
+        return await db.get_assets(status, location)
 
 # Global instance
 dashboard_service = DashboardService()

@@ -15,50 +15,85 @@ class FirebaseAuthService:
         self.app = None
         self.auth_client = None
         self.db = None
+        self._initialized = False
         self._initialize_firebase()
     
     def _initialize_firebase(self):
         """Initialize Firebase Admin SDK and client SDK"""
+        # Check if Firebase is explicitly disabled
+        if os.getenv("DISABLE_FIREBASE", "").lower() in ("true", "1", "yes"):
+            logger.info("🔥 Firebase disabled via DISABLE_FIREBASE environment variable")
+            return
+        
+        # Check if credentials are available
+        google_creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        firebase_api_key = os.getenv("FIREBASE_API_KEY")
+        
+        # Skip initialization if no credentials are configured
+        if not google_creds_path and not firebase_api_key:
+            logger.info("🔥 Firebase not configured - running in local/SQLite mode")
+            logger.info("   To enable Firebase, set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_API_KEY")
+            return
+        
         try:
             # Initialize Firebase Admin SDK
             if not firebase_admin._apps:
-                # For GCP deployment, use default credentials
-                if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-                    cred = credentials.Certificate(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-                else:
-                    # For Cloud Run, use default credentials
-                    cred = credentials.ApplicationDefault()
+                cred = None
                 
-                self.app = firebase_admin.initialize_app(cred, {
-                    'projectId': os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
-                })
+                # Try to load credentials from file path
+                if google_creds_path and os.path.exists(google_creds_path):
+                    cred = credentials.Certificate(google_creds_path)
+                    logger.info(f"🔥 Using credentials from: {google_creds_path}")
+                else:
+                    # Try Application Default Credentials (for Cloud Run, GKE, etc.)
+                    try:
+                        cred = credentials.ApplicationDefault()
+                        logger.info("🔥 Using Application Default Credentials")
+                    except Exception as adc_error:
+                        logger.warning(f"🔥 Application Default Credentials not available: {adc_error}")
+                        return
+                
+                if cred:
+                    self.app = firebase_admin.initialize_app(cred, {
+                        'projectId': os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
+                    })
             else:
                 self.app = firebase_admin.get_app()
             
             # Initialize Firestore client
-            self.db = firestore.client()
+            if self.app:
+                try:
+                    self.db = firestore.client()
+                except Exception as fs_error:
+                    logger.warning(f"🔥 Firestore not available: {fs_error}")
             
             # Initialize Pyrebase for client-side auth (optional, for frontend)
-            firebase_config = {
-                "apiKey": os.getenv("FIREBASE_API_KEY", ""),
-                "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
-                "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
-                "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
-                "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
-                "appId": os.getenv("FIREBASE_APP_ID", ""),
-                "databaseURL": ""
-            }
+            if firebase_api_key:
+                firebase_config = {
+                    "apiKey": firebase_api_key,
+                    "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
+                    "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
+                    "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
+                    "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
+                    "appId": os.getenv("FIREBASE_APP_ID", ""),
+                    "databaseURL": ""
+                }
+                
+                try:
+                    firebase = pyrebase.initialize_app(firebase_config)
+                    self.auth_client = firebase.auth()
+                except Exception as pyrebase_error:
+                    logger.warning(f"🔥 Pyrebase initialization failed: {pyrebase_error}")
             
-            if firebase_config["apiKey"]:
-                firebase = pyrebase.initialize_app(firebase_config)
-                self.auth_client = firebase.auth()
-            
+            self._initialized = True
             logger.info("🔥 Firebase Authentication initialized successfully")
             
         except Exception as e:
-            logger.error(f"❌ Failed to initialize Firebase: {e}")
+            logger.warning(f"🔥 Firebase initialization skipped: {e}")
+            logger.info("   Application will use SQLite authentication instead")
             self.app = None
             self.auth_client = None
+            self.db = None
     
     async def verify_token(self, token: str) -> Dict[str, Any]:
         """Verify Firebase ID token and return user data"""

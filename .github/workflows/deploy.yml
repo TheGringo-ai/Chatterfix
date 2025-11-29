@@ -1,13 +1,46 @@
-name: Deploy to GCP
+name: Deploy to Production
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment (skip pre-checks)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
+  pre-deployment-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install bandit safety pytest black flake8
+      
+      - name: Run Pre-Deployment Validation
+        run: |
+          chmod +x deployment/pre-deploy-check.sh
+          if [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then
+            ./deployment/pre-deploy-check.sh --force --skip-tests
+          else
+            ./deployment/pre-deploy-check.sh
+          fi
+  
   deploy:
+    needs: pre-deployment-checks
     runs-on: ubuntu-latest
     
     steps:
@@ -24,9 +57,17 @@ jobs:
         with:
           project_id: fredfix
       
-      - name: Deploy to Cloud Run
+      - name: Get Current Revision (for rollback)
+        id: current_revision
         run: |
-          gcloud run deploy chatterfix-cmms \
+          CURRENT=$(gcloud run services describe chatterfix --region us-central1 --format='value(status.latestReadyRevisionName)' 2>/dev/null || echo "none")
+          echo "revision=$CURRENT" >> $GITHUB_OUTPUT
+          echo "Current revision: $CURRENT"
+      
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy chatterfix \
             --source . \
             --region us-central1 \
             --set-env-vars="USE_FIRESTORE=true,OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GOOGLE_CLOUD_PROJECT=fredfix" \
@@ -34,25 +75,45 @@ jobs:
             --cpu=2 \
             --min-instances=1 \
             --max-instances=10 \
+            --timeout=300 \
             --allow-unauthenticated
-
-      - name: Verify Deployment
+      
+      - name: Get Service URL
+        id: service_url
         run: |
-          SERVICE_URL=$(gcloud run services describe chatterfix-cmms --region us-central1 --format='value(status.url)')
-          echo "Service URL: $SERVICE_URL"
-          
-          echo "Checking service health..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" --max-time 30)
-          
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-            echo "✅ Deployment verified successfully (HTTP $HTTP_STATUS)"
-          else
-            echo "⚠️ Service returned HTTP $HTTP_STATUS - checking root endpoint..."
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL" --max-time 30)
-            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
-              echo "✅ Root endpoint verified successfully (HTTP $HTTP_STATUS)"
-            else
-              echo "❌ Deployment verification failed (HTTP $HTTP_STATUS)"
-              exit 1
-            fi
-          fi
+          URL=$(gcloud run services describe chatterfix --region us-central1 --format='value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Service URL: $URL"
+      
+      - name: Wait for Deployment to Stabilize
+        run: |
+          echo "Waiting 30 seconds for deployment to stabilize..."
+          sleep 30
+      
+      - name: Run Smoke Tests
+        id: smoke_tests
+        run: |
+          chmod +x deployment/smoke-tests.sh
+          ./deployment/smoke-tests.sh ${{ steps.service_url.outputs.url }}
+        continue-on-error: true
+      
+      - name: Rollback on Failure
+        if: steps.smoke_tests.outcome == 'failure' && steps.current_revision.outputs.revision != 'none'
+        run: |
+          echo "❌ Smoke tests failed - initiating automatic rollback"
+          chmod +x deployment/rollback.sh
+          ./deployment/rollback.sh --reason "Automated rollback: smoke tests failed"
+          exit 1
+      
+      - name: Deployment Success Notification
+        if: steps.smoke_tests.outcome == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Service URL: ${{ steps.service_url.outputs.url }}"
+          echo "All smoke tests passed"
+      
+      - name: Deployment Failed Notification
+        if: steps.smoke_tests.outcome == 'failure'
+        run: |
+          echo "❌ Deployment failed and was rolled back"
+          exit 1

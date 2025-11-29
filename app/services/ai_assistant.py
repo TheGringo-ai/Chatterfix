@@ -7,10 +7,11 @@ from .openai_service import openai_service
 
 logger = logging.getLogger(__name__)
 
+
 class ChatterFixAIClient:
     def __init__(self):
         logger.info("ChatterFix AI Assistant initialized")
-        
+
         try:
             self.predictive_engine = PredictiveMaintenanceEngine()
             self.health_monitor = HealthMonitor()
@@ -28,11 +29,16 @@ class ChatterFixAIClient:
             await self.predictive_engine.start()
         # Health monitor start logic if needed
 
-    async def process_message(self, message: str, context: str = "", user_id: int = None) -> str:
+    async def process_message(
+        self, message: str, context: str = "", user_id: int = None
+    ) -> str:
         """Process a user message and return an AI response"""
         if self.openai:
-            return await self.openai.generate_response(message, context, user_id=user_id)
+            return await self.openai.generate_response(
+                message, context, user_id=user_id
+            )
         return "AI features are currently unavailable."
+
 
 # Global instance
 chatterfix_ai = ChatterFixAIClient()

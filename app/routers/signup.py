@@ -27,40 +27,40 @@ async def signup(
     email: str = Form(...),
     password: str = Form(...),
     full_name: str = Form(""),
-    request: Request = None
+    request: Request = None,
 ):
     """Create new user account"""
-    
+
     # Validate password length
     if len(password) < 8:
-        return templates.TemplateResponse("signup.html", {
-            "request": request,
-            "error": "Password must be at least 8 characters"
-        })
-    
+        return templates.TemplateResponse(
+            "signup.html",
+            {"request": request, "error": "Password must be at least 8 characters"},
+        )
+
     # Create user
     user_id = auth_service.create_user(
         username=username,
         email=email,
         password=password,
         full_name=full_name,
-        role="technician"  # Default role for new signups
+        role="technician",  # Default role for new signups
     )
-    
+
     if not user_id:
-        return templates.TemplateResponse("signup.html", {
-            "request": request,
-            "error": "Username or email already exists"
-        })
-    
+        return templates.TemplateResponse(
+            "signup.html",
+            {"request": request, "error": "Username or email already exists"},
+        )
+
     # Create demo data for new user
     create_demo_data(user_id)
-    
+
     # Auto-login: create session
     ip_address = request.client.host if request else None
     user_agent = request.headers.get("user-agent") if request else None
     token = auth_service.create_session(user_id, ip_address, user_agent)
-    
+
     # Set cookie and redirect
     response = RedirectResponse(url="/dashboard?welcome=true", status_code=302)
     response.set_cookie(
@@ -68,7 +68,7 @@ async def signup(
         value=token,
         httponly=True,
         max_age=86400,  # 24 hours
-        samesite="lax"
+        samesite="lax",
     )
-    
+
     return response

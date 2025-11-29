@@ -8,18 +8,20 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from app.core.database import get_db_connection
 
+
 class PlannerService:
     """Service for maintenance planning and scheduling"""
-    
+
     def get_pm_schedule(self, days_ahead: int = 30) -> Dict:
         """Get preventive maintenance schedule for next N days"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Get scheduled PM work orders
         end_date = datetime.now() + timedelta(days=days_ahead)
-        
-        scheduled_work = cur.execute("""
+
+        scheduled_work = cur.execute(
+            """
             SELECT 
                 wo.id,
                 wo.title,
@@ -36,34 +38,37 @@ class PlannerService:
             WHERE wo.due_date <= ?
             AND wo.status NOT IN ('completed', 'cancelled')
             ORDER BY wo.due_date ASC
-        """, (end_date.strftime('%Y-%m-%d'),)).fetchall()
-        
+        """,
+            (end_date.strftime("%Y-%m-%d"),),
+        ).fetchall()
+
         # Group by date
         schedule_by_date = {}
         for work in scheduled_work:
-            date = work['due_date']
+            date = work["due_date"]
             if date not in schedule_by_date:
                 schedule_by_date[date] = []
             schedule_by_date[date].append(dict(work))
-        
+
         conn.close()
-        
+
         return {
             "schedule": schedule_by_date,
             "total_scheduled": len(scheduled_work),
             "date_range": {
-                "start": datetime.now().strftime('%Y-%m-%d'),
-                "end": end_date.strftime('%Y-%m-%d')
-            }
+                "start": datetime.now().strftime("%Y-%m-%d"),
+                "end": end_date.strftime("%Y-%m-%d"),
+            },
         }
-    
+
     def get_resource_capacity(self) -> Dict:
         """Get technician capacity and workload"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Get all technicians
-        technicians = cur.execute("""
+        technicians = cur.execute(
+            """
             SELECT 
                 u.id,
                 u.full_name,
@@ -77,38 +82,50 @@ class PlannerService:
                 AND wo.status NOT IN ('completed', 'cancelled')
             WHERE u.role = 'technician'
             GROUP BY u.id
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         capacity_data = []
         for tech in technicians:
-            total_hours = tech['total_hours'] or 0
+            total_hours = tech["total_hours"] or 0
             capacity_pct = min((total_hours / 40) * 100, 100)  # Assume 40 hour week
-            
-            capacity_data.append({
-                "id": tech['id'],
-                "name": tech['full_name'],
-                "status": tech['status'],
-                "active_work_orders": tech['active_work_orders'],
-                "urgent_count": tech['urgent_count'],
-                "total_hours": total_hours,
-                "capacity_percentage": round(capacity_pct, 1),
-                "available_hours": max(40 - total_hours, 0)
-            })
-        
+
+            capacity_data.append(
+                {
+                    "id": tech["id"],
+                    "name": tech["full_name"],
+                    "status": tech["status"],
+                    "active_work_orders": tech["active_work_orders"],
+                    "urgent_count": tech["urgent_count"],
+                    "total_hours": total_hours,
+                    "capacity_percentage": round(capacity_pct, 1),
+                    "available_hours": max(40 - total_hours, 0),
+                }
+            )
+
         conn.close()
-        
+
         return {
             "technicians": capacity_data,
             "total_technicians": len(capacity_data),
-            "average_capacity": round(sum(t['capacity_percentage'] for t in capacity_data) / len(capacity_data), 1) if capacity_data else 0
+            "average_capacity": (
+                round(
+                    sum(t["capacity_percentage"] for t in capacity_data)
+                    / len(capacity_data),
+                    1,
+                )
+                if capacity_data
+                else 0
+            ),
         }
-    
+
     def get_work_order_backlog(self) -> Dict:
         """Get pending work order backlog"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
-        backlog = cur.execute("""
+
+        backlog = cur.execute(
+            """
             SELECT 
                 wo.id,
                 wo.title,
@@ -136,34 +153,36 @@ class PlannerService:
                     ELSE 4
                 END,
                 wo.due_date ASC
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         # Categorize backlog
-        by_priority = {'urgent': [], 'high': [], 'medium': [], 'low': []}
-        by_urgency = {'overdue': [], 'due_today': [], 'due_this_week': [], 'future': []}
-        
+        by_priority = {"urgent": [], "high": [], "medium": [], "low": []}
+        by_urgency = {"overdue": [], "due_today": [], "due_this_week": [], "future": []}
+
         for work in backlog:
             work_dict = dict(work)
-            by_priority[work['priority']].append(work_dict)
-            by_urgency[work['urgency']].append(work_dict)
-        
+            by_priority[work["priority"]].append(work_dict)
+            by_urgency[work["urgency"]].append(work_dict)
+
         conn.close()
-        
+
         return {
             "total_backlog": len(backlog),
             "by_priority": {k: len(v) for k, v in by_priority.items()},
             "by_urgency": {k: len(v) for k, v in by_urgency.items()},
             "work_orders": [dict(w) for w in backlog],
-            "overdue_count": len(by_urgency['overdue']),
-            "due_today_count": len(by_urgency['due_today'])
+            "overdue_count": len(by_urgency["overdue"]),
+            "due_today_count": len(by_urgency["due_today"]),
         }
-    
+
     def get_asset_pm_status(self) -> List[Dict]:
         """Get preventive maintenance status for all assets"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
-        assets = cur.execute("""
+
+        assets = cur.execute(
+            """
             SELECT 
                 a.id,
                 a.name,
@@ -178,61 +197,65 @@ class PlannerService:
             LEFT JOIN work_orders wo ON a.id = wo.asset_id
             GROUP BY a.id
             ORDER BY a.criticality DESC, next_pm_date ASC
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         pm_status = []
         for asset in assets:
-            last_maint = asset['last_maintenance']
-            next_pm = asset['next_pm_date']
-            
+            last_maint = asset["last_maintenance"]
+            next_pm = asset["next_pm_date"]
+
             # Calculate days since last maintenance
             days_since = None
             if last_maint:
-                last_date = datetime.strptime(last_maint, '%Y-%m-%d %H:%M:%S')
+                last_date = datetime.strptime(last_maint, "%Y-%m-%d %H:%M:%S")
                 days_since = (datetime.now() - last_date).days
-            
+
             # Calculate days until next PM
             days_until = None
-            pm_status_text = 'No PM scheduled'
+            pm_status_text = "No PM scheduled"
             if next_pm:
-                next_date = datetime.strptime(next_pm, '%Y-%m-%d')
+                next_date = datetime.strptime(next_pm, "%Y-%m-%d")
                 days_until = (next_date - datetime.now()).days
-                
+
                 if days_until < 0:
-                    pm_status_text = 'Overdue'
+                    pm_status_text = "Overdue"
                 elif days_until == 0:
-                    pm_status_text = 'Due today'
+                    pm_status_text = "Due today"
                 elif days_until <= 7:
-                    pm_status_text = 'Due this week'
+                    pm_status_text = "Due this week"
                 else:
-                    pm_status_text = f'Due in {days_until} days'
-            
-            pm_status.append({
-                "id": asset['id'],
-                "name": asset['name'],
-                "asset_id": asset['asset_id'],
-                "category": asset['category'],
-                "criticality": asset['criticality'],
-                "location": asset['location'],
-                "last_maintenance": last_maint,
-                "days_since_maintenance": days_since,
-                "next_pm_date": next_pm,
-                "days_until_pm": days_until,
-                "pm_status": pm_status_text,
-                "total_work_orders": asset['total_work_orders']
-            })
-        
+                    pm_status_text = f"Due in {days_until} days"
+
+            pm_status.append(
+                {
+                    "id": asset["id"],
+                    "name": asset["name"],
+                    "asset_id": asset["asset_id"],
+                    "category": asset["category"],
+                    "criticality": asset["criticality"],
+                    "location": asset["location"],
+                    "last_maintenance": last_maint,
+                    "days_since_maintenance": days_since,
+                    "next_pm_date": next_pm,
+                    "days_until_pm": days_until,
+                    "pm_status": pm_status_text,
+                    "total_work_orders": asset["total_work_orders"],
+                }
+            )
+
         conn.close()
-        
+
         return pm_status
-    
+
     def get_parts_availability(self) -> Dict:
         """Get parts availability for scheduled work"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Get parts needed for upcoming work orders
-        parts_needed = cur.execute("""
+        parts_needed = cur.execute(
+            """
             SELECT 
                 pr.id,
                 pr.part_name,
@@ -250,10 +273,12 @@ class PlannerService:
             WHERE pr.status IN ('pending', 'approved', 'ordered')
             AND wo.status NOT IN ('completed', 'cancelled')
             ORDER BY wo.due_date ASC
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         # Check inventory levels
-        low_stock = cur.execute("""
+        low_stock = cur.execute(
+            """
             SELECT 
                 part_name,
                 quantity,
@@ -261,24 +286,26 @@ class PlannerService:
                 location
             FROM parts_inventory
             WHERE quantity <= min_quantity
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         conn.close()
-        
+
         return {
             "parts_needed": [dict(p) for p in parts_needed],
             "total_pending": len(parts_needed),
             "low_stock_items": [dict(p) for p in low_stock],
-            "low_stock_count": len(low_stock)
+            "low_stock_count": len(low_stock),
         }
-    
+
     def get_scheduling_conflicts(self) -> List[Dict]:
         """Detect scheduling conflicts (overlapping assignments)"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Find technicians with multiple work orders on same day
-        conflicts = cur.execute("""
+        conflicts = cur.execute(
+            """
             SELECT 
                 u.id as technician_id,
                 u.full_name as technician_name,
@@ -292,33 +319,39 @@ class PlannerService:
             AND wo.due_date IS NOT NULL
             GROUP BY u.id, wo.due_date
             HAVING work_order_count > 1 OR total_hours > 8
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         conn.close()
-        
+
         conflict_list = []
         for conflict in conflicts:
-            conflict_type = 'overload' if conflict['total_hours'] > 8 else 'multiple_assignments'
-            
-            conflict_list.append({
-                "technician_id": conflict['technician_id'],
-                "technician_name": conflict['technician_name'],
-                "date": conflict['due_date'],
-                "work_order_count": conflict['work_order_count'],
-                "total_hours": conflict['total_hours'],
-                "conflict_type": conflict_type,
-                "work_orders": conflict['work_orders'].split(' | ')
-            })
-        
+            conflict_type = (
+                "overload" if conflict["total_hours"] > 8 else "multiple_assignments"
+            )
+
+            conflict_list.append(
+                {
+                    "technician_id": conflict["technician_id"],
+                    "technician_name": conflict["technician_name"],
+                    "date": conflict["due_date"],
+                    "work_order_count": conflict["work_order_count"],
+                    "total_hours": conflict["total_hours"],
+                    "conflict_type": conflict_type,
+                    "work_orders": conflict["work_orders"].split(" | "),
+                }
+            )
+
         return conflict_list
-    
+
     def get_compliance_tracking(self) -> Dict:
         """Track regulatory compliance for maintenance"""
         conn = get_db_connection()
         cur = conn.cursor()
-        
+
         # Get critical assets requiring compliance
-        compliance_assets = cur.execute("""
+        compliance_assets = cur.execute(
+            """
             SELECT 
                 a.id,
                 a.name,
@@ -336,30 +369,32 @@ class PlannerService:
             LEFT JOIN work_orders wo ON a.id = wo.asset_id AND wo.status = 'completed'
             WHERE a.criticality >= 4
             GROUP BY a.id
-        """).fetchall()
-        
+        """
+        ).fetchall()
+
         # Categorize by compliance status
         by_status = {
-            'compliant': [],
-            'due_soon': [],
-            'overdue': [],
-            'never_inspected': []
+            "compliant": [],
+            "due_soon": [],
+            "overdue": [],
+            "never_inspected": [],
         }
-        
+
         for asset in compliance_assets:
-            status_key = asset['compliance_status'].lower().replace(' ', '_')
+            status_key = asset["compliance_status"].lower().replace(" ", "_")
             by_status[status_key].append(dict(asset))
-        
+
         conn.close()
-        
+
         return {
             "total_critical_assets": len(compliance_assets),
-            "compliant": len(by_status['compliant']),
-            "due_soon": len(by_status['due_soon']),
-            "overdue": len(by_status['overdue']),
-            "never_inspected": len(by_status['never_inspected']),
-            "assets_by_status": by_status
+            "compliant": len(by_status["compliant"]),
+            "due_soon": len(by_status["due_soon"]),
+            "overdue": len(by_status["overdue"]),
+            "never_inspected": len(by_status["never_inspected"]),
+            "assets_by_status": by_status,
         }
+
 
 # Global instance
 planner_service = PlannerService()

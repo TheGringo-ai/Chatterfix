@@ -37,7 +37,7 @@ class BroadcastRequest(BaseModel):
 async def subscribe_push(data: PushSubscription):
     """
     Register a push notification subscription
-    
+
     The subscription object should contain:
     - endpoint: The push service URL
     - keys.p256dh: The p256dh key
@@ -46,12 +46,13 @@ async def subscribe_push(data: PushSubscription):
     try:
         success = push_service.register_subscription(data.user_id, data.subscription)
         if success:
-            return JSONResponse(content={
-                "success": True,
-                "message": "Push subscription registered"
-            })
+            return JSONResponse(
+                content={"success": True, "message": "Push subscription registered"}
+            )
         else:
-            raise HTTPException(status_code=500, detail="Failed to register subscription")
+            raise HTTPException(
+                status_code=500, detail="Failed to register subscription"
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -61,10 +62,14 @@ async def unsubscribe_push(user_id: int = Body(...)):
     """Unregister push notification subscription"""
     try:
         success = push_service.unregister_subscription(user_id)
-        return JSONResponse(content={
-            "success": success,
-            "message": "Subscription removed" if success else "No subscription found"
-        })
+        return JSONResponse(
+            content={
+                "success": success,
+                "message": (
+                    "Subscription removed" if success else "No subscription found"
+                ),
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -78,7 +83,7 @@ async def send_notification(request: NotificationRequest):
             title=request.title,
             body=request.body,
             url=request.url,
-            priority=request.priority
+            priority=request.priority,
         )
         return JSONResponse(content=result)
     except Exception as e:
@@ -94,7 +99,7 @@ async def broadcast_notification(request: BroadcastRequest):
             body=request.body,
             url=request.url,
             priority=request.priority,
-            user_ids=request.user_ids
+            user_ids=request.user_ids,
         )
         return JSONResponse(content=results)
     except Exception as e:
@@ -110,7 +115,7 @@ async def send_test_notification(user_id: int):
             title="🔔 Test Notification",
             body="Push notifications are working! This is a test from ChatterFix.",
             url="/",
-            priority="normal"
+            priority="normal",
         )
         return JSONResponse(content=result)
     except Exception as e:
@@ -121,11 +126,13 @@ async def send_test_notification(user_id: int):
 async def get_vapid_public_key():
     """
     Get the VAPID public key for push subscription
-    
+
     In production, this would return an actual VAPID key.
     For demo purposes, return a placeholder.
     """
-    return JSONResponse(content={
-        "publicKey": "VAPID_PUBLIC_KEY_PLACEHOLDER",
-        "note": "Configure VAPID keys in production for Web Push"
-    })
+    return JSONResponse(
+        content={
+            "publicKey": "VAPID_PUBLIC_KEY_PLACEHOLDER",
+            "note": "Configure VAPID keys in production for Web Push",
+        }
+    )

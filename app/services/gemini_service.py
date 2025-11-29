@@ -7,6 +7,7 @@ import sqlite3
 
 logger = logging.getLogger(__name__)
 
+
 class GeminiService:
     def __init__(self):
         # We no longer initialize a global model here because keys can be user-specific
@@ -28,18 +29,18 @@ class GeminiService:
         conn = sqlite3.connect("./data/cmms.db")
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         api_key = None
-        
+
         # 1. Check user settings
         if user_id:
             try:
                 row = cursor.execute(
                     "SELECT setting_value FROM user_api_settings WHERE user_id = ? AND setting_key = 'gemini_api_key'",
-                    (user_id,)
+                    (user_id,),
                 ).fetchone()
-                if row and row['setting_value']:
-                    api_key = row['setting_value']
+                if row and row["setting_value"]:
+                    api_key = row["setting_value"]
             except Exception:
                 pass
 
@@ -49,41 +50,47 @@ class GeminiService:
                 row = cursor.execute(
                     "SELECT setting_value FROM system_settings WHERE setting_key = 'gemini_api_key'"
                 ).fetchone()
-                if row and row['setting_value']:
-                    api_key = row['setting_value']
+                if row and row["setting_value"]:
+                    api_key = row["setting_value"]
             except Exception:
                 pass
-        
+
         conn.close()
 
         # 3. Fallback to env var
         if not api_key:
             api_key = self.default_api_key
-            
+
         return api_key
 
-    def _get_model(self, user_id: Optional[int] = None) -> Optional[genai.GenerativeModel]:
+    def _get_model(
+        self, user_id: Optional[int] = None
+    ) -> Optional[genai.GenerativeModel]:
         """Get a configured model instance for the user"""
         api_key = self._get_api_key(user_id)
         if not api_key:
             return None
-            
+
         # Configure genai with the specific key
-        # Note: This changes the global configuration for the library. 
+        # Note: This changes the global configuration for the library.
         # In a high-concurrency async environment, this could be race-condition prone if different keys are used simultaneously.
         # However, for this implementation scope, it's acceptable. A more robust solution would use client instances if supported.
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-1.5-flash')
+        return genai.GenerativeModel("gemini-1.5-flash")
 
-    def _get_vision_model(self, user_id: Optional[int] = None) -> Optional[genai.GenerativeModel]:
+    def _get_vision_model(
+        self, user_id: Optional[int] = None
+    ) -> Optional[genai.GenerativeModel]:
         """Get a configured vision model instance for the user"""
         api_key = self._get_api_key(user_id)
         if not api_key:
             return None
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-1.5-flash')
+        return genai.GenerativeModel("gemini-1.5-flash")
 
-    async def generate_response(self, prompt: str, context: str = "", user_id: Optional[int] = None) -> str:
+    async def generate_response(
+        self, prompt: str, context: str = "", user_id: Optional[int] = None
+    ) -> str:
         """Generate a text response using Gemini"""
         model = self._get_model(user_id)
         if not model:
@@ -97,7 +104,9 @@ class GeminiService:
             logger.error(f"Error generating response: {e}")
             return f"I encountered an error processing your request: {str(e)}"
 
-    async def analyze_image(self, image_path: str, prompt: str, user_id: Optional[int] = None) -> str:
+    async def analyze_image(
+        self, image_path: str, prompt: str, user_id: Optional[int] = None
+    ) -> str:
         """Analyze an image using Gemini Vision"""
         model = self._get_vision_model(user_id)
         if not model:
@@ -106,15 +115,18 @@ class GeminiService:
         try:
             # Load image data
             import PIL.Image
+
             img = PIL.Image.open(image_path)
-            
+
             response = await model.generate_content_async([prompt, img])
             return response.text
         except Exception as e:
             logger.error(f"Error analyzing image: {e}")
             return f"Error analyzing image: {str(e)}"
 
-    async def generate_kpi_report(self, data: Dict[str, Any], user_id: Optional[int] = None) -> str:
+    async def generate_kpi_report(
+        self, data: Dict[str, Any], user_id: Optional[int] = None
+    ) -> str:
         """Generate a KPI report based on provided data"""
         model = self._get_model(user_id)
         if not model:
@@ -131,7 +143,9 @@ class GeminiService:
         """
         return await self.generate_response(prompt, user_id=user_id)
 
-    async def get_troubleshooting_advice(self, asset_info: str, issue_description: str, user_id: Optional[int] = None) -> str:
+    async def get_troubleshooting_advice(
+        self, asset_info: str, issue_description: str, user_id: Optional[int] = None
+    ) -> str:
         """Provide troubleshooting advice for a technician"""
         context = f"""
         You are an expert industrial maintenance technician assistant. 
@@ -141,14 +155,18 @@ class GeminiService:
         prompt = f"Asset: {asset_info}\nIssue: {issue_description}\n\nPlease provide troubleshooting steps."
         return await self.generate_response(prompt, context, user_id=user_id)
 
-    async def run_assistant_agent(self, message: str, context: str, user_id: Optional[int] = None) -> Dict[str, Any]:
+    async def run_assistant_agent(
+        self, message: str, context: str, user_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """
         Main entry point for the Global AI Assistant.
         Uses a ReAct-like loop or structured prompting to handle user requests.
         """
         model = self._get_model(user_id)
         if not model:
-            return {"response": "AI Service is unavailable. Please configure your Gemini API Key in Settings."}
+            return {
+                "response": "AI Service is unavailable. Please configure your Gemini API Key in Settings."
+            }
 
         # 1. Construct the System Prompt with Tool Definitions
         system_prompt = f"""
@@ -194,14 +212,14 @@ class GeminiService:
             full_prompt = f"{system_prompt}\n\nUser: {message}\nAssistant:"
             response = await model.generate_content_async(full_prompt)
             text_response = response.text.strip()
-            
+
             # 3. Check for Tool Execution (JSON)
             if text_response.startswith("{") and text_response.endswith("}"):
                 try:
                     tool_call = json.loads(text_response)
                     tool_name = tool_call.get("tool")
                     params = tool_call.get("parameters", {})
-                    
+
                     if tool_name == "create_work_order":
                         return await self._create_work_order(**params)
                     elif tool_name == "update_work_order":
@@ -216,61 +234,81 @@ class GeminiService:
                         return await self._create_asset(**params)
                     elif tool_name == "web_search":
                         return await self._web_search(**params)
-                        
+
                 except json.JSONDecodeError:
-                    pass # Fallback to treating it as text
+                    pass  # Fallback to treating it as text
 
             # 4. Default Text Response
             return {"response": text_response}
 
         except Exception as e:
             logger.error(f"AI Assistant Error: {e}")
-            return {"response": "I'm sorry, I encountered an error processing your request."}
+            return {
+                "response": "I'm sorry, I encountered an error processing your request."
+            }
 
     # --- Tool Implementations ---
 
     async def _web_search(self, query: str):
         try:
             from duckduckgo_search import DDGS
+
             results = DDGS().text(query, max_results=3)
             if not results:
-                return {"response": f"I couldn't find any information for '{query}' on the web."}
-            
+                return {
+                    "response": f"I couldn't find any information for '{query}' on the web."
+                }
+
             response_text = f"**Web Search Results for '{query}':**\n\n"
             for r in results:
                 response_text += f"- [{r['title']}]({r['href']}): {r['body']}\n"
-            
+
             return {"response": response_text}
         except ImportError:
-            return {"response": "Web search is not available (duckduckgo-search not installed)."}
+            return {
+                "response": "Web search is not available (duckduckgo-search not installed)."
+            }
         except Exception as e:
             return {"response": f"Error performing web search: {e}"}
 
-    async def _create_work_order(self, title: str, description: str, priority: str = "Medium", asset_id: int = None):
+    async def _create_work_order(
+        self,
+        title: str,
+        description: str,
+        priority: str = "Medium",
+        asset_id: int = None,
+    ):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
         try:
             # If asset_id is missing, try to find it by name in description or just set null
             # For now, we'll assume the AI extracted it or we proceed without it
-            
-            cursor = conn.execute("""
+
+            cursor = conn.execute(
+                """
                 INSERT INTO work_orders (title, description, priority, asset_id, status, created_date)
                 VALUES (?, ?, ?, ?, 'Open', datetime('now'))
-            """, (title, description, priority, asset_id))
+            """,
+                (title, description, priority, asset_id),
+            )
             conn.commit()
             wo_id = cursor.lastrowid
-            
+
             return {
                 "response": f"✅ Work Order #{wo_id} created successfully!\n\n**Title:** {title}\n**Priority:** {priority}",
-                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"}
+                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"},
             }
         except Exception as e:
             return {"response": f"Failed to create work order: {e}"}
         finally:
             conn.close()
 
-    async def _update_work_order(self, wo_id: int, status: str = None, priority: str = None, notes: str = None):
+    async def _update_work_order(
+        self, wo_id: int, status: str = None, priority: str = None, notes: str = None
+    ):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
         try:
             updates = []
@@ -281,20 +319,22 @@ class GeminiService:
             if priority:
                 updates.append("priority = ?")
                 params.append(priority)
-            
+
             if updates:
                 params.append(wo_id)
-                conn.execute(f"UPDATE work_orders SET {', '.join(updates)} WHERE id = ?", params)
+                conn.execute(
+                    f"UPDATE work_orders SET {', '.join(updates)} WHERE id = ?", params
+                )
                 conn.commit()
-            
+
             msg = f"✅ Work Order #{wo_id} updated."
             if notes:
                 # In a real app, we'd add this to a notes table. For now, we'll just append to description or ignore.
                 msg += f"\n(Note: '{notes}' was acknowledged but not saved to DB in this demo version)"
-                
+
             return {
                 "response": msg,
-                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"}
+                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"},
             }
         except Exception as e:
             return {"response": f"Failed to update work order: {e}"}
@@ -303,40 +343,55 @@ class GeminiService:
 
     async def _update_part_stock(self, part_id: int, quantity_change: int):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
         try:
             # Check current stock
-            part = conn.execute("SELECT name, current_stock FROM parts WHERE id = ?", (part_id,)).fetchone()
+            part = conn.execute(
+                "SELECT name, current_stock FROM parts WHERE id = ?", (part_id,)
+            ).fetchone()
             if not part:
                 return {"response": f"Part #{part_id} not found."}
-            
-            new_stock = part['current_stock'] + quantity_change
+
+            new_stock = part["current_stock"] + quantity_change
             if new_stock < 0:
-                return {"response": f"Cannot reduce stock below 0. Current stock: {part['current_stock']}"}
-                
-            conn.execute("UPDATE parts SET current_stock = ? WHERE id = ?", (new_stock, part_id))
+                return {
+                    "response": f"Cannot reduce stock below 0. Current stock: {part['current_stock']}"
+                }
+
+            conn.execute(
+                "UPDATE parts SET current_stock = ? WHERE id = ?", (new_stock, part_id)
+            )
             conn.commit()
-            
-            return {"response": f"✅ Updated stock for **{part['name']}**. New Quantity: {new_stock}"}
+
+            return {
+                "response": f"✅ Updated stock for **{part['name']}**. New Quantity: {new_stock}"
+            }
         except Exception as e:
             return {"response": f"Failed to update stock: {e}"}
         finally:
             conn.close()
 
-    async def _create_asset(self, name: str, type: str, location: str, status: str = "Operational"):
+    async def _create_asset(
+        self, name: str, type: str, location: str, status: str = "Operational"
+    ):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
         try:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 INSERT INTO assets (name, type, location, status, created_date)
                 VALUES (?, ?, ?, ?, datetime('now'))
-            """, (name, type, location, status))
+            """,
+                (name, type, location, status),
+            )
             conn.commit()
             asset_id = cursor.lastrowid
-            
+
             return {
                 "response": f"✅ Asset **{name}** created successfully (ID: {asset_id})!",
-                "action": {"type": "redirect", "url": f"/assets/{asset_id}"}
+                "action": {"type": "redirect", "url": f"/assets/{asset_id}"},
             }
         except Exception as e:
             return {"response": f"Failed to create asset: {e}"}
@@ -345,49 +400,62 @@ class GeminiService:
 
     async def _search_parts(self, query: str):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
-        results = conn.execute("""
+        results = conn.execute(
+            """
             SELECT * FROM parts 
             WHERE name LIKE ? OR part_number LIKE ? OR description LIKE ?
             LIMIT 5
-        """, (f'%{query}%', f'%{query}%', f'%{query}%')).fetchall()
+        """,
+            (f"%{query}%", f"%{query}%", f"%{query}%"),
+        ).fetchall()
         conn.close()
-        
+
         if not results:
             return {"response": f"I couldn't find any parts matching '{query}'."}
-            
+
         response_text = f"Found {len(results)} parts matching '{query}':\n\n"
         for part in results:
             response_text += f"- **{part['name']}** (Stock: {part['current_stock']}) - Location: {part['location']}\n"
-            
+
         return {"response": response_text}
 
     async def _get_asset_history(self, asset_name: str):
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
-        
+
         # Find asset first
-        asset = conn.execute("SELECT id, name FROM assets WHERE name LIKE ?", (f'%{asset_name}%',)).fetchone()
+        asset = conn.execute(
+            "SELECT id, name FROM assets WHERE name LIKE ?", (f"%{asset_name}%",)
+        ).fetchone()
         if not asset:
             conn.close()
             return {"response": f"I couldn't find an asset named '{asset_name}'."}
-            
-        history = conn.execute("""
+
+        history = conn.execute(
+            """
             SELECT * FROM maintenance_history 
             WHERE asset_id = ? 
             ORDER BY created_date DESC 
             LIMIT 3
-        """, (asset['id'],)).fetchall()
+        """,
+            (asset["id"],),
+        ).fetchall()
         conn.close()
-        
+
         if not history:
-            return {"response": f"No maintenance history found for **{asset['name']}**."}
-            
+            return {
+                "response": f"No maintenance history found for **{asset['name']}**."
+            }
+
         response_text = f"**Recent History for {asset['name']}:**\n\n"
         for record in history:
             response_text += f"- {record['created_date']}: {record['description']} (Cost: ${record['total_cost']})\n"
-            
+
         return {"response": response_text}
+
 
 # Global instance
 gemini_service = GeminiService()

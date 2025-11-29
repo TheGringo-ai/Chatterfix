@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 class AnalyticsService:
     """Service for advanced analytics and KPI calculations"""
-    
+
     def __init__(self):
         self.cache = {}
         self.cache_timeout = 300  # 5 minutes cache
-    
+
     def get_kpi_summary(self, days: int = 30) -> Dict[str, Any]:
         """Get summary of all KPIs for the dashboard"""
         try:
@@ -36,12 +36,12 @@ class AnalyticsService:
                 "work_order_metrics": self.get_work_order_metrics(days),
                 "compliance_metrics": self.get_compliance_metrics(days),
                 "generated_at": datetime.now().isoformat(),
-                "period_days": days
+                "period_days": days,
             }
         except Exception as e:
             logger.error(f"Error calculating KPI summary: {e}")
             return self._get_default_kpi_summary(days)
-    
+
     def calculate_mttr(self, days: int = 30) -> Dict[str, Any]:
         """
         Calculate Mean Time To Repair (MTTR)
@@ -50,7 +50,8 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get completed work orders with duration
-            result = conn.execute("""
+            result = conn.execute(
+                """
                 SELECT 
                     COUNT(*) as total_repairs,
                     AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as avg_repair_time,
@@ -62,26 +63,28 @@ class AnalyticsService:
                 AND actual_start IS NOT NULL
                 AND actual_end IS NOT NULL
                 AND DATE(actual_end) >= DATE('now', ?)
-            """, (f'-{days} days',)).fetchone()
-            
-            if result and result['total_repairs'] and result['total_repairs'] > 0:
-                mttr_hours = result['avg_repair_time'] or 0
+            """,
+                (f"-{days} days",),
+            ).fetchone()
+
+            if result and result["total_repairs"] and result["total_repairs"] > 0:
+                mttr_hours = result["avg_repair_time"] or 0
                 return {
                     "value": round(mttr_hours, 2),
                     "unit": "hours",
-                    "total_repairs": result['total_repairs'],
-                    "total_repair_time": round(result['total_repair_time'] or 0, 2),
-                    "min_repair_time": round(result['min_repair_time'] or 0, 2),
-                    "max_repair_time": round(result['max_repair_time'] or 0, 2),
+                    "total_repairs": result["total_repairs"],
+                    "total_repair_time": round(result["total_repair_time"] or 0, 2),
+                    "min_repair_time": round(result["min_repair_time"] or 0, 2),
+                    "max_repair_time": round(result["max_repair_time"] or 0, 2),
                     "trend": self._calculate_trend("mttr", mttr_hours, days),
-                    "status": self._get_mttr_status(mttr_hours)
+                    "status": self._get_mttr_status(mttr_hours),
                 }
-            
+
             return self._get_default_mttr()
-            
+
         finally:
             conn.close()
-    
+
     def calculate_mtbf(self, days: int = 30) -> Dict[str, Any]:
         """
         Calculate Mean Time Between Failures (MTBF)
@@ -90,28 +93,33 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get failure count from maintenance history
-            failures = conn.execute("""
+            failures = conn.execute(
+                """
                 SELECT 
                     COUNT(*) as failure_count,
                     SUM(downtime_hours) as total_downtime
                 FROM maintenance_history
                 WHERE maintenance_type IN ('Corrective', 'Emergency')
                 AND DATE(created_date) >= DATE('now', ?)
-            """, (f'-{days} days',)).fetchone()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchone()
+
             # Get total assets for operating time calculation
-            assets = conn.execute("""
+            assets = conn.execute(
+                """
                 SELECT COUNT(*) as total_assets
                 FROM assets
                 WHERE status = 'Active'
-            """).fetchone()
-            
-            failure_count = failures['failure_count'] if failures else 0
-            total_assets = assets['total_assets'] if assets else 1
-            
+            """
+            ).fetchone()
+
+            failure_count = failures["failure_count"] if failures else 0
+            total_assets = assets["total_assets"] if assets else 1
+
             # Calculate total operating hours (assets * hours in period)
             total_operating_hours = total_assets * days * 24
-            
+
             if failure_count > 0:
                 mtbf_hours = total_operating_hours / failure_count
                 return {
@@ -119,11 +127,11 @@ class AnalyticsService:
                     "unit": "hours",
                     "failure_count": failure_count,
                     "total_operating_hours": total_operating_hours,
-                    "total_downtime": round(failures['total_downtime'] or 0, 2),
+                    "total_downtime": round(failures["total_downtime"] or 0, 2),
                     "trend": self._calculate_trend("mtbf", mtbf_hours, days),
-                    "status": self._get_mtbf_status(mtbf_hours)
+                    "status": self._get_mtbf_status(mtbf_hours),
                 }
-            
+
             return {
                 "value": total_operating_hours,
                 "unit": "hours",
@@ -132,12 +140,12 @@ class AnalyticsService:
                 "total_downtime": 0,
                 "trend": "stable",
                 "status": "excellent",
-                "message": "No failures recorded in this period"
+                "message": "No failures recorded in this period",
             }
-            
+
         finally:
             conn.close()
-    
+
     def calculate_asset_utilization(self, days: int = 30) -> Dict[str, Any]:
         """
         Calculate asset utilization metrics
@@ -145,16 +153,19 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get asset status breakdown
-            status_breakdown = conn.execute("""
+            status_breakdown = conn.execute(
+                """
                 SELECT 
                     status,
                     COUNT(*) as count
                 FROM assets
                 GROUP BY status
-            """).fetchall()
-            
+            """
+            ).fetchall()
+
             # Get utilization from maintenance history
-            utilization = conn.execute("""
+            utilization = conn.execute(
+                """
                 SELECT 
                     a.id,
                     a.name,
@@ -165,46 +176,62 @@ class AnalyticsService:
                     AND DATE(mh.created_date) >= DATE('now', ?)
                 WHERE a.status = 'Active'
                 GROUP BY a.id
-            """, (f'-{days} days',)).fetchall()
-            
-            total_assets = sum(s['count'] for s in status_breakdown)
-            active_assets = next((s['count'] for s in status_breakdown if s['status'] == 'Active'), 0)
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
+            total_assets = sum(s["count"] for s in status_breakdown)
+            active_assets = next(
+                (s["count"] for s in status_breakdown if s["status"] == "Active"), 0
+            )
+
             # Calculate average utilization rate
             total_hours = days * 24
             total_uptime = 0
             asset_data = []
-            
+
             for asset in utilization:
-                downtime = asset['total_downtime'] or 0
+                downtime = asset["total_downtime"] or 0
                 uptime = total_hours - downtime
-                utilization_rate = (uptime / total_hours) * 100 if total_hours > 0 else 100
+                utilization_rate = (
+                    (uptime / total_hours) * 100 if total_hours > 0 else 100
+                )
                 total_uptime += uptime
-                asset_data.append({
-                    "id": asset['id'],
-                    "name": asset['name'],
-                    "maintenance_events": asset['maintenance_events'],
-                    "downtime_hours": round(downtime, 2),
-                    "utilization_rate": round(utilization_rate, 2)
-                })
-            
-            avg_utilization = (total_uptime / (len(utilization) * total_hours)) * 100 if utilization else 100
-            
+                asset_data.append(
+                    {
+                        "id": asset["id"],
+                        "name": asset["name"],
+                        "maintenance_events": asset["maintenance_events"],
+                        "downtime_hours": round(downtime, 2),
+                        "utilization_rate": round(utilization_rate, 2),
+                    }
+                )
+
+            avg_utilization = (
+                (total_uptime / (len(utilization) * total_hours)) * 100
+                if utilization
+                else 100
+            )
+
             return {
                 "average_utilization": round(avg_utilization, 2),
                 "unit": "percent",
                 "total_assets": total_assets,
                 "active_assets": active_assets,
-                "status_breakdown": {s['status']: s['count'] for s in status_breakdown},
-                "top_utilized": sorted(asset_data, key=lambda x: x['utilization_rate'], reverse=True)[:5],
-                "low_utilized": sorted(asset_data, key=lambda x: x['utilization_rate'])[:5],
+                "status_breakdown": {s["status"]: s["count"] for s in status_breakdown},
+                "top_utilized": sorted(
+                    asset_data, key=lambda x: x["utilization_rate"], reverse=True
+                )[:5],
+                "low_utilized": sorted(asset_data, key=lambda x: x["utilization_rate"])[
+                    :5
+                ],
                 "trend": self._calculate_trend("utilization", avg_utilization, days),
-                "status": self._get_utilization_status(avg_utilization)
+                "status": self._get_utilization_status(avg_utilization),
             }
-            
+
         finally:
             conn.close()
-    
+
     def get_cost_tracking(self, days: int = 30) -> Dict[str, Any]:
         """
         Get comprehensive cost tracking metrics
@@ -212,7 +239,8 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get maintenance costs
-            costs = conn.execute("""
+            costs = conn.execute(
+                """
                 SELECT 
                     SUM(labor_cost) as total_labor,
                     SUM(parts_cost) as total_parts,
@@ -221,10 +249,13 @@ class AnalyticsService:
                     AVG(total_cost) as avg_cost_per_event
                 FROM maintenance_history
                 WHERE DATE(created_date) >= DATE('now', ?)
-            """, (f'-{days} days',)).fetchone()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchone()
+
             # Get costs by maintenance type
-            costs_by_type = conn.execute("""
+            costs_by_type = conn.execute(
+                """
                 SELECT 
                     maintenance_type,
                     SUM(total_cost) as total_cost,
@@ -232,10 +263,13 @@ class AnalyticsService:
                 FROM maintenance_history
                 WHERE DATE(created_date) >= DATE('now', ?)
                 GROUP BY maintenance_type
-            """, (f'-{days} days',)).fetchall()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
             # Get top costly assets
-            costly_assets = conn.execute("""
+            costly_assets = conn.execute(
+                """
                 SELECT 
                     a.name,
                     a.id,
@@ -247,10 +281,13 @@ class AnalyticsService:
                 GROUP BY a.id
                 ORDER BY total_cost DESC
                 LIMIT 10
-            """, (f'-{days} days',)).fetchall()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
             # Get daily cost trend
-            daily_costs = conn.execute("""
+            daily_costs = conn.execute(
+                """
                 SELECT 
                     DATE(created_date) as date,
                     SUM(total_cost) as daily_cost
@@ -258,36 +295,44 @@ class AnalyticsService:
                 WHERE DATE(created_date) >= DATE('now', ?)
                 GROUP BY DATE(created_date)
                 ORDER BY date
-            """, (f'-{days} days',)).fetchall()
-            
-            total_cost = costs['total_cost'] if costs and costs['total_cost'] else 0
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
+            total_cost = costs["total_cost"] if costs and costs["total_cost"] else 0
+
             return {
                 "total_cost": round(total_cost, 2),
-                "labor_cost": round(costs['total_labor'] or 0, 2) if costs else 0,
-                "parts_cost": round(costs['total_parts'] or 0, 2) if costs else 0,
-                "maintenance_count": costs['maintenance_count'] if costs else 0,
-                "avg_cost_per_event": round(costs['avg_cost_per_event'] or 0, 2) if costs else 0,
-                "costs_by_type": {c['maintenance_type']: round(c['total_cost'] or 0, 2) for c in costs_by_type},
+                "labor_cost": round(costs["total_labor"] or 0, 2) if costs else 0,
+                "parts_cost": round(costs["total_parts"] or 0, 2) if costs else 0,
+                "maintenance_count": costs["maintenance_count"] if costs else 0,
+                "avg_cost_per_event": (
+                    round(costs["avg_cost_per_event"] or 0, 2) if costs else 0
+                ),
+                "costs_by_type": {
+                    c["maintenance_type"]: round(c["total_cost"] or 0, 2)
+                    for c in costs_by_type
+                },
                 "top_costly_assets": [
                     {
-                        "name": a['name'],
-                        "id": a['id'],
-                        "total_cost": round(a['total_cost'] or 0, 2),
-                        "events": a['maintenance_events']
-                    } for a in costly_assets
+                        "name": a["name"],
+                        "id": a["id"],
+                        "total_cost": round(a["total_cost"] or 0, 2),
+                        "events": a["maintenance_events"],
+                    }
+                    for a in costly_assets
                 ],
                 "daily_trend": [
-                    {"date": d['date'], "cost": round(d['daily_cost'] or 0, 2)}
+                    {"date": d["date"], "cost": round(d["daily_cost"] or 0, 2)}
                     for d in daily_costs
                 ],
                 "trend": self._calculate_trend("cost", total_cost, days),
-                "currency": "USD"
+                "currency": "USD",
             }
-            
+
         finally:
             conn.close()
-    
+
     def get_work_order_metrics(self, days: int = 30) -> Dict[str, Any]:
         """
         Get comprehensive work order metrics
@@ -295,46 +340,60 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get work order status breakdown
-            status_breakdown = conn.execute("""
+            status_breakdown = conn.execute(
+                """
                 SELECT 
                     status,
                     COUNT(*) as count
                 FROM work_orders
                 WHERE DATE(created_date) >= DATE('now', ?)
                 GROUP BY status
-            """, (f'-{days} days',)).fetchall()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
             # Get priority breakdown
-            priority_breakdown = conn.execute("""
+            priority_breakdown = conn.execute(
+                """
                 SELECT 
                     priority,
                     COUNT(*) as count
                 FROM work_orders
                 WHERE DATE(created_date) >= DATE('now', ?)
                 GROUP BY priority
-            """, (f'-{days} days',)).fetchall()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
             # Get overdue work orders
-            overdue = conn.execute("""
+            overdue = conn.execute(
+                """
                 SELECT COUNT(*) as count
                 FROM work_orders
                 WHERE status NOT IN ('Completed', 'Cancelled')
                 AND due_date < DATE('now')
-            """).fetchone()
-            
+            """
+            ).fetchone()
+
             # Get completion rate
-            total_created = conn.execute("""
+            total_created = conn.execute(
+                """
                 SELECT COUNT(*) as count
                 FROM work_orders
                 WHERE DATE(created_date) >= DATE('now', ?)
-            """, (f'-{days} days',)).fetchone()
-            
-            completed = next((s['count'] for s in status_breakdown if s['status'] == 'Completed'), 0)
-            total = total_created['count'] if total_created else 0
+            """,
+                (f"-{days} days",),
+            ).fetchone()
+
+            completed = next(
+                (s["count"] for s in status_breakdown if s["status"] == "Completed"), 0
+            )
+            total = total_created["count"] if total_created else 0
             completion_rate = (completed / total * 100) if total > 0 else 0
-            
+
             # Get daily trend
-            daily_trend = conn.execute("""
+            daily_trend = conn.execute(
+                """
                 SELECT 
                     DATE(created_date) as date,
                     COUNT(*) as created,
@@ -343,25 +402,37 @@ class AnalyticsService:
                 WHERE DATE(created_date) >= DATE('now', ?)
                 GROUP BY DATE(created_date)
                 ORDER BY date
-            """, (f'-{days} days',)).fetchall()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchall()
+
             return {
                 "total_created": total,
                 "completion_rate": round(completion_rate, 2),
-                "overdue_count": overdue['count'] if overdue else 0,
-                "status_breakdown": {s['status']: s['count'] for s in status_breakdown},
-                "priority_breakdown": {p['priority']: p['count'] for p in priority_breakdown},
+                "overdue_count": overdue["count"] if overdue else 0,
+                "status_breakdown": {s["status"]: s["count"] for s in status_breakdown},
+                "priority_breakdown": {
+                    p["priority"]: p["count"] for p in priority_breakdown
+                },
                 "daily_trend": [
-                    {"date": d['date'], "created": d['created'], "completed": d['completed']}
+                    {
+                        "date": d["date"],
+                        "created": d["created"],
+                        "completed": d["completed"],
+                    }
                     for d in daily_trend
                 ],
                 "trend": self._calculate_trend("work_orders", completion_rate, days),
-                "status": "good" if completion_rate >= 80 else "warning" if completion_rate >= 60 else "critical"
+                "status": (
+                    "good"
+                    if completion_rate >= 80
+                    else "warning" if completion_rate >= 60 else "critical"
+                ),
             }
-            
+
         finally:
             conn.close()
-    
+
     def get_compliance_metrics(self, days: int = 30) -> Dict[str, Any]:
         """
         Get compliance and PM schedule adherence metrics
@@ -369,41 +440,52 @@ class AnalyticsService:
         conn = get_db_connection()
         try:
             # Get PM completion rate
-            pm_stats = conn.execute("""
+            pm_stats = conn.execute(
+                """
                 SELECT 
                     COUNT(*) as total_pm,
                     SUM(CASE WHEN DATE(actual_end) <= DATE(due_date) THEN 1 ELSE 0 END) as on_time
                 FROM work_orders
                 WHERE status = 'Completed'
                 AND DATE(created_date) >= DATE('now', ?)
-            """, (f'-{days} days',)).fetchone()
-            
+            """,
+                (f"-{days} days",),
+            ).fetchone()
+
             # Get training compliance
-            training_stats = conn.execute("""
+            training_stats = conn.execute(
+                """
                 SELECT 
                     COUNT(*) as total_assigned,
                     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
                 FROM user_training
-            """).fetchone()
-            
+            """
+            ).fetchone()
+
             # Get certification status
-            cert_stats = conn.execute("""
+            cert_stats = conn.execute(
+                """
                 SELECT 
                     COUNT(*) as total_certs,
                     SUM(CASE WHEN certification_expiry >= DATE('now') THEN 1 ELSE 0 END) as valid_certs,
                     SUM(CASE WHEN certification_expiry < DATE('now') THEN 1 ELSE 0 END) as expired_certs
                 FROM user_skills
                 WHERE certified = 1
-            """).fetchone()
-            
-            total_pm = pm_stats['total_pm'] if pm_stats else 0
-            on_time_pm = pm_stats['on_time'] if pm_stats else 0
+            """
+            ).fetchone()
+
+            total_pm = pm_stats["total_pm"] if pm_stats else 0
+            on_time_pm = pm_stats["on_time"] if pm_stats else 0
             pm_compliance = (on_time_pm / total_pm * 100) if total_pm > 0 else 100
-            
-            total_training = training_stats['total_assigned'] if training_stats else 0
-            completed_training = training_stats['completed'] if training_stats else 0
-            training_compliance = (completed_training / total_training * 100) if total_training > 0 else 100
-            
+
+            total_training = training_stats["total_assigned"] if training_stats else 0
+            completed_training = training_stats["completed"] if training_stats else 0
+            training_compliance = (
+                (completed_training / total_training * 100)
+                if total_training > 0
+                else 100
+            )
+
             return {
                 "pm_compliance_rate": round(pm_compliance, 2),
                 "total_pm_work_orders": total_pm,
@@ -412,18 +494,26 @@ class AnalyticsService:
                 "total_training_assigned": total_training,
                 "training_completed": completed_training,
                 "certification_status": {
-                    "total": cert_stats['total_certs'] if cert_stats else 0,
-                    "valid": cert_stats['valid_certs'] if cert_stats else 0,
-                    "expired": cert_stats['expired_certs'] if cert_stats else 0
+                    "total": cert_stats["total_certs"] if cert_stats else 0,
+                    "valid": cert_stats["valid_certs"] if cert_stats else 0,
+                    "expired": cert_stats["expired_certs"] if cert_stats else 0,
                 },
-                "overall_compliance": round((pm_compliance + training_compliance) / 2, 2),
-                "status": "good" if pm_compliance >= 90 else "warning" if pm_compliance >= 70 else "critical"
+                "overall_compliance": round(
+                    (pm_compliance + training_compliance) / 2, 2
+                ),
+                "status": (
+                    "good"
+                    if pm_compliance >= 90
+                    else "warning" if pm_compliance >= 70 else "critical"
+                ),
             }
-            
+
         finally:
             conn.close()
-    
-    def get_trend_data(self, metric: str, days: int = 30, interval: str = "day") -> List[Dict[str, Any]]:
+
+    def get_trend_data(
+        self, metric: str, days: int = 30, interval: str = "day"
+    ) -> List[Dict[str, Any]]:
         """
         Get historical trend data for a specific metric
         """
@@ -441,10 +531,11 @@ class AnalyticsService:
                 return []
         finally:
             conn.close()
-    
+
     def _get_mttr_trend(self, conn, days: int) -> List[Dict[str, Any]]:
         """Get MTTR trend over time"""
-        result = conn.execute("""
+        result = conn.execute(
+            """
             SELECT 
                 DATE(actual_end) as date,
                 AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as mttr
@@ -455,13 +546,16 @@ class AnalyticsService:
             AND DATE(actual_end) >= DATE('now', ?)
             GROUP BY DATE(actual_end)
             ORDER BY date
-        """, (f'-{days} days',)).fetchall()
-        
-        return [{"date": r['date'], "value": round(r['mttr'] or 0, 2)} for r in result]
-    
+        """,
+            (f"-{days} days",),
+        ).fetchall()
+
+        return [{"date": r["date"], "value": round(r["mttr"] or 0, 2)} for r in result]
+
     def _get_mtbf_trend(self, conn, days: int) -> List[Dict[str, Any]]:
         """Get MTBF trend over time"""
-        result = conn.execute("""
+        result = conn.execute(
+            """
             SELECT 
                 DATE(created_date) as date,
                 COUNT(*) as failures
@@ -470,24 +564,36 @@ class AnalyticsService:
             AND DATE(created_date) >= DATE('now', ?)
             GROUP BY DATE(created_date)
             ORDER BY date
-        """, (f'-{days} days',)).fetchall()
-        
+        """,
+            (f"-{days} days",),
+        ).fetchall()
+
         # Calculate running MTBF
-        assets_count = conn.execute("SELECT COUNT(*) FROM assets WHERE status = 'Active'").fetchone()[0] or 1
+        assets_count = (
+            conn.execute(
+                "SELECT COUNT(*) FROM assets WHERE status = 'Active'"
+            ).fetchone()[0]
+            or 1
+        )
         trend_data = []
         cumulative_failures = 0
-        
+
         for i, r in enumerate(result):
-            cumulative_failures += r['failures']
+            cumulative_failures += r["failures"]
             operating_hours = (i + 1) * 24 * assets_count
-            mtbf = operating_hours / cumulative_failures if cumulative_failures > 0 else operating_hours
-            trend_data.append({"date": r['date'], "value": round(mtbf, 2)})
-        
+            mtbf = (
+                operating_hours / cumulative_failures
+                if cumulative_failures > 0
+                else operating_hours
+            )
+            trend_data.append({"date": r["date"], "value": round(mtbf, 2)})
+
         return trend_data
-    
+
     def _get_cost_trend(self, conn, days: int) -> List[Dict[str, Any]]:
         """Get cost trend over time"""
-        result = conn.execute("""
+        result = conn.execute(
+            """
             SELECT 
                 DATE(created_date) as date,
                 SUM(total_cost) as cost
@@ -495,13 +601,16 @@ class AnalyticsService:
             WHERE DATE(created_date) >= DATE('now', ?)
             GROUP BY DATE(created_date)
             ORDER BY date
-        """, (f'-{days} days',)).fetchall()
-        
-        return [{"date": r['date'], "value": round(r['cost'] or 0, 2)} for r in result]
-    
+        """,
+            (f"-{days} days",),
+        ).fetchall()
+
+        return [{"date": r["date"], "value": round(r["cost"] or 0, 2)} for r in result]
+
     def _get_work_order_trend(self, conn, days: int) -> List[Dict[str, Any]]:
         """Get work order completion trend over time"""
-        result = conn.execute("""
+        result = conn.execute(
+            """
             SELECT 
                 DATE(created_date) as date,
                 COUNT(*) as total,
@@ -510,18 +619,22 @@ class AnalyticsService:
             WHERE DATE(created_date) >= DATE('now', ?)
             GROUP BY DATE(created_date)
             ORDER BY date
-        """, (f'-{days} days',)).fetchall()
-        
+        """,
+            (f"-{days} days",),
+        ).fetchall()
+
         return [
             {
-                "date": r['date'],
-                "total": r['total'],
-                "completed": r['completed'],
-                "completion_rate": round((r['completed'] / r['total'] * 100) if r['total'] > 0 else 0, 2)
+                "date": r["date"],
+                "total": r["total"],
+                "completed": r["completed"],
+                "completion_rate": round(
+                    (r["completed"] / r["total"] * 100) if r["total"] > 0 else 0, 2
+                ),
             }
             for r in result
         ]
-    
+
     def _calculate_trend(self, metric: str, current_value: float, days: int) -> str:
         """
         Calculate trend direction compared to previous period
@@ -531,7 +644,8 @@ class AnalyticsService:
         try:
             # Get previous period value based on metric
             if metric == "mttr":
-                prev_result = conn.execute("""
+                prev_result = conn.execute(
+                    """
                     SELECT AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as value
                     FROM work_orders
                     WHERE status = 'Completed'
@@ -539,39 +653,52 @@ class AnalyticsService:
                     AND actual_end IS NOT NULL
                     AND DATE(actual_end) >= DATE('now', ?)
                     AND DATE(actual_end) < DATE('now', ?)
-                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
-                
+                """,
+                    (f"-{days * 2} days", f"-{days} days"),
+                ).fetchone()
+
             elif metric == "mtbf":
-                prev_result = conn.execute("""
+                prev_result = conn.execute(
+                    """
                     SELECT COUNT(*) as failure_count
                     FROM maintenance_history
                     WHERE maintenance_type IN ('Corrective', 'Emergency')
                     AND DATE(created_date) >= DATE('now', ?)
                     AND DATE(created_date) < DATE('now', ?)
-                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
-                
+                """,
+                    (f"-{days * 2} days", f"-{days} days"),
+                ).fetchone()
+
             elif metric == "cost":
-                prev_result = conn.execute("""
+                prev_result = conn.execute(
+                    """
                     SELECT SUM(total_cost) as value
                     FROM maintenance_history
                     WHERE DATE(created_date) >= DATE('now', ?)
                     AND DATE(created_date) < DATE('now', ?)
-                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
-                
+                """,
+                    (f"-{days * 2} days", f"-{days} days"),
+                ).fetchone()
+
             elif metric == "utilization":
                 # For utilization, use current vs previous downtime
-                prev_result = conn.execute("""
+                prev_result = conn.execute(
+                    """
                     SELECT SUM(downtime_hours) as value
                     FROM maintenance_history
                     WHERE DATE(created_date) >= DATE('now', ?)
                     AND DATE(created_date) < DATE('now', ?)
-                """, (f'-{days * 2} days', f'-{days} days')).fetchone()
-                
+                """,
+                    (f"-{days * 2} days", f"-{days} days"),
+                ).fetchone()
+
             else:
                 return "stable"
-            
-            prev_value = prev_result['value'] if prev_result and prev_result['value'] else 0
-            
+
+            prev_value = (
+                prev_result["value"] if prev_result and prev_result["value"] else 0
+            )
+
             # Calculate change percentage
             if prev_value > 0:
                 change_pct = ((current_value - prev_value) / prev_value) * 100
@@ -579,7 +706,7 @@ class AnalyticsService:
                 change_pct = 100  # New data, assume improving
             else:
                 return "stable"
-            
+
             # Determine trend based on metric type
             # For MTTR and cost, lower is better (decreasing = improving)
             # For MTBF and utilization, higher is better (increasing = improving)
@@ -593,15 +720,15 @@ class AnalyticsService:
                     return "improving"
                 elif change_pct < -10:
                     return "declining"
-            
+
             return "stable"
-            
+
         except Exception as e:
             logger.error(f"Error calculating trend for {metric}: {e}")
             return "stable"
         finally:
             conn.close()
-    
+
     def _get_mttr_status(self, mttr_hours: float) -> str:
         """Get status based on MTTR value"""
         if mttr_hours <= 2:
@@ -611,7 +738,7 @@ class AnalyticsService:
         elif mttr_hours <= 8:
             return "warning"
         return "critical"
-    
+
     def _get_mtbf_status(self, mtbf_hours: float) -> str:
         """Get status based on MTBF value"""
         if mtbf_hours >= 720:  # 30 days
@@ -621,7 +748,7 @@ class AnalyticsService:
         elif mtbf_hours >= 72:  # 3 days
             return "warning"
         return "critical"
-    
+
     def _get_utilization_status(self, utilization: float) -> str:
         """Get status based on utilization rate"""
         if utilization >= 95:
@@ -631,7 +758,7 @@ class AnalyticsService:
         elif utilization >= 70:
             return "warning"
         return "critical"
-    
+
     def _get_default_mttr(self) -> Dict[str, Any]:
         """Return default MTTR data"""
         return {
@@ -643,9 +770,9 @@ class AnalyticsService:
             "max_repair_time": 0,
             "trend": "stable",
             "status": "excellent",
-            "message": "No repair data available for this period"
+            "message": "No repair data available for this period",
         }
-    
+
     def _get_default_kpi_summary(self, days: int) -> Dict[str, Any]:
         """Return default KPI summary when data is unavailable"""
         return {
@@ -656,7 +783,7 @@ class AnalyticsService:
             "work_order_metrics": {"total_created": 0, "completion_rate": 0},
             "compliance_metrics": {"pm_compliance_rate": 0, "overall_compliance": 0},
             "generated_at": datetime.now().isoformat(),
-            "period_days": days
+            "period_days": days,
         }
 
 

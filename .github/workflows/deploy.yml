@@ -35,3 +35,24 @@ jobs:
             --min-instances=1 \
             --max-instances=10 \
             --allow-unauthenticated
+
+      - name: Verify Deployment
+        run: |
+          SERVICE_URL=$(gcloud run services describe chatterfix-cmms --region us-central1 --format='value(status.url)')
+          echo "Service URL: $SERVICE_URL"
+          
+          echo "Checking service health..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" --max-time 30)
+          
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "✅ Deployment verified successfully (HTTP $HTTP_STATUS)"
+          else
+            echo "⚠️ Service returned HTTP $HTTP_STATUS - checking root endpoint..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL" --max-time 30)
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+              echo "✅ Root endpoint verified successfully (HTTP $HTTP_STATUS)"
+            else
+              echo "❌ Deployment verification failed (HTTP $HTTP_STATUS)"
+              exit 1
+            fi
+          fi

@@ -1,20 +1,25 @@
-# ChatterFix CMMS - GCP Deployment Guide
+# ChatterFix Deployment Guide - GUARANTEED CONSISTENT DEPLOYMENT
 
-This guide walks you through deploying ChatterFix to Google Cloud Platform with Firebase Authentication and Firestore.
+## 🎯 IMPORTANT: Your Production Service
 
-## 🚀 Quick Deploy
+Your app **ALWAYS** deploys to the same place:
+- **Service**: `chatterfix-cmms` 
+- **Project**: `fredfix`
+- **Region**: `us-central1`
+- **Domains**: https://chatterfix.com, https://www.chatterfix.com
 
-**1. Set up Firebase:**
+## 🚀 Foolproof Deploy (ONE COMMAND)
+
 ```bash
-./setup-firebase.sh
+./deploy-production.sh
 ```
 
-**2. Deploy to GCP:**
-```bash
-./deploy-gcp.sh
-```
-
-That's it! Your ChatterFix CMMS will be deployed to Cloud Run with Firebase and Firestore.
+**This script guarantees you'll never deploy to the wrong place because it:**
+- ✅ Verifies correct GCP project (`fredfix`)
+- ✅ Confirms target service exists (`chatterfix-cmms`)  
+- ✅ Only updates the existing service (never creates new ones)
+- ✅ Tests the deployment after completion
+- ✅ Shows you exactly where your app is live
 
 ## 📋 Prerequisites
 

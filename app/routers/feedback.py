@@ -8,10 +8,18 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
 from app.services.notification_service import notification_service
-import google.generativeai as genai
 import os
 import logging
 from datetime import datetime
+
+# Import Google Generative AI with error handling
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Google Generative AI not available: {e}")
+    genai = None
+    GENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +28,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GENAI_AVAILABLE:
     genai.configure(api_key=GEMINI_API_KEY)
 
 # ========== WORK ORDER FEEDBACK ==========
@@ -52,7 +60,7 @@ async def submit_feedback(
 
         # Generate AI analysis
         ai_analysis = ""
-        if GEMINI_API_KEY and feedback_type == "immediate_failure":
+        if GEMINI_API_KEY and GENAI_AVAILABLE and feedback_type == "immediate_failure":
             try:
                 model = genai.GenerativeModel("gemini-1.5-flash")
                 prompt = f"""

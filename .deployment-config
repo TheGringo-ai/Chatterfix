@@ -1,0 +1,24 @@
+# ChatterFix Deployment Configuration
+# This file locks in your production deployment settings
+
+# PRODUCTION SETTINGS - DO NOT MODIFY
+PROD_PROJECT_ID=fredfix
+PROD_REGION=us-central1
+PROD_SERVICE_NAME=chatterfix-cmms
+PROD_DOMAIN=chatterfix.com
+PROD_IMAGE=gcr.io/fredfix/chatterfix-cmms
+
+# Firebase Configuration
+FIREBASE_PROJECT_ID=fredfix
+GOOGLE_APPLICATION_CREDENTIALS=/Users/fredtaylor/ChatterFix/secrets/firebase-admin.json
+
+# Memory and CPU settings
+MEMORY=2Gi
+CPU=1
+MAX_INSTANCES=10
+MIN_INSTANCES=1
+TIMEOUT=300s
+
+# Environment Variables for Production
+USE_FIRESTORE=true
+LOG_LEVEL=info

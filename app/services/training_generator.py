@@ -3,18 +3,26 @@ AI Training Content Generator
 Generates interactive training modules from equipment manuals and documentation
 """
 
-import google.generativeai as genai
 import os
 from app.core.database import get_db_connection
 import logging
 from datetime import datetime
 import json
 
+# Import Google Generative AI with error handling
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Google Generative AI not available: {e}")
+    genai = None
+    GENAI_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # Configure Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GENAI_AVAILABLE:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
@@ -28,8 +36,8 @@ class TrainingGenerator:
         Generate training module from equipment manual
         Supports PDF, images, and text files
         """
-        if not GEMINI_API_KEY:
-            logger.warning("GEMINI_API_KEY not set, cannot generate training")
+        if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+            logger.warning("GEMINI_API_KEY not set or Google Generative AI not available, cannot generate training")
             return None
 
         try:
@@ -124,8 +132,8 @@ class TrainingGenerator:
         """
         Generate a quick reference guide for a specific task
         """
-        if not GEMINI_API_KEY:
-            return "GEMINI_API_KEY not configured"
+        if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+            return "GEMINI_API_KEY not configured or Google Generative AI not available"
 
         try:
             model = genai.GenerativeModel("gemini-1.5-flash")
@@ -159,8 +167,8 @@ class TrainingGenerator:
         """
         Real-time knowledge assistant for technicians
         """
-        if not GEMINI_API_KEY:
-            return "GEMINI_API_KEY not configured"
+        if not GEMINI_API_KEY or not GENAI_AVAILABLE:
+            return "GEMINI_API_KEY not configured or Google Generative AI not available"
 
         try:
             model = genai.GenerativeModel("gemini-1.5-flash")

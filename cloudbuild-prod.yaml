@@ -33,6 +33,20 @@ steps:
       - '--min-instances=1'
       - '--timeout=300s'
 
+  # Verify domain mapping exists (create if needed)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud beta run domain-mappings create \
+          --service=chatterfix-cmms \
+          --domain=chatterfix.com \
+          --region=us-central1 \
+          || echo "Domain mapping already exists or creation failed - continuing deployment"
+    env:
+      - 'CLOUDSDK_RUN_REGION=us-central1'
+
 images:
   - 'gcr.io/fredfix/chatterfix-cmms:latest'
 

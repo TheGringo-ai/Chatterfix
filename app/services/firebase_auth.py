@@ -2,11 +2,23 @@ import os
 import json
 import logging
 from typing import Dict, Optional, Any
-import firebase_admin
-from firebase_admin import credentials, auth, firestore
-import pyrebase
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+# Import Firebase modules with error handling
+try:
+    import firebase_admin
+    from firebase_admin import credentials, auth, firestore
+    import pyrebase
+    FIREBASE_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Firebase modules not available: {e}")
+    firebase_admin = None
+    credentials = None
+    auth = None
+    firestore = None
+    pyrebase = None
+    FIREBASE_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +33,12 @@ class FirebaseAuthService:
 
     def _initialize_firebase(self):
         """Initialize Firebase Admin SDK and client SDK"""
+        # Check if Firebase modules are available
+        if not FIREBASE_AVAILABLE:
+            logger.info("🔥 Firebase modules not installed - running in local/SQLite mode")
+            logger.info("   To enable Firebase, install: pip install firebase-admin pyrebase4")
+            return
+
         # Check if Firebase is explicitly disabled
         if os.getenv("DISABLE_FIREBASE", "").lower() in ("true", "1", "yes"):
             logger.info(

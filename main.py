@@ -26,7 +26,9 @@ from app.routers import (
     signup,
     team,
     training,
-    work_orders
+    work_orders,
+    analytics,
+    iot
 )
 
 # Initialize FastAPI application
@@ -59,6 +61,8 @@ app.include_router(ai.router)
 app.include_router(ar.router)
 app.include_router(geolocation.router)
 app.include_router(onboarding.router)
+app.include_router(analytics.router)  # Advanced analytics dashboard
+app.include_router(iot.router)        # IoT sensor integration
 
 # Startup event - initialize database
 @app.on_event("startup")
@@ -85,6 +89,8 @@ async def startup_event():
         print(f"⚠️ Demo data population failed: {e}")
     
     print("🌐 ChatterFix ready for use!")
+    print("📊 Analytics dashboard: /analytics/dashboard")
+    print("🔌 IoT API: /iot/sensors/")
 
 # Main entry point
 if __name__ == "__main__":

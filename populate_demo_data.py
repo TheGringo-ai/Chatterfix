@@ -48,24 +48,24 @@ def populate_demo_data():
     # ========== ASSETS ==========
     assets_data = [
         # Production Line 1
-        ("Battery Pack Assembly Line 1", "High-speed automated assembly line for EV battery packs", "BPAL-001", "BP2023-X1", "Model X1-2023", "EV Manufacturing Inc", "Production Floor A", "Manufacturing", "Active", 9, "Critical", "2023-01-15", "2025-01-15", 2500000.00, "2023-01-15", "2023-11-20", "2024-01-15", 24.5, 125000.00, 8760.0, "/static/images/battery_line.jpg"),
-        ("Gigapress Machine Alpha", "8000-ton casting machine for vehicle frames", "GPM-ALPHA", "GP-8K-001", "Giga Press 8000T", "IDRA Group", "Casting Bay 1", "Manufacturing", "Active", 8, "Critical", "2023-02-01", "2030-02-01", 15000000.00, "2023-02-01", "2023-11-10", "2024-02-01", 18.2, 85000.00, 4380.0, "/static/images/gigapress.jpg"),
-        ("Paint Booth Station 3", "Automated paint application system with color changing capability", "PBS-003", "PB-AC-2023", "AutoCoat Pro 5000", "Dürr Systems", "Paint Shop", "Finishing", "Active", 7, "High", "2023-01-20", "2028-01-20", 750000.00, "2023-01-20", "2023-11-05", "2024-01-20", 36.8, 45000.00, 2190.0, "/static/images/paint_booth.jpg"),
-        ("Stamping Press Line B", "Heavy-duty stamping press for body panels", "SPL-B-01", "SP-HD-450", "HeavyDuty 450T", "Schuler Group", "Stamping Bay B", "Manufacturing", "Active", 8, "Critical", "2023-03-10", "2033-03-10", 3200000.00, "2023-03-10", "2023-10-28", "2024-03-10", 12.5, 95000.00, 8760.0, "/static/images/stamping_press.jpg"),
+        ("Battery Pack Assembly Line 1", "High-speed automated assembly line for EV battery packs", "BPAL-001", "BP2023-X1", "Model X1-2023", "EV Manufacturing Inc", "Production Floor A", "Manufacturing", "Active", 9, "Critical", "2023-01-15", "2025-01-15", 2500000.00, "2023-01-15", "2023-11-20", "2024-01-15", 24.5, 125000.00, "/static/images/battery_line.jpg"),
+        ("Gigapress Machine Alpha", "8000-ton casting machine for vehicle frames", "GPM-ALPHA", "GP-8K-001", "Giga Press 8000T", "IDRA Group", "Casting Bay 1", "Manufacturing", "Active", 8, "Critical", "2023-02-01", "2030-02-01", 15000000.00, "2023-02-01", "2023-11-10", "2024-02-01", 18.2, 85000.00, "/static/images/gigapress.jpg"),
+        ("Paint Booth Station 3", "Automated paint application system with color changing capability", "PBS-003", "PB-AC-2023", "AutoCoat Pro 5000", "Dürr Systems", "Paint Shop", "Finishing", "Active", 7, "High", "2023-01-20", "2028-01-20", 750000.00, "2023-01-20", "2023-11-05", "2024-01-20", 36.8, 45000.00, "/static/images/paint_booth.jpg"),
+        ("Stamping Press Line B", "Heavy-duty stamping press for body panels", "SPL-B-01", "SP-HD-450", "HeavyDuty 450T", "Schuler Group", "Stamping Bay B", "Manufacturing", "Active", 8, "Critical", "2023-03-10", "2033-03-10", 3200000.00, "2023-03-10", "2023-10-28", "2024-03-10", 12.5, 95000.00, "/static/images/stamping_press.jpg"),
         
         # Supporting Equipment
-        ("Compressed Air System", "Central compressed air distribution system", "CAS-001", "CA-CTL-2023", "CentralAir 5000", "Atlas Copco", "Utility Room 1", "Utilities", "Active", 8, "High", "2023-01-05", "2030-01-05", 125000.00, "2023-01-05", "2023-10-25", "2024-01-05", 8.5, 15000.00, 4380.0, "/static/images/air_system.jpg"),
-        ("Electrical Substation A", "Main power distribution substation", "ESA-001", "ES-PWR-500", "PowerGrid 500kV", "ABB", "Electrical Room A", "Electrical", "Active", 9, "Critical", "2022-12-15", "2032-12-15", 850000.00, "2022-12-15", "2023-10-20", "2024-12-15", 6.0, 32000.00, 17520.0, "/static/images/substation.jpg"),
-        ("Cooling Tower System", "Industrial cooling system for process equipment", "CTS-001", "CT-IND-2000", "CoolMax 2000", "Baltimore Aircoil", "Rooftop", "HVAC", "Active", 7, "High", "2023-02-20", "2033-02-20", 180000.00, "2023-02-20", "2023-10-15", "2024-02-20", 16.2, 25000.00, 4380.0, "/static/images/cooling_tower.jpg"),
-        ("AGV Fleet Controller", "Automated guided vehicle fleet management system", "AGV-FC-01", "AGV-FM-2023", "FleetMaster 3000", "KION Group", "Control Room", "Automation", "Active", 8, "Medium", "2023-04-01", "2028-04-01", 95000.00, "2023-04-01", "2023-10-10", "2024-04-01", 4.5, 5000.00, 8760.0, "/static/images/agv_system.jpg"),
+        ("Compressed Air System", "Central compressed air distribution system", "CAS-001", "CA-CTL-2023", "CentralAir 5000", "Atlas Copco", "Utility Room 1", "Utilities", "Active", 8, "High", "2023-01-05", "2030-01-05", 125000.00, "2023-01-05", "2023-10-25", "2024-01-05", 8.5, 15000.00, "/static/images/air_system.jpg"),
+        ("Electrical Substation A", "Main power distribution substation", "ESA-001", "ES-PWR-500", "PowerGrid 500kV", "ABB", "Electrical Room A", "Electrical", "Active", 9, "Critical", "2022-12-15", "2032-12-15", 850000.00, "2022-12-15", "2023-10-20", "2024-12-15", 6.0, 32000.00, "/static/images/substation.jpg"),
+        ("Cooling Tower System", "Industrial cooling system for process equipment", "CTS-001", "CT-IND-2000", "CoolMax 2000", "Baltimore Aircoil", "Rooftop", "HVAC", "Active", 7, "High", "2023-02-20", "2033-02-20", 180000.00, "2023-02-20", "2023-10-15", "2024-02-20", 16.2, 25000.00, "/static/images/cooling_tower.jpg"),
+        ("AGV Fleet Controller", "Automated guided vehicle fleet management system", "AGV-FC-01", "AGV-FM-2023", "FleetMaster 3000", "KION Group", "Control Room", "Automation", "Active", 8, "Medium", "2023-04-01", "2028-04-01", 95000.00, "2023-04-01", "2023-10-10", "2024-04-01", 4.5, 5000.00, "/static/images/agv_system.jpg"),
         
         # Quality & Testing
-        ("X-Ray Inspection Unit", "Battery pack quality inspection system", "XIU-001", "XR-QC-450", "InspectPro X450", "Yxlon", "Quality Lab", "Quality", "Active", 8, "High", "2023-03-15", "2030-03-15", 320000.00, "2023-03-15", "2023-10-01", "2024-03-15", 12.8, 18000.00, 4380.0, "/static/images/xray_unit.jpg"),
-        ("Leak Test Station", "Automated leak detection for battery systems", "LTS-002", "LT-AUTO-100", "LeakGuard 100", "ATEQ", "Quality Lab", "Quality", "Active", 9, "High", "2023-05-01", "2030-05-01", 85000.00, "2023-05-01", "2023-11-22", "2024-05-01", 6.2, 8500.00, 4380.0, "/static/images/leak_tester.jpg"),
+        ("X-Ray Inspection Unit", "Battery pack quality inspection system", "XIU-001", "XR-QC-450", "InspectPro X450", "Yxlon", "Quality Lab", "Quality", "Active", 8, "High", "2023-03-15", "2030-03-15", 320000.00, "2023-03-15", "2023-10-01", "2024-03-15", 12.8, 18000.00, "/static/images/xray_unit.jpg"),
+        ("Leak Test Station", "Automated leak detection for battery systems", "LTS-002", "LT-AUTO-100", "LeakGuard 100", "ATEQ", "Quality Lab", "Quality", "Active", 9, "High", "2023-05-01", "2030-05-01", 85000.00, "2023-05-01", "2023-11-22", "2024-05-01", 6.2, 8500.00, "/static/images/leak_tester.jpg"),
         
         # Maintenance Equipment
-        ("Mobile Crane Unit 5", "50-ton mobile crane for heavy lifting", "MCU-005", "MC-HD-50T", "CraneMaster 50", "Liebherr", "Maintenance Bay", "Maintenance", "Active", 8, "High", "2023-02-10", "2033-02-10", 450000.00, "2023-02-10", "2023-11-20", "2024-02-10", 8.0, 22000.00, 4380.0, "/static/images/crane.jpg"),
-        ("Forklift Fleet A1", "Electric forklift for material handling", "FFA-001", "FL-EL-5000", "ElectroLift 5000", "Toyota", "Warehouse", "Material Handling", "Active", 7, "Medium", "2023-04-15", "2030-04-15", 35000.00, "2023-04-15", "2023-11-20", "2024-04-15", 28.5, 12000.00, 2190.0, "/static/images/forklift.jpg")
+        ("Mobile Crane Unit 5", "50-ton mobile crane for heavy lifting", "MCU-005", "MC-HD-50T", "CraneMaster 50", "Liebherr", "Maintenance Bay", "Maintenance", "Active", 8, "High", "2023-02-10", "2033-02-10", 450000.00, "2023-02-10", "2023-11-20", "2024-02-10", 8.0, 22000.00, "/static/images/crane.jpg"),
+        ("Forklift Fleet A1", "Electric forklift for material handling", "FFA-001", "FL-EL-5000", "ElectroLift 5000", "Toyota", "Warehouse", "Material Handling", "Active", 7, "Medium", "2023-04-15", "2030-04-15", 35000.00, "2023-04-15", "2023-11-20", "2024-04-15", 28.5, 12000.00, "/static/images/forklift.jpg")
     ]
     
     for asset in assets_data:
@@ -73,9 +73,9 @@ def populate_demo_data():
             INSERT INTO assets (name, description, asset_tag, serial_number, model, manufacturer, 
                                location, department, status, condition_rating, criticality, 
                                purchase_date, warranty_expiry, purchase_cost, installation_date, 
-                               last_service_date, next_service_date, total_downtime_hours, 
-                               total_maintenance_cost, mtbf, image_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               last_maintenance_date, next_maintenance_due, total_downtime_hours, 
+                               total_maintenance_cost, image_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, asset)
     
     # ========== PARTS INVENTORY ==========

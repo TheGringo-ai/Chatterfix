@@ -1,0 +1,822 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Analytics - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .analytics-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .analytics-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 1.5rem;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .kpi-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .kpi-trend {
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .trend-up {
+        background: rgba(39, 174, 96, 0.2);
+        color: #27ae60;
+    }
+
+    .trend-down {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+    }
+
+    .trend-stable {
+        background: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+    }
+
+    .status-excellent {
+        color: #27ae60;
+    }
+
+    .status-good {
+        color: #2ecc71;
+    }
+
+    .status-warning {
+        color: #f39c12;
+    }
+
+    .status-critical {
+        color: #e74c3c;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-card {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 1.5rem;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+
+    .export-section {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .export-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .period-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .period-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .period-btn:hover,
+    .period-btn.active {
+        background: rgba(52, 152, 219, 0.5);
+        border-color: #3498db;
+    }
+
+    .compliance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .compliance-item {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+
+    .compliance-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+    }
+
+    .loading-spinner::after {
+        content: "";
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top-color: #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-header">
+    <h1>📊 Advanced Analytics Dashboard</h1>
+    <p>Real-time KPIs, trends, and insights for your maintenance operations</p>
+</div>
+
+<!-- Period Selector -->
+<div class="period-selector">
+    <button class="period-btn" data-days="7">7 Days</button>
+    <button class="period-btn active" data-days="30">30 Days</button>
+    <button class="period-btn" data-days="90">90 Days</button>
+    <button class="period-btn" data-days="365">1 Year</button>
+    <button class="cmms-btn cmms-btn-sm" onclick="refreshData()" style="margin-left: auto;">
+        <i class="fas fa-sync-alt"></i> Refresh
+    </button>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid" id="kpi-grid">
+    <!-- MTTR -->
+    <div class="kpi-card">
+        <div class="kpi-icon">⏱️</div>
+        <div class="kpi-value" id="mttr-value">--</div>
+        <div class="kpi-label">Mean Time To Repair (MTTR)</div>
+        <span class="kpi-trend trend-stable" id="mttr-trend">Loading...</span>
+    </div>
+
+    <!-- MTBF -->
+    <div class="kpi-card">
+        <div class="kpi-icon">🔄</div>
+        <div class="kpi-value" id="mtbf-value">--</div>
+        <div class="kpi-label">Mean Time Between Failures (MTBF)</div>
+        <span class="kpi-trend trend-stable" id="mtbf-trend">Loading...</span>
+    </div>
+
+    <!-- Asset Utilization -->
+    <div class="kpi-card">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-value" id="utilization-value">--%</div>
+        <div class="kpi-label">Asset Utilization</div>
+        <span class="kpi-trend trend-stable" id="utilization-trend">Loading...</span>
+    </div>
+
+    <!-- Total Cost -->
+    <div class="kpi-card">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-value" id="cost-value">$--</div>
+        <div class="kpi-label">Total Maintenance Cost</div>
+        <span class="kpi-trend trend-stable" id="cost-trend">Loading...</span>
+    </div>
+
+    <!-- Work Orders Completed -->
+    <div class="kpi-card">
+        <div class="kpi-icon">✅</div>
+        <div class="kpi-value" id="completion-rate">--%</div>
+        <div class="kpi-label">Work Order Completion Rate</div>
+        <span class="kpi-trend trend-stable" id="completion-trend">Loading...</span>
+    </div>
+
+    <!-- Compliance -->
+    <div class="kpi-card">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-value" id="compliance-value">--%</div>
+        <div class="kpi-label">PM Compliance Rate</div>
+        <span class="kpi-trend trend-stable" id="compliance-trend">Loading...</span>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="chart-grid">
+    <!-- Work Order Status Chart -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>📊 Work Order Status Distribution</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="workOrderStatusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Cost Trend Chart -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>💵 Daily Maintenance Cost Trend</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="costTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Work Order Completion Trend -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>📈 Work Order Trend</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="completionTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Asset Health Distribution -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>🔧 Asset Status Distribution</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="assetHealthChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Cost Breakdown by Type -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>📊 Cost Breakdown by Maintenance Type</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="costBreakdownChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Priority Distribution -->
+    <div class="chart-card">
+        <div class="chart-title">
+            <span>⚡ Priority Distribution</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="priorityChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Compliance Section -->
+<div class="cmms-card">
+    <h2>✅ Compliance Metrics</h2>
+    <div class="compliance-grid" id="compliance-grid">
+        <div class="compliance-item">
+            <div class="compliance-value" id="pm-compliance">--%</div>
+            <div>PM Compliance</div>
+        </div>
+        <div class="compliance-item">
+            <div class="compliance-value" id="training-compliance">--%</div>
+            <div>Training Compliance</div>
+        </div>
+        <div class="compliance-item">
+            <div class="compliance-value" id="overall-compliance">--%</div>
+            <div>Overall Compliance</div>
+        </div>
+        <div class="compliance-item">
+            <div class="compliance-value" id="valid-certifications">--</div>
+            <div>Valid Certifications</div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Section -->
+<div class="export-section">
+    <h2>📥 Export Reports</h2>
+    <p>Download reports in various formats for offline analysis or sharing.</p>
+    <div class="export-buttons">
+        <button class="cmms-btn" onclick="exportReport('pdf')">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button class="cmms-btn" onclick="exportReport('excel')">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </button>
+        <button class="cmms-btn" onclick="exportReport('csv')">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+        <button class="cmms-btn" onclick="exportReport('json')">
+            <i class="fas fa-file-code"></i> Export JSON
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let currentPeriod = 30;
+    let charts = {};
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        loadKPIData();
+        loadCharts();
+
+        // Period selector
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentPeriod = parseInt(this.dataset.days);
+                refreshData();
+            });
+        });
+    });
+
+    // Refresh all data
+    function refreshData() {
+        loadKPIData();
+        loadCharts();
+    }
+
+    // Load KPI data
+    async function loadKPIData() {
+        try {
+            const response = await fetch(`/analytics/kpi/summary?days=${currentPeriod}`);
+            const data = await response.json();
+
+            // Update MTTR
+            const mttr = data.mttr || {};
+            document.getElementById('mttr-value').textContent = `${mttr.value || 0} hrs`;
+            updateTrendBadge('mttr-trend', mttr.status, mttr.trend);
+
+            // Update MTBF
+            const mtbf = data.mtbf || {};
+            document.getElementById('mtbf-value').textContent = `${mtbf.value || 0} hrs`;
+            updateTrendBadge('mtbf-trend', mtbf.status, mtbf.trend);
+
+            // Update Utilization
+            const util = data.asset_utilization || {};
+            document.getElementById('utilization-value').textContent = `${util.average_utilization || 0}%`;
+            updateTrendBadge('utilization-trend', util.status, util.trend);
+
+            // Update Cost
+            const cost = data.cost_tracking || {};
+            document.getElementById('cost-value').textContent = `$${(cost.total_cost || 0).toLocaleString()}`;
+            updateTrendBadge('cost-trend', 'info', cost.trend);
+
+            // Update Completion Rate
+            const wo = data.work_order_metrics || {};
+            document.getElementById('completion-rate').textContent = `${wo.completion_rate || 0}%`;
+            updateTrendBadge('completion-trend', wo.status, wo.trend);
+
+            // Update Compliance
+            const compliance = data.compliance_metrics || {};
+            document.getElementById('compliance-value').textContent = `${compliance.pm_compliance_rate || 0}%`;
+            updateTrendBadge('compliance-trend', compliance.status, 'stable');
+
+            // Update compliance grid
+            document.getElementById('pm-compliance').textContent = `${compliance.pm_compliance_rate || 0}%`;
+            document.getElementById('training-compliance').textContent = `${compliance.training_compliance_rate || 0}%`;
+            document.getElementById('overall-compliance').textContent = `${compliance.overall_compliance || 0}%`;
+            const certStatus = compliance.certification_status || {};
+            document.getElementById('valid-certifications').textContent = `${certStatus.valid || 0}/${certStatus.total || 0}`;
+
+        } catch (error) {
+            console.error('Error loading KPI data:', error);
+        }
+    }
+
+    function updateTrendBadge(elementId, status, trend) {
+        const element = document.getElementById(elementId);
+        element.className = 'kpi-trend';
+
+        if (status === 'excellent' || status === 'good') {
+            element.classList.add('trend-up');
+            element.textContent = `✓ ${status.charAt(0).toUpperCase() + status.slice(1)}`;
+        } else if (status === 'warning') {
+            element.classList.add('trend-stable');
+            element.textContent = '⚠ Warning';
+        } else if (status === 'critical') {
+            element.classList.add('trend-down');
+            element.textContent = '⚠ Critical';
+        } else {
+            element.classList.add('trend-stable');
+            element.textContent = trend || 'Stable';
+        }
+    }
+
+    // Load all charts
+    async function loadCharts() {
+        await Promise.all([
+            loadWorkOrderStatusChart(),
+            loadCostTrendChart(),
+            loadCompletionTrendChart(),
+            loadAssetHealthChart(),
+            loadCostBreakdownChart(),
+            loadPriorityChart()
+        ]);
+    }
+
+    // Work Order Status Chart
+    async function loadWorkOrderStatusChart() {
+        try {
+            const response = await fetch(`/analytics/charts/work-order-status?days=${currentPeriod}`);
+            const data = await response.json();
+
+            const ctx = document.getElementById('workOrderStatusChart').getContext('2d');
+
+            if (charts.workOrderStatus) {
+                charts.workOrderStatus.destroy();
+            }
+
+            const colors = data.colors || {};
+            const backgroundColors = data.labels.map(label =>
+                colors[label] || '#3498db'
+            );
+
+            charts.workOrderStatus = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading work order status chart:', error);
+        }
+    }
+
+    // Cost Trend Chart
+    async function loadCostTrendChart() {
+        try {
+            const response = await fetch(`/analytics/charts/cost-trend?days=${currentPeriod}`);
+            const data = await response.json();
+
+            const ctx = document.getElementById('costTrendChart').getContext('2d');
+
+            if (charts.costTrend) {
+                charts.costTrend.destroy();
+            }
+
+            charts.costTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: data.label,
+                        data: data.data,
+                        borderColor: '#f39c12',
+                        backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading cost trend chart:', error);
+        }
+    }
+
+    // Completion Trend Chart
+    async function loadCompletionTrendChart() {
+        try {
+            const response = await fetch(`/analytics/charts/completion-trend?days=${currentPeriod}`);
+            const data = await response.json();
+
+            const ctx = document.getElementById('completionTrendChart').getContext('2d');
+
+            if (charts.completionTrend) {
+                charts.completionTrend.destroy();
+            }
+
+            charts.completionTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: data.datasets.map(ds => ({
+                        ...ds,
+                        tension: 0.4
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading completion trend chart:', error);
+        }
+    }
+
+    // Asset Health Chart
+    async function loadAssetHealthChart() {
+        try {
+            const response = await fetch('/analytics/charts/asset-health');
+            const data = await response.json();
+
+            const ctx = document.getElementById('assetHealthChart').getContext('2d');
+
+            if (charts.assetHealth) {
+                charts.assetHealth.destroy();
+            }
+
+            const colors = data.colors || {};
+            const backgroundColors = data.labels.map(label =>
+                colors[label] || '#3498db'
+            );
+
+            charts.assetHealth = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading asset health chart:', error);
+        }
+    }
+
+    // Cost Breakdown Chart
+    async function loadCostBreakdownChart() {
+        try {
+            const response = await fetch(`/analytics/charts/cost-breakdown?days=${currentPeriod}`);
+            const data = await response.json();
+
+            const ctx = document.getElementById('costBreakdownChart').getContext('2d');
+
+            if (charts.costBreakdown) {
+                charts.costBreakdown.destroy();
+            }
+
+            const colors = data.colors || {};
+            const backgroundColors = data.labels.map(label =>
+                colors[label] || '#3498db'
+            );
+
+            charts.costBreakdown = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Cost ($)',
+                        data: data.data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading cost breakdown chart:', error);
+        }
+    }
+
+    // Priority Chart
+    async function loadPriorityChart() {
+        try {
+            const response = await fetch(`/analytics/charts/priority-distribution?days=${currentPeriod}`);
+            const data = await response.json();
+
+            const ctx = document.getElementById('priorityChart').getContext('2d');
+
+            if (charts.priority) {
+                charts.priority.destroy();
+            }
+
+            const colors = data.colors || {};
+            const backgroundColors = data.labels.map(label =>
+                colors[label] || '#3498db'
+            );
+
+            charts.priority = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading priority chart:', error);
+        }
+    }
+
+    // Export functions
+    async function exportReport(format) {
+        try {
+            showNotification(`Generating ${format.toUpperCase()} report...`, 'info');
+
+            const response = await fetch(`/analytics/export/kpi/${format}?days=${currentPeriod}`);
+
+            if (!response.ok) {
+                throw new Error('Export failed');
+            }
+
+            const blob = await response.blob();
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `kpi_report.${format}`;
+
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="(.+)"/);
+                if (match) {
+                    filename = match[1];
+                }
+            }
+
+            // Download the file
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showNotification(`${format.toUpperCase()} report downloaded successfully!`, 'success');
+
+        } catch (error) {
+            console.error('Export error:', error);
+            showNotification('Failed to export report. Please try again.', 'error');
+        }
+    }
+</script>
+{% endblock %}

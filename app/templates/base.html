@@ -32,6 +32,8 @@
                 Orders</a>
             <a href="/demo/assets"
                 class="nav-link {% if request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
+            <a href="/analytics/dashboard"
+                class="nav-link {% if request.url.path.startswith('/analytics') %}active{% endif %}">Analytics</a>
             <a href="/demo/planner"
                 class="nav-link {% if request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
             <a href="/demo/purchasing"

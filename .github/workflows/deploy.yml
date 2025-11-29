@@ -12,24 +12,26 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
       
       - name: Setup Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          export_default_credentials: true
+          project_id: fredfix
       
-      - name: Authenticate Docker to GCR
+      - name: Deploy to Cloud Run
         run: |
-          gcloud auth configure-docker
-      
-      - name: Build and Push Docker Image
-        run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/chatterfix:${{ github.sha }} .
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/chatterfix:${{ github.sha }}
-      
-      - name: Deploy to App Engine
-        run: |
-          gcloud app deploy deployment/app.yaml --quiet --version=${{ github.sha }}
+          gcloud run deploy chatterfix \
+            --source . \
+            --region us-central1 \
+            --set-env-vars="USE_FIRESTORE=true,OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GOOGLE_CLOUD_PROJECT=fredfix" \
+            --memory=4Gi \
+            --cpu=2 \
+            --min-instances=1 \
+            --max-instances=10 \
+            --allow-unauthenticated

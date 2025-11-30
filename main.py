@@ -171,4 +171,4 @@ async def test_endpoint():
 # Main entry point
 if __name__ == "__main__":
     port = int(os.getenv("PORT", os.getenv("CMMS_PORT", "8000")))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, log_level="info")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False, log_level="info")

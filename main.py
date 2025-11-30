@@ -12,16 +12,20 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.db_adapter import get_db_adapter
 
-# Configure logging
+# Configure logging (Cloud Run friendly)
+try:
+    os.makedirs("logs", exist_ok=True)
+    handlers = [logging.FileHandler("logs/chatterfix.log"), logging.StreamHandler()]
+except (OSError, PermissionError):
+    # Fallback for Cloud Run where we can't write files
+    handlers = [logging.StreamHandler()]
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("logs/chatterfix.log"), logging.StreamHandler()],
+    handlers=handlers,
 )
 logger = logging.getLogger(__name__)
-
-# Create logs directory
-os.makedirs("logs", exist_ok=True)
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)

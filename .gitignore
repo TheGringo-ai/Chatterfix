@@ -32,3 +32,5 @@ secrets/
 
 # Antigravity artifacts
 .gemini/
+secrets/*.json
+*.json

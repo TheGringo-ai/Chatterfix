@@ -191,7 +191,7 @@ class PredictiveMaintenanceEngine:
         ]
 
         for i, (name, asset_type) in enumerate(asset_types):
-            asset_id = f"AST-{i+1:03d}"
+            asset_id = f"AST-{i + 1:03d}"
 
             # Generate time series data for the past year
             dates = pd.date_range(start="2024-01-01", end="2025-01-01", freq="D")
@@ -639,7 +639,7 @@ Provide analysis in this JSON format:
 
         formatted = []
         for i, data in enumerate(sensor_data[-7:]):  # Last 7 days
-            date = data.get("date", f"Day -{7-i}")
+            date = data.get("date", f"Day -{7 - i}")
             temp = data.get("temperature", "N/A")
             vibration = data.get("vibration", "N/A")
             pressure = data.get("pressure", "N/A")

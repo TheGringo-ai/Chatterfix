@@ -248,7 +248,7 @@ async def demo_planner(request: Request):
         if asset["next_maintenance"] != "Overdue":
             planned_maintenance.append(
                 {
-                    "id": f"PM-{i+1:03d}",
+                    "id": f"PM-{i + 1:03d}",
                     "asset": asset["name"],
                     "task": f"Scheduled maintenance for {asset['name']}",
                     "date": asset["next_maintenance"],

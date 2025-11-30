@@ -611,7 +611,7 @@ class HealthMonitor:
             async with aiosqlite.connect(self.db_path) as conn:
                 await conn.execute(
                     """
-                    UPDATE incidents 
+                    UPDATE incidents
                     SET resolved = TRUE, resolution = ?, resolved_at = ?
                     WHERE id = ?
                 """,

@@ -37,7 +37,9 @@ class TrainingGenerator:
         Supports PDF, images, and text files
         """
         if not GEMINI_API_KEY or not GENAI_AVAILABLE:
-            logger.warning("GEMINI_API_KEY not set or Google Generative AI not available, cannot generate training")
+            logger.warning(
+                "GEMINI_API_KEY not set or Google Generative AI not available, cannot generate training"
+            )
             return None
 
         try:

@@ -35,8 +35,8 @@ async def login(
         )
 
     # Create session
-    ip_address = request.client.host if request else None
-    user_agent = request.headers.get("user-agent") if request else None
+    ip_address = request.client.host if (request and request.client) else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown") if request else "unknown"
     token = auth_service.create_session(user["id"], ip_address, user_agent)
 
     # Set cookie

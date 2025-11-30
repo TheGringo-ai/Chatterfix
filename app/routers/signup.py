@@ -85,8 +85,8 @@ async def signup(
         create_demo_data(user_id)
 
         # Auto-login: create session
-        ip_address = request.client.host if request else None
-        user_agent = request.headers.get("user-agent") if request else None
+        ip_address = request.client.host if (request and request.client) else "unknown"
+        user_agent = request.headers.get("user-agent", "unknown") if request else "unknown"
         token = auth_service.create_session(user_id, ip_address, user_agent)
 
     # Set cookie and redirect to dashboard with welcome message

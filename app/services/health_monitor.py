@@ -9,7 +9,13 @@ import sys
 import time
 import json
 import psutil
-import aiosqlite
+try:
+    import aiosqlite
+except ImportError:
+    aiosqlite = None  # type: ignore
+except OSError:
+    # Handle cases where sqlite3 library is missing/broken (e.g. dlopen errors)
+    aiosqlite = None  # type: ignore
 import logging
 import asyncio
 from datetime import datetime, timezone, timedelta
@@ -103,6 +109,10 @@ class HealthMonitor:
 
     async def init_database(self):
         """Initialize SQLite database for health metrics"""
+        if aiosqlite is None:
+            logger.warning("⚠️ aiosqlite not available - Health Monitor running in memory-only mode")
+            return
+
         async with aiosqlite.connect(self.db_path) as conn:
             await conn.execute(
                 """
@@ -359,6 +369,20 @@ class HealthMonitor:
 
     async def check_database_connection(self) -> Dict[str, Any]:
         """Check database connectivity (SQLite health database)"""
+        if not aiosqlite:
+             return {
+                "status": "healthy",
+                "metrics": {
+                    "connection": HealthMetric(
+                        "database_connection", "skipped_no_sqlite", "healthy"
+                    ),
+                    "recent_metrics": HealthMetric(
+                        "recent_metrics_count", 0, "healthy"
+                    ),
+                },
+                "summary": "Database connection skipped (no sqlite)",
+            }
+
         try:
             async with aiosqlite.connect(self.db_path) as conn:
                 cursor = await conn.cursor()
@@ -451,19 +475,25 @@ class HealthMonitor:
             since_time = datetime.now(timezone.utc) - timedelta(
                 hours=slo.time_window_hours
             )
+            
+            total_violation_minutes = 0
+            
+            if aiosqlite:
+                try:
+                    async with aiosqlite.connect(self.db_path) as conn:
+                        cursor = await conn.cursor()
+                        await cursor.execute(
+                            """
+                            SELECT SUM(duration_minutes) FROM slo_events
+                            WHERE slo_name = ? AND timestamp > ? AND event_type = 'violation'
+                        """,
+                            (slo_name, since_time),
+                        )
 
-            async with aiosqlite.connect(self.db_path) as conn:
-                cursor = await conn.cursor()
-                await cursor.execute(
-                    """
-                    SELECT SUM(duration_minutes) FROM slo_events
-                    WHERE slo_name = ? AND timestamp > ? AND event_type = 'violation'
-                """,
-                    (slo_name, since_time),
-                )
-
-                row = await cursor.fetchone()
-                total_violation_minutes = row[0] if row and row[0] else 0
+                        row = await cursor.fetchone()
+                        total_violation_minutes = row[0] if row and row[0] else 0
+                except Exception:
+                    pass
 
             # Calculate error budget consumption
             budget_consumed_percent = (
@@ -507,6 +537,10 @@ class HealthMonitor:
     async def store_health_metric(self, check_name: str, check_result: Dict[str, Any]):
         """Store health check results in database"""
         await self.ensure_database_initialized()
+        
+        if not aiosqlite:
+            return
+
         try:
             async with aiosqlite.connect(self.db_path) as conn:
                 timestamp = datetime.now(timezone.utc).isoformat()
@@ -541,58 +575,91 @@ class HealthMonitor:
         self, incident_type: str, severity: str, description: str
     ) -> int:
         """Record a new incident"""
-        async with aiosqlite.connect(self.db_path) as conn:
-            cursor = await conn.execute(
-                """
-                INSERT INTO incidents (timestamp, type, severity, description)
-                VALUES (?, ?, ?, ?)
-            """,
-                (
-                    datetime.now(timezone.utc).isoformat(),
-                    incident_type,
-                    severity,
-                    description,
-                ),
-            )
+        if not aiosqlite:
+            return 0
 
-            await conn.commit()
-            return cursor.lastrowid
+        try:
+            async with aiosqlite.connect(self.db_path) as conn:
+                cursor = await conn.execute(
+                    """
+                    INSERT INTO incidents (timestamp, type, severity, description)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (
+                        datetime.now(timezone.utc).isoformat(),
+                        incident_type,
+                        severity,
+                        description,
+                    ),
+                )
 
-    async def resolve_incident(self, incident_id: int, resolution: str):
+                await conn.commit()
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"Failed to record incident: {e}")
+            return 0
+
+    async def resolve_incident(self, incident_id: int, resolution: str) -> bool:
         """Mark an incident as resolved"""
-        async with aiosqlite.connect(self.db_path) as conn:
-            await conn.execute(
-                """
-                UPDATE incidents
-                SET resolved = TRUE, resolution = ?, resolved_at = ?
-                WHERE id = ?
-            """,
-                (resolution, datetime.now(timezone.utc).isoformat(), incident_id),
-            )
-            await conn.commit()
+        if not aiosqlite:
+            return False
+
+        try:
+            async with aiosqlite.connect(self.db_path) as conn:
+                await conn.execute(
+                    """
+                    UPDATE incidents 
+                    SET resolved = TRUE, resolution = ?, resolved_at = ?
+                    WHERE id = ?
+                """,
+                    (
+                        resolution,
+                        datetime.now(timezone.utc).isoformat(),
+                        incident_id,
+                    ),
+                )
+                await conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Failed to resolve incident: {e}")
+            return False
 
     async def record_slo_violation(
         self, slo_name: str, duration_minutes: float, details: str = None
     ):
         """Record an SLO violation"""
-        async with aiosqlite.connect(self.db_path) as conn:
-            await conn.execute(
-                """
-                INSERT INTO slo_events (timestamp, slo_name, event_type, duration_minutes, details)
-                VALUES (?, ?, 'violation', ?, ?)
-            """,
-                (
-                    datetime.now(timezone.utc).isoformat(),
-                    slo_name,
-                    duration_minutes,
-                    details,
-                ),
-            )
-            await conn.commit()
+        if not aiosqlite:
+            return
 
+        try:
+            async with aiosqlite.connect(self.db_path) as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO slo_events (timestamp, slo_name, event_type, duration_minutes, details)
+                    VALUES (?, ?, 'violation', ?, ?)
+                """,
+                    (
+                        datetime.now(timezone.utc).isoformat(),
+                        slo_name,
+                        duration_minutes,
+                        details,
+                    ),
+                )
+                await conn.commit()
+        except Exception as e:
+            logger.error(f"Failed to record SLO violation: {e}")
     async def get_health_history(self, hours: int = 24) -> Dict[str, Any]:
         """Get health check history for analysis"""
         await self.ensure_database_initialized()
+        
+        if not aiosqlite:
+            return {
+                "time_range_hours": hours,
+                "metrics_summary": [],
+                "recent_incidents": [],
+                "slo_events": [],
+            }
+
         since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         async with aiosqlite.connect(self.db_path) as conn:

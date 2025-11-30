@@ -1,5 +1,10 @@
 import os
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables (override system defaults)
+load_dotenv(override=True)
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -58,13 +63,46 @@ from app.routers import (
 )
 
 # Initialize FastAPI application
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan events: startup and shutdown"""
+    # Startup
+    try:
+        logger.info("🚀 Starting ChatterFix CMMS...")
+
+        # Initialize database adapter
+        db_adapter = get_db_adapter()
+        logger.info(f"📊 Database initialized ({db_adapter.db_type})")
+
+        if db_adapter.db_type == "firestore":
+            logger.info("🔥 Firebase/Firestore configured and ready")
+            logger.info("✅ No SQLite dependencies - running on GCP")
+        else:
+            logger.warning("📁 Running in fallback SQLite mode")
+            logger.warning("   For production, configure Firebase credentials")
+
+        logger.info("✅ ChatterFix CMMS started successfully!")
+        logger.info("🌐 ChatterFix ready for use!")
+        logger.info("📊 Analytics dashboard: /analytics/dashboard")
+        logger.info("🔌 IoT API: /iot/sensors/")
+        
+        yield
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to start ChatterFix CMMS: {e}")
+        raise
+    finally:
+        # Shutdown
+        logger.info("🛑 Shutting down ChatterFix CMMS...")
+        logger.info("✅ ChatterFix CMMS shutdown complete")
+
 app = FastAPI(
-    title="ChatterFix CMMS",
-    description="Comprehensive Maintenance Management System with AI Integration",
-    version="2.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    title="ChatterFix CMMS API",
+    description="AI-Powered Maintenance Management System",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add middleware
@@ -126,42 +164,6 @@ async def test_endpoint():
         "environment": os.getenv("ENVIRONMENT", "unknown"),
         "port": os.getenv("PORT", "unknown")
     }
-
-
-# Startup event - initialize database
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database on startup"""
-    try:
-        logger.info("🚀 Starting ChatterFix CMMS...")
-
-        # Initialize database adapter
-        db_adapter = get_db_adapter()
-        logger.info(f"📊 Database initialized ({db_adapter.db_type})")
-
-        if db_adapter.db_type == "firestore":
-            logger.info("🔥 Firebase/Firestore configured and ready")
-            logger.info("✅ No SQLite dependencies - running on GCP")
-        else:
-            logger.warning("📁 Running in fallback SQLite mode")
-            logger.warning("   For production, configure Firebase credentials")
-
-        logger.info("✅ ChatterFix CMMS started successfully!")
-        logger.info("🌐 ChatterFix ready for use!")
-        logger.info("📊 Analytics dashboard: /analytics/dashboard")
-        logger.info("🔌 IoT API: /iot/sensors/")
-
-    except Exception as e:
-        logger.error(f"❌ Failed to start ChatterFix CMMS: {e}")
-        raise
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("🛑 Shutting down ChatterFix CMMS...")
-    # Add any cleanup code here
-    logger.info("✅ ChatterFix CMMS shutdown complete")
 
 
 # Main entry point

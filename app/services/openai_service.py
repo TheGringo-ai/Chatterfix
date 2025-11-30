@@ -30,50 +30,12 @@ class OpenAIService:
     def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
         """
         Resolve API key in order:
-        1. User-specific key from DB
-        2. System-wide setting from DB
+        1. User-specific key from DB (Not implemented in Firestore yet)
+        2. System-wide setting from DB (Not implemented in Firestore yet)
         3. Environment variable
         4. Default hardcoded key
         """
-        from app.core.database import get_db_connection
-        import sqlite3
-
-        conn = get_db_connection()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        api_key = None
-
-        # 1. Check user settings
-        if user_id:
-            try:
-                row = cursor.execute(
-                    "SELECT setting_value FROM user_api_settings WHERE user_id = ? AND setting_key = 'openai_api_key'",
-                    (user_id,),
-                ).fetchone()
-                if row and row["setting_value"]:
-                    api_key = row["setting_value"]
-            except Exception:
-                pass
-
-        # 2. Check system settings
-        if not api_key:
-            try:
-                row = cursor.execute(
-                    "SELECT setting_value FROM system_settings WHERE setting_key = 'openai_api_key'"
-                ).fetchone()
-                if row and row["setting_value"]:
-                    api_key = row["setting_value"]
-            except Exception:
-                pass
-
-        conn.close()
-
-        # 3. Fallback to default
-        if not api_key:
-            api_key = self.default_api_key
-
-        return api_key
+        return self.default_api_key
 
     def _get_client(self, user_id: Optional[int] = None) -> Optional[OpenAI]:
         """Get a configured OpenAI client for the user"""

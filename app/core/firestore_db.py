@@ -1,17 +1,28 @@
 import os
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, cast
 from datetime import datetime, timezone
-from google.cloud import firestore
-from google.cloud.firestore_v1.base_query import FieldFilter
 
 logger = logging.getLogger(__name__)
+
+try:
+    from google.cloud import firestore  # type: ignore
+    from google.cloud.firestore_v1.base_query import FieldFilter
+    FIRESTORE_AVAILABLE = True
+except ImportError:
+    logger.warning("⚠️ google-cloud-firestore not available. Firestore features will be disabled.")
+    FIRESTORE_AVAILABLE = False
+    firestore = None
+    FieldFilter = None
 
 
 class FirestoreDB:
     def __init__(self):
         self.db = None
-        self._initialize_client()
+        if FIRESTORE_AVAILABLE:
+            self._initialize_client()
+        else:
+            logger.error("❌ Firestore client cannot be initialized: module not found")
 
     def _initialize_client(self):
         """Initialize Firestore client"""
@@ -32,7 +43,7 @@ class FirestoreDB:
 
     def get_client(self):
         """Get Firestore client"""
-        if not self.db:
+        if not self.db and FIRESTORE_AVAILABLE:
             self._initialize_client()
         return self.db
 
@@ -48,7 +59,7 @@ class FirestoreManager:
         self.db = firestore_db.get_client()
 
     async def create_document(
-        self, collection: str, data: Dict[str, Any], doc_id: str = None
+        self, collection: str, data: Dict[str, Any], doc_id: Optional[str] = None
     ) -> str:
         """Create a new document"""
         try:
@@ -65,7 +76,7 @@ class FirestoreManager:
                 return doc_id
             else:
                 doc_ref = self.db.collection(collection).add(data)[1]
-                return doc_ref.id
+                return cast(str, doc_ref.id)
         except Exception as e:
             logger.error(f"Error creating document in {collection}: {e}")
             raise
@@ -82,7 +93,7 @@ class FirestoreManager:
             doc = doc_ref.get()
 
             if doc.exists:
-                data = doc.to_dict()
+                data = cast(Dict[str, Any], doc.to_dict())
                 data["id"] = doc.id
                 return data
             return None
@@ -122,9 +133,9 @@ class FirestoreManager:
     async def get_collection(
         self,
         collection: str,
-        limit: int = None,
-        order_by: str = None,
-        filters: List[Dict] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
+        filters: Optional[List[Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         """Get documents from a collection with optional filtering and ordering"""
         try:
@@ -177,7 +188,7 @@ class FirestoreManager:
         return await self.create_document("work_orders", work_order_data)
 
     async def get_work_orders(
-        self, status: str = None, assigned_to: str = None
+        self, status: Optional[str] = None, assigned_to: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Get work orders with optional filtering"""
         filters = []
@@ -197,7 +208,7 @@ class FirestoreManager:
         return await self.create_document("assets", asset_data)
 
     async def get_assets(
-        self, status: str = None, location: str = None
+        self, status: Optional[str] = None, location: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """Get assets with optional filtering"""
         filters = []

@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, cast
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -162,14 +162,16 @@ class FirebaseAuthService:
             logger.error(f"Token verification error: {e}")
             raise HTTPException(status_code=401, detail="Authentication failed")
 
-    async def get_or_create_user(self, user_record) -> Dict[str, Any]:
+    async def get_or_create_user(self, user_record: Any) -> Dict[str, Any]:
         """Get user from Firestore or create if doesn't exist"""
         try:
+            if not self.db:
+                raise Exception("Firestore not initialized")
             user_ref = self.db.collection("users").document(user_record.uid)
             user_doc = user_ref.get()
 
             if user_doc.exists:
-                return user_doc.to_dict()
+                return cast(Dict[str, Any], user_doc.to_dict())
             else:
                 # Create new user record
                 user_data = {
@@ -195,9 +197,11 @@ class FirebaseAuthService:
             logger.error(f"Error getting/creating user: {e}")
             raise HTTPException(status_code=500, detail="User creation failed")
 
-    async def update_user_login(self, uid: str):
+    async def update_user_login(self, uid: str) -> None:
         """Update user's last login timestamp"""
         try:
+            if not self.db:
+                return
             user_ref = self.db.collection("users").document(uid)
             user_ref.update({"last_login": firestore.SERVER_TIMESTAMP})
         except Exception as e:
@@ -206,11 +210,13 @@ class FirebaseAuthService:
     async def get_user_by_uid(self, uid: str) -> Optional[Dict[str, Any]]:
         """Get user data by UID"""
         try:
+            if not self.db:
+                return None
             user_ref = self.db.collection("users").document(uid)
             user_doc = user_ref.get()
 
             if user_doc.exists:
-                return user_doc.to_dict()
+                return cast(Dict[str, Any], user_doc.to_dict())
             return None
 
         except Exception as e:
@@ -220,6 +226,8 @@ class FirebaseAuthService:
     async def update_user_profile(self, uid: str, profile_data: Dict[str, Any]) -> bool:
         """Update user profile"""
         try:
+            if not self.db:
+                return False
             user_ref = self.db.collection("users").document(uid)
             user_ref.update({**profile_data, "updated_at": firestore.SERVER_TIMESTAMP})
             return True
@@ -229,8 +237,8 @@ class FirebaseAuthService:
             return False
 
     async def create_user_with_email_password(
-        self, email: str, password: str, display_name: str = None
-    ):
+        self, email: str, password: str, display_name: Optional[str] = None
+    ) -> Any:
         """Create a new Firebase user with email and password"""
         if not self.is_available:
             raise Exception("Firebase not available")
@@ -257,8 +265,8 @@ class FirebaseAuthService:
             custom_token = auth.create_custom_token(uid)
             # Convert bytes to string if needed
             if isinstance(custom_token, bytes):
-                custom_token = custom_token.decode("utf-8")
-            return custom_token
+                return custom_token.decode("utf-8")
+            return cast(str, custom_token)
         except Exception as e:
             logger.error(f"Error creating custom token: {e}")
             raise Exception(f"Failed to create session token: {str(e)}")

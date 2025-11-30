@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from datetime import datetime
 
 # Email functionality - temporarily simplified
@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 import secrets
 import string
-from app.core.database import get_db_connection
+from app.core.db_adapter import get_db_adapter
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class LandingSignupRequest(BaseModel):
     fullName: str
-    email: EmailStr
+    email: str
     company: str
     phone: str = None
     industry: str
@@ -85,60 +85,38 @@ async def handle_landing_signup(
         password = generate_password()
 
         # Create user in database
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        db = get_db_adapter()
 
         # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE email = ?", (signup_data.email,))
-        if cursor.fetchone():
+        existing_user = await db.get_user_by_email(signup_data.email)
+        if existing_user:
             raise HTTPException(
                 status_code=400,
                 detail="An account with this email already exists. Please use the login page.",
             )
 
-        # Insert new user (working with existing schema)
-        cursor.execute(
-            """
-            INSERT INTO users (
-                username, email, password_hash, full_name, phone, role,
-                is_active, created_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                signup_data.email,  # Use email as username
-                signup_data.email,
-                password,  # In production, you should hash this password
-                signup_data.fullName,
-                signup_data.phone,
-                "manager",  # First user becomes manager
-                True,
-                datetime.now().isoformat(),
-            ),
-        )
+        # Create user data with company info (NoSQL structure)
+        user_data = {
+            "username": signup_data.email,
+            "email": signup_data.email,
+            "password_hash": password,  # In production, hash this!
+            "full_name": signup_data.fullName,
+            "phone": signup_data.phone,
+            "role": "manager",
+            "is_active": True,
+            "created_date": datetime.now().isoformat(),
+            "company": {
+                "name": signup_data.company,
+                "industry": signup_data.industry,
+                "size": signup_data.company_size,
+                "created_date": datetime.now().isoformat(),
+            },
+        }
 
-        user_id = cursor.lastrowid
-
-        # Insert company information
-        cursor.execute(
-            """
-            INSERT INTO companies (
-                user_id, name, industry, company_size, created_date
-            ) VALUES (?, ?, ?, ?, ?)
-        """,
-            (
-                user_id,
-                signup_data.company,
-                signup_data.industry,
-                signup_data.company_size,
-                datetime.now().isoformat(),
-            ),
-        )
-
-        conn.commit()
-        conn.close()
+        user_id = await db.create_user(user_data)
 
         # Prepare user data for emails
-        user_data = {
+        email_data = {
             "fullName": signup_data.fullName,
             "email": signup_data.email,
             "company": signup_data.company,
@@ -148,8 +126,8 @@ async def handle_landing_signup(
         }
 
         # Schedule background email tasks
-        background_tasks.add_task(send_notification_email, user_data, password)
-        background_tasks.add_task(send_welcome_email, user_data, password)
+        background_tasks.add_task(send_notification_email, email_data, password)
+        background_tasks.add_task(send_welcome_email, email_data, password)
 
         logger.info(
             f"New user created: {signup_data.email} for company {signup_data.company}"

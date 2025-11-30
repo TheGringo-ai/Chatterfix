@@ -41,28 +41,9 @@ async def recognize_part(
         ]
 
         # Get real inventory data from database
-        from app.core.database import get_db_connection
-        import sqlite3
-
-        conn = get_db_connection()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        # Search for similar parts in inventory
-        cursor.execute(
-            """
-            SELECT
-                id, name, part_number, category, current_stock,
-                minimum_stock, location, unit_cost
-            FROM parts
-            WHERE category LIKE ? OR name LIKE ?
-            LIMIT 5
-        """,
-            ("%hydraulic%", "%pump%"),
-        )
-
-        inventory_matches = [dict(row) for row in cursor.fetchall()]
-        conn.close()
+        inventory_matches = []
+        # Database lookup disabled in Firestore mode for now
+        # TODO: Implement Firestore inventory lookup
 
         return {
             "success": True,

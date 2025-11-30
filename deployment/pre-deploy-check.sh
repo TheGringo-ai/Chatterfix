@@ -79,20 +79,24 @@ fi
 
 # 2. YAML Validation
 check_start "Validating YAML files"
-YAML_ERROR=false
-for file in $(find . -name "*.yml" -o -name "*.yaml" | grep -v node_modules); do
-  if ! python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
-    YAML_ERROR=true
-    if [ "$VERBOSE" = true ]; then
-      echo -e "\n${RED}   Invalid YAML: $file${NC}"
+if python3 -c "import yaml" 2>/dev/null; then
+  YAML_ERROR=false
+  for file in $(find . -name "*.yml" -o -name "*.yaml" | grep -v node_modules); do
+    if ! python3 -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+      YAML_ERROR=true
+      if [ "$VERBOSE" = true ]; then
+        echo -e "\n${RED}   Invalid YAML: $file${NC}"
+      fi
     fi
-  fi
-done
+  done
 
-if [ "$YAML_ERROR" = true ]; then
-  check_fail "YAML validation errors found"
+  if [ "$YAML_ERROR" = true ]; then
+    check_fail "YAML validation errors found"
+  else
+    check_pass
+  fi
 else
-  check_pass
+  check_warn "PyYAML not installed, skipping YAML validation"
 fi
 
 # 3. Requirements.txt Validation

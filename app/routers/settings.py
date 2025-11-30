@@ -34,8 +34,8 @@ async def settings_page(request: Request, session_token: Optional[str] = Cookie(
     conn = get_db_connection()
     api_settings = conn.execute(
         """
-        SELECT setting_key, setting_value 
-        FROM user_api_settings 
+        SELECT setting_key, setting_value
+        FROM user_api_settings
         WHERE user_id = ?
     """,
         (user["id"],),
@@ -168,8 +168,8 @@ async def toggle_user_active(user_id: int, session_token: Optional[str] = Cookie
 
     cursor.execute(
         """
-        UPDATE users 
-        SET is_active = NOT is_active 
+        UPDATE users
+        SET is_active = NOT is_active
         WHERE id = ?
     """,
         (user_id,),

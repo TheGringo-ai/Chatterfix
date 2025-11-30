@@ -456,7 +456,7 @@ class HealthMonitor:
                 cursor = await conn.cursor()
                 await cursor.execute(
                     """
-                    SELECT SUM(duration_minutes) FROM slo_events 
+                    SELECT SUM(duration_minutes) FROM slo_events
                     WHERE slo_name = ? AND timestamp > ? AND event_type = 'violation'
                 """,
                     (slo_name, since_time),
@@ -563,7 +563,7 @@ class HealthMonitor:
         async with aiosqlite.connect(self.db_path) as conn:
             await conn.execute(
                 """
-                UPDATE incidents 
+                UPDATE incidents
                 SET resolved = TRUE, resolution = ?, resolved_at = ?
                 WHERE id = ?
             """,
@@ -601,9 +601,9 @@ class HealthMonitor:
             # Get metric trends
             await cursor.execute(
                 """
-                SELECT check_name, metric_name, AVG(value) as avg_value, 
+                SELECT check_name, metric_name, AVG(value) as avg_value,
                        COUNT(*) as sample_count, status
-                FROM health_metrics 
+                FROM health_metrics
                 WHERE timestamp > ? AND value IS NOT NULL
                 GROUP BY check_name, metric_name, status
                 ORDER BY check_name, metric_name
@@ -616,7 +616,7 @@ class HealthMonitor:
             # Get incidents
             await cursor.execute(
                 """
-                SELECT * FROM incidents 
+                SELECT * FROM incidents
                 WHERE timestamp > ?
                 ORDER BY timestamp DESC
             """,
@@ -628,7 +628,7 @@ class HealthMonitor:
             # Get SLO violations
             await cursor.execute(
                 """
-                SELECT * FROM slo_events 
+                SELECT * FROM slo_events
                 WHERE timestamp > ?
                 ORDER BY timestamp DESC
             """,

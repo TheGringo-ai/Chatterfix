@@ -22,7 +22,7 @@ class PlannerService:
 
         scheduled_work = cur.execute(
             """
-            SELECT 
+            SELECT
                 wo.id,
                 wo.title,
                 wo.due_date,
@@ -69,7 +69,7 @@ class PlannerService:
         # Get all technicians
         technicians = cur.execute(
             """
-            SELECT 
+            SELECT
                 u.id,
                 u.full_name,
                 u.username,
@@ -78,7 +78,7 @@ class PlannerService:
                 SUM(CASE WHEN wo.priority = 'urgent' THEN 1 ELSE 0 END) as urgent_count,
                 SUM(wo.estimated_duration) as total_hours
             FROM users u
-            LEFT JOIN work_orders wo ON u.id = wo.assigned_to 
+            LEFT JOIN work_orders wo ON u.id = wo.assigned_to
                 AND wo.status NOT IN ('completed', 'cancelled')
             WHERE u.role = 'technician'
             GROUP BY u.id
@@ -126,7 +126,7 @@ class PlannerService:
 
         backlog = cur.execute(
             """
-            SELECT 
+            SELECT
                 wo.id,
                 wo.title,
                 wo.priority,
@@ -136,7 +136,7 @@ class PlannerService:
                 wo.estimated_duration,
                 a.name as asset_name,
                 a.criticality,
-                CASE 
+                CASE
                     WHEN wo.due_date < date('now') THEN 'overdue'
                     WHEN wo.due_date = date('now') THEN 'due_today'
                     WHEN wo.due_date <= date('now', '+7 days') THEN 'due_this_week'
@@ -145,8 +145,8 @@ class PlannerService:
             FROM work_orders wo
             LEFT JOIN assets a ON wo.asset_id = a.id
             WHERE wo.status IN ('pending', 'on_hold')
-            ORDER BY 
-                CASE wo.priority 
+            ORDER BY
+                CASE wo.priority
                     WHEN 'urgent' THEN 1
                     WHEN 'high' THEN 2
                     WHEN 'medium' THEN 3
@@ -183,7 +183,7 @@ class PlannerService:
 
         assets = cur.execute(
             """
-            SELECT 
+            SELECT
                 a.id,
                 a.name,
                 a.asset_id,
@@ -256,7 +256,7 @@ class PlannerService:
         # Get parts needed for upcoming work orders
         parts_needed = cur.execute(
             """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.part_name,
                 pr.quantity,
@@ -279,7 +279,7 @@ class PlannerService:
         # Check inventory levels
         low_stock = cur.execute(
             """
-            SELECT 
+            SELECT
                 part_name,
                 quantity,
                 min_quantity,
@@ -306,7 +306,7 @@ class PlannerService:
         # Find technicians with multiple work orders on same day
         conflicts = cur.execute(
             """
-            SELECT 
+            SELECT
                 u.id as technician_id,
                 u.full_name as technician_name,
                 wo.due_date,
@@ -352,14 +352,14 @@ class PlannerService:
         # Get critical assets requiring compliance
         compliance_assets = cur.execute(
             """
-            SELECT 
+            SELECT
                 a.id,
                 a.name,
                 a.asset_id,
                 a.category,
                 COUNT(wo.id) as total_maintenance,
                 MAX(wo.completed_date) as last_inspection,
-                CASE 
+                CASE
                     WHEN MAX(wo.completed_date) IS NULL THEN 'Never inspected'
                     WHEN julianday('now') - julianday(MAX(wo.completed_date)) > 90 THEN 'Overdue'
                     WHEN julianday('now') - julianday(MAX(wo.completed_date)) > 60 THEN 'Due soon'

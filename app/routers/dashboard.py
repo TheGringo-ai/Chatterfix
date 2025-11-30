@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional, List
 from pydantic import BaseModel
+import json
 
 from app.services.dashboard_service import dashboard_service
 from app.services.real_time_feed_service import real_time_feed

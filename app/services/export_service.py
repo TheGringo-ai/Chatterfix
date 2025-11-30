@@ -433,8 +433,8 @@ class ExportService:
     <title>ChatterFix CMMS - KPI Report</title>
     <style>
         @page {{ size: A4; margin: 20mm; }}
-        body {{ 
-            font-family: Arial, sans-serif; 
+        body {{
+            font-family: Arial, sans-serif;
             color: #333;
             line-height: 1.6;
         }}

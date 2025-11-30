@@ -32,8 +32,8 @@ async def training_center(request: Request, user_id: int = 1):
             FROM user_training ut
             JOIN training_modules tm ON ut.training_module_id = tm.id
             WHERE ut.user_id = ?
-            ORDER BY 
-                CASE ut.status 
+            ORDER BY
+                CASE ut.status
                     WHEN 'assigned' THEN 1
                     WHEN 'in_progress' THEN 2
                     WHEN 'completed' THEN 3
@@ -59,7 +59,7 @@ async def training_center(request: Request, user_id: int = 1):
         # Get completion stats
         stats = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_assigned,
                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
@@ -205,7 +205,7 @@ async def start_training(module_id: int, user_id: int = Form(...)):
         # Check if already assigned
         existing = conn.execute(
             """
-            SELECT id FROM user_training 
+            SELECT id FROM user_training
             WHERE user_id = ? AND training_module_id = ?
         """,
             (user_id, module_id),
@@ -215,7 +215,7 @@ async def start_training(module_id: int, user_id: int = Form(...)):
             # Update to in_progress
             conn.execute(
                 """
-                UPDATE user_training 
+                UPDATE user_training
                 SET status = 'in_progress', started_date = CURRENT_TIMESTAMP
                 WHERE id = ?
             """,
@@ -246,7 +246,7 @@ async def complete_training(
     try:
         conn.execute(
             """
-            UPDATE user_training 
+            UPDATE user_training
             SET status = 'completed', completed_date = CURRENT_TIMESTAMP, score = ?
             WHERE user_id = ? AND training_module_id = ?
         """,
@@ -259,8 +259,8 @@ async def complete_training(
             """
             UPDATE user_performance
             SET training_hours = training_hours + (
-                SELECT estimated_duration_minutes / 60.0 
-                FROM training_modules 
+                SELECT estimated_duration_minutes / 60.0
+                FROM training_modules
                 WHERE id = ?
             )
             WHERE user_id = ? AND period = 'monthly'

@@ -66,19 +66,19 @@ async def submit_feedback(
                 model = genai.GenerativeModel("gemini-1.5-flash")
                 prompt = f"""
                 Analyze this maintenance failure and provide insights:
-                
+
                 Asset: {wo['asset_name']} ({wo['asset_type']})
                 Work Order: {wo['title']}
                 Time to Failure: {time_to_failure_hours} hours after completion
                 Description: {description}
                 Root Cause: {root_cause or 'Not specified'}
-                
+
                 Provide:
                 1. Likely root cause (if not specified)
                 2. Preventive actions to avoid recurrence
                 3. Whether this indicates a systemic issue
                 4. Recommended follow-up actions
-                
+
                 Be concise and actionable.
                 """
 
@@ -91,8 +91,8 @@ async def submit_feedback(
         # Save feedback
         conn.execute(
             """
-            INSERT INTO work_order_feedback 
-            (work_order_id, asset_id, technician_id, feedback_type, description, 
+            INSERT INTO work_order_feedback
+            (work_order_id, asset_id, technician_id, feedback_type, description,
              time_to_failure_hours, root_cause, ai_analysis)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -162,7 +162,7 @@ async def get_recurring_issues():
         # Find assets with multiple failures
         recurring = conn.execute(
             """
-            SELECT 
+            SELECT
                 a.id as asset_id,
                 a.name as asset_name,
                 a.type as asset_type,
@@ -190,7 +190,7 @@ async def get_quality_alerts():
     try:
         alerts = conn.execute(
             """
-            SELECT f.*, 
+            SELECT f.*,
                    a.name as asset_name,
                    u.full_name as technician_name,
                    wo.title as work_order_title
@@ -217,7 +217,7 @@ async def get_technician_quality(technician_id: int):
         # Get feedback stats
         stats = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_feedback,
                 SUM(CASE WHEN feedback_type = 'immediate_failure' THEN 1 ELSE 0 END) as immediate_failures,
                 SUM(CASE WHEN feedback_type = 'recurring_issue' THEN 1 ELSE 0 END) as recurring_issues,
@@ -231,7 +231,7 @@ async def get_technician_quality(technician_id: int):
         # Get work order completion rate
         wo_stats = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_work_orders,
                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
             FROM work_orders

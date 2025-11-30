@@ -52,7 +52,7 @@ class AnalyticsService:
             # Get completed work orders with duration
             result = conn.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_repairs,
                     AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as avg_repair_time,
                     SUM(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as total_repair_time,
@@ -95,7 +95,7 @@ class AnalyticsService:
             # Get failure count from maintenance history
             failures = conn.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as failure_count,
                     SUM(downtime_hours) as total_downtime
                 FROM maintenance_history
@@ -155,7 +155,7 @@ class AnalyticsService:
             # Get asset status breakdown
             status_breakdown = conn.execute(
                 """
-                SELECT 
+                SELECT
                     status,
                     COUNT(*) as count
                 FROM assets
@@ -166,7 +166,7 @@ class AnalyticsService:
             # Get utilization from maintenance history
             utilization = conn.execute(
                 """
-                SELECT 
+                SELECT
                     a.id,
                     a.name,
                     COUNT(mh.id) as maintenance_events,
@@ -241,7 +241,7 @@ class AnalyticsService:
             # Get maintenance costs
             costs = conn.execute(
                 """
-                SELECT 
+                SELECT
                     SUM(labor_cost) as total_labor,
                     SUM(parts_cost) as total_parts,
                     SUM(total_cost) as total_cost,
@@ -256,7 +256,7 @@ class AnalyticsService:
             # Get costs by maintenance type
             costs_by_type = conn.execute(
                 """
-                SELECT 
+                SELECT
                     maintenance_type,
                     SUM(total_cost) as total_cost,
                     COUNT(*) as event_count
@@ -270,7 +270,7 @@ class AnalyticsService:
             # Get top costly assets
             costly_assets = conn.execute(
                 """
-                SELECT 
+                SELECT
                     a.name,
                     a.id,
                     SUM(mh.total_cost) as total_cost,
@@ -288,7 +288,7 @@ class AnalyticsService:
             # Get daily cost trend
             daily_costs = conn.execute(
                 """
-                SELECT 
+                SELECT
                     DATE(created_date) as date,
                     SUM(total_cost) as daily_cost
                 FROM maintenance_history
@@ -342,7 +342,7 @@ class AnalyticsService:
             # Get work order status breakdown
             status_breakdown = conn.execute(
                 """
-                SELECT 
+                SELECT
                     status,
                     COUNT(*) as count
                 FROM work_orders
@@ -355,7 +355,7 @@ class AnalyticsService:
             # Get priority breakdown
             priority_breakdown = conn.execute(
                 """
-                SELECT 
+                SELECT
                     priority,
                     COUNT(*) as count
                 FROM work_orders
@@ -394,7 +394,7 @@ class AnalyticsService:
             # Get daily trend
             daily_trend = conn.execute(
                 """
-                SELECT 
+                SELECT
                     DATE(created_date) as date,
                     COUNT(*) as created,
                     SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed
@@ -442,7 +442,7 @@ class AnalyticsService:
             # Get PM completion rate
             pm_stats = conn.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_pm,
                     SUM(CASE WHEN DATE(actual_end) <= DATE(due_date) THEN 1 ELSE 0 END) as on_time
                 FROM work_orders
@@ -455,7 +455,7 @@ class AnalyticsService:
             # Get training compliance
             training_stats = conn.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_assigned,
                     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
                 FROM user_training
@@ -465,7 +465,7 @@ class AnalyticsService:
             # Get certification status
             cert_stats = conn.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total_certs,
                     SUM(CASE WHEN certification_expiry >= DATE('now') THEN 1 ELSE 0 END) as valid_certs,
                     SUM(CASE WHEN certification_expiry < DATE('now') THEN 1 ELSE 0 END) as expired_certs
@@ -536,7 +536,7 @@ class AnalyticsService:
         """Get MTTR trend over time"""
         result = conn.execute(
             """
-            SELECT 
+            SELECT
                 DATE(actual_end) as date,
                 AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as mttr
             FROM work_orders
@@ -556,7 +556,7 @@ class AnalyticsService:
         """Get MTBF trend over time"""
         result = conn.execute(
             """
-            SELECT 
+            SELECT
                 DATE(created_date) as date,
                 COUNT(*) as failures
             FROM maintenance_history
@@ -594,7 +594,7 @@ class AnalyticsService:
         """Get cost trend over time"""
         result = conn.execute(
             """
-            SELECT 
+            SELECT
                 DATE(created_date) as date,
                 SUM(total_cost) as cost
             FROM maintenance_history
@@ -611,7 +611,7 @@ class AnalyticsService:
         """Get work order completion trend over time"""
         result = conn.execute(
             """
-            SELECT 
+            SELECT
                 DATE(created_date) as date,
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed

@@ -4,7 +4,6 @@ WebSocket Manager for Real-Time Team Communication
 
 from fastapi import WebSocket
 from typing import Dict, List
-import json
 import logging
 
 logger = logging.getLogger(__name__)

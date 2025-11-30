@@ -71,7 +71,7 @@ class GeolocationService:
         # Log location history
         cur.execute(
             """
-            INSERT INTO user_location_history 
+            INSERT INTO user_location_history
             (user_id, latitude, longitude, accuracy, work_order_id, within_property)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
@@ -189,7 +189,7 @@ class GeolocationService:
 
         locations = cur.execute(
             """
-            SELECT 
+            SELECT
                 u.id,
                 u.full_name,
                 u.username,
@@ -227,7 +227,7 @@ class GeolocationService:
         # Get work orders with location data
         work_orders = cur.execute(
             """
-            SELECT 
+            SELECT
                 wo.id,
                 wo.title,
                 wo.priority,
@@ -260,7 +260,7 @@ class GeolocationService:
         try:
             cur.execute(
                 """
-                INSERT OR REPLACE INTO user_privacy_settings 
+                INSERT OR REPLACE INTO user_privacy_settings
                 (user_id, location_tracking_enabled, share_location_with_team, track_only_on_shift, updated_date)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
@@ -288,7 +288,7 @@ class GeolocationService:
 
         settings = cur.execute(
             """
-            SELECT 
+            SELECT
                 location_tracking_enabled,
                 share_location_with_team,
                 track_only_on_shift
@@ -342,7 +342,7 @@ class GeolocationService:
 
         history = cur.execute(
             """
-            SELECT 
+            SELECT
                 latitude,
                 longitude,
                 accuracy,

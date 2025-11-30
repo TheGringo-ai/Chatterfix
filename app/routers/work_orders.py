@@ -20,9 +20,9 @@ async def work_orders_list(request: Request):
     conn = get_db_connection()
     work_orders = conn.execute(
         """
-        SELECT wo.*, a.image_url as asset_image_url 
-        FROM work_orders wo 
-        LEFT JOIN assets a ON wo.asset_id = a.id 
+        SELECT wo.*, a.image_url as asset_image_url
+        FROM work_orders wo
+        LEFT JOIN assets a ON wo.asset_id = a.id
         ORDER BY wo.created_date DESC
     """
     ).fetchall()

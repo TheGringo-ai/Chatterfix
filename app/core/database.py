@@ -20,8 +20,8 @@ def init_database():
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS work_orders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                title TEXT NOT NULL, 
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
                 description TEXT,
                 status TEXT DEFAULT 'Open',
                 priority TEXT DEFAULT 'Medium',
@@ -47,31 +47,31 @@ def init_database():
                 model TEXT,
                 manufacturer TEXT,
                 image_url TEXT,
-                
+
                 -- Location & Hierarchy
                 location TEXT,
                 department TEXT,
                 parent_asset_id INTEGER,
-                
+
                 -- Status & Condition
                 status TEXT DEFAULT 'Active', -- Active, Inactive, Maintenance, Retired
                 condition_rating INTEGER DEFAULT 5, -- 1-10 scale
                 criticality TEXT DEFAULT 'Medium', -- Low, Medium, High, Critical
-                
+
                 -- Warranty & Purchase
                 purchase_date DATE,
                 warranty_expiry DATE,
                 purchase_cost REAL,
-                
+
                 -- Operational Dates
                 installation_date DATE,
-                
+
                 -- Maintenance Stats (Cached/Calculated)
                 last_maintenance_date DATE,
                 next_maintenance_due DATE,
                 total_maintenance_cost REAL DEFAULT 0,
                 total_downtime_hours REAL DEFAULT 0,
-                
+
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(parent_asset_id) REFERENCES assets(id)
@@ -197,9 +197,9 @@ def init_database():
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS ai_interactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_message TEXT, 
+                user_message TEXT,
                 ai_response TEXT
             )
         """
@@ -554,7 +554,7 @@ def init_database():
         cur.execute(
             """
             INSERT OR IGNORE INTO dashboard_widgets (widget_type, title, description, default_roles, is_system)
-            VALUES 
+            VALUES
                 ('workload', 'My Workload', 'Today''s assigned work orders with timeline', '["technician", "supervisor"]', 1),
                 ('parts_status', 'Parts Status', 'Parts arriving, pending requests, low stock alerts', '["technician", "parts_manager"]', 1),
                 ('messages', 'Team Messages', 'Unread messages and mentions', '["technician", "supervisor", "parts_manager"]', 1),

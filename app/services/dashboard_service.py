@@ -40,7 +40,7 @@ class DashboardService:
         # Get user's configured widgets
         widgets = cur.execute(
             """
-            SELECT 
+            SELECT
                 udc.id as config_id,
                 udc.position,
                 udc.size,
@@ -78,7 +78,7 @@ class DashboardService:
 
         widgets = cur.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 widget_type,
                 title,
@@ -133,7 +133,7 @@ class DashboardService:
         # Get assigned work orders
         work_orders = cur.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 title,
                 description,
@@ -146,10 +146,10 @@ class DashboardService:
                 location,
                 asset_id
             FROM work_orders
-            WHERE assigned_to = ? 
+            WHERE assigned_to = ?
             AND status NOT IN ('completed', 'cancelled')
-            ORDER BY 
-                CASE priority 
+            ORDER BY
+                CASE priority
                     WHEN 'urgent' THEN 1
                     WHEN 'high' THEN 2
                     WHEN 'medium' THEN 3
@@ -209,7 +209,7 @@ class DashboardService:
         # Get user's parts requests
         requests = cur.execute(
             """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.quantity,
                 pr.priority,
@@ -266,7 +266,7 @@ class DashboardService:
         # Get unread messages
         messages = cur.execute(
             """
-            SELECT 
+            SELECT
                 tm.id,
                 tm.message,
                 tm.priority,
@@ -314,7 +314,7 @@ class DashboardService:
         # Today's completions
         today_stats = cur.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as completed,
                 AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as avg_hours
             FROM work_orders
@@ -328,7 +328,7 @@ class DashboardService:
         # This week's stats
         week_stats = cur.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as completed,
                 AVG(CAST((julianday(actual_end) - julianday(actual_start)) * 24 AS REAL)) as avg_hours
             FROM work_orders
@@ -439,7 +439,7 @@ class DashboardService:
 
         notifications = cur.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 notification_type,
                 title,
@@ -480,7 +480,7 @@ class DashboardService:
         # Get all team members
         team_members = cur.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 username,
                 full_name,
@@ -520,7 +520,7 @@ class DashboardService:
         # Get assigned training
         training = cur.execute(
             """
-            SELECT 
+            SELECT
                 ut.id,
                 ut.status,
                 ut.score,
@@ -608,7 +608,7 @@ class DashboardService:
         # Get recent feedback with issues
         alerts = cur.execute(
             """
-            SELECT 
+            SELECT
                 wf.id,
                 wf.feedback_type,
                 wf.description,
@@ -637,7 +637,7 @@ class DashboardService:
         # Get low stock items
         low_stock = cur.execute(
             """
-            SELECT 
+            SELECT
                 id,
                 name,
                 part_number,
@@ -675,7 +675,7 @@ class DashboardService:
         # Get pending parts requests
         requests = cur.execute(
             """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.quantity,
                 pr.priority,
@@ -706,7 +706,7 @@ class DashboardService:
         # Get overall stats
         stats = cur.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_work_orders,
                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
                 SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,

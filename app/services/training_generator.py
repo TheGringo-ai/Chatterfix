@@ -53,9 +53,9 @@ class TrainingGenerator:
 
             prompt = f"""
             You are an expert technical trainer creating a comprehensive training module for maintenance technicians.
-            
+
             Analyze this equipment manual and create a structured training module that includes:
-            
+
             1. **Overview** - Brief introduction to the equipment
             2. **Safety Procedures** - Critical safety information (MUST be first)
             3. **Operating Procedures** - Step-by-step operation instructions
@@ -63,10 +63,10 @@ class TrainingGenerator:
             5. **Troubleshooting Guide** - Common issues and solutions
             6. **Key Specifications** - Important technical specs to remember
             7. **Quiz Questions** - 5 multiple-choice questions to test understanding
-            
+
             Asset Type: {asset_type}
             Skill Category: {skill_category}
-            
+
             Format the response as JSON with the following structure:
             {{
                 "title": "Training module title",
@@ -87,7 +87,7 @@ class TrainingGenerator:
                     ...
                 ]
             }}
-            
+
             Make it practical, technician-friendly, and focused on hands-on skills.
             """
 
@@ -100,8 +100,8 @@ class TrainingGenerator:
             try:
                 cursor = conn.execute(
                     """
-                    INSERT INTO training_modules 
-                    (title, description, content_type, asset_type, skill_category, 
+                    INSERT INTO training_modules
+                    (title, description, content_type, asset_type, skill_category,
                      difficulty_level, estimated_duration_minutes, content_path, ai_generated)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
                 """,
@@ -143,17 +143,17 @@ class TrainingGenerator:
 
             prompt = f"""
             Create a concise, step-by-step quick reference guide for a maintenance technician.
-            
+
             Equipment: {equipment_name}
             Task: {task_description}
-            
+
             Provide:
             1. Safety warnings (if applicable)
             2. Required tools/parts
             3. Step-by-step procedure (numbered)
             4. Common mistakes to avoid
             5. Verification steps
-            
+
             Keep it brief and practical - this is a field reference guide.
             Format in markdown.
             """
@@ -178,7 +178,7 @@ class TrainingGenerator:
 
             prompt = f"""
             You are an expert maintenance technician assistant. Answer this question clearly and practically.
-            
+
             Question: {question}
             """
 
@@ -186,13 +186,13 @@ class TrainingGenerator:
                 prompt += f"\n\nContext: {context}"
 
             prompt += """
-            
+
             Provide:
             - Direct answer
             - Safety considerations (if relevant)
             - Best practices
             - Common pitfalls to avoid
-            
+
             Keep it concise and actionable.
             """
 
@@ -227,7 +227,7 @@ class TrainingGenerator:
         try:
             conn.execute(
                 """
-                UPDATE user_training 
+                UPDATE user_training
                 SET status = 'completed', completed_date = ?, score = ?
                 WHERE id = ?
             """,
@@ -248,8 +248,8 @@ class TrainingGenerator:
                 FROM user_training ut
                 JOIN training_modules tm ON ut.training_module_id = tm.id
                 WHERE ut.user_id = ?
-                ORDER BY 
-                    CASE ut.status 
+                ORDER BY
+                    CASE ut.status
                         WHEN 'assigned' THEN 1
                         WHEN 'in_progress' THEN 2
                         WHEN 'completed' THEN 3

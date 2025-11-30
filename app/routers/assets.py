@@ -88,8 +88,8 @@ async def asset_detail(request: Request, asset_id: int):
     # Get maintenance history
     history = conn.execute(
         """
-        SELECT * FROM maintenance_history 
-        WHERE asset_id = ? 
+        SELECT * FROM maintenance_history
+        WHERE asset_id = ?
         ORDER BY created_date DESC
         LIMIT 50
     """,
@@ -111,7 +111,7 @@ async def asset_detail(request: Request, asset_id: int):
     # Calculate cost analytics
     cost_data = conn.execute(
         """
-        SELECT 
+        SELECT
             SUM(total_cost) as total_cost,
             SUM(labor_cost) as labor_cost,
             SUM(parts_cost) as parts_cost,
@@ -293,7 +293,7 @@ async def log_maintenance(
     # Update asset totals
     conn.execute(
         """
-        UPDATE assets 
+        UPDATE assets
         SET total_downtime_hours = total_downtime_hours + ?,
             total_maintenance_cost = total_maintenance_cost + ?,
             last_service_date = CURRENT_TIMESTAMP
@@ -318,9 +318,9 @@ async def ai_health_analysis(asset_id: int):
     asset = conn.execute("SELECT * FROM assets WHERE id = ?", (asset_id,)).fetchone()
     history = conn.execute(
         """
-        SELECT * FROM maintenance_history 
-        WHERE asset_id = ? 
-        ORDER BY created_date DESC 
+        SELECT * FROM maintenance_history
+        WHERE asset_id = ?
+        ORDER BY created_date DESC
         LIMIT 10
     """,
         (asset_id,),
@@ -330,7 +330,7 @@ async def ai_health_analysis(asset_id: int):
     # Prepare context for AI
     context = f"""
     Analyze the health of this asset and provide a health score (0-100) and brief analysis.
-    
+
     Asset: {asset['name']}
     Model: {asset['model']}
     Age: Installed {asset['installation_date']}
@@ -338,7 +338,7 @@ async def ai_health_analysis(asset_id: int):
     Total Maintenance Cost: ${asset['total_maintenance_cost']}
     Recent Maintenance Events: {len(history)}
     Criticality: {asset['criticality']}
-    
+
     Provide response as JSON: {{"health_score": <0-100>, "risk_level": "<Low/Medium/High>", "analysis": "<brief analysis>", "recommendations": ["<rec1>", "<rec2>"]}}
     """
 
@@ -388,12 +388,12 @@ async def ai_recommendations(asset_id: int):
 
     prompt = f"""
     Provide predictive maintenance recommendations for this asset.
-    
+
     Asset: {asset['name']} ({asset['model']})
     Last Service: {asset['last_service_date']}
     Next Service: {asset['next_service_date']}
     Associated Parts: {len(parts)}
-    
+
     Return JSON array of recommendations with priority and estimated cost.
     """
 

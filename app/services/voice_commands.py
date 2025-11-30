@@ -6,7 +6,6 @@ AI-powered voice command processing with Grok integration
 import logging
 import httpx
 import sqlite3
-import random
 from datetime import datetime, timedelta
 from typing import Optional
 import os

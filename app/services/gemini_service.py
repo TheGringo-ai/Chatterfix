@@ -147,12 +147,12 @@ class GeminiService:
             return "KPI reporting unavailable. Please configure API Key."
 
         prompt = f"""
-        Act as a Maintenance Manager. Analyze the following CMMS data and generate a concise executive summary 
+        Act as a Maintenance Manager. Analyze the following CMMS data and generate a concise executive summary
         highlighting key performance indicators, trends, and recommendations.
-        
+
         Data:
         {json.dumps(data, indent=2)}
-        
+
         Format the response as HTML with <h3> headers and bullet points.
         """
         return await self.generate_response(prompt, user_id=user_id)
@@ -162,7 +162,7 @@ class GeminiService:
     ) -> str:
         """Provide troubleshooting advice for a technician"""
         context = f"""
-        You are an expert industrial maintenance technician assistant. 
+        You are an expert industrial maintenance technician assistant.
         Provide step-by-step troubleshooting advice based on the asset and issue described.
         Prioritize safety first.
         """
@@ -186,34 +186,34 @@ class GeminiService:
         system_prompt = f"""
         You are ChatterFix, an intelligent CMMS assistant for industrial maintenance technicians.
         Your goal is to help users manage work orders, find parts, and troubleshoot equipment efficiently.
-        
+
         Current Context:
         {context}
-        
+
         AVAILABLE TOOLS:
         1. create_work_order(title: str, description: str, priority: str, asset_id: int)
            - Use this when the user explicitly wants to create a ticket, job, or work order.
            - Priority options: 'Low', 'Medium', 'High', 'Critical'.
            - If asset_id is unknown, ask the user to clarify which asset.
-           
+
         2. update_work_order(wo_id: int, status: str = None, priority: str = None, notes: str = None)
            - Use this to modify an existing work order. Status options: 'Open', 'In Progress', 'Completed', 'On Hold'.
-           
+
         3. search_parts(query: str)
            - Use this to find spare parts in inventory.
-           
+
         4. update_part_stock(part_id: int, quantity_change: int)
            - Use this to increase or decrease stock levels (e.g., "used 2 bearings", "received 5 filters").
-           
+
         5. get_asset_history(asset_name: str)
            - Use this to see past maintenance on a machine.
-           
+
         6. create_asset(name: str, type: str, location: str, status: str = "Operational")
            - Use this to add a new machine or equipment to the system.
 
         7. web_search(query: str)
            - Use this to find information on the internet, such as manual, error codes, or general troubleshooting advice.
-           
+
         INSTRUCTIONS:
         - If the user's request requires a tool, return a JSON object ONLY:
           {{"tool": "tool_name", "parameters": {{...}}}}
@@ -418,7 +418,7 @@ class GeminiService:
         conn = get_db_connection()
         results = conn.execute(
             """
-            SELECT * FROM parts 
+            SELECT * FROM parts
             WHERE name LIKE ? OR part_number LIKE ? OR description LIKE ?
             LIMIT 5
         """,
@@ -450,9 +450,9 @@ class GeminiService:
 
         history = conn.execute(
             """
-            SELECT * FROM maintenance_history 
-            WHERE asset_id = ? 
-            ORDER BY created_date DESC 
+            SELECT * FROM maintenance_history
+            WHERE asset_id = ?
+            ORDER BY created_date DESC
             LIMIT 3
         """,
             (asset["id"],),

@@ -49,7 +49,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     # Get user
     cursor.execute(
         """
-        SELECT * FROM users 
+        SELECT * FROM users
         WHERE username = ? AND is_active = 1
     """,
         (username,),
@@ -75,10 +75,10 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         # Increment failed attempts
         cursor.execute(
             """
-            UPDATE users 
+            UPDATE users
             SET failed_login_attempts = failed_login_attempts + 1,
-                locked_until = CASE 
-                    WHEN failed_login_attempts >= 4 
+                locked_until = CASE
+                    WHEN failed_login_attempts >= 4
                     THEN datetime('now', '+30 minutes')
                     ELSE NULL
                 END
@@ -93,7 +93,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     # Reset failed attempts on successful login
     cursor.execute(
         """
-        UPDATE users 
+        UPDATE users
         SET failed_login_attempts = 0,
             locked_until = NULL,
             last_seen = CURRENT_TIMESTAMP
@@ -149,10 +149,10 @@ def validate_session(token: str) -> Optional[Dict[str, Any]]:
 
     cursor.execute(
         """
-        SELECT s.*, u.* 
+        SELECT s.*, u.*
         FROM user_sessions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.token = ? 
+        WHERE s.token = ?
         AND s.is_active = 1
         AND datetime(s.expires_at) > datetime('now')
         AND u.is_active = 1
@@ -176,8 +176,8 @@ def invalidate_session(token: str) -> bool:
 
     cursor.execute(
         """
-        UPDATE user_sessions 
-        SET is_active = 0 
+        UPDATE user_sessions
+        SET is_active = 0
         WHERE token = ?
     """,
         (token,),
@@ -244,8 +244,8 @@ def change_password(user_id: int, old_password: str, new_password: str) -> bool:
     new_hash = hash_password(new_password)
     cursor.execute(
         """
-        UPDATE users 
-        SET password_hash = ?, 
+        UPDATE users
+        SET password_hash = ?,
             last_password_change = CURRENT_TIMESTAMP
         WHERE id = ?
     """,

@@ -36,7 +36,7 @@ async def team_dashboard(request: Request):
         # Get all team members
         users = conn.execute(
             """
-            SELECT u.*, 
+            SELECT u.*,
                    COUNT(DISTINCT wo.id) as active_work_orders,
                    (SELECT COUNT(*) FROM user_skills WHERE user_id = u.id) as skill_count
             FROM users u
@@ -49,7 +49,7 @@ async def team_dashboard(request: Request):
         # Get recent messages
         messages = conn.execute(
             """
-            SELECT tm.*, 
+            SELECT tm.*,
                    s.full_name as sender_name,
                    r.full_name as recipient_name
             FROM team_messages tm
@@ -108,7 +108,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
                 conn = get_db_connection()
                 conn.execute(
                     """
-                    INSERT INTO team_messages 
+                    INSERT INTO team_messages
                     (sender_id, recipient_id, work_order_id, message_type, message, priority)
                     VALUES (?, ?, ?, 'chat', ?, ?)
                 """,
@@ -187,7 +187,7 @@ async def get_messages(user_id: int = None, work_order_id: int = None, limit: in
     conn = get_db_connection()
     try:
         query = """
-            SELECT tm.*, 
+            SELECT tm.*,
                    s.full_name as sender_name,
                    r.full_name as recipient_name
             FROM team_messages tm
@@ -228,7 +228,7 @@ async def send_message(
     try:
         conn.execute(
             """
-            INSERT INTO team_messages 
+            INSERT INTO team_messages
             (sender_id, recipient_id, work_order_id, message_type, message, priority)
             VALUES (?, ?, ?, ?, ?, ?)
         """,
@@ -274,7 +274,7 @@ async def create_parts_request(
         # Create request
         conn.execute(
             """
-            INSERT INTO parts_requests 
+            INSERT INTO parts_requests
             (requester_id, work_order_id, part_id, quantity, priority, notes, status)
             VALUES (?, ?, ?, ?, ?, ?, 'pending')
         """,
@@ -314,7 +314,7 @@ async def get_parts_requests(status: str = None):
     conn = get_db_connection()
     try:
         query = """
-            SELECT pr.*, 
+            SELECT pr.*,
                    u.full_name as requester_name,
                    p.name as part_name,
                    p.part_number
@@ -355,7 +355,7 @@ async def update_parts_request_status(request_id: int, status: str = Form(...)):
         # Update status
         conn.execute(
             """
-            UPDATE parts_requests 
+            UPDATE parts_requests
             SET status = ?, fulfilled_date = ?
             WHERE id = ?
         """,
@@ -419,7 +419,7 @@ async def user_profile(request: Request, user_id: int):
         # Get performance
         performance = conn.execute(
             """
-            SELECT * FROM user_performance 
+            SELECT * FROM user_performance
             WHERE user_id = ?
             ORDER BY period_end DESC
             LIMIT 12
@@ -442,11 +442,11 @@ async def user_profile(request: Request, user_id: int):
         # Get work order stats
         wo_stats = conn.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-                AVG(CASE WHEN status = 'completed' 
-                    THEN julianday(completed_date) - julianday(created_date) 
+                AVG(CASE WHEN status = 'completed'
+                    THEN julianday(completed_date) - julianday(created_date)
                     ELSE NULL END) as avg_completion_days
             FROM work_orders
             WHERE assigned_to = ?

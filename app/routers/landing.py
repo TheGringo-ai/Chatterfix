@@ -102,7 +102,7 @@ async def handle_landing_signup(
         cursor.execute(
             """
             INSERT INTO users (
-                username, email, password_hash, full_name, phone, role, 
+                username, email, password_hash, full_name, phone, role,
                 is_active, created_date
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,

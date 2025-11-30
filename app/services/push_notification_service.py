@@ -41,7 +41,7 @@ class PushNotificationService:
             # Store subscription
             conn.execute(
                 """
-                INSERT OR REPLACE INTO push_subscriptions 
+                INSERT OR REPLACE INTO push_subscriptions
                 (user_id, endpoint, p256dh_key, auth_key, created_at)
                 VALUES (?, ?, ?, ?, ?)
             """,
@@ -150,7 +150,7 @@ class PushNotificationService:
         try:
             conn.execute(
                 """
-                INSERT INTO notifications 
+                INSERT INTO notifications
                 (user_id, notification_type, title, message, link, priority)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,

@@ -18,7 +18,7 @@ class PurchasingService:
         cur = conn.cursor()
 
         query = """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.part_name,
                 pr.quantity,
@@ -51,7 +51,7 @@ class PurchasingService:
 
         pending = cur.execute(
             """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.part_name,
                 pr.quantity,
@@ -64,8 +64,8 @@ class PurchasingService:
             LEFT JOIN users u ON pr.requester_id = u.id
             LEFT JOIN work_orders wo ON pr.work_order_id = wo.id
             WHERE pr.status = 'pending'
-            ORDER BY 
-                CASE pr.priority 
+            ORDER BY
+                CASE pr.priority
                     WHEN 'urgent' THEN 1
                     WHEN 'high' THEN 2
                     WHEN 'medium' THEN 3
@@ -123,7 +123,7 @@ class PurchasingService:
         # Get parts spending (simulated pricing)
         parts_spending = cur.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_requests,
                 SUM(quantity) as total_quantity
             FROM parts_requests
@@ -178,7 +178,7 @@ class PurchasingService:
 
         low_stock = cur.execute(
             """
-            SELECT 
+            SELECT
                 part_name,
                 quantity,
                 min_quantity,
@@ -257,7 +257,7 @@ class PurchasingService:
         # Get parts requests in period
         requests = cur.execute(
             """
-            SELECT 
+            SELECT
                 pr.id,
                 pr.part_name,
                 pr.quantity,

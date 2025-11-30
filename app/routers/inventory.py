@@ -20,9 +20,9 @@ async def inventory_list(request: Request):
     conn = get_db_connection()
     parts = conn.execute(
         """
-        SELECT p.*, v.name as vendor_name 
-        FROM parts p 
-        LEFT JOIN vendors v ON p.vendor_id = v.id 
+        SELECT p.*, v.name as vendor_name
+        FROM parts p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
         ORDER BY p.name
     """
     ).fetchall()
@@ -140,8 +140,8 @@ async def part_detail(request: Request, part_id: int):
     part = conn.execute(
         """
         SELECT p.*, v.name as vendor_name, v.phone as vendor_phone, v.email as vendor_email
-        FROM parts p 
-        LEFT JOIN vendors v ON p.vendor_id = v.id 
+        FROM parts p
+        LEFT JOIN vendors v ON p.vendor_id = v.id
         WHERE p.id = ?
     """,
         (part_id,),

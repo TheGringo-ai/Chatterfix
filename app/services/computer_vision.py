@@ -49,10 +49,10 @@ async def recognize_part(
         # Search for similar parts in inventory
         cursor.execute(
             """
-            SELECT 
-                id, name, part_number, category, current_stock, 
+            SELECT
+                id, name, part_number, category, current_stock,
                 minimum_stock, location, unit_cost
-            FROM parts 
+            FROM parts
             WHERE category LIKE ? OR name LIKE ?
             LIMIT 5
         """,
@@ -127,7 +127,7 @@ async def analyze_asset_condition(
 
             cursor.execute(
                 """
-                UPDATE assets 
+                UPDATE assets
                 SET condition_rating = ?,
                     updated_date = CURRENT_TIMESTAMP
                 WHERE id = ?

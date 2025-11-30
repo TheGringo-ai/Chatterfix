@@ -72,11 +72,12 @@ async def health_check():
                 db_adapter = get_db_adapter()
                 db_status = "firestore_ok"
             else:
-                # SQLite health check
-                conn = sqlite3.connect("./data/cmms.db")
+                # Database health check
+                from app.core.database import get_db_connection
+                conn = get_db_connection()
                 conn.execute("SELECT 1")
                 conn.close()
-                db_status = "sqlite_ok"
+                db_status = "db_ok"
         except Exception as e:
             db_status = f"error: {str(e)}"
         

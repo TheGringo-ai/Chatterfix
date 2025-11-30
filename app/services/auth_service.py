@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from passlib.context import CryptContext
 from app.core.database import get_db_connection
-import sqlite3
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -42,7 +41,6 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         User dict if successful, None if failed
     """
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     # Get user
@@ -114,7 +112,7 @@ def create_session(user_id: int, ip_address: str = None, user_agent: str = None)
     Returns:
         Session token
     """
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     session_id = secrets.token_urlsafe(16)
@@ -143,7 +141,6 @@ def validate_session(token: str) -> Optional[Dict[str, Any]]:
         User dict if valid, None if invalid/expired
     """
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute(
@@ -170,7 +167,7 @@ def validate_session(token: str) -> Optional[Dict[str, Any]]:
 
 def invalidate_session(token: str) -> bool:
     """Invalidate a session (logout)"""
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute(
@@ -202,7 +199,7 @@ def create_user(
     Returns:
         User ID if successful, None if failed
     """
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     password_hash = hash_password(password)
@@ -220,7 +217,7 @@ def create_user(
         conn.commit()
         conn.close()
         return user_id
-    except sqlite3.IntegrityError:
+    except Exception:
         conn.close()
         return None
 
@@ -228,7 +225,6 @@ def create_user(
 def change_password(user_id: int, old_password: str, new_password: str) -> bool:
     """Change a user's password"""
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     # Verify old password

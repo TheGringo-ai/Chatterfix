@@ -4,7 +4,6 @@ ChatterFix CMMS Demo Data Population Script
 Creates realistic demo data for a fully functional demonstration
 """
 
-import sqlite3
 import random
 from datetime import datetime, timedelta
 import json
@@ -12,7 +11,11 @@ import json
 DATABASE_PATH = "./data/cmms.db"
 
 def populate_demo_data():
-    conn = sqlite3.connect(DATABASE_PATH)
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(__file__))
+    from app.core.database import get_db_connection
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Clear existing demo data (keep structure)

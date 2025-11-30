@@ -13,7 +13,7 @@ def init_database():
     os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
 
     try:
-        conn = sqlite3.connect(DATABASE_PATH)
+        conn = get_db_connection()
         cur = conn.cursor()
 
         # Work Orders Table

@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -35,16 +35,28 @@ jobs:
           pip install pytest pytest-asyncio black flake8 mypy
           
       - name: Run Black formatter check
-        run: black --check app/ --diff || echo "Code formatting issues found - run 'black app/' to fix"
-        continue-on-error: true
+        run: |
+          black --check app/ --diff
+          if [ $? -ne 0 ]; then
+            echo "❌ Code formatting issues found - run 'black app/' to fix"
+            exit 1
+          fi
         
       - name: Run Flake8 linting
-        run: flake8 app/ --max-line-length=100 --ignore=E203,W503 || echo "Linting issues found"
-        continue-on-error: true
+        run: |
+          flake8 app/ --max-line-length=100 --ignore=E203,W503 --count
+          if [ $? -ne 0 ]; then
+            echo "❌ Linting issues found"
+            exit 1
+          fi
         
       - name: Run MyPy type checking
-        run: mypy app/ --ignore-missing-imports || echo "Type checking issues found"
-        continue-on-error: true
+        run: |
+          mypy app/ --ignore-missing-imports
+          if [ $? -ne 0 ]; then
+            echo "❌ Type checking issues found"
+            exit 1
+          fi
         
       - name: Run pytest
         run: |

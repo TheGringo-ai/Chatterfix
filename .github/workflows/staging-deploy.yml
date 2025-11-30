@@ -51,13 +51,28 @@ jobs:
           
           echo "🧪 Testing staging deployment..."
           
-          # Basic health check
-          curl -f "$STAGING_URL" --max-time 30
+          # Basic health check with retry
+          for i in {1..3}; do
+            if curl -f "$STAGING_URL" --max-time 30; then
+              echo "✅ Basic health check passed"
+              break
+            elif [ $i -eq 3 ]; then
+              echo "❌ Basic health check failed after 3 attempts"
+              exit 1
+            else
+              echo "⏳ Retrying health check... (attempt $i/3)"
+              sleep 10
+            fi
+          done
           
           # Test API endpoints
-          curl -f "$STAGING_URL/health" --max-time 30 || echo "Health endpoint not found"
+          if curl -f "$STAGING_URL/health" --max-time 30; then
+            echo "✅ Health endpoint accessible"
+          else
+            echo "⚠️ Health endpoint not accessible - may not be implemented yet"
+          fi
           
-          echo "✅ Staging tests passed"
+          echo "✅ Staging tests completed"
           
       - name: Comment on PR
         if: github.event_name == 'pull_request'

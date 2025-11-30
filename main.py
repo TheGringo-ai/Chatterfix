@@ -1,10 +1,33 @@
 import os
+import logging
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
-from app.core.database import init_database
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from app.core.db_adapter import get_db_adapter
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("logs/chatterfix.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Create logs directory
+os.makedirs("logs", exist_ok=True)
+
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
 
 # Import all routers
 from app.routers import (
@@ -37,8 +60,31 @@ from app.routers import (
 app = FastAPI(
     title="ChatterFix CMMS",
     description="Comprehensive Maintenance Management System with AI Integration",
-    version="2.0.0"
+    version="2.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json"
 )
+
+# Add middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add trusted host middleware for production
+if os.getenv("ENVIRONMENT") == "production":
+    app.add_middleware(
+        TrustedHostMiddleware, 
+        allowed_hosts=["chatterfix.com", "*.chatterfix.com"]
+    )
+
+# Add rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -72,29 +118,35 @@ app.include_router(media.router)      # Media upload and barcode functionality
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup"""
-    init_database()
-    db_adapter = get_db_adapter()
-    print("✅ ChatterFix CMMS started successfully!")
-    print(f"📊 Database initialized ({db_adapter.db_type})")
-    
-    # Auto-populate demo data if database is empty
     try:
-        import sqlite3
-        conn = sqlite3.connect("./data/cmms.db")
-        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        conn.close()
+        logger.info("🚀 Starting ChatterFix CMMS...")
         
-        if user_count == 0:
-            print("🔄 Populating demo data...")
-            import subprocess
-            subprocess.run(["python", "populate_demo_data.py"], check=True)
-            print("✨ Demo data populated successfully!")
+        # Initialize database adapter
+        db_adapter = get_db_adapter()
+        logger.info(f"📊 Database initialized ({db_adapter.db_type})")
+        
+        if db_adapter.db_type == "firestore":
+            logger.info("🔥 Firebase/Firestore configured and ready")
+            logger.info("✅ No SQLite dependencies - running on GCP")
+        else:
+            logger.warning("📁 Running in fallback SQLite mode")
+            logger.warning("   For production, configure Firebase credentials")
+        
+        logger.info("✅ ChatterFix CMMS started successfully!")
+        logger.info("🌐 ChatterFix ready for use!")
+        logger.info("📊 Analytics dashboard: /analytics/dashboard")
+        logger.info("🔌 IoT API: /iot/sensors/")
+        
     except Exception as e:
-        print(f"⚠️ Demo data population failed: {e}")
-    
-    print("🌐 ChatterFix ready for use!")
-    print("📊 Analytics dashboard: /analytics/dashboard")
-    print("🔌 IoT API: /iot/sensors/")
+        logger.error(f"❌ Failed to start ChatterFix CMMS: {e}")
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("🛑 Shutting down ChatterFix CMMS...")
+    # Add any cleanup code here
+    logger.info("✅ ChatterFix CMMS shutdown complete")
 
 # Main entry point
 if __name__ == "__main__":

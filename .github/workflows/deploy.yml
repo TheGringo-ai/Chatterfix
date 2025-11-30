@@ -21,15 +21,16 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
       
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install bandit safety pytest black flake8
-        continue-on-error: true
+          pip install bandit safety pytest black flake8 mypy
       
       - name: Run Pre-Deployment Validation
         run: |
@@ -37,14 +38,13 @@ jobs:
           echo "Pre-deployment checks temporarily simplified for workflow stability"
           if [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then
             echo "Force deploy enabled - skipping checks"
+            exit 0
           else
-            ./deployment/pre-deploy-check.sh --skip-tests || echo "Some checks failed but continuing deployment"
+            ./deployment/pre-deploy-check.sh --skip-tests
           fi
-        continue-on-error: true
   
   deploy:
-    # Temporarily skip pre-deployment checks for Firebase setup
-    # needs: pre-deployment-checks
+    needs: pre-deployment-checks
     runs-on: ubuntu-latest
     
     steps:

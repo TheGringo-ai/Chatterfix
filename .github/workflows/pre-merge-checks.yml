@@ -15,12 +15,14 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
       
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install bandit safety pytest black flake8 mypy
       
@@ -35,20 +37,11 @@ jobs:
           black app/ --check || echo "⚠️ Code formatting issues found"
           flake8 app/ --max-line-length=100 --ignore=E203,W503 --count || echo "⚠️ Linting issues found"
       
-      - name: Security Scan
+      - name: Quick Security Check
         run: |
-          echo "Running security scan..."
-          bandit -r app/ -f json -o bandit-report.json || true
-          if [ -f bandit-report.json ]; then
-            echo "Security scan completed - check artifacts for report"
-          fi
-      
-      - name: Upload Security Report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: security-report
-          path: bandit-report.json
+          echo "Running quick security check..."
+          echo "⚠️ For full security scan, see the Security Scan workflow"
+          bandit -r app/ --severity-level high -q || echo "⚠️ High severity security issues found"
       
       - name: Check for Breaking Changes
         run: |

@@ -1,0 +1,130 @@
+# Version Control
+.git
+.gitignore
+
+# Virtual Environments
+venv/
+venv_debug/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation
+*.md
+README.md
+AI-SETUP.md
+CLI-DEPLOYMENT.md
+CUSTOM-DOMAIN.md
+DEPLOYMENT.md
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_SAFETY.md
+DEV-WORKFLOW.md
+FEATURE-SUMMARY.md
+FIREBASE_SETUP_GUIDE.md
+GITHUB_SECRETS_SETUP.md
+SIGNUP_FIREBASE_REPORT.md
+SYNC-GUIDE.md
+TEST_REPORT.md
+configure-domain.md
+
+# Test Files
+test_*.py
+tests/
+*_test.py
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Development Tools
+.flake8
+.pre-commit-config.yaml
+pyproject.toml
+requirements-dev.txt
+requirements-local.txt
+requirements-media.txt
+Makefile
+
+# Deployment Scripts (not needed in container)
+deploy-*.sh
+setup-*.sh
+sync-*.sh
+test-*.sh
+cleanup-branches.sh
+dev-deploy.sh
+local-dev.sh
+
+# Cloud Build Files (used by GCP, not container)
+cloudbuild*.yaml
+
+# Firebase Config (handled by environment variables)
+.firebaserc
+firebase.json
+
+# Docker Files
+docker-compose*.yml
+Dockerfile.gcp
+
+# Development Data
+data/
+secrets/
+.deployment-config
+
+# Temporary Files
+*.tmp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Cache and Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Environment Variables (use secrets in production)
+.env.example
+
+# Demo and population scripts (exclude specific scripts, keep app code)
+generate_*.py
+populate_*.py
+fix-*.py
+check_*.py
+init_*.py
+setup_*.py
+add_image_columns.py
+test_ai_search.py
+test_app.py
+test_chatterfix_e2e.py
+test_database.py
+test_env.py
+test_security_performance.py
+test_signup_firebase.py
+
+# Mobile app (separate deployment)
+mobile/
+
+# Deployment directory
+deployment/
+
+# Scripts directory  
+scripts/

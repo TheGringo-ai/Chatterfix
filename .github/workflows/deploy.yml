@@ -57,7 +57,26 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY || secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+          export_environment_variables: true
+        continue-on-error: true
+        id: auth
+      
+      - name: Check Authentication
+        run: |
+          if [ "${{ steps.auth.outcome }}" = "failure" ]; then
+            echo "⚠️ GCP authentication failed - missing service account key"
+            echo "To fix this, add GCP_SA_KEY secret to repository:"
+            echo "1. Go to https://console.cloud.google.com/iam-admin/serviceaccounts"
+            echo "2. Create or select service account for 'fredfix' project"
+            echo "3. Create key -> JSON -> Download"
+            echo "4. Add as GitHub secret: GCP_SA_KEY"
+            echo "5. Grant Cloud Run Admin and Storage Admin roles"
+            exit 1
+          else
+            echo "✅ GCP authentication successful"
+          fi
       
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v2

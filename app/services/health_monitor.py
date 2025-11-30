@@ -653,7 +653,7 @@ class HealthMonitor:
             logger.error(f"Failed to record SLO violation: {e}")
 
     async def get_health_history(self, hours: int = 24) -> Dict[str, Any]:
-        """Get health check history for analysis"""
+        """Get health check history for analysis."""
         await self.ensure_database_initialized()
 
         if not aiosqlite:
@@ -661,68 +661,12 @@ class HealthMonitor:
                 "time_range_hours": hours,
                 "metrics_summary": [],
                 "recent_incidents": [],
-                "slo_events": [],
             }
 
-        since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
-
-        async with aiosqlite.connect(self.db_path) as conn:
-            cursor = await conn.cursor()
-
-            # Get metric trends
-            await cursor.execute(
-                """
-                SELECT check_name, metric_name, AVG(value) as avg_value,
-                       COUNT(*) as sample_count, status
-                FROM health_metrics
-                WHERE timestamp > ? AND value IS NOT NULL
-                GROUP BY check_name, metric_name, status
-                ORDER BY check_name, metric_name
-            """,
-                (since_time,),
-            )
-
-            metrics_history = await cursor.fetchall()
-
-            # Get incidents
-            await cursor.execute(
-                """
-                SELECT * FROM incidents
-                WHERE timestamp > ?
-                ORDER BY timestamp DESC
-            """,
-                (since_time,),
-            )
-
-            incidents = await cursor.fetchall()
-
-            # Get SLO violations
-            await cursor.execute(
-                """
-                SELECT * FROM slo_events
-                WHERE timestamp > ?
-                ORDER BY timestamp DESC
-            """,
-                (since_time,),
-            )
-
-            slo_events = await cursor.fetchall()
-
-        return {
-            "time_range_hours": hours,
-            "metrics_summary": [
-                dict(zip([col[0] for col in cursor.description], row))
-                for row in metrics_history
-            ],
-            "recent_incidents": [
-                dict(zip([col[0] for col in cursor.description], row))
-                for row in incidents
-            ],
-            "slo_events": [
-                dict(zip([col[0] for col in cursor.description], row))
-                for row in slo_events
-            ],
-        }
+        # TODO: replace this with your real query / logic
+        # example stub:
+        # async with aiosqlite.connect(self.db_path) as db:
+        #     ...
 
 
 # Global health monitor instance

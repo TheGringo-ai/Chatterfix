@@ -13,7 +13,8 @@ import bcrypt
 import json
 
 # Add the app directory to the path
-sys.path.append('/app')
+sys.path.append("/app")
+
 
 def get_firestore_client():
     """Initialize Firestore client for Cloud Run environment"""
@@ -24,10 +25,12 @@ def get_firestore_client():
         print(f"❌ Failed to initialize Firestore: {e}")
         return None
 
+
 def hash_password(password: str) -> str:
     """Hash password using bcrypt"""
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
 
 def populate_demo_data():
     """Populate Firestore with comprehensive demo data"""
@@ -38,7 +41,7 @@ def populate_demo_data():
 
     try:
         # Check if data already exists
-        users_ref = db.collection('users')
+        users_ref = db.collection("users")
         existing_users = list(users_ref.limit(1).stream())
         if existing_users:
             print("✅ Demo data already exists, skipping population")
@@ -58,10 +61,10 @@ def populate_demo_data():
                 "phone": "+1-555-0101",
                 "is_active": True,
                 "created_at": datetime.now(),
-                "last_login": datetime.now() - timedelta(hours=2)
+                "last_login": datetime.now() - timedelta(hours=2),
             },
             {
-                "id": "user_002", 
+                "id": "user_002",
                 "email": "tech@evfactory.com",
                 "password_hash": hash_password("demo123"),
                 "full_name": "Mike Rodriguez",
@@ -70,11 +73,11 @@ def populate_demo_data():
                 "phone": "+1-555-0102",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=30),
-                "last_login": datetime.now() - timedelta(hours=1)
+                "last_login": datetime.now() - timedelta(hours=1),
             },
             {
                 "id": "user_003",
-                "email": "supervisor@evfactory.com", 
+                "email": "supervisor@evfactory.com",
                 "password_hash": hash_password("demo123"),
                 "full_name": "Jessica Chen",
                 "role": "Maintenance Supervisor",
@@ -82,7 +85,7 @@ def populate_demo_data():
                 "phone": "+1-555-0103",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=45),
-                "last_login": datetime.now() - timedelta(hours=3)
+                "last_login": datetime.now() - timedelta(hours=3),
             },
             {
                 "id": "user_004",
@@ -91,10 +94,10 @@ def populate_demo_data():
                 "full_name": "David Park",
                 "role": "Maintenance Engineer",
                 "department": "Engineering",
-                "phone": "+1-555-0104", 
+                "phone": "+1-555-0104",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=60),
-                "last_login": datetime.now() - timedelta(hours=5)
+                "last_login": datetime.now() - timedelta(hours=5),
             },
             {
                 "id": "user_005",
@@ -106,7 +109,7 @@ def populate_demo_data():
                 "phone": "+1-555-0105",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=20),
-                "last_login": datetime.now() - timedelta(minutes=30)
+                "last_login": datetime.now() - timedelta(minutes=30),
             },
             {
                 "id": "user_006",
@@ -118,7 +121,7 @@ def populate_demo_data():
                 "phone": "+1-555-0106",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=90),
-                "last_login": datetime.now() - timedelta(hours=8)
+                "last_login": datetime.now() - timedelta(hours=8),
             },
             {
                 "id": "user_007",
@@ -130,14 +133,14 @@ def populate_demo_data():
                 "phone": "+1-555-0107",
                 "is_active": True,
                 "created_at": datetime.now() - timedelta(days=100),
-                "last_login": datetime.now() - timedelta(minutes=15)
-            }
+                "last_login": datetime.now() - timedelta(minutes=15),
+            },
         ]
 
         # Populate users
         for user_data in users_data:
             user_id = user_data.pop("id")
-            db.collection('users').document(user_id).set(user_data)
+            db.collection("users").document(user_id).set(user_data)
         print(f"✅ Created {len(users_data)} users")
 
         # 2. Create Assets
@@ -157,14 +160,18 @@ def populate_demo_data():
                 "condition": "Good",
                 "criticality": "High",
                 "description": "Automated battery pack assembly line for EV production",
-                "specifications": {"voltage": "480V", "capacity": "500 units/hour", "power": "50kW"},
+                "specifications": {
+                    "voltage": "480V",
+                    "capacity": "500 units/hour",
+                    "power": "50kW",
+                },
                 "created_at": datetime.now() - timedelta(days=300),
-                "updated_at": datetime.now() - timedelta(days=10)
+                "updated_at": datetime.now() - timedelta(days=10),
             },
             {
                 "id": "asset_002",
                 "name": "Motor Winding Station",
-                "asset_number": "MWS-002", 
+                "asset_number": "MWS-002",
                 "category": "Production Equipment",
                 "location": "Building A - Floor 2",
                 "status": "Operational",
@@ -176,35 +183,43 @@ def populate_demo_data():
                 "condition": "Excellent",
                 "criticality": "High",
                 "description": "Precision motor winding station for electric motors",
-                "specifications": {"precision": "±0.001mm", "speed": "200 RPM", "power": "25kW"},
+                "specifications": {
+                    "precision": "±0.001mm",
+                    "speed": "200 RPM",
+                    "power": "25kW",
+                },
                 "created_at": datetime.now() - timedelta(days=280),
-                "updated_at": datetime.now() - timedelta(days=5)
+                "updated_at": datetime.now() - timedelta(days=5),
             },
             {
                 "id": "asset_003",
                 "name": "Quality Testing Station",
                 "asset_number": "QTS-003",
-                "category": "Quality Equipment", 
+                "category": "Quality Equipment",
                 "location": "Building B - Floor 1",
                 "status": "Operational",
                 "manufacturer": "QualityMax",
                 "model": "QM-500",
                 "serial_number": "QM500-2023-003",
                 "purchase_date": "2023-03-10",
-                "warranty_expiry": "2026-03-10", 
+                "warranty_expiry": "2026-03-10",
                 "condition": "Good",
                 "criticality": "Medium",
                 "description": "Automated quality testing for battery components",
-                "specifications": {"test_capacity": "100 units/hour", "accuracy": "99.9%", "power": "15kW"},
+                "specifications": {
+                    "test_capacity": "100 units/hour",
+                    "accuracy": "99.9%",
+                    "power": "15kW",
+                },
                 "created_at": datetime.now() - timedelta(days=260),
-                "updated_at": datetime.now() - timedelta(days=2)
-            }
+                "updated_at": datetime.now() - timedelta(days=2),
+            },
         ]
 
         # Populate assets
         for asset_data in assets_data:
             asset_id = asset_data.pop("id")
-            db.collection('assets').document(asset_id).set(asset_data)
+            db.collection("assets").document(asset_id).set(asset_data)
         print(f"✅ Created {len(assets_data)} assets")
 
         # 3. Create Work Orders
@@ -226,14 +241,14 @@ def populate_demo_data():
                 "actual_hours": 2.5,
                 "due_date": datetime.now() + timedelta(days=2),
                 "created_at": datetime.now() - timedelta(days=1),
-                "updated_at": datetime.now() - timedelta(hours=3)
+                "updated_at": datetime.now() - timedelta(hours=3),
             },
             {
                 "id": "wo_002",
                 "title": "Motor Winding Station Inspection",
                 "description": "Monthly inspection and lubrication of motor winding equipment",
                 "asset_id": "asset_002",
-                "asset_name": "Motor Winding Station", 
+                "asset_name": "Motor Winding Station",
                 "priority": "High",
                 "status": "Completed",
                 "type": "Preventive Maintenance",
@@ -246,14 +261,14 @@ def populate_demo_data():
                 "due_date": datetime.now() - timedelta(days=5),
                 "completed_at": datetime.now() - timedelta(days=2),
                 "created_at": datetime.now() - timedelta(days=7),
-                "updated_at": datetime.now() - timedelta(days=2)
-            }
+                "updated_at": datetime.now() - timedelta(days=2),
+            },
         ]
 
         # Populate work orders
         for wo_data in work_orders_data:
             wo_id = wo_data.pop("id")
-            db.collection('work_orders').document(wo_id).set(wo_data)
+            db.collection("work_orders").document(wo_id).set(wo_data)
         print(f"✅ Created {len(work_orders_data)} work orders")
 
         # 4. Create Inventory Items
@@ -273,10 +288,10 @@ def populate_demo_data():
                 "location": "Warehouse A - Rack A1",
                 "status": "Active",
                 "created_at": datetime.now() - timedelta(days=100),
-                "updated_at": datetime.now() - timedelta(days=5)
+                "updated_at": datetime.now() - timedelta(days=5),
             },
             {
-                "id": "inv_002", 
+                "id": "inv_002",
                 "name": "Motor Magnets",
                 "part_number": "MM-NEO-N42",
                 "category": "Motor Components",
@@ -290,14 +305,14 @@ def populate_demo_data():
                 "location": "Warehouse A - Rack B2",
                 "status": "Active",
                 "created_at": datetime.now() - timedelta(days=85),
-                "updated_at": datetime.now() - timedelta(days=3)
-            }
+                "updated_at": datetime.now() - timedelta(days=3),
+            },
         ]
 
         # Populate inventory
         for inv_data in inventory_data:
             inv_id = inv_data.pop("id")
-            db.collection('inventory').document(inv_id).set(inv_data)
+            db.collection("inventory").document(inv_id).set(inv_data)
         print(f"✅ Created {len(inventory_data)} inventory items")
 
         print("🎉 Demo data population completed successfully!")
@@ -306,6 +321,7 @@ def populate_demo_data():
     except Exception as e:
         print(f"❌ Error populating demo data: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = populate_demo_data()

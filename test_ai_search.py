@@ -6,7 +6,7 @@ import os
 url = "http://localhost:8000/ai/assist"
 data = {
     "message": "Search for 'industrial conveyor belt maintenance checklist'",
-    "context": "Dashboard"
+    "context": "Dashboard",
 }
 
 try:

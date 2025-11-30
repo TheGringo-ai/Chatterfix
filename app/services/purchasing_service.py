@@ -3,8 +3,7 @@ Purchasing Dashboard Service - Procurement & Vendor Management
 Provides data for purchase orders, vendor management, budget tracking, and spend analytics
 """
 
-import sqlite3
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime, timedelta
 from app.core.database import get_db_connection
 

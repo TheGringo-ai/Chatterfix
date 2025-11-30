@@ -3,7 +3,6 @@ Push Notification Service for ChatterFix CMMS
 Handles push notifications for urgent work orders and alerts
 """
 
-import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Any, Optional

@@ -9,7 +9,6 @@ from fastapi.templating import Jinja2Templates
 from app.services import auth_service
 from app.core.database import get_db_connection
 from typing import Optional
-import sqlite3
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 templates = Jinja2Templates(directory="app/templates")
@@ -66,7 +65,7 @@ async def save_api_keys(
             {"success": False, "message": "Not authenticated"}, status_code=401
         )
 
-    conn = sqlite3.connect("./data/cmms.db")
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # Save API keys
@@ -163,7 +162,7 @@ async def toggle_user_active(user_id: int, session_token: Optional[str] = Cookie
             {"success": False, "message": "Unauthorized"}, status_code=403
         )
 
-    conn = sqlite3.connect("./data/cmms.db")
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute(

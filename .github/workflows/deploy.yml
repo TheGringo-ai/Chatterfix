@@ -54,13 +54,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Debug Secrets
+      - name: Validate Required Secrets
         run: |
-          echo "🔍 Checking available secrets..."
-          if [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
-            echo "✅ GCP_SA_KEY is available"
+          echo "🔍 Checking required secrets..."
+          MISSING_SECRETS=()
+          
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+            MISSING_SECRETS+=("GCP_SA_KEY")
+          fi
+          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
+            MISSING_SECRETS+=("FIREBASE_API_KEY")
+          fi
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            MISSING_SECRETS+=("GEMINI_API_KEY")
+          fi
+          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+            MISSING_SECRETS+=("OPENAI_API_KEY")
+          fi
+          if [ -z "${{ secrets.GROK_API_KEY }}" ]; then
+            MISSING_SECRETS+=("GROK_API_KEY")
+          fi
+          
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ All required secrets are configured"
           else
-            echo "❌ GCP_SA_KEY is missing"
+            echo "❌ Missing required secrets: ${MISSING_SECRETS[*]}"
+            echo "   Please add these secrets to your GitHub repository:"
+            for secret in "${MISSING_SECRETS[@]}"; do
+              echo "   - $secret"
+            done
+            exit 1
           fi
       
       - name: Authenticate to Google Cloud
@@ -87,7 +110,7 @@ jobs:
           gcloud run deploy chatterfix-cmms \
             --source . \
             --region us-central1 \
-            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,FIREBASE_API_KEY=AIzaSyAaXlvuopHtTZglfghnlc_hBqGr1YzPrBk,GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
+            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
             --memory=4Gi \
             --cpu=2 \
             --min-instances=1 \

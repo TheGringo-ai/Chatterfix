@@ -2,7 +2,6 @@ import os
 import logging
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime
-import sqlite3
 
 logger = logging.getLogger(__name__)
 

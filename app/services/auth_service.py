@@ -5,12 +5,13 @@ Handles user authentication, password hashing, and session management
 
 import os
 import secrets
-import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import hashlib
 import hmac
 from passlib.context import CryptContext
+from app.core.database import get_db_connection
+import sqlite3
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -42,7 +43,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     Returns:
         User dict if successful, None if failed
     """
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -143,7 +144,7 @@ def validate_session(token: str) -> Optional[Dict[str, Any]]:
     Returns:
         User dict if valid, None if invalid/expired
     """
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -228,7 +229,7 @@ def create_user(
 
 def change_password(user_id: int, old_password: str, new_password: str) -> bool:
     """Change a user's password"""
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 

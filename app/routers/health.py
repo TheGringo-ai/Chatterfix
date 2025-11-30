@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 import os
-import sqlite3
 from datetime import datetime
+from app.core.database import get_db_connection
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ async def health_check():
                 db_status = "firestore_ok"
             else:
                 # SQLite health check
-                conn = sqlite3.connect("./data/cmms.db")
+                conn = get_db_connection()
                 conn.execute("SELECT 1")
                 conn.close()
                 db_status = "sqlite_ok"

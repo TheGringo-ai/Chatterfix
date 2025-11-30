@@ -5,7 +5,6 @@ AI-powered voice command processing with Grok integration
 
 import logging
 import httpx
-import sqlite3
 from datetime import datetime, timedelta
 from typing import Optional
 import os
@@ -75,7 +74,8 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
             logger.info("XAI_API_KEY not set, using basic voice processing")
 
         # Create AI-enhanced work order
-        conn = sqlite3.connect(DATABASE_PATH)
+        from app.core.database import get_db_connection
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         # Determine priority from AI analysis or voice text

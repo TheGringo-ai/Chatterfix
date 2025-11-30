@@ -3,7 +3,6 @@ Dashboard Service - Widget Data Aggregation
 Provides data for all dashboard widgets based on user role and configuration
 """
 
-import sqlite3
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
@@ -71,7 +70,7 @@ class DashboardService:
             "refresh_interval": user_dict.get("refresh_interval", 30),
         }
 
-    def _get_default_widgets_for_role(self, role: str) -> List[sqlite3.Row]:
+    def _get_default_widgets_for_role(self, role: str) -> List[Any]:
         """Get default widgets for a specific role"""
         conn = get_db_connection()
         cur = conn.cursor()

@@ -3,11 +3,9 @@ Mock Data Service
 Generate demo/sample data for new users and guest mode
 """
 
-import sqlite3
 from datetime import datetime, timedelta
 import random
-
-DATABASE_PATH = "./data/cmms.db"
+from app.core.database import get_db_connection
 
 
 def create_demo_data(user_id: int):
@@ -17,7 +15,7 @@ def create_demo_data(user_id: int):
     Args:
         user_id: ID of the user to create data for
     """
-    conn = sqlite3.connect(DATABASE_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # Update user avatar

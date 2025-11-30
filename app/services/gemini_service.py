@@ -2,7 +2,6 @@ import os
 import logging
 from typing import Optional, List, Dict, Any
 import json
-import sqlite3
 
 # Import Google Generative AI with error handling
 try:
@@ -40,7 +39,9 @@ class GeminiService:
         2. System-wide setting from DB
         3. Environment variable
         """
-        conn = sqlite3.connect("./data/cmms.db")
+        from app.core.database import get_db_connection
+        import sqlite3
+        conn = get_db_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 

@@ -4,7 +4,6 @@ AI-powered part recognition and visual inspection
 """
 
 import logging
-import sqlite3
 import os
 from typing import List, Dict, Any
 
@@ -42,7 +41,9 @@ async def recognize_part(
         ]
 
         # Get real inventory data from database
-        conn = sqlite3.connect(DATABASE_PATH)
+        from app.core.database import get_db_connection
+        import sqlite3
+        conn = get_db_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
@@ -122,7 +123,8 @@ async def analyze_asset_condition(
 
         # Update asset condition in database if asset_id provided
         if asset_id:
-            conn = sqlite3.connect(DATABASE_PATH)
+            from app.core.database import get_db_connection
+            conn = get_db_connection()
             cursor = conn.cursor()
 
             cursor.execute(

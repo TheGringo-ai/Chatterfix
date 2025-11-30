@@ -3,7 +3,6 @@ Geolocation Service - Property Boundary Tracking
 Manages user location tracking with property boundary restrictions and privacy controls
 """
 
-import sqlite3
 import json
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime

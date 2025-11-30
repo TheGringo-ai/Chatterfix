@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request, Form, Depends, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
-import sqlite3
 import shutil
 import os
 
@@ -124,7 +123,7 @@ async def add_part(
                     )
 
         conn.commit()
-    except sqlite3.IntegrityError:
+    except Exception:
         # Handle duplicate part number
         pass  # In a real app, show error
     finally:

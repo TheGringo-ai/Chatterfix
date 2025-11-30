@@ -1,117 +1,60 @@
-# GitHub Secrets Setup for ChatterFix Deployment
+# 🔐 GitHub Secrets Setup Guide
 
-## 🔑 Required Secrets for Deployment
+## Required Secrets for Deployment
 
-To deploy ChatterFix to GCP, you need to configure these GitHub repository secrets:
+Your ChatterFix deployment needs these GitHub repository secrets configured:
 
-### 1. **GCP_SA_KEY** (Required for Cloud Run deployment)
+### 🔥 **Firebase Configuration**
+- **`FIREBASE_API_KEY`**: `AIzaSyAaXlvuopHtTZglfghnlc_hBqGr1YzPrBk`
+  - Current value from your `.env` file
+  - Used for Firebase web app authentication
 
-#### Step-by-step setup:
+### 🤖 **AI Service Keys**
+- **`GEMINI_API_KEY`**: `AIzaSyDxQ45QqBacpEIISrS52E1QjeSy1nNuy48`
+  - Current working key from your `.env` file
+- **`OPENAI_API_KEY`**: `sk-your-openai-key-here`
+  - ⚠️ **Update needed**: Replace with real OpenAI API key
+- **`GROK_API_KEY`**: `grok-your-grok-key-here`
+  - ⚠️ **Update needed**: Replace with real Grok API key
 
-1. **Go to Google Cloud Console**:
-   ```
-   https://console.cloud.google.com/iam-admin/serviceaccounts?project=fredfix
-   ```
+### ☁️ **Google Cloud Configuration**
+- **`GCP_SA_KEY`**: Google Cloud Service Account JSON
+  - Download from Google Cloud Console → IAM & Admin → Service Accounts
+  - Should have Cloud Run deployment permissions
 
-2. **Create or use existing service account**:
-   - Click "Create Service Account"
-   - Name: `chatterfix-deploy`
-   - Description: `Service account for ChatterFix deployment`
+## 📋 Setup Instructions
 
-3. **Grant required roles**:
-   - Cloud Run Admin
-   - Cloud Build Service Account
-   - Storage Admin
-   - Artifact Registry Administrator
-   - Service Account User
+### Step 1: Access GitHub Secrets
+1. Go to your GitHub repository: `https://github.com/[username]/ChatterFix`
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Click **"New repository secret"**
 
-4. **Create JSON key**:
-   - Click on the service account
-   - Go to "Keys" tab
-   - "Add Key" → "Create new key" → JSON
-   - Download the JSON file
+### Step 2: Add Each Secret
+For each secret above:
+1. **Name**: Enter the exact secret name (e.g., `FIREBASE_API_KEY`)
+2. **Secret**: Paste the corresponding value
+3. Click **"Add secret"**
 
-5. **Add to GitHub Secrets**:
-   - Go to your GitHub repository
-   - Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `GCP_SA_KEY`
-   - Value: Copy and paste the **entire contents** of the downloaded JSON file
+### Step 3: Verify Setup
+After adding all secrets, the deployment workflow will:
+- ✅ Validate all required secrets exist
+- ✅ Deploy with secure environment variables
+- ❌ Fail early if any secrets are missing
 
-### 2. **FIREBASE_SERVICE_ACCOUNT_KEY** (Alternative/Fallback)
+## 🚨 Security Notes
 
-If you already have Firebase credentials:
-- Use the same JSON key from Firebase Console
-- Project Settings → Service accounts → Generate new private key
-- Add as GitHub secret with this name
+- **Never commit API keys** to your repository
+- The `.env` file should remain in `.gitignore`
+- GitHub secrets are encrypted and only accessible during workflows
+- Update API keys regularly for security
 
-### 3. **API Keys** (Optional but recommended)
+## 🔍 Testing
 
+After setup, push to main branch to trigger deployment:
 ```bash
-# AI API Keys
-GEMINI_API_KEY=AIzaSyDxQ45QqBacpEIISrS52E1QjeSy1nNuy48
-OPENAI_API_KEY=sk-your-openai-key-here  
-GROK_API_KEY=grok-your-key-here
+git add .
+git commit -m "Configure GitHub secrets for deployment"
+git push origin main
 ```
 
-## 🧪 Test Your Setup
-
-After adding the secrets, you can test the deployment by:
-
-1. **Manual deployment trigger**:
-   - Go to Actions tab in your repository
-   - Click "Deploy to Production" 
-   - "Run workflow" → "Run workflow"
-
-2. **Check deployment status**:
-   - Monitor the workflow run
-   - Check Cloud Run service at: https://console.cloud.google.com/run?project=fredfix
-
-## 🛠️ Troubleshooting
-
-### "Credentials_json" Error
-- Ensure the entire JSON file content is copied to GitHub secret
-- Check that the service account has the required roles
-- Verify the project ID is correct (`fredfix`)
-
-### "Permission Denied" Error  
-- Add Cloud Run Admin role to service account
-- Add Cloud Build Service Account role
-- Ensure project billing is enabled
-
-### "Service Not Found" Error
-- The service will be created automatically on first deployment
-- Ensure region is set to `us-central1`
-
-## 🚀 Manual GCP Deployment (Alternative)
-
-If GitHub Actions fail, you can deploy manually:
-
-```bash
-# Set up gcloud CLI locally
-gcloud auth login
-gcloud config set project fredfix
-
-# Deploy directly
-gcloud run deploy chatterfix \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080 \
-  --memory 2Gi \
-  --cpu 2
-```
-
-## 📋 Security Best Practices
-
-✅ **Do**:
-- Use service accounts with minimal required permissions
-- Regularly rotate service account keys
-- Monitor Cloud Audit logs for unusual activity
-
-❌ **Don't**:
-- Share service account JSON files
-- Commit service account keys to repository  
-- Use overly broad permissions (like Project Editor)
-
-Your ChatterFix deployment should work perfectly once the `GCP_SA_KEY` secret is configured! 🎉
+The workflow will validate all secrets before proceeding with deployment.

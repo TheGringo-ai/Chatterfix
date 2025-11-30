@@ -3,7 +3,6 @@ import logging
 from openai import OpenAI
 from typing import Optional, List, Dict, Any
 import json
-import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,9 @@ class OpenAIService:
         3. Environment variable
         4. Default hardcoded key
         """
-        conn = sqlite3.connect("./data/cmms.db")
+        from app.core.database import get_db_connection
+        import sqlite3
+        conn = get_db_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 

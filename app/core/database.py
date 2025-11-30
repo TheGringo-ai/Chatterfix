@@ -745,7 +745,6 @@ def get_database():
     """Get the preferred database adapter - defaults to Firestore"""
     import os
     use_firestore = os.getenv("USE_FIRESTORE", "true").lower() == "true"
-    
     if use_firestore:
         try:
             from app.core.db_adapter import get_db_adapter
@@ -754,7 +753,7 @@ def get_database():
             logger.warning(f"Failed to get Firestore adapter, falling back to SQLite: {e}")
             from app.core.db_adapter import get_db_adapter
             return get_db_adapter()
-    
+
     # Return SQLite adapter
     from app.core.db_adapter import get_db_adapter
     return get_db_adapter()

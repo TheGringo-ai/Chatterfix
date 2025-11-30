@@ -17,7 +17,7 @@
 
 <div class="cmms-card">
     <h2>Create New Work Order</h2>
-    <form id="create-wo-form" action="/work-orders" method="post">
+    <form id="create-wo-form" action="/work-orders" method="post" enctype="multipart/form-data">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
                 <label style="display: block; margin-bottom: 0.5rem;">Title</label>
@@ -49,8 +49,16 @@
                 <input type="date" name="due_date"
                     style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
             </div>
+            <div style="grid-column: 1 / -1;">
+                <label style="display: block; margin-bottom: 0.5rem;">📎 Attachments</label>
+                <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx,.txt"
+                    style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 0.3rem;">
+                    Upload photos, documents, or files related to this work order. Multiple files supported.
+                </small>
+            </div>
         </div>
-        <button type="submit" class="cmms-btn" style="margin-top: 1rem;">Create Work Order</button>
+        <button type="submit" class="cmms-btn" style="margin-top: 1rem;">📋 Create Work Order</button>
     </form>
 </div>
 

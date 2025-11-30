@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}POS System - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>🏪 Point of Sale & Purchasing</h1>
+            <p>Complete purchasing and parts management system</p>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button class="cmms-btn" onclick="showBarcodeScan()">
+                <i class="fas fa-qrcode"></i> Barcode Scan
+            </button>
+            <button class="cmms-btn" onclick="showQuickAdd()">
+                <i class="fas fa-plus"></i> Quick Add Part
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main POS Interface -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    
+    <!-- Left Panel: Search & Cart -->
+    <div>
+        <!-- Search Bar -->
+        <div class="cmms-card">
+            <h3>🔍 Part Search</h3>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <input type="text" id="part-search" placeholder="Search parts by name or part number..." 
+                    style="flex: 1; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                <button onclick="searchParts()" class="cmms-btn">Search</button>
+            </div>
+            <div id="search-results" style="max-height: 300px; overflow-y: auto;">
+                <!-- Search results will be populated here -->
+            </div>
+        </div>
+
+        <!-- Shopping Cart -->
+        <div class="cmms-card">
+            <h3>🛒 Current Purchase Order</h3>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="vendor-select" style="flex: 1; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                    <option value="">Select Vendor...</option>
+                    {% for vendor in vendors %}
+                    <option value="{{ vendor.id }}" style="color: black;">{{ vendor.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="po-number" placeholder="PO Number" 
+                    style="padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+            </div>
+            
+            <div id="cart-items" style="min-height: 200px;">
+                <div style="text-align: center; color: rgba(255,255,255,0.5); padding: 2rem;">
+                    Cart is empty. Search for parts to add them.
+                </div>
+            </div>
+            
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
+                    <span>Total: $</span>
+                    <span id="cart-total">0.00</span>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                    <button onclick="savePO()" class="cmms-btn" style="flex: 1;">💾 Save as Draft</button>
+                    <button onclick="submitPO()" class="cmms-btn cmms-btn-success" style="flex: 1;">✅ Submit PO</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Quick Actions -->
+    <div>
+        <!-- Quick Stats -->
+        <div class="cmms-card">
+            <h3>📊 Quick Stats</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="text-align: center; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #e74c3c;" id="low-stock-count">0</div>
+                    <div style="font-size: 0.9rem;">Low Stock</div>
+                </div>
+                <div style="text-align: center; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #3498db;" id="pending-pos">0</div>
+                    <div style="font-size: 0.9rem;">Pending POs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Parts -->
+        <div class="cmms-card">
+            <h3>🕒 Recently Added</h3>
+            <div id="recent-parts">
+                {% for part in parts[:5] %}
+                <div class="item-card" style="margin-bottom: 0.5rem; padding: 0.8rem;" onclick="addToCart({{ part.id }}, '{{ part.name }}', {{ part.unit_cost }})">
+                    <strong>{{ part.name }}</strong><br>
+                    <small>{{ part.part_number }} - ${{ "%.2f"|format(part.unit_cost) }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="cmms-card">
+            <h3>⚡ Quick Actions</h3>
+            <button onclick="showAddPart()" class="cmms-btn" style="width: 100%; margin-bottom: 0.5rem;">
+                <i class="fas fa-plus"></i> Add New Part
+            </button>
+            <button onclick="showAddVendor()" class="cmms-btn" style="width: 100%; margin-bottom: 0.5rem;">
+                <i class="fas fa-building"></i> Add New Vendor
+            </button>
+            <button onclick="showLowStock()" class="cmms-btn" style="width: 100%; margin-bottom: 0.5rem;">
+                <i class="fas fa-exclamation-triangle"></i> View Low Stock
+            </button>
+            <button onclick="showInvoices()" class="cmms-btn" style="width: 100%;">
+                <i class="fas fa-file-invoice"></i> Upload Invoice
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Part Modal -->
+<div id="addPartModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 5% auto; width: 600px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+        <h2>📦 Add New Part</h2>
+        <form id="add-part-form" enctype="multipart/form-data">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label>Part Name</label>
+                    <input type="text" name="name" required style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label>Part Number</label>
+                    <input type="text" name="part_number" required style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Description</label>
+                    <textarea name="description" rows="2" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;"></textarea>
+                </div>
+                <div>
+                    <label>Category</label>
+                    <input type="text" name="category" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label>Vendor</label>
+                    <select name="vendor_id" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                        <option value="" style="color: black;">No Vendor</option>
+                        {% for vendor in vendors %}
+                        <option value="{{ vendor.id }}" style="color: black;">{{ vendor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Unit Cost</label>
+                    <input type="number" step="0.01" name="unit_cost" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label>Current Stock</label>
+                    <input type="number" name="current_stock" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label>Minimum Stock</label>
+                    <input type="number" name="minimum_stock" value="5" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label>Location</label>
+                    <input type="text" name="location" placeholder="e.g., A1-B2" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>📸 Photos & Documents</label>
+                    <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                </div>
+            </div>
+            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" onclick="document.getElementById('addPartModal').style.display='none'" class="cmms-btn" style="background: #e74c3c;">Cancel</button>
+                <button type="submit" class="cmms-btn">Add Part</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div id="barcodeModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 10% auto; width: 400px; padding: 30px;">
+        <h2>📱 Barcode Scanner</h2>
+        <div style="margin-bottom: 1rem;">
+            <input type="text" id="barcode-input" placeholder="Scan or enter barcode/part number" 
+                style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button onclick="lookupBarcode()" class="cmms-btn" style="flex: 1;">Lookup</button>
+            <button onclick="document.getElementById('barcodeModal').style.display='none'" class="cmms-btn" style="background: #e74c3c;">Close</button>
+        </div>
+        <div id="barcode-result" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<script>
+let cart = [];
+let cartTotal = 0;
+
+// Search functionality
+async function searchParts() {
+    const query = document.getElementById('part-search').value;
+    try {
+        const response = await fetch(`/purchasing/parts/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        const resultsDiv = document.getElementById('search-results');
+        if (data.parts.length > 0) {
+            resultsDiv.innerHTML = data.parts.map(part => `
+                <div class="item-card" style="margin-bottom: 0.5rem; cursor: pointer;" onclick="addToCart(${part.id}, '${part.name}', ${part.unit_cost}, '${part.part_number}')">
+                    <strong>${part.name}</strong><br>
+                    <small>${part.part_number} - $${part.unit_cost.toFixed(2)} | Stock: ${part.current_stock}</small>
+                </div>
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 1rem;">No parts found</div>';
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+    }
+}
+
+// Cart functionality
+function addToCart(partId, name, price, partNumber = '') {
+    const existingItem = cart.find(item => item.id === partId);
+    
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({
+            id: partId,
+            name: name,
+            partNumber: partNumber,
+            price: price,
+            quantity: 1
+        });
+    }
+    
+    updateCartDisplay();
+}
+
+function updateCartDisplay() {
+    const cartDiv = document.getElementById('cart-items');
+    const totalDiv = document.getElementById('cart-total');
+    
+    if (cart.length === 0) {
+        cartDiv.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 2rem;">Cart is empty. Search for parts to add them.</div>';
+        totalDiv.textContent = '0.00';
+        return;
+    }
+    
+    cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    cartDiv.innerHTML = cart.map(item => `
+        <div class="item-card" style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>${item.name}</strong><br>
+                <small>${item.partNumber} - $${item.price.toFixed(2)} each</small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})" class="cmms-btn cmms-btn-sm">-</button>
+                <span style="padding: 0 0.5rem;">${item.quantity}</span>
+                <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})" class="cmms-btn cmms-btn-sm">+</button>
+                <button onclick="removeFromCart(${item.id})" class="cmms-btn cmms-btn-sm" style="background: #e74c3c; margin-left: 0.5rem;">×</button>
+            </div>
+        </div>
+    `).join('');
+    
+    totalDiv.textContent = cartTotal.toFixed(2);
+}
+
+function updateQuantity(partId, newQuantity) {
+    if (newQuantity <= 0) {
+        removeFromCart(partId);
+        return;
+    }
+    
+    const item = cart.find(item => item.id === partId);
+    if (item) {
+        item.quantity = newQuantity;
+        updateCartDisplay();
+    }
+}
+
+function removeFromCart(partId) {
+    cart = cart.filter(item => item.id !== partId);
+    updateCartDisplay();
+}
+
+// Purchase Order submission
+async function submitPO() {
+    const vendorId = document.getElementById('vendor-select').value;
+    const poNumber = document.getElementById('po-number').value;
+    
+    if (!vendorId) {
+        alert('Please select a vendor');
+        return;
+    }
+    
+    if (!poNumber) {
+        alert('Please enter a PO number');
+        return;
+    }
+    
+    if (cart.length === 0) {
+        alert('Cart is empty');
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('vendor_id', vendorId);
+        formData.append('po_number', poNumber);
+        formData.append('description', `PO with ${cart.length} items`);
+        formData.append('total_amount', cartTotal.toFixed(2));
+        
+        const response = await fetch('/purchasing/purchase-orders/create', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Purchase Order created successfully!');
+            cart = [];
+            updateCartDisplay();
+            document.getElementById('po-number').value = '';
+            document.getElementById('vendor-select').value = '';
+        } else {
+            alert('Error creating purchase order');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error creating purchase order');
+    }
+}
+
+// Modals
+function showAddPart() {
+    document.getElementById('addPartModal').style.display = 'block';
+}
+
+function showBarcodeScan() {
+    document.getElementById('barcodeModal').style.display = 'block';
+    document.getElementById('barcode-input').focus();
+}
+
+// Barcode lookup
+async function lookupBarcode() {
+    const barcode = document.getElementById('barcode-input').value;
+    if (!barcode) return;
+    
+    try {
+        const response = await fetch(`/purchasing/barcode/${encodeURIComponent(barcode)}`);
+        const data = await response.json();
+        
+        const resultDiv = document.getElementById('barcode-result');
+        if (data.success) {
+            const part = data.part;
+            resultDiv.innerHTML = `
+                <div class="item-card">
+                    <strong>${part.name}</strong><br>
+                    <small>${part.part_number} - $${part.unit_cost.toFixed(2)}</small><br>
+                    <button onclick="addToCart(${part.id}, '${part.name}', ${part.unit_cost}, '${part.part_number}'); document.getElementById('barcodeModal').style.display='none'" 
+                        class="cmms-btn cmms-btn-sm" style="margin-top: 0.5rem;">Add to Cart</button>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = '<div style="color: #e74c3c;">Part not found</div>';
+        }
+    } catch (error) {
+        console.error('Barcode lookup error:', error);
+    }
+}
+
+// Form submissions
+document.getElementById('add-part-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/purchasing/parts/add', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Part added successfully!');
+            document.getElementById('addPartModal').style.display = 'none';
+            this.reset();
+            location.reload(); // Refresh to show new part
+        } else {
+            alert('Error adding part');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error adding part');
+    }
+});
+
+// Enter key for search
+document.getElementById('part-search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchParts();
+    }
+});
+
+// Enter key for barcode
+document.getElementById('barcode-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        lookupBarcode();
+    }
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    searchParts(); // Load all parts initially
+});
+</script>
+{% endblock %}

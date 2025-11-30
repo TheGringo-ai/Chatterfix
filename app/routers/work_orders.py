@@ -95,13 +95,42 @@ async def create_work_order(
     priority: str = Form(...),
     assigned_to: str = Form(...),
     due_date: str = Form(...),
+    files: list[UploadFile] = File(None),
 ):
     """Create a new work order"""
     conn = get_db_connection()
-    conn.execute(
+    
+    # Insert work order and get ID
+    cursor = conn.execute(
         "INSERT INTO work_orders (title, description, priority, assigned_to, due_date) VALUES (?, ?, ?, ?, ?)",
         (title, description, priority, assigned_to, due_date),
     )
+    wo_id = cursor.lastrowid
+    
+    # Handle file uploads if provided
+    if files:
+        wo_dir = os.path.join(UPLOAD_DIR, str(wo_id))
+        os.makedirs(wo_dir, exist_ok=True)
+        
+        for file in files:
+            if file.filename:
+                file_path = os.path.join(wo_dir, file.filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                
+                rel_path = f"/static/uploads/work_orders/{wo_id}/{file.filename}"
+                file_type = (
+                    "image" if file.content_type and file.content_type.startswith("image/") else "document"
+                )
+                
+                conn.execute(
+                    """
+                    INSERT INTO work_order_media (work_order_id, file_path, file_type, title, description)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (wo_id, rel_path, file_type, file.filename, "Uploaded during creation"),
+                )
+    
     conn.commit()
     conn.close()
     return RedirectResponse(url="/work-orders", status_code=303)

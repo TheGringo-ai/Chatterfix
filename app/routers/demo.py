@@ -271,50 +271,23 @@ async def demo_planner(request: Request):
 
 @router.get("/demo/purchasing", response_class=HTMLResponse)
 async def demo_purchasing(request: Request):
-    """Demo purchasing page with sample data"""
-    demo_inventory = [
-        {
-            "id": 1,
-            "part_number": "FLT-001",
-            "description": "HVAC Air Filter - 20x25x1",
-            "quantity": 15,
-            "reorder_point": 10,
-            "cost": 12.50,
-            "supplier": "FilterPro Inc",
-            "status": "In Stock",
-        },
-        {
-            "id": 2,
-            "part_number": "OIL-COMP-5W30",
-            "description": "Compressor Oil 5W-30 - 5L",
-            "quantity": 3,
-            "reorder_point": 5,
-            "cost": 85.00,
-            "supplier": "Industrial Lubricants",
-            "status": "Low Stock",
-        },
-        {
-            "id": 3,
-            "part_number": "BELT-V001",
-            "description": "V-Belt - Industrial Grade",
-            "quantity": 0,
-            "reorder_point": 2,
-            "cost": 45.00,
-            "supplier": "PowerTrans Supply",
-            "status": "Out of Stock",
-        },
-    ]
-
+    """Demo purchasing page - full POS system identical to main app"""
+    from app.core.firestore_db import get_firestore_manager
+    
+    db = get_firestore_manager()
+    
+    # Get live vendors and parts data (same as main POS system)
+    vendors = await db.get_collection("vendors", order_by="name")
+    parts = await db.get_collection("parts", order_by="name", limit=50)
+    
     return templates.TemplateResponse(
-        "purchasing_dashboard.html",
+        "purchasing_pos.html", 
         {
-            "request": request,
-            "inventory": demo_inventory,
-            "low_stock_items": [
-                i for i in demo_inventory if i["quantity"] <= i["reorder_point"]
-            ],
-            "is_demo": True,
-        },
+            "request": request, 
+            "vendors": vendors,
+            "parts": parts,
+            "is_demo": True
+        }
     )
 
 

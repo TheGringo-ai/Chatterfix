@@ -9,7 +9,7 @@ class DatabaseAdapter:
     """Database adapter that can switch between SQLite and Firestore based on environment"""
 
     def __init__(self):
-        self.use_firestore = os.getenv("USE_FIRESTORE", "false").lower() == "true"
+        self.use_firestore = os.getenv("USE_FIRESTORE", "true").lower() == "true"
         self.db_type = "firestore" if self.use_firestore else "sqlite"
 
         if self.use_firestore:

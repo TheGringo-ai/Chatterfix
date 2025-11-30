@@ -735,7 +735,33 @@ def init_database():
 
 
 def get_db_connection():
-    """Get a connection to the SQLite database"""
+    """Get a SQLite database connection (legacy compatibility)"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_database():
+    """Get the preferred database adapter - defaults to Firestore"""
+    import os
+    use_firestore = os.getenv("USE_FIRESTORE", "true").lower() == "true"
+    
+    if use_firestore:
+        try:
+            from app.core.db_adapter import get_db_adapter
+            return get_db_adapter()
+        except Exception as e:
+            logger.warning(f"Failed to get Firestore adapter, falling back to SQLite: {e}")
+            from app.core.db_adapter import get_db_adapter
+            return get_db_adapter()
+    
+    # Return SQLite adapter
+    from app.core.db_adapter import get_db_adapter
+    return get_db_adapter()
+
+
+def get_db_connection_sqlite():
+    """Get a direct SQLite connection (legacy fallback)"""
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn

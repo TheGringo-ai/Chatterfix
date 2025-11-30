@@ -7,6 +7,7 @@ import sqlite3
 # Import Google Generative AI with error handling
 try:
     import google.generativeai as genai
+
     GENAI_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Google Generative AI not available: {e}")
@@ -22,7 +23,7 @@ class GeminiService:
         if not GENAI_AVAILABLE:
             logger.info("🤖 Gemini AI not available - service disabled")
             return
-            
+
         # We no longer initialize a global model here because keys can be user-specific
         self.default_api_key = os.getenv("GEMINI_API_KEY")
         if self.default_api_key:

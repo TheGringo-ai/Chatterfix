@@ -16,10 +16,7 @@ from app.core.db_adapter import get_db_adapter
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("logs/chatterfix.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler("logs/chatterfix.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -53,7 +50,7 @@ from app.routers import (
     analytics,
     iot,
     push,
-    media
+    media,
 )
 
 # Initialize FastAPI application
@@ -63,7 +60,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
 )
 
 # Add middleware
@@ -78,8 +75,7 @@ app.add_middleware(
 # Add trusted host middleware for production
 if os.getenv("ENVIRONMENT") == "production":
     app.add_middleware(
-        TrustedHostMiddleware, 
-        allowed_hosts=["chatterfix.com", "*.chatterfix.com"]
+        TrustedHostMiddleware, allowed_hosts=["chatterfix.com", "*.chatterfix.com"]
     )
 
 # Add rate limiting
@@ -90,10 +86,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include all routers
-app.include_router(health.router)     # Health checks (no prefix)
+app.include_router(health.router)  # Health checks (no prefix)
 app.include_router(dashboard.router)  # Dashboard is now the main landing page
-app.include_router(landing.router)    # Landing page becomes signup page
-app.include_router(demo.router)       # Demo routes for app exploration
+app.include_router(landing.router)  # Landing page becomes signup page
+app.include_router(demo.router)  # Demo routes for app exploration
 app.include_router(auth.router)
 app.include_router(signup.router)
 app.include_router(settings.router)
@@ -110,9 +106,10 @@ app.include_router(ar.router)
 app.include_router(geolocation.router)
 app.include_router(onboarding.router)
 app.include_router(analytics.router)  # Advanced analytics dashboard
-app.include_router(iot.router)        # IoT sensor integration
-app.include_router(push.router)       # Push notifications
-app.include_router(media.router)      # Media upload and barcode functionality
+app.include_router(iot.router)  # IoT sensor integration
+app.include_router(push.router)  # Push notifications
+app.include_router(media.router)  # Media upload and barcode functionality
+
 
 # Startup event - initialize database
 @app.on_event("startup")
@@ -120,26 +117,27 @@ async def startup_event():
     """Initialize database on startup"""
     try:
         logger.info("🚀 Starting ChatterFix CMMS...")
-        
+
         # Initialize database adapter
         db_adapter = get_db_adapter()
         logger.info(f"📊 Database initialized ({db_adapter.db_type})")
-        
+
         if db_adapter.db_type == "firestore":
             logger.info("🔥 Firebase/Firestore configured and ready")
             logger.info("✅ No SQLite dependencies - running on GCP")
         else:
             logger.warning("📁 Running in fallback SQLite mode")
             logger.warning("   For production, configure Firebase credentials")
-        
+
         logger.info("✅ ChatterFix CMMS started successfully!")
         logger.info("🌐 ChatterFix ready for use!")
         logger.info("📊 Analytics dashboard: /analytics/dashboard")
         logger.info("🔌 IoT API: /iot/sensors/")
-        
+
     except Exception as e:
         logger.error(f"❌ Failed to start ChatterFix CMMS: {e}")
         raise
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -148,13 +146,8 @@ async def shutdown_event():
     # Add any cleanup code here
     logger.info("✅ ChatterFix CMMS shutdown complete")
 
+
 # Main entry point
 if __name__ == "__main__":
     port = int(os.getenv("PORT", os.getenv("CMMS_PORT", "8000")))
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, log_level="info")

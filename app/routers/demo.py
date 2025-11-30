@@ -379,7 +379,7 @@ async def demo_analytics(request: Request):
     """Demo analytics dashboard with predictive insights"""
     from datetime import datetime, timedelta
     import random
-    
+
     # Generate sample predictions
     predictions = [
         {
@@ -390,7 +390,7 @@ async def demo_analytics(request: Request):
             "date": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
             "confidence": 87,
             "severity": "warning",
-            "recommendation": "Schedule filter replacement within 3 days to prevent system strain and maintain air quality"
+            "recommendation": "Schedule filter replacement within 3 days to prevent system strain and maintain air quality",
         },
         {
             "asset_id": 4,
@@ -400,7 +400,7 @@ async def demo_analytics(request: Request):
             "date": (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d"),
             "confidence": 91,
             "severity": "critical",
-            "recommendation": "Immediate oil change and cooling system inspection required to prevent catastrophic failure"
+            "recommendation": "Immediate oil change and cooling system inspection required to prevent catastrophic failure",
         },
         {
             "asset_id": 1,
@@ -410,7 +410,7 @@ async def demo_analytics(request: Request):
             "date": (datetime.now() + timedelta(days=12)).strftime("%Y-%m-%d"),
             "confidence": 73,
             "severity": "warning",
-            "recommendation": "Inspect drive belts and order replacements. Schedule maintenance during next planned downtime"
+            "recommendation": "Inspect drive belts and order replacements. Schedule maintenance during next planned downtime",
         },
         {
             "asset_id": 3,
@@ -420,10 +420,10 @@ async def demo_analytics(request: Request):
             "date": (datetime.now() + timedelta(days=18)).strftime("%Y-%m-%d"),
             "confidence": 65,
             "severity": "good",
-            "recommendation": "Monitor battery health. Consider battery replacement in next quarter"
-        }
+            "recommendation": "Monitor battery health. Consider battery replacement in next quarter",
+        },
     ]
-    
+
     return templates.TemplateResponse(
         "analytics_dashboard.html",
         {
@@ -473,7 +473,7 @@ async def demo_inventory(request: Request):
             "status": "In Stock",
             "compatible_assets": ["HVAC Unit B-2", "HVAC Unit C-1"],
             "monthly_usage": 4,
-            "ai_recommendation": "Current stock sufficient for 3.75 months"
+            "ai_recommendation": "Current stock sufficient for 3.75 months",
         },
         {
             "id": 2,
@@ -487,7 +487,7 @@ async def demo_inventory(request: Request):
             "status": "Low Stock",
             "compatible_assets": ["Compressor C-5", "Compressor D-2"],
             "monthly_usage": 2,
-            "ai_recommendation": "⚠️ Reorder recommended - only 1.5 months supply remaining"
+            "ai_recommendation": "⚠️ Reorder recommended - only 1.5 months supply remaining",
         },
         {
             "id": 3,
@@ -501,7 +501,7 @@ async def demo_inventory(request: Request):
             "status": "Out of Stock",
             "compatible_assets": ["Production Line A", "Conveyor System"],
             "monthly_usage": 1,
-            "ai_recommendation": "🚨 Critical - Order immediately! Predicted need in 12 days"
+            "ai_recommendation": "🚨 Critical - Order immediately! Predicted need in 12 days",
         },
         {
             "id": 4,
@@ -515,16 +515,18 @@ async def demo_inventory(request: Request):
             "status": "In Stock",
             "compatible_assets": ["Production Line A", "Forklift FL-001"],
             "monthly_usage": 1,
-            "ai_recommendation": "Stock level optimal for 8 months"
-        }
+            "ai_recommendation": "Stock level optimal for 8 months",
+        },
     ]
-    
+
     return templates.TemplateResponse(
         "parts_catalog.html",
         {
             "request": request,
             "parts": demo_parts,
-            "low_stock_count": len([p for p in demo_parts if p["quantity"] <= p["reorder_point"]]),
+            "low_stock_count": len(
+                [p for p in demo_parts if p["quantity"] <= p["reorder_point"]]
+            ),
             "total_value": sum(p["quantity"] * p["cost"] for p in demo_parts),
             "is_demo": True,
         },
@@ -541,7 +543,7 @@ async def demo_reports(request: Request):
             "description": "High-level overview of key performance indicators",
             "category": "Executive",
             "frequency": "Weekly",
-            "last_generated": "2 days ago"
+            "last_generated": "2 days ago",
         },
         {
             "id": 2,
@@ -549,7 +551,7 @@ async def demo_reports(request: Request):
             "description": "Detailed breakdown of maintenance costs by asset and type",
             "category": "Financial",
             "frequency": "Monthly",
-            "last_generated": "5 days ago"
+            "last_generated": "5 days ago",
         },
         {
             "id": 3,
@@ -557,7 +559,7 @@ async def demo_reports(request: Request):
             "description": "Individual asset health, utilization, and maintenance history",
             "category": "Operations",
             "frequency": "Monthly",
-            "last_generated": "1 week ago"
+            "last_generated": "1 week ago",
         },
         {
             "id": 4,
@@ -565,10 +567,10 @@ async def demo_reports(request: Request):
             "description": "PM compliance, safety certifications, and regulatory status",
             "category": "Compliance",
             "frequency": "Quarterly",
-            "last_generated": "3 weeks ago"
-        }
+            "last_generated": "3 weeks ago",
+        },
     ]
-    
+
     return templates.TemplateResponse(
         "reports_dashboard.html",
         {

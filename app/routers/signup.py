@@ -42,27 +42,25 @@ async def signup(
 
     # Check if we're using Firebase (production) or SQLite (local)
     use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
-    
+
     if use_firebase and firebase_auth_service.is_available:
         # Firebase/Firestore signup flow
         try:
             # Create Firebase user
             user_record = await firebase_auth_service.create_user_with_email_password(
-                email=email,
-                password=password,
-                display_name=full_name or username
+                email=email, password=password, display_name=full_name or username
             )
-            
+
             # Get or create user in Firestore
             user_data = await firebase_auth_service.get_or_create_user(user_record)
             user_id = user_data.get("uid")
-            
+
             # Create demo data for new user
             create_demo_data(user_id)
-            
+
             # Create Firebase session token
             token = await firebase_auth_service.create_custom_token(user_record.uid)
-            
+
         except Exception as e:
             return templates.TemplateResponse(
                 "signup.html",

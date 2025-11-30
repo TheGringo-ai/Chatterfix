@@ -15,6 +15,7 @@ from datetime import datetime
 # Import Google Generative AI with error handling
 try:
     import google.generativeai as genai
+
     GENAI_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Google Generative AI not available: {e}")

@@ -10,6 +10,7 @@ try:
     import firebase_admin
     from firebase_admin import credentials, auth, firestore
     import pyrebase
+
     FIREBASE_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Firebase modules not available: {e}")
@@ -35,8 +36,12 @@ class FirebaseAuthService:
         """Initialize Firebase Admin SDK and client SDK"""
         # Check if Firebase modules are available
         if not FIREBASE_AVAILABLE:
-            logger.info("🔥 Firebase modules not installed - running in local/SQLite mode")
-            logger.info("   To enable Firebase, install: pip install firebase-admin pyrebase4")
+            logger.info(
+                "🔥 Firebase modules not installed - running in local/SQLite mode"
+            )
+            logger.info(
+                "   To enable Firebase, install: pip install firebase-admin pyrebase4"
+            )
             return
 
         # Check if Firebase is explicitly disabled
@@ -224,17 +229,19 @@ class FirebaseAuthService:
             logger.error(f"Error updating user profile: {e}")
             return False
 
-    async def create_user_with_email_password(self, email: str, password: str, display_name: str = None):
+    async def create_user_with_email_password(
+        self, email: str, password: str, display_name: str = None
+    ):
         """Create a new Firebase user with email and password"""
         if not self.is_available:
             raise Exception("Firebase not available")
-        
+
         try:
             user_record = auth.create_user(
                 email=email,
                 password=password,
                 display_name=display_name,
-                email_verified=False
+                email_verified=False,
             )
             logger.info(f"Created Firebase user: {email}")
             return user_record
@@ -246,12 +253,12 @@ class FirebaseAuthService:
         """Create a custom token for user authentication"""
         if not self.is_available:
             raise Exception("Firebase not available")
-        
+
         try:
             custom_token = auth.create_custom_token(uid)
             # Convert bytes to string if needed
             if isinstance(custom_token, bytes):
-                custom_token = custom_token.decode('utf-8')
+                custom_token = custom_token.decode("utf-8")
             return custom_token
         except Exception as e:
             logger.error(f"Error creating custom token: {e}")

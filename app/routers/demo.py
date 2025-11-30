@@ -378,7 +378,6 @@ async def demo_ar_mode(request: Request):
 async def demo_analytics(request: Request):
     """Demo analytics dashboard with predictive insights"""
     from datetime import datetime, timedelta
-    import random
 
     # Generate sample predictions
     predictions = [

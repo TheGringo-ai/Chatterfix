@@ -1,6 +1,4 @@
 import logging
-import asyncio
-from typing import Optional
 from .predictive_engine import PredictiveMaintenanceEngine
 from .health_monitor import HealthMonitor
 from .openai_service import openai_service

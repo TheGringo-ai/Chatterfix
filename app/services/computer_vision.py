@@ -5,7 +5,7 @@ AI-powered part recognition and visual inspection
 
 import logging
 import os
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

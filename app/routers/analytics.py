@@ -30,7 +30,7 @@ async def analytics_dashboard(request: Request):
     # Get KPI summary for initial render
     try:
         kpi_data = analytics_service.get_kpi_summary(30)
-    except Exception as e:
+    except Exception:
         kpi_data = {}
 
     return templates.TemplateResponse(

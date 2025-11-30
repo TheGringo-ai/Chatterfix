@@ -57,7 +57,6 @@ class ConnectionManager:
     async def send_to_role(self, message: dict, role: str):
         """Send a message to all users with a specific role"""
         # This would require user role lookup - implement when user management is added
-        pass
 
     def get_online_users(self) -> List[int]:
         """Get list of currently connected user IDs"""

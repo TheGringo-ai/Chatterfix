@@ -1,14 +1,12 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
+from fastapi import APIRouter, Form, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 from app.services.ai_assistant import chatterfix_ai
 from app.services.voice_commands import process_voice_command
 from app.services.computer_vision import recognize_part, analyze_asset_condition
 from app.core.database import get_db_connection
-from app.core.db_adapter import get_db_adapter
 from app.routers.auth import get_current_user
 import shutil
 import os
-import json
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 

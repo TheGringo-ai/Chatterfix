@@ -7,11 +7,10 @@ import os
 import csv
 import json
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import datetime
 import uuid
 from io import StringIO, BytesIO
-import zipfile
 
 # Import with error handling
 try:
@@ -23,7 +22,7 @@ except ImportError:
     PANDAS_AVAILABLE = False
 
 try:
-    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.pagesizes import A4
     from reportlab.platypus import (
         SimpleDocTemplate,
         Table,
@@ -31,14 +30,13 @@ try:
         Paragraph,
         Spacer,
     )
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib import colors
 
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-from app.services.media_service import media_service
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +207,7 @@ class DocumentService:
             df.to_excel(writer, sheet_name=data_type.title(), index=False)
 
             # Get the workbook and worksheet for formatting
-            workbook = writer.book
+            writer.book
             worksheet = writer.sheets[data_type.title()]
 
             # Auto-adjust column widths

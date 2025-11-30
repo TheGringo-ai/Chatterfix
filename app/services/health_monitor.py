@@ -13,7 +13,7 @@ import aiosqlite
 import logging
 import asyncio
 from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -703,7 +703,6 @@ async def get_readiness_probe() -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
-    import asyncio
 
     async def main():
         print("🏥 ChatterFix Health Monitor Test")

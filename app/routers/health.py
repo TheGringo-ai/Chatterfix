@@ -18,7 +18,7 @@ async def health_check():
                 # Firestore health check
                 from app.core.db_adapter import get_db_adapter
 
-                db_adapter = get_db_adapter()
+                get_db_adapter()
                 db_status = "firestore_ok"
             else:
                 # SQLite health check

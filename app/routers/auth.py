@@ -8,8 +8,6 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.services import auth_service
 from app.services.firebase_auth import (
-    get_current_user,
-    get_optional_user,
     firebase_auth_service,
 )
 from typing import Optional, Dict, Any
@@ -153,7 +151,7 @@ async def verify_firebase_token(token: str = Form(...), request: Request = None)
         return JSONResponse(
             {"success": False, "message": str(e.detail)}, status_code=e.status_code
         )
-    except Exception as e:
+    except Exception:
         return JSONResponse(
             {"success": False, "message": "Authentication failed"}, status_code=401
         )
@@ -206,7 +204,7 @@ async def update_firebase_profile(
                 {"success": False, "message": "Profile update failed"}, status_code=400
             )
 
-    except Exception as e:
+    except Exception:
         return JSONResponse(
             {"success": False, "message": "Profile update failed"}, status_code=500
         )

@@ -3,7 +3,7 @@ Planner Dashboard Service - Maintenance Planning & Scheduling
 Provides data for preventive maintenance scheduling, resource allocation, and capacity planning
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime, timedelta
 from app.core.database import get_db_connection
 

@@ -4,7 +4,6 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-import json
 
 logger = logging.getLogger(__name__)
 

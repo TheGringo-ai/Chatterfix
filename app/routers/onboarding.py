@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form
+from fastapi import APIRouter, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
 import shutil
 import os
 import pandas as pd
-import io
 from datetime import datetime
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])

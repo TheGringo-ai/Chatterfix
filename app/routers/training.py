@@ -4,7 +4,7 @@ Handles AI-generated training modules and technician learning
 """
 
 from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
 from app.services.training_generator import training_generator

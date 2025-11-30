@@ -3,15 +3,11 @@ Media Service
 Handles file uploads, image/video processing, document scanning, and barcode operations
 """
 
-import os
 import uuid
 import logging
-import base64
-import json
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Any
 from datetime import datetime
 from pathlib import Path
-import mimetypes
 
 # Import with error handling
 try:

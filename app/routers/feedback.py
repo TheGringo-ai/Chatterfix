@@ -3,14 +3,12 @@ Feedback Router
 Handles work order feedback and quality tracking
 """
 
-from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import APIRouter, Form
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
 from app.services.notification_service import notification_service
 import os
 import logging
-from datetime import datetime
 
 # Import Google Generative AI with error handling
 try:

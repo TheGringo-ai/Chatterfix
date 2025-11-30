@@ -3,11 +3,10 @@ Export Service for ChatterFix CMMS
 Provides PDF and Excel export functionality for reports and analytics
 """
 
-import io
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from app.services.analytics_service import analytics_service
 
 logger = logging.getLogger(__name__)

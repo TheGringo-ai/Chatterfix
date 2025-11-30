@@ -3,9 +3,8 @@ IoT Sensor Integration Service for ChatterFix CMMS
 Handles sensor data collection, threshold monitoring, and automated work order creation
 """
 
-import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Any, Optional
 from app.core.database import get_db_connection
 

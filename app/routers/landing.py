@@ -3,12 +3,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-import smtplib
 
 # Email functionality - temporarily simplified
 # from email.mime.text import MimeText
 # from email.mime.multipart import MimeMultipart
-import os
 import logging
 import secrets
 import string

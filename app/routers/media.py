@@ -3,11 +3,9 @@ Media Router
 Handles file uploads, barcode scanning, document processing
 """
 
-import io
-import json
 from typing import List
 from fastapi import APIRouter, Request, File, UploadFile, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.services.media_service import media_service
 

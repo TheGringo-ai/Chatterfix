@@ -4,7 +4,7 @@ Provides data for all dashboard widgets based on user role and configuration
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
@@ -307,8 +307,7 @@ class DashboardService:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        today = datetime.now().date()
-        week_ago = today - timedelta(days=7)
+        datetime.now().date()
 
         # Today's completions
         today_stats = cur.execute(

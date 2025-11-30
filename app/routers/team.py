@@ -9,10 +9,8 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Form,
-    UploadFile,
-    File,
 )
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
 from app.services.websocket_manager import websocket_manager

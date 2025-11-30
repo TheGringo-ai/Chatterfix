@@ -81,7 +81,7 @@ gcloud run deploy chatterfix \
   --memory 2Gi \
   --cpu 2 \
   --max-instances 10 \
-  --set-env-vars "ENVIRONMENT=production,USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,CMMS_PORT=8080" \
+  --set-env-vars "ENVIRONMENT=production,USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,FIREBASE_API_KEY=AIzaSyAaXlvuopHtTZglfghnlc_hBqGr1YzPrBk,CMMS_PORT=8080" \
   --tag "$BUILD_TAG"
 
 if [ $? -eq 0 ]; then

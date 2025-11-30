@@ -96,7 +96,7 @@ jobs:
           gcloud run deploy chatterfix-cmms \
             --source . \
             --region us-central1 \
-            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
+            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=fredfix,FIREBASE_API_KEY=AIzaSyAaXlvuopHtTZglfghnlc_hBqGr1YzPrBk,GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
             --memory=4Gi \
             --cpu=2 \
             --min-instances=1 \

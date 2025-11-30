@@ -8,7 +8,7 @@ import os
 from datetime import datetime
 
 from app.services.purchasing_service import purchasing_service
-from app.core.database import get_db_connection
+from app.core.firestore_db import get_firestore_manager
 
 router = APIRouter(prefix="/purchasing", tags=["purchasing"])
 templates = Jinja2Templates(directory="app/templates")
@@ -134,19 +134,14 @@ async def get_purchasing_summary():
 @router.get("/pos", response_class=HTMLResponse)
 async def pos_system(request: Request):
     """Point of Sale system for purchasing"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
     
     # Get vendors for dropdown
-    vendors = conn.execute(
-        "SELECT * FROM vendors ORDER BY name"
-    ).fetchall()
+    vendors = await db.get_collection("vendors", order_by="name")
     
     # Get parts for quick add
-    parts = conn.execute(
-        "SELECT id, name, part_number, unit_cost, current_stock FROM parts ORDER BY name"
-    ).fetchall()
+    parts = await db.get_collection("parts", order_by="name", limit=50)
     
-    conn.close()
     return templates.TemplateResponse(
         "purchasing_pos.html", 
         {
@@ -158,7 +153,7 @@ async def pos_system(request: Request):
 
 @router.post("/purchase-orders/create")
 async def create_purchase_order(
-    vendor_id: int = Form(...),
+    vendor_id: str = Form(...),
     po_number: str = Form(...),
     description: str = Form(""),
     total_amount: float = Form(0.0),
@@ -166,20 +161,24 @@ async def create_purchase_order(
     files: list[UploadFile] = File(None),
 ):
     """Create new purchase order with documents"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
+    
+    # Create purchase order data
+    po_data = {
+        "po_number": po_number,
+        "vendor_id": vendor_id,
+        "description": description,
+        "total_amount": total_amount,
+        "delivery_date": delivery_date,
+        "status": "Draft"
+    }
     
     # Create purchase order
-    cursor = conn.execute(
-        """INSERT INTO purchase_orders 
-           (po_number, vendor_id, description, total_amount, delivery_date, status, created_date)
-           VALUES (?, ?, ?, ?, ?, 'Draft', ?)""",
-        (po_number, vendor_id, description, total_amount, delivery_date, datetime.now())
-    )
-    po_id = cursor.lastrowid
+    po_id = await db.create_document("purchase_orders", po_data)
     
     # Handle file uploads
     if files:
-        po_dir = os.path.join(PO_UPLOAD_DIR, str(po_id))
+        po_dir = os.path.join(PO_UPLOAD_DIR, po_id)
         os.makedirs(po_dir, exist_ok=True)
         
         for file in files:
@@ -194,14 +193,15 @@ async def create_purchase_order(
                     else "document"
                 )
                 
-                conn.execute(
-                    """INSERT INTO po_documents (po_id, file_path, file_type, filename, description)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (po_id, rel_path, file_type, file.filename, "Uploaded during creation")
-                )
+                doc_data = {
+                    "po_id": po_id,
+                    "file_path": rel_path,
+                    "file_type": file_type,
+                    "filename": file.filename,
+                    "description": "Uploaded during creation"
+                }
+                await db.create_document("po_documents", doc_data)
     
-    conn.commit()
-    conn.close()
     return JSONResponse({"success": True, "po_id": po_id, "message": "Purchase order created successfully"})
 
 @router.post("/parts/add")
@@ -210,7 +210,7 @@ async def add_part_with_media(
     part_number: str = Form(...),
     description: str = Form(""),
     category: str = Form(...),
-    vendor_id: Optional[int] = Form(None),
+    vendor_id: Optional[str] = Form(None),
     unit_cost: float = Form(0.0),
     current_stock: int = Form(0),
     minimum_stock: int = Form(5),
@@ -218,24 +218,31 @@ async def add_part_with_media(
     files: list[UploadFile] = File(None),
 ):
     """Add new part with pictures and documents"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
+    
+    # Create part data
+    part_data = {
+        "name": name,
+        "part_number": part_number,
+        "description": description,
+        "category": category,
+        "vendor_id": vendor_id,
+        "unit_cost": unit_cost,
+        "current_stock": current_stock,
+        "minimum_stock": minimum_stock,
+        "location": location,
+        "image_url": ""
+    }
     
     # Create part
-    cursor = conn.execute(
-        """INSERT INTO parts 
-           (name, part_number, description, category, vendor_id, unit_cost, 
-            current_stock, minimum_stock, location)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (name, part_number, description, category, vendor_id, unit_cost, 
-         current_stock, minimum_stock, location)
-    )
-    part_id = cursor.lastrowid
+    part_id = await db.create_document("parts", part_data)
     
     # Handle file uploads
     if files:
-        part_dir = os.path.join("app/static/uploads/parts", str(part_id))
+        part_dir = os.path.join("app/static/uploads/parts", part_id)
         os.makedirs(part_dir, exist_ok=True)
         
+        first_image = True
         for file in files:
             if file.filename:
                 file_path = os.path.join(part_dir, file.filename)
@@ -249,24 +256,20 @@ async def add_part_with_media(
                 )
                 
                 # Update part image if it's the first image
-                if file_type == "image":
-                    existing_image = conn.execute(
-                        "SELECT image_url FROM parts WHERE id = ?", (part_id,)
-                    ).fetchone()
-                    if not existing_image[0]:
-                        conn.execute(
-                            "UPDATE parts SET image_url = ? WHERE id = ?",
-                            (rel_path, part_id)
-                        )
+                if file_type == "image" and first_image:
+                    await db.update_document("parts", part_id, {"image_url": rel_path})
+                    first_image = False
                 
-                conn.execute(
-                    """INSERT INTO part_media (part_id, file_path, file_type, title, description)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (part_id, rel_path, file_type, file.filename, "Uploaded during creation")
-                )
+                # Create document record
+                doc_data = {
+                    "part_id": part_id,
+                    "file_path": rel_path,
+                    "file_type": file_type,
+                    "title": file.filename,
+                    "description": "Uploaded during creation"
+                }
+                await db.create_document("part_media", doc_data)
     
-    conn.commit()
-    conn.close()
     return JSONResponse({"success": True, "part_id": part_id, "message": "Part added successfully"})
 
 @router.post("/vendors/create")
@@ -281,20 +284,25 @@ async def create_vendor(
     files: list[UploadFile] = File(None),
 ):
     """Create vendor with documents"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
+    
+    # Create vendor data
+    vendor_data = {
+        "name": name,
+        "contact_name": contact_name,
+        "email": email,
+        "phone": phone,
+        "address": address,
+        "payment_terms": payment_terms,
+        "tax_id": tax_id
+    }
     
     # Create vendor
-    cursor = conn.execute(
-        """INSERT INTO vendors 
-           (name, contact_name, email, phone, address, payment_terms, tax_id, created_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (name, contact_name, email, phone, address, payment_terms, tax_id, datetime.now())
-    )
-    vendor_id = cursor.lastrowid
+    vendor_id = await db.create_document("vendors", vendor_data)
     
     # Handle file uploads
     if files:
-        vendor_dir = os.path.join(VENDOR_UPLOAD_DIR, str(vendor_id))
+        vendor_dir = os.path.join(VENDOR_UPLOAD_DIR, vendor_id)
         os.makedirs(vendor_dir, exist_ok=True)
         
         for file in files:
@@ -306,38 +314,42 @@ async def create_vendor(
                 rel_path = f"/static/uploads/vendors/{vendor_id}/{file.filename}"
                 file_type = "document"  # Vendor files are typically documents
                 
-                conn.execute(
-                    """INSERT INTO vendor_documents (vendor_id, file_path, file_type, filename, description)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (vendor_id, rel_path, file_type, file.filename, "Uploaded during creation")
-                )
+                doc_data = {
+                    "vendor_id": vendor_id,
+                    "file_path": rel_path,
+                    "file_type": file_type,
+                    "filename": file.filename,
+                    "description": "Uploaded during creation"
+                }
+                await db.create_document("vendor_documents", doc_data)
     
-    conn.commit()
-    conn.close()
     return JSONResponse({"success": True, "vendor_id": vendor_id, "message": "Vendor created successfully"})
 
 @router.post("/invoices/upload")
 async def upload_invoice(
-    po_id: int = Form(...),
+    po_id: str = Form(...),
     invoice_number: str = Form(...),
     invoice_amount: float = Form(...),
     invoice_date: str = Form(...),
     files: list[UploadFile] = File(...),
 ):
     """Upload invoice with documents"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
+    
+    # Create invoice data
+    invoice_data = {
+        "po_id": po_id,
+        "invoice_number": invoice_number,
+        "amount": invoice_amount,
+        "invoice_date": invoice_date,
+        "status": "Pending"
+    }
     
     # Create invoice record
-    cursor = conn.execute(
-        """INSERT INTO invoices 
-           (po_id, invoice_number, amount, invoice_date, status, created_date)
-           VALUES (?, ?, ?, ?, 'Pending', ?)""",
-        (po_id, invoice_number, invoice_amount, invoice_date, datetime.now())
-    )
-    invoice_id = cursor.lastrowid
+    invoice_id = await db.create_document("invoices", invoice_data)
     
     # Handle file uploads
-    invoice_dir = os.path.join(INVOICE_UPLOAD_DIR, str(invoice_id))
+    invoice_dir = os.path.join(INVOICE_UPLOAD_DIR, invoice_id)
     os.makedirs(invoice_dir, exist_ok=True)
     
     for file in files:
@@ -352,77 +364,108 @@ async def upload_invoice(
                 else "document"
             )
             
-            conn.execute(
-                """INSERT INTO invoice_documents (invoice_id, file_path, file_type, filename, description)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (invoice_id, rel_path, file_type, file.filename, "Invoice document")
-            )
+            doc_data = {
+                "invoice_id": invoice_id,
+                "file_path": rel_path,
+                "file_type": file_type,
+                "filename": file.filename,
+                "description": "Invoice document"
+            }
+            await db.create_document("invoice_documents", doc_data)
     
-    conn.commit()
-    conn.close()
     return JSONResponse({"success": True, "invoice_id": invoice_id, "message": "Invoice uploaded successfully"})
 
 @router.get("/parts/search")
 async def search_parts(q: str = ""):
     """Search parts by name or part number"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
     
+    # Get all parts first (Firestore doesn't support complex text search)
+    parts = await db.get_collection("parts", order_by="name", limit=100)
+    
+    # Filter by search query if provided
     if q:
-        parts = conn.execute(
-            """SELECT p.*, v.name as vendor_name 
-               FROM parts p 
-               LEFT JOIN vendors v ON p.vendor_id = v.id
-               WHERE p.name LIKE ? OR p.part_number LIKE ?
-               ORDER BY p.name LIMIT 50""",
-            (f"%{q}%", f"%{q}%")
-        ).fetchall()
-    else:
-        parts = conn.execute(
-            """SELECT p.*, v.name as vendor_name 
-               FROM parts p 
-               LEFT JOIN vendors v ON p.vendor_id = v.id
-               ORDER BY p.name LIMIT 50"""
-        ).fetchall()
+        q_lower = q.lower()
+        parts = [
+            part for part in parts 
+            if q_lower in part.get("name", "").lower() or 
+               q_lower in part.get("part_number", "").lower()
+        ]
     
-    conn.close()
+    # Get vendor names for each part
+    for part in parts:
+        if part.get("vendor_id"):
+            vendor = await db.get_document("vendors", part["vendor_id"])
+            part["vendor_name"] = vendor.get("name", "") if vendor else ""
+        else:
+            part["vendor_name"] = ""
+    
     return JSONResponse({
-        "parts": [dict(row) for row in parts]
+        "parts": parts[:50]  # Limit to 50 results
     })
 
 @router.get("/barcode/{barcode}")
 async def lookup_by_barcode(barcode: str):
     """Lookup part by barcode/part number"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
     
-    part = conn.execute(
-        """SELECT p.*, v.name as vendor_name 
-           FROM parts p 
-           LEFT JOIN vendors v ON p.vendor_id = v.id
-           WHERE p.part_number = ? OR p.barcode = ?""",
-        (barcode, barcode)
-    ).fetchone()
+    # Search by part number or barcode
+    parts = await db.get_collection(
+        "parts",
+        filters=[
+            {"field": "part_number", "operator": "==", "value": barcode}
+        ]
+    )
     
-    conn.close()
+    if not parts:
+        # Try searching by barcode field
+        parts = await db.get_collection(
+            "parts",
+            filters=[
+                {"field": "barcode", "operator": "==", "value": barcode}
+            ]
+        )
     
-    if part:
-        return JSONResponse({"success": True, "part": dict(part)})
+    if parts:
+        part = parts[0]
+        # Get vendor name if vendor_id exists
+        if part.get("vendor_id"):
+            vendor = await db.get_document("vendors", part["vendor_id"])
+            part["vendor_name"] = vendor.get("name", "") if vendor else ""
+        else:
+            part["vendor_name"] = ""
+            
+        return JSONResponse({"success": True, "part": part})
     else:
         return JSONResponse({"success": False, "message": "Part not found"})
 
 @router.get("/inventory/low-stock")
 async def get_low_stock_items():
     """Get items below minimum stock level"""
-    conn = get_db_connection()
+    db = get_firestore_manager()
     
-    items = conn.execute(
-        """SELECT p.*, v.name as vendor_name 
-           FROM parts p 
-           LEFT JOIN vendors v ON p.vendor_id = v.id
-           WHERE p.current_stock <= p.minimum_stock
-           ORDER BY (p.current_stock - p.minimum_stock) ASC"""
-    ).fetchall()
+    # Get all parts (Firestore doesn't support complex filtering)
+    all_parts = await db.get_collection("parts")
     
-    conn.close()
+    # Filter for low stock items
+    low_stock_items = [
+        part for part in all_parts
+        if part.get("current_stock", 0) <= part.get("minimum_stock", 0)
+    ]
+    
+    # Get vendor names and sort by stock difference
+    for part in low_stock_items:
+        if part.get("vendor_id"):
+            vendor = await db.get_document("vendors", part["vendor_id"])
+            part["vendor_name"] = vendor.get("name", "") if vendor else ""
+        else:
+            part["vendor_name"] = ""
+    
+    # Sort by stock difference (most critical first)
+    low_stock_items.sort(
+        key=lambda x: x.get("current_stock", 0) - x.get("minimum_stock", 0)
+    )
+    
     return JSONResponse({
-        "low_stock_items": [dict(row) for row in items]
+        "low_stock_items": low_stock_items
     })

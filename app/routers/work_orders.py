@@ -115,7 +115,7 @@ async def complete_work_order(wo_id: int):
     conn.commit()
     conn.close()
     # Redirect to detail view if we are there, or list view
-    return RedirectResponse(url=f"/work-orders", status_code=303)
+    return RedirectResponse(url="/work-orders", status_code=303)
 
 
 @router.post("/work-orders/{wo_id}/update")

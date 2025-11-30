@@ -577,57 +577,57 @@ def init_database():
             cur.execute(
                 "ALTER TABLE users ADD COLUMN dashboard_layout TEXT DEFAULT 'grid'"
             )
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE users ADD COLUMN theme TEXT DEFAULT 'dark'")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute(
                 "ALTER TABLE users ADD COLUMN refresh_interval INTEGER DEFAULT 30"
             )
-        except:
+        except Exception:
             pass
 
         # Update work_orders table with assignment and scheduling
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN assigned_to INTEGER")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN estimated_duration INTEGER")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute(
                 "ALTER TABLE work_orders ADD COLUMN actual_start_time TIMESTAMP"
             )
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN actual_start TIMESTAMP")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN actual_end TIMESTAMP")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN blocked_reason TEXT")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE work_orders ADD COLUMN location TEXT")
-        except:
+        except Exception:
             pass
 
         # ========== GEOLOCATION & PWA TABLES ==========
@@ -699,17 +699,17 @@ def init_database():
         # Update users table with geolocation preferences
         try:
             cur.execute("ALTER TABLE users ADD COLUMN current_latitude REAL")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE users ADD COLUMN current_longitude REAL")
-        except:
+        except Exception:
             pass
 
         try:
             cur.execute("ALTER TABLE users ADD COLUMN last_location_update TIMESTAMP")
-        except:
+        except Exception:
             pass
 
         # Company Information Table for Landing Page Signups

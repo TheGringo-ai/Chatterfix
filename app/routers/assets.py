@@ -351,7 +351,7 @@ async def ai_health_analysis(asset_id: int):
         if json_match:
             result = json.loads(json_match.group())
             return JSONResponse(result)
-    except:
+    except Exception:
         pass
 
     return JSONResponse(
@@ -400,7 +400,7 @@ async def ai_recommendations(asset_id: int):
     try:
         response = await gemini_service.generate_response(prompt)
         return JSONResponse({"recommendations": response})
-    except:
+    except Exception:
         return JSONResponse(
             {
                 "recommendations": [

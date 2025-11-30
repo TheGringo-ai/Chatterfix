@@ -163,7 +163,7 @@ class GeminiService:
         self, asset_info: str, issue_description: str, user_id: Optional[int] = None
     ) -> str:
         """Provide troubleshooting advice for a technician"""
-        context = f"""
+        context = """
         You are an expert industrial maintenance technician assistant.
         Provide step-by-step troubleshooting advice based on the asset and issue described.
         Prioritize safety first.

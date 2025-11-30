@@ -297,7 +297,7 @@ async def create_parts_request(
                 notification_type="parts_request",
                 title="New Parts Request",
                 message=f"{part[0]} - Qty: {quantity}",
-                link=f"/inventory",
+                link="/inventory",
                 priority=priority,
             )
 

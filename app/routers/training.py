@@ -128,7 +128,7 @@ async def module_detail(request: Request, module_id: int):
         if module["ai_generated"] and module["content_path"]:
             try:
                 content = json.loads(module["content_path"])
-            except:
+            except Exception:
                 pass
 
         return templates.TemplateResponse(

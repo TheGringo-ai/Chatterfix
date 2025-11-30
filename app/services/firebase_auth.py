@@ -308,7 +308,7 @@ async def get_optional_user(
 
     try:
         return await firebase_auth_service.verify_token(credentials.credentials)
-    except:
+    except Exception:
         return None
 
 

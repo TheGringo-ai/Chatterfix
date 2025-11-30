@@ -43,6 +43,7 @@ async def recognize_part(
         # Get real inventory data from database
         from app.core.database import get_db_connection
         import sqlite3
+
         conn = get_db_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -124,6 +125,7 @@ async def analyze_asset_condition(
         # Update asset condition in database if asset_id provided
         if asset_id:
             from app.core.database import get_db_connection
+
             conn = get_db_connection()
             cursor = conn.cursor()
 

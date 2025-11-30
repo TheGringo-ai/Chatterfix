@@ -75,6 +75,7 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
 
         # Create AI-enhanced work order
         from app.core.database import get_db_connection
+
         conn = get_db_connection()
         cursor = conn.cursor()
 

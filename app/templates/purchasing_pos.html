@@ -93,9 +93,9 @@
             <h3>🕒 Recently Added</h3>
             <div id="recent-parts">
                 {% for part in parts[:5] %}
-                <div class="item-card" style="margin-bottom: 0.5rem; padding: 0.8rem;" onclick="addToCart({{ part.id }}, '{{ part.name }}', {{ part.unit_cost }})">
+                <div class="item-card" style="margin-bottom: 0.5rem; padding: 0.8rem;" onclick="addToCart('{{ part.id }}', '{{ part.name }}', {{ part.cost or 0 }})">
                     <strong>{{ part.name }}</strong><br>
-                    <small>{{ part.part_number }} - ${{ "%.2f"|format(part.unit_cost) }}</small>
+                    <small>{{ part.part_number }} - ${{ "%.2f"|format(part.cost or 0) }}</small>
                 </div>
                 {% endfor %}
             </div>

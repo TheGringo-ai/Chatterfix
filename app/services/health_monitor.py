@@ -9,6 +9,7 @@ import sys
 import time
 import json
 import psutil
+
 try:
     import aiosqlite
 except ImportError:
@@ -110,7 +111,9 @@ class HealthMonitor:
     async def init_database(self):
         """Initialize SQLite database for health metrics"""
         if aiosqlite is None:
-            logger.warning("⚠️ aiosqlite not available - Health Monitor running in memory-only mode")
+            logger.warning(
+                "⚠️ aiosqlite not available - Health Monitor running in memory-only mode"
+            )
             return
 
         async with aiosqlite.connect(self.db_path) as conn:
@@ -370,7 +373,7 @@ class HealthMonitor:
     async def check_database_connection(self) -> Dict[str, Any]:
         """Check database connectivity (SQLite health database)"""
         if not aiosqlite:
-             return {
+            return {
                 "status": "healthy",
                 "metrics": {
                     "connection": HealthMetric(
@@ -475,9 +478,9 @@ class HealthMonitor:
             since_time = datetime.now(timezone.utc) - timedelta(
                 hours=slo.time_window_hours
             )
-            
+
             total_violation_minutes = 0
-            
+
             if aiosqlite:
                 try:
                     async with aiosqlite.connect(self.db_path) as conn:
@@ -537,7 +540,7 @@ class HealthMonitor:
     async def store_health_metric(self, check_name: str, check_result: Dict[str, Any]):
         """Store health check results in database"""
         await self.ensure_database_initialized()
-        
+
         if not aiosqlite:
             return
 
@@ -648,10 +651,11 @@ class HealthMonitor:
                 await conn.commit()
         except Exception as e:
             logger.error(f"Failed to record SLO violation: {e}")
+
     async def get_health_history(self, hours: int = 24) -> Dict[str, Any]:
         """Get health check history for analysis"""
         await self.ensure_database_initialized()
-        
+
         if not aiosqlite:
             return {
                 "time_range_hours": hours,

@@ -14,7 +14,9 @@ class DatabaseAdapter:
             from app.core.firestore_db import get_firestore_manager, FIRESTORE_AVAILABLE
 
             if not FIRESTORE_AVAILABLE:
-                logger.error("❌ Firestore module not available. Database operations will fail.")
+                logger.error(
+                    "❌ Firestore module not available. Database operations will fail."
+                )
                 self.firestore_manager = None
             else:
                 self.firestore_manager = get_firestore_manager()

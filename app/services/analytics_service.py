@@ -233,14 +233,18 @@ class AnalyticsService:
                     "unit": "percent",
                     "total_assets": total_assets,
                     "active_assets": active_assets,
-                    "status_breakdown": {s["status"]: s["count"] for s in status_breakdown},
+                    "status_breakdown": {
+                        s["status"]: s["count"] for s in status_breakdown
+                    },
                     "top_utilized": sorted(
                         asset_data, key=lambda x: x["utilization_rate"], reverse=True
                     )[:5],
-                    "low_utilized": sorted(asset_data, key=lambda x: x["utilization_rate"])[
-                        :5
-                    ],
-                    "trend": self._calculate_trend("utilization", avg_utilization, days),
+                    "low_utilized": sorted(
+                        asset_data, key=lambda x: x["utilization_rate"]
+                    )[:5],
+                    "trend": self._calculate_trend(
+                        "utilization", avg_utilization, days
+                    ),
                     "status": self._get_utilization_status(avg_utilization),
                 }
 
@@ -428,7 +432,12 @@ class AnalyticsService:
                 ).fetchone()
 
                 completed = next(
-                    (s["count"] for s in status_breakdown if s["status"] == "Completed"), 0
+                    (
+                        s["count"]
+                        for s in status_breakdown
+                        if s["status"] == "Completed"
+                    ),
+                    0,
                 )
                 total = total_created["count"] if total_created else 0
                 completion_rate = (completed / total * 100) if total > 0 else 0
@@ -452,7 +461,9 @@ class AnalyticsService:
                     "total_created": total,
                     "completion_rate": round(completion_rate, 2),
                     "overdue_count": overdue["count"] if overdue else 0,
-                    "status_breakdown": {s["status"]: s["count"] for s in status_breakdown},
+                    "status_breakdown": {
+                        s["status"]: s["count"] for s in status_breakdown
+                    },
                     "priority_breakdown": {
                         p["priority"]: p["count"] for p in priority_breakdown
                     },
@@ -464,7 +475,9 @@ class AnalyticsService:
                         }
                         for d in daily_trend
                     ],
-                    "trend": self._calculate_trend("work_orders", completion_rate, days),
+                    "trend": self._calculate_trend(
+                        "work_orders", completion_rate, days
+                    ),
                     "status": (
                         "good"
                         if completion_rate >= 80
@@ -532,8 +545,12 @@ class AnalyticsService:
                 on_time_pm = pm_stats["on_time"] if pm_stats else 0
                 pm_compliance = (on_time_pm / total_pm * 100) if total_pm > 0 else 100
 
-                total_training = training_stats["total_assigned"] if training_stats else 0
-                completed_training = training_stats["completed"] if training_stats else 0
+                total_training = (
+                    training_stats["total_assigned"] if training_stats else 0
+                )
+                completed_training = (
+                    training_stats["completed"] if training_stats else 0
+                )
                 training_compliance = (
                     (completed_training / total_training * 100)
                     if total_training > 0

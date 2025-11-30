@@ -42,7 +42,6 @@ class GeminiService:
         # For now, just return the default key from env
         return self.default_api_key
 
-
     def _get_model(
         self, user_id: Optional[int] = None
     ) -> Optional[genai.GenerativeModel]:

@@ -8,9 +8,12 @@ logger = logging.getLogger(__name__)
 try:
     from google.cloud import firestore  # type: ignore
     from google.cloud.firestore_v1.base_query import FieldFilter
+
     FIRESTORE_AVAILABLE = True
 except ImportError:
-    logger.warning("⚠️ google-cloud-firestore not available. Firestore features will be disabled.")
+    logger.warning(
+        "⚠️ google-cloud-firestore not available. Firestore features will be disabled."
+    )
     FIRESTORE_AVAILABLE = False
     firestore = None
     FieldFilter = None

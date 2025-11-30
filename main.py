@@ -65,6 +65,7 @@ from app.routers import (
 # Initialize FastAPI application
 from contextlib import asynccontextmanager
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan events: startup and shutdown"""
@@ -87,9 +88,9 @@ async def lifespan(app: FastAPI):
         logger.info("🌐 ChatterFix ready for use!")
         logger.info("📊 Analytics dashboard: /analytics/dashboard")
         logger.info("🔌 IoT API: /iot/sensors/")
-        
+
         yield
-        
+
     except Exception as e:
         logger.error(f"❌ Failed to start ChatterFix CMMS: {e}")
         raise
@@ -98,11 +99,12 @@ async def lifespan(app: FastAPI):
         logger.info("🛑 Shutting down ChatterFix CMMS...")
         logger.info("✅ ChatterFix CMMS shutdown complete")
 
+
 app = FastAPI(
     title="ChatterFix CMMS API",
     description="AI-Powered Maintenance Management System",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add middleware
@@ -162,7 +164,7 @@ async def test_endpoint():
         "message": "ChatterFix is running!",
         "timestamp": "2025-11-30",
         "environment": os.getenv("ENVIRONMENT", "unknown"),
-        "port": os.getenv("PORT", "unknown")
+        "port": os.getenv("PORT", "unknown"),
     }
 
 

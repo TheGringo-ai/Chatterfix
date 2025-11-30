@@ -1,4 +1,5 @@
 """Tests for the main application module."""
+
 import pytest
 from fastapi.testclient import TestClient
 from main import app
@@ -37,6 +38,7 @@ async def test_startup_event():
     # This is a basic test - in real scenarios you'd mock dependencies
     try:
         from main import startup_event
+
         # Don't actually call it to avoid database initialization
         assert callable(startup_event)
     except ImportError:

@@ -67,7 +67,9 @@ class PlannerService:
                 "total_scheduled": 0,
                 "date_range": {
                     "start": datetime.now().strftime("%Y-%m-%d"),
-                    "end": (datetime.now() + timedelta(days=days_ahead)).strftime("%Y-%m-%d"),
+                    "end": (datetime.now() + timedelta(days=days_ahead)).strftime(
+                        "%Y-%m-%d"
+                    ),
                 },
             }
 
@@ -176,7 +178,12 @@ class PlannerService:
 
             # Categorize backlog
             by_priority = {"urgent": [], "high": [], "medium": [], "low": []}
-            by_urgency = {"overdue": [], "due_today": [], "due_this_week": [], "future": []}
+            by_urgency = {
+                "overdue": [],
+                "due_today": [],
+                "due_this_week": [],
+                "future": [],
+            }
 
             for work in backlog:
                 work_dict = dict(work)
@@ -197,7 +204,12 @@ class PlannerService:
             return {
                 "total_backlog": 0,
                 "by_priority": {"urgent": 0, "high": 0, "medium": 0, "low": 0},
-                "by_urgency": {"overdue": 0, "due_today": 0, "due_this_week": 0, "future": 0},
+                "by_urgency": {
+                    "overdue": 0,
+                    "due_today": 0,
+                    "due_this_week": 0,
+                    "future": 0,
+                },
                 "work_orders": [],
                 "overdue_count": 0,
                 "due_today_count": 0,
@@ -366,7 +378,9 @@ class PlannerService:
             conflict_list = []
             for conflict in conflicts:
                 conflict_type = (
-                    "overload" if conflict["total_hours"] > 8 else "multiple_assignments"
+                    "overload"
+                    if conflict["total_hours"] > 8
+                    else "multiple_assignments"
                 )
 
                 conflict_list.append(

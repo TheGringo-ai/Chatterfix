@@ -4,20 +4,20 @@ ChatterFix Predictive Maintenance Engine
 Baseline statistical risk scoring with upgrade path to advanced ML models
 """
 
-import os
 import json
 import logging
 import asyncio
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
-from pathlib import Path
-import pickle
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+# Set up logging first
+logger = logging.getLogger(__name__)
 
 # ML imports
 try:
@@ -26,10 +26,7 @@ try:
         GradientBoostingRegressor,
         RandomForestRegressor,
     )
-    from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
-    from sklearn.metrics import accuracy_score, mean_squared_error
-    import joblib
 
     ML_AVAILABLE = True
 except ImportError:
@@ -37,8 +34,6 @@ except ImportError:
     logger.warning(
         "⚠️ ML libraries not available. Install scikit-learn for predictive features."
     )
-
-logger = logging.getLogger(__name__)
 
 # Predictive maintenance router
 predictive_router = APIRouter(prefix="/ai/predictive", tags=["predictive-maintenance"])
@@ -1068,8 +1063,7 @@ Focus on practical actions a maintenance technician can implement."""
 
 
 # Initialize global engine
-# Initialize global engine
-# predictive_engine = PredictiveMaintenanceEngine()
+predictive_engine = PredictiveMaintenanceEngine()
 
 
 # API Endpoints

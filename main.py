@@ -115,6 +115,19 @@ app.include_router(push.router)  # Push notifications
 app.include_router(media.router)  # Media upload and barcode functionality
 
 
+# Simple test endpoint to verify deployment
+@app.get("/test")
+async def test_endpoint():
+    """Simple test endpoint to verify deployment works"""
+    return {
+        "status": "success",
+        "message": "ChatterFix is running!",
+        "timestamp": "2025-11-30",
+        "environment": os.getenv("ENVIRONMENT", "unknown"),
+        "port": os.getenv("PORT", "unknown")
+    }
+
+
 # Startup event - initialize database
 @app.on_event("startup")
 async def startup_event():

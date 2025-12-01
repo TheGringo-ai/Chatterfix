@@ -77,44 +77,225 @@ ROLE_ONBOARDING_CONFIG = {
     },
     "planner": {
         "title": "Maintenance Planner Onboarding",
-        "description": "Master work planning, scheduling, and resource optimization",
-        "duration_days": 4,
+        "description": "Master comprehensive maintenance planning, PM automation, scheduling, and resource optimization",
+        "duration_days": 7,
         "modules": [
             {
-                "id": "plan_overview",
-                "title": "Planning & Scheduling Overview",
+                "id": "plan_fundamentals",
+                "title": "Planning & Scheduling Fundamentals",
                 "type": "interactive",
-                "duration_minutes": 60,
-                "required": True
-            },
-            {
-                "id": "plan_job_planning",
-                "title": "Job Planning Techniques",
-                "type": "practical",
                 "duration_minutes": 90,
                 "required": True,
                 "content": {
                     "sections": [
-                        {"title": "Work Order Analysis", "type": "case_study"},
-                        {"title": "Resource Planning", "type": "interactive"},
-                        {"title": "Time Estimation", "type": "practice"},
-                        {"title": "Material Coordination", "type": "scenario"}
+                        {"title": "Maintenance Planning Principles", "type": "theory"},
+                        {"title": "Work Order Lifecycle Management", "type": "workflow"},
+                        {"title": "Resource Allocation & Optimization", "type": "interactive"},
+                        {"title": "Maintenance Strategy Development", "type": "case_study"}
                     ]
                 }
             },
             {
-                "id": "plan_scheduling",
-                "title": "Advanced Scheduling",
-                "type": "hands_on",
-                "duration_minutes": 75,
-                "required": True
+                "id": "plan_preventive_maintenance",
+                "title": "Preventive Maintenance Program Design",
+                "type": "comprehensive",
+                "duration_minutes": 120,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "PM Strategy & Methodology", "type": "theory"},
+                        {"title": "Equipment Criticality Analysis", "type": "assessment"},
+                        {"title": "Failure Mode Analysis (FMEA)", "type": "workshop"},
+                        {"title": "PM Task Development", "type": "hands_on"},
+                        {"title": "Frequency Optimization", "type": "calculation"},
+                        {"title": "PM Performance Metrics", "type": "analytics"}
+                    ]
+                }
             },
             {
-                "id": "plan_kpis",
-                "title": "KPIs & Analytics",
-                "type": "dashboard",
-                "duration_minutes": 45,
-                "required": True
+                "id": "plan_pm_automation",
+                "title": "Automated PM Scheduling & Triggers",
+                "type": "technical",
+                "duration_minutes": 105,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Calendar-Based PM Setup", "type": "configuration"},
+                        {"title": "Meter-Based PM Triggers", "type": "hands_on"},
+                        {"title": "Condition-Based Triggers", "type": "advanced"},
+                        {"title": "Multi-Criteria PM Scheduling", "type": "workshop"},
+                        {"title": "PM Auto-Generation Rules", "type": "configuration"},
+                        {"title": "Seasonal & Weather-Based PM", "type": "scenario"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_inspection_templates",
+                "title": "Inspection Templates & Checklists",
+                "type": "template_builder",
+                "duration_minutes": 135,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Standard Inspection Templates", "type": "template"},
+                        {"title": "Equipment-Specific Checklists", "type": "customization"},
+                        {"title": "Safety Inspection Protocols", "type": "compliance"},
+                        {"title": "Quality Control Templates", "type": "standards"},
+                        {"title": "Route-Based Inspections", "type": "optimization"},
+                        {"title": "Digital Forms & Mobile Checklists", "type": "technology"},
+                        {"title": "Inspection Result Analytics", "type": "reporting"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_meter_readings",
+                "title": "Meter Readings & Monitoring Systems",
+                "type": "monitoring",
+                "duration_minutes": 120,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Meter Types & Configuration", "type": "setup"},
+                        {"title": "Hourly Reading Schedules", "type": "scheduling"},
+                        {"title": "Gauge Reading Protocols", "type": "procedure"},
+                        {"title": "Temperature & Pressure Monitoring", "type": "technical"},
+                        {"title": "Vibration Analysis Setup", "type": "advanced"},
+                        {"title": "Flow Rate & Usage Tracking", "type": "measurement"},
+                        {"title": "Automated Data Collection", "type": "integration"},
+                        {"title": "Threshold Alerts & Warnings", "type": "notification"},
+                        {"title": "Trending & Predictive Analysis", "type": "analytics"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_advanced_scheduling",
+                "title": "Advanced Scheduling & Resource Management",
+                "type": "optimization",
+                "duration_minutes": 150,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Multi-Craft Scheduling", "type": "coordination"},
+                        {"title": "Equipment Availability Planning", "type": "logistics"},
+                        {"title": "Shutdown & Outage Planning", "type": "project"},
+                        {"title": "Emergency Response Scheduling", "type": "emergency"},
+                        {"title": "Contractor & Vendor Coordination", "type": "external"},
+                        {"title": "Resource Conflict Resolution", "type": "problem_solving"},
+                        {"title": "Schedule Optimization Algorithms", "type": "advanced"},
+                        {"title": "Capacity Planning & Forecasting", "type": "strategic"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_work_packages",
+                "title": "Work Package Development & Job Planning",
+                "type": "detailed_planning",
+                "duration_minutes": 135,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Work Package Structure", "type": "framework"},
+                        {"title": "Job Hazard Analysis (JHA)", "type": "safety"},
+                        {"title": "Permit Requirements Planning", "type": "compliance"},
+                        {"title": "Tool & Equipment Staging", "type": "logistics"},
+                        {"title": "Materials & Parts Kitting", "type": "preparation"},
+                        {"title": "Step-by-Step Procedures", "type": "documentation"},
+                        {"title": "Quality Standards & Acceptance", "type": "quality"},
+                        {"title": "Documentation & Closeout", "type": "completion"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_predictive_maintenance",
+                "title": "Predictive Maintenance Planning",
+                "type": "predictive",
+                "duration_minutes": 120,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Condition Monitoring Strategy", "type": "strategy"},
+                        {"title": "PdM Technology Integration", "type": "technology"},
+                        {"title": "Data Collection Planning", "type": "data"},
+                        {"title": "Analysis Frequency & Methods", "type": "methodology"},
+                        {"title": "Trend Analysis & Baselines", "type": "analytics"},
+                        {"title": "Failure Prediction Models", "type": "modeling"},
+                        {"title": "PdM Work Order Triggers", "type": "automation"},
+                        {"title": "ROI & Cost-Benefit Analysis", "type": "financial"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_reliability_engineering",
+                "title": "Reliability Engineering & RCM",
+                "type": "engineering",
+                "duration_minutes": 180,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Reliability-Centered Maintenance (RCM)", "type": "methodology"},
+                        {"title": "Asset Criticality Assessment", "type": "evaluation"},
+                        {"title": "Root Cause Analysis (RCA)", "type": "investigation"},
+                        {"title": "Failure Pattern Recognition", "type": "analysis"},
+                        {"title": "Maintenance Task Optimization", "type": "improvement"},
+                        {"title": "Reliability Metrics & KPIs", "type": "measurement"},
+                        {"title": "MTBF/MTTR Optimization", "type": "performance"},
+                        {"title": "Life Cycle Cost Analysis", "type": "economics"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_compliance_regulatory",
+                "title": "Compliance & Regulatory Planning",
+                "type": "compliance",
+                "duration_minutes": 90,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Regulatory Requirement Mapping", "type": "compliance"},
+                        {"title": "Audit Trail Documentation", "type": "documentation"},
+                        {"title": "Environmental Compliance", "type": "environmental"},
+                        {"title": "Safety Regulation Adherence", "type": "safety"},
+                        {"title": "Industry Standards (ISO, API, etc.)", "type": "standards"},
+                        {"title": "Certification Management", "type": "certification"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_kpis_analytics",
+                "title": "Advanced KPIs & Analytics Dashboard",
+                "type": "analytics",
+                "duration_minutes": 105,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Planning Efficiency Metrics", "type": "metrics"},
+                        {"title": "Schedule Compliance Tracking", "type": "compliance"},
+                        {"title": "Backlog Management Analytics", "type": "management"},
+                        {"title": "Resource Utilization Reports", "type": "utilization"},
+                        {"title": "Cost per Work Order Analysis", "type": "financial"},
+                        {"title": "Predictive Analytics & Forecasting", "type": "prediction"},
+                        {"title": "Dashboard Design & Visualization", "type": "visualization"},
+                        {"title": "Executive Reporting & Insights", "type": "reporting"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_integration_systems",
+                "title": "System Integration & Workflow Automation",
+                "type": "integration",
+                "duration_minutes": 120,
+                "required": False,
+                "content": {
+                    "sections": [
+                        {"title": "ERP Integration Planning", "type": "integration"},
+                        {"title": "IoT Sensor Data Integration", "type": "iot"},
+                        {"title": "Mobile Workforce Management", "type": "mobile"},
+                        {"title": "Workflow Automation Rules", "type": "automation"},
+                        {"title": "API Configuration & Usage", "type": "technical"},
+                        {"title": "Data Export & Reporting", "type": "data"},
+                        {"title": "Third-Party Tool Integration", "type": "integration"}
+                    ]
+                }
             }
         ]
     },

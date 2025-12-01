@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from datetime import datetime, timedelta
 import random
+from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -549,5 +550,115 @@ async def demo_reports(request: Request):
             "request": request,
             "report_templates": report_templates,
             "is_demo": True,
+        },
+    )
+
+
+@router.get("/demo/onboarding", response_class=HTMLResponse)
+async def demo_onboarding_dashboard(request: Request):
+    """Demo onboarding dashboard with role selection"""
+    return templates.TemplateResponse(
+        "onboarding_dashboard.html",
+        {
+            "request": request,
+            "roles": ROLE_ONBOARDING_CONFIG,
+            "is_demo": True,
+            "page_title": "Demo: Role-Based Onboarding",
+            "demo_banner": "Experience our comprehensive training system - all features available in demo mode"
+        },
+    )
+
+
+@router.get("/demo/onboarding/{role}", response_class=HTMLResponse)
+async def demo_role_onboarding(request: Request, role: str):
+    """Demo role-specific onboarding experience"""
+    if role not in ROLE_ONBOARDING_CONFIG:
+        return RedirectResponse(url="/demo/onboarding")
+    
+    role_config = ROLE_ONBOARDING_CONFIG[role]
+    
+    # Demo progress simulation - show some modules as completed for showcase
+    demo_progress = {}
+    if role == "planner":
+        # Show planner has made some progress for demo purposes
+        demo_progress = {
+            "plan_fundamentals": {"status": "completed", "completion_date": "2025-11-28"},
+            "plan_preventive_maintenance": {"status": "completed", "completion_date": "2025-11-29"},
+            "plan_pm_automation": {"status": "in_progress", "progress": 65},
+            "plan_inspection_templates": {"status": "pending"},
+            "plan_meter_readings": {"status": "pending"},
+        }
+    elif role == "technician":
+        demo_progress = {
+            "tech_safety": {"status": "completed", "completion_date": "2025-11-25"},
+            "tech_work_orders": {"status": "in_progress", "progress": 80},
+        }
+    
+    return templates.TemplateResponse(
+        "role_onboarding.html",
+        {
+            "request": request,
+            "role": role,
+            "role_config": role_config,
+            "progress": demo_progress,
+            "is_demo": True,
+            "demo_banner": f"Demo: {role_config['title']} - Interactive training simulation",
+            "completion_rate": 35 if role == "planner" else 25,
+        },
+    )
+
+
+@router.get("/demo/onboarding/{role}/{module_id}", response_class=HTMLResponse)
+async def demo_training_module(request: Request, role: str, module_id: str):
+    """Demo individual training module experience"""
+    if role not in ROLE_ONBOARDING_CONFIG:
+        return RedirectResponse(url="/demo/onboarding")
+    
+    role_config = ROLE_ONBOARDING_CONFIG[role]
+    module = None
+    
+    for mod in role_config["modules"]:
+        if mod["id"] == module_id:
+            module = mod
+            break
+    
+    if not module:
+        return RedirectResponse(url=f"/demo/onboarding/{role}")
+    
+    # Demo content simulation with realistic planner examples
+    demo_content = {
+        "current_section": 0,
+        "total_sections": len(module.get("content", {}).get("sections", [])),
+        "progress": 0,
+        "interactive_elements": True,
+    }
+    
+    if role == "planner":
+        # Add specific demo content for planner modules
+        if module_id == "plan_pm_automation":
+            demo_content["demo_data"] = {
+                "pm_schedules": 15,
+                "automated_triggers": 8,
+                "meter_readings": 45,
+                "active_routes": 12
+            }
+        elif module_id == "plan_meter_readings":
+            demo_content["demo_data"] = {
+                "meter_points": 127,
+                "daily_readings": 340,
+                "alerts_configured": 23,
+                "trending_charts": 8
+            }
+    
+    return templates.TemplateResponse(
+        "training_module_interactive.html",
+        {
+            "request": request,
+            "role": role,
+            "role_config": role_config,
+            "module": module,
+            "content": demo_content,
+            "is_demo": True,
+            "demo_banner": f"Demo: {module['title']} - Full interactive experience available",
         },
     )

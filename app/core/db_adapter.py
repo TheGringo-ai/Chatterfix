@@ -80,6 +80,48 @@ class DatabaseAdapter:
             )
         return {"work_orders": [], "assets": [], "ai_interactions": []}
 
+    async def get_asset_by_tag(self, asset_tag: str) -> Optional[Dict[str, Any]]:
+        """Get asset by asset tag/barcode"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_asset_by_tag(asset_tag)
+        return None
+
+    async def find_asset_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+        """Find asset by serial number, name, or other identifier"""
+        if self.firestore_manager:
+            return await self.firestore_manager.find_asset_by_identifier(identifier)
+        return None
+
+    async def get_asset(self, asset_id: int) -> Optional[Dict[str, Any]]:
+        """Get asset by ID"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_asset(asset_id)
+        return None
+
+    async def get_asset_work_orders(self, asset_id: int) -> List[Dict[str, Any]]:
+        """Get work orders for an asset"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_asset_work_orders(asset_id)
+        return []
+
+    async def get_asset_parts(self, asset_id: int) -> List[Dict[str, Any]]:
+        """Get parts for an asset"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_asset_parts(asset_id)
+        return []
+
+    async def count_asset_work_orders(self, asset_id: int) -> int:
+        """Count work orders for an asset"""
+        if self.firestore_manager:
+            return await self.firestore_manager.count_asset_work_orders(asset_id)
+        return 0
+
+    async def count_asset_parts(self, asset_id: int) -> int:
+        """Count parts for an asset"""
+        if self.firestore_manager:
+            return await self.firestore_manager.count_asset_parts(asset_id)
+        return 0
+
 
 # Global database adapter instance
 db_adapter = DatabaseAdapter()

@@ -9,9 +9,14 @@
             <h1>📋 Work Orders</h1>
             <p>Manage and track maintenance tasks</p>
         </div>
-        <button class="cmms-btn" onclick="openAIAssistant()">
-            <i class="fas fa-robot"></i> Ask AI Assistant
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn-secondary" onclick="document.getElementById('workOrderBarcodeScanModal').style.display='block'">
+                <i class="fas fa-qrcode"></i> Scan Asset
+            </button>
+            <button class="cmms-btn" onclick="openAIAssistant()">
+                <i class="fas fa-robot"></i> Ask AI Assistant
+            </button>
+        </div>
     </div>
 </div>
 
@@ -200,6 +205,62 @@
     </div>
 </div>
 
+<!-- Work Order Barcode Scanner Modal -->
+<div id="workOrderBarcodeScanModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2><i class="fas fa-qrcode"></i> Scan Asset for Work Orders</h2>
+        <p>Scan an asset's barcode to quickly view its work orders and create new ones.</p>
+
+        <!-- Camera Interface -->
+        <div id="woCameraSection" style="text-align: center; margin: 20px 0;">
+            <video id="woBarcodeVideo" width="400" height="300" style="border: 2px solid #667eea; border-radius: 8px; display: none;"></video>
+            <div id="woCameraPlaceholder" style="width: 400px; height: 300px; border: 2px dashed #667eea; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                <div style="text-align: center; color: #999;">
+                    <i class="fas fa-camera" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                    <div>Click "Start Camera" to begin scanning</div>
+                </div>
+            </div>
+            <div style="margin: 10px 0;">
+                <button id="woStartCameraBtn" class="cmms-btn" onclick="startWOBarcodeCamera()">
+                    <i class="fas fa-camera"></i> Start Camera
+                </button>
+                <button id="woStopCameraBtn" class="cmms-btn" style="display: none; background: #e74c3c;" onclick="stopWOBarcodeCamera()">
+                    <i class="fas fa-stop"></i> Stop Camera
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Upload Barcode Image</h4>
+            <form id="woBarcodeUploadForm" enctype="multipart/form-data">
+                <input type="file" id="woBarcodeFile" name="file" accept="image/*" class="form-control" onchange="uploadWOBarcode()">
+            </form>
+        </div>
+
+        <!-- Manual Entry Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Enter Asset Tag Manually</h4>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="woManualAssetTag" class="form-control" placeholder="Enter asset tag or barcode...">
+                <button class="cmms-btn" onclick="lookupWOByTag()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="woScanResults" style="margin-top: 20px; display: none;"></div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 20px; justify-content: center;">
+            <button type="button" class="cmms-btn" style="background: #555;" onclick="closeWOBarcodeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         setupUnifiedFiltering('wo-list', {
@@ -224,6 +285,210 @@
         document.getElementById('edit-due-date').value = dueDate;
 
         modal.style.display = 'block';
+    }
+
+    // Work Order Barcode Scanner Functions
+    let woBarcodeStream = null;
+
+    function startWOBarcodeCamera() {
+        if (!navigator.mediaDevices) {
+            alert('Camera access not supported in this browser');
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                woBarcodeStream = stream;
+                const video = document.getElementById('woBarcodeVideo');
+                const placeholder = document.getElementById('woCameraPlaceholder');
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                document.getElementById('woStartCameraBtn').style.display = 'none';
+                document.getElementById('woStopCameraBtn').style.display = 'inline-block';
+                
+                video.play();
+                console.log('Work Order barcode camera started');
+            })
+            .catch(err => {
+                console.error('Error accessing camera:', err);
+                alert('Could not access camera. Please check permissions.');
+            });
+    }
+
+    function stopWOBarcodeCamera() {
+        if (woBarcodeStream) {
+            woBarcodeStream.getTracks().forEach(track => track.stop());
+            woBarcodeStream = null;
+        }
+        
+        const video = document.getElementById('woBarcodeVideo');
+        const placeholder = document.getElementById('woCameraPlaceholder');
+        
+        video.style.display = 'none';
+        placeholder.style.display = 'flex';
+        
+        document.getElementById('woStartCameraBtn').style.display = 'inline-block';
+        document.getElementById('woStopCameraBtn').style.display = 'none';
+    }
+
+    function uploadWOBarcode() {
+        const fileInput = document.getElementById('woBarcodeFile');
+        const file = fileInput.files[0];
+        
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/assets/scan-barcode', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayWOScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error scanning barcode:', error);
+            alert('Error scanning barcode: ' + error.message);
+        });
+    }
+
+    function lookupWOByTag() {
+        const assetTag = document.getElementById('woManualAssetTag').value.trim();
+        
+        if (!assetTag) {
+            alert('Please enter an asset tag');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('asset_tag', assetTag);
+        
+        fetch('/assets/lookup-by-tag', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayWOScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error looking up asset:', error);
+            alert('Error looking up asset: ' + error.message);
+        });
+    }
+
+    function displayWOScanResults(data) {
+        const resultsDiv = document.getElementById('woScanResults');
+        
+        if (data.success && data.asset) {
+            const asset = data.asset;
+            const workOrders = data.work_orders || [];
+            const parts = data.parts || [];
+            
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.2)); border: 1px solid rgba(39, 174, 96, 0.5); border-radius: 8px; padding: 20px;">
+                    <h3 style="color: #27ae60; margin-bottom: 15px;">
+                        <i class="fas fa-check-circle"></i> Asset Found: ${asset.name}
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div><strong>Tag:</strong> ${asset.asset_tag || 'N/A'}</div>
+                        <div><strong>Location:</strong> ${asset.location || 'N/A'}</div>
+                        <div><strong>Status:</strong> ${asset.status || 'N/A'}</div>
+                        <div><strong>Model:</strong> ${asset.model || 'N/A'}</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #3498db; margin-bottom: 10px;">
+                            <i class="fas fa-clipboard-list"></i> Active Work Orders (${workOrders.length})
+                        </h4>
+                        ${workOrders.length > 0 ? `
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${workOrders.map(wo => `
+                                    <div style="background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db; padding: 10px; margin-bottom: 5px;">
+                                        <div style="font-weight: bold;">${wo.title}</div>
+                                        <div style="font-size: 0.9em; color: #bdc3c7;">
+                                            Status: ${wo.status} | Priority: ${wo.priority} | Due: ${wo.due_date || 'N/A'}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<div style="font-style: italic; color: #95a5a6;">No active work orders</div>'}
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h4 style="color: #f39c12; margin-bottom: 10px;">
+                            <i class="fas fa-cogs"></i> Required Parts (${parts.length})
+                        </h4>
+                        ${parts.length > 0 ? `
+                            <div style="max-height: 150px; overflow-y: auto;">
+                                ${parts.slice(0, 5).map(part => `
+                                    <div style="background: rgba(243, 156, 18, 0.1); border-left: 3px solid #f39c12; padding: 8px; margin-bottom: 3px; font-size: 0.9em;">
+                                        ${part.name} - ${part.quantity_used || 'N/A'} units
+                                    </div>
+                                `).join('')}
+                                ${parts.length > 5 ? '<div style="font-style: italic; color: #95a5a6; text-align: center;">... and more</div>' : ''}
+                            </div>
+                        ` : '<div style="font-style: italic; color: #95a5a6;">No parts information available</div>'}
+                    </div>
+                    
+                    <div style="text-align: center; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
+                        <button class="cmms-btn" onclick="createWorkOrderForAsset('${asset.id}', '${asset.name}')">
+                            <i class="fas fa-plus"></i> Create New Work Order
+                        </button>
+                        <a href="/assets/${asset.id}" class="cmms-btn-secondary" style="display: inline-block; margin-left: 10px;">
+                            <i class="fas fa-eye"></i> View Asset Details
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2)); border: 1px solid rgba(231, 76, 60, 0.5); border-radius: 8px; padding: 20px; text-align: center;">
+                    <h3 style="color: #e74c3c; margin-bottom: 15px;">
+                        <i class="fas fa-times-circle"></i> No Asset Found
+                    </h3>
+                    <p>${data.message || data.error || 'No asset found with this identifier'}</p>
+                    ${data.barcode_data ? `<p><strong>Scanned Data:</strong> ${data.barcode_data}</p>` : ''}
+                </div>
+            `;
+        }
+        
+        resultsDiv.style.display = 'block';
+    }
+
+    function createWorkOrderForAsset(assetId, assetName) {
+        // Pre-fill the create work order form with asset information
+        closeWOBarcodeModal();
+        
+        // Scroll to the create form
+        document.querySelector('.cmms-card').scrollIntoView({ behavior: 'smooth' });
+        
+        // Pre-fill the title with asset name
+        const titleField = document.querySelector('input[name="title"]');
+        if (titleField) {
+            titleField.value = `Maintenance for ${assetName}`;
+            titleField.focus();
+        }
+        
+        // You could also add a hidden field for asset_id if your form supports it
+        // const assetIdField = document.createElement('input');
+        // assetIdField.type = 'hidden';
+        // assetIdField.name = 'asset_id';
+        // assetIdField.value = assetId;
+        // document.getElementById('create-wo-form').appendChild(assetIdField);
+    }
+
+    function closeWOBarcodeModal() {
+        stopWOBarcodeCamera();
+        document.getElementById('workOrderBarcodeScanModal').style.display = 'none';
+        document.getElementById('woScanResults').style.display = 'none';
+        document.getElementById('woManualAssetTag').value = '';
+        document.getElementById('woBarcodeFile').value = '';
     }
 </script>
 {% endblock %}

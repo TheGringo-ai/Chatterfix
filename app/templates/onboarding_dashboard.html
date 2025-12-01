@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Comprehensive Onboarding - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="text-align: center;">
+        <h1>🎓 ChatterFix CMMS Onboarding</h1>
+        <p>Comprehensive role-based training for maintenance excellence</p>
+    </div>
+</div>
+
+<!-- Welcome Section -->
+<div class="cmms-card" style="background: linear-gradient(135deg, rgba(103, 126, 234, 0.1), rgba(67, 97, 238, 0.1)); border: 2px solid rgba(103, 126, 234, 0.3); margin-bottom: 2rem;">
+    <div style="text-align: center; padding: 2rem;">
+        <h2>🚀 Welcome to Your CMMS Journey</h2>
+        <p style="font-size: 1.1rem; margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+            Our comprehensive onboarding program is designed to get you up to speed quickly and effectively. 
+            Each role has a customized learning path with interactive modules, hands-on practice, and real-world scenarios.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+            <div class="onboarding-stat">
+                <div style="font-size: 2rem; color: #667eea;">{{ total_roles }}</div>
+                <div>Role-Specific Paths</div>
+            </div>
+            <div class="onboarding-stat">
+                <div style="font-size: 2rem; color: #667eea;">3-7</div>
+                <div>Days to Complete</div>
+            </div>
+            <div class="onboarding-stat">
+                <div style="font-size: 2rem; color: #667eea;">20+</div>
+                <div>Interactive Modules</div>
+            </div>
+            <div class="onboarding-stat">
+                <div style="font-size: 2rem; color: #667eea;">AI-Powered</div>
+                <div>Learning Experience</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role Selection -->
+<div class="cmms-card">
+    <h2 style="text-align: center; margin-bottom: 2rem;">🎯 Choose Your Role</h2>
+    <p style="text-align: center; margin-bottom: 2rem; color: #bdc3c7;">
+        Select your primary role to access customized onboarding modules designed specifically for your responsibilities.
+    </p>
+    
+    <div class="roles-grid">
+        {% for role_key, role_config in roles.items() %}
+        <div class="role-card" onclick="selectRole('{{ role_key }}')">
+            <div class="role-icon">
+                {% if role_key == 'technician' %}
+                    <i class="fas fa-wrench"></i>
+                {% elif role_key == 'planner' %}
+                    <i class="fas fa-calendar-alt"></i>
+                {% elif role_key == 'parts_person' %}
+                    <i class="fas fa-boxes"></i>
+                {% elif role_key == 'supervisor' %}
+                    <i class="fas fa-users"></i>
+                {% elif role_key == 'manager' %}
+                    <i class="fas fa-chart-line"></i>
+                {% endif %}
+            </div>
+            <h3>{{ role_config.title.replace(' Onboarding', '') }}</h3>
+            <p>{{ role_config.description }}</p>
+            <div class="role-meta">
+                <div class="role-duration">
+                    <i class="fas fa-clock"></i>
+                    {{ role_config.duration_days }} days
+                </div>
+                <div class="role-modules">
+                    <i class="fas fa-graduation-cap"></i>
+                    {{ role_config.modules|length }} modules
+                </div>
+            </div>
+            <div class="role-highlight">
+                {% set total_time = role_config.modules | map(attribute='duration_minutes') | sum %}
+                <strong>{{ "%.1f" | format(total_time / 60) }} hours of training</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="cmms-card">
+    <h2 style="text-align: center; margin-bottom: 2rem;">✨ What Makes Our Onboarding Special</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h4>AI-Powered Learning</h4>
+            <p>Adaptive content that adjusts to your pace and learning style, with personalized recommendations and instant feedback.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-hands-helping"></i>
+            </div>
+            <h4>Hands-On Practice</h4>
+            <p>Interactive simulations and real CMMS system practice with guided scenarios and live data.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h4>Progress Tracking</h4>
+            <p>Detailed analytics on your learning journey with badges, achievements, and skill assessments.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <h4>Certification</h4>
+            <p>Earn recognized certificates upon completion to demonstrate your ChatterFix CMMS expertise.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h4>Mobile-Friendly</h4>
+            <p>Learn anywhere, anytime with responsive design optimized for tablets and mobile devices.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon">
+                <i class="fas fa-life-ring"></i>
+            </div>
+            <h4>Ongoing Support</h4>
+            <p>Access to help resources, community forums, and additional training materials post-completion.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Access for Existing Users -->
+<div class="cmms-card" style="background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3);">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: #27ae60;">🔄 Continuing Your Journey</h2>
+    <p style="text-align: center; margin-bottom: 2rem;">
+        Already started? Continue where you left off or explore additional training modules.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button class="cmms-btn" onclick="showProgressModal()">
+            <i class="fas fa-chart-line"></i> View My Progress
+        </button>
+        <button class="cmms-btn-secondary" onclick="window.location.href='/training'">
+            <i class="fas fa-plus"></i> Additional Training
+        </button>
+        <button class="cmms-btn-secondary" onclick="window.location.href='/demo'">
+            <i class="fas fa-play"></i> Explore Demo Mode
+        </button>
+    </div>
+</div>
+
+<!-- Role Selection Modal -->
+<div id="roleSelectionModal" class="modal" style="display:none;">
+    <div class="modal-content glass-panel" style="max-width: 600px; margin: 5% auto;">
+        <h2 id="selectedRoleTitle"></h2>
+        <div id="roleDetails"></div>
+        
+        <form id="startOnboardingForm">
+            <div style="margin: 20px 0;">
+                <label>Your Name *</label>
+                <input type="text" id="userName" name="user_name" required class="form-control">
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Email Address *</label>
+                <input type="email" id="userEmail" name="user_email" required class="form-control">
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Department</label>
+                <input type="text" id="userDepartment" name="department" class="form-control">
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Experience Level</label>
+                <select id="experienceLevel" name="experience_level" class="form-control">
+                    <option value="beginner">Beginner - New to CMMS</option>
+                    <option value="intermediate">Intermediate - Some CMMS experience</option>
+                    <option value="advanced">Advanced - Experienced with CMMS systems</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 30px;">
+                <button type="button" onclick="closeRoleModal()" class="cmms-btn" style="background: #95a5a6;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button type="submit" class="cmms-btn">
+                    <i class="fas fa-rocket"></i> Start Onboarding
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.role-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.role-card:hover {
+    transform: translateY(-5px);
+    border-color: #667eea;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.role-icon {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.role-card h3 {
+    color: #ecf0f1;
+    margin: 1rem 0;
+    font-size: 1.3rem;
+}
+
+.role-card p {
+    color: #bdc3c7;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.role-meta {
+    display: flex;
+    justify-content: space-around;
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.role-duration, .role-modules {
+    color: #95a5a6;
+    font-size: 0.9rem;
+}
+
+.role-highlight {
+    color: #667eea;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.onboarding-stat {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+
+.feature-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.feature-item h4 {
+    color: #ecf0f1;
+    margin-bottom: 1rem;
+}
+
+.feature-item p {
+    color: #bdc3c7;
+    line-height: 1.5;
+}
+</style>
+
+<script>
+let selectedRole = null;
+
+function selectRole(role) {
+    selectedRole = role;
+    const roleConfig = {{ roles | tojson }};
+    const config = roleConfig[role];
+    
+    document.getElementById('selectedRoleTitle').textContent = config.title;
+    
+    const details = `
+        <div style="margin: 20px 0;">
+            <p><strong>Description:</strong> ${config.description}</p>
+            <p><strong>Duration:</strong> ${config.duration_days} days</p>
+            <p><strong>Modules:</strong> ${config.modules.length} interactive training modules</p>
+            <p><strong>Total Time:</strong> ${(config.modules.reduce((sum, m) => sum + m.duration_minutes, 0) / 60).toFixed(1)} hours</p>
+        </div>
+        <div style="background: rgba(103, 126, 234, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <h4 style="margin-bottom: 10px; color: #667eea;">Training Modules:</h4>
+            <ul style="color: #bdc3c7; margin: 0;">
+                ${config.modules.map(m => `<li>${m.title} (${m.duration_minutes} min)${m.required ? ' - Required' : ''}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+    
+    document.getElementById('roleDetails').innerHTML = details;
+    document.getElementById('roleSelectionModal').style.display = 'block';
+}
+
+function closeRoleModal() {
+    document.getElementById('roleSelectionModal').style.display = 'none';
+    selectedRole = null;
+}
+
+function showProgressModal() {
+    alert('Progress tracking feature coming soon! For now, you can access your training through the role-specific pages.');
+}
+
+document.getElementById('startOnboardingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!selectedRole) {
+        alert('Please select a role first');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    formData.append('role', selectedRole);
+    
+    fetch('/onboarding/start-onboarding', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Onboarding started successfully!');
+            window.location.href = data.redirect_url;
+        } else {
+            alert('Error starting onboarding: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error starting onboarding');
+    });
+});
+
+// Close modal when clicking outside
+document.getElementById('roleSelectionModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRoleModal();
+    }
+});
+</script>
+{% endblock %}

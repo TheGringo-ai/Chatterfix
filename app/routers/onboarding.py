@@ -1,24 +1,551 @@
-from fastapi import APIRouter, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from fastapi import APIRouter, Request, UploadFile, File, Form
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.core.database import get_db_connection
+from app.core.db_adapter import get_db_adapter
+from app.services.gemini_service import gemini_service
 import shutil
 import os
 import pandas as pd
-from datetime import datetime
+import json
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 templates = Jinja2Templates(directory="app/templates")
+
+logger = logging.getLogger(__name__)
 
 # Ensure upload directory exists
 UPLOAD_DIR = "app/static/uploads/imports"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Role-specific onboarding configurations
+ROLE_ONBOARDING_CONFIG = {
+    "technician": {
+        "title": "Maintenance Technician Onboarding",
+        "description": "Learn core maintenance skills, work order management, and safety protocols",
+        "duration_days": 5,
+        "modules": [
+            {
+                "id": "tech_safety",
+                "title": "Safety Fundamentals",
+                "type": "interactive",
+                "duration_minutes": 45,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Personal Protective Equipment (PPE)", "type": "video_quiz"},
+                        {"title": "Lockout/Tagout Procedures", "type": "interactive"},
+                        {"title": "Hazard Recognition", "type": "scenario"},
+                        {"title": "Emergency Procedures", "type": "checklist"}
+                    ]
+                }
+            },
+            {
+                "id": "tech_work_orders",
+                "title": "Work Order Management",
+                "type": "hands_on",
+                "duration_minutes": 60,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Using ChatterFix CMMS", "type": "guided_tour"},
+                        {"title": "Scanning Asset Barcodes", "type": "practice"},
+                        {"title": "Creating Work Orders", "type": "hands_on"},
+                        {"title": "Parts Management", "type": "practice"},
+                        {"title": "Documenting Completion", "type": "hands_on"}
+                    ]
+                }
+            },
+            {
+                "id": "tech_preventive",
+                "title": "Preventive Maintenance",
+                "type": "practical",
+                "duration_minutes": 90,
+                "required": True
+            },
+            {
+                "id": "tech_troubleshooting",
+                "title": "Basic Troubleshooting",
+                "type": "scenario",
+                "duration_minutes": 75,
+                "required": False
+            }
+        ]
+    },
+    "planner": {
+        "title": "Maintenance Planner Onboarding",
+        "description": "Master work planning, scheduling, and resource optimization",
+        "duration_days": 4,
+        "modules": [
+            {
+                "id": "plan_overview",
+                "title": "Planning & Scheduling Overview",
+                "type": "interactive",
+                "duration_minutes": 60,
+                "required": True
+            },
+            {
+                "id": "plan_job_planning",
+                "title": "Job Planning Techniques",
+                "type": "practical",
+                "duration_minutes": 90,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Work Order Analysis", "type": "case_study"},
+                        {"title": "Resource Planning", "type": "interactive"},
+                        {"title": "Time Estimation", "type": "practice"},
+                        {"title": "Material Coordination", "type": "scenario"}
+                    ]
+                }
+            },
+            {
+                "id": "plan_scheduling",
+                "title": "Advanced Scheduling",
+                "type": "hands_on",
+                "duration_minutes": 75,
+                "required": True
+            },
+            {
+                "id": "plan_kpis",
+                "title": "KPIs & Analytics",
+                "type": "dashboard",
+                "duration_minutes": 45,
+                "required": True
+            }
+        ]
+    },
+    "parts_person": {
+        "title": "Parts & Inventory Specialist Onboarding",
+        "description": "Learn inventory management, procurement, and parts tracking",
+        "duration_days": 3,
+        "modules": [
+            {
+                "id": "parts_inventory",
+                "title": "Inventory Management Fundamentals",
+                "type": "interactive",
+                "duration_minutes": 75,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Stock Level Management", "type": "practice"},
+                        {"title": "ABC Classification", "type": "interactive"},
+                        {"title": "Reorder Points", "type": "calculation"},
+                        {"title": "Physical Inventory", "type": "hands_on"}
+                    ]
+                }
+            },
+            {
+                "id": "parts_procurement",
+                "title": "Procurement & Purchasing",
+                "type": "workflow",
+                "duration_minutes": 60,
+                "required": True
+            },
+            {
+                "id": "parts_tracking",
+                "title": "Parts Tracking & Barcode Systems",
+                "type": "hands_on",
+                "duration_minutes": 45,
+                "required": True
+            },
+            {
+                "id": "parts_vendors",
+                "title": "Vendor Management",
+                "type": "scenarios",
+                "duration_minutes": 50,
+                "required": False
+            }
+        ]
+    },
+    "supervisor": {
+        "title": "Maintenance Supervisor Onboarding",
+        "description": "Leadership, team management, and operational oversight",
+        "duration_days": 6,
+        "modules": [
+            {
+                "id": "sup_leadership",
+                "title": "Maintenance Leadership",
+                "type": "interactive",
+                "duration_minutes": 90,
+                "required": True
+            },
+            {
+                "id": "sup_team_mgmt",
+                "title": "Team Management & Performance",
+                "type": "case_study",
+                "duration_minutes": 75,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Performance Coaching", "type": "scenario"},
+                        {"title": "Resource Allocation", "type": "simulation"},
+                        {"title": "Conflict Resolution", "type": "interactive"},
+                        {"title": "Safety Leadership", "type": "checklist"}
+                    ]
+                }
+            },
+            {
+                "id": "sup_analytics",
+                "title": "Performance Analytics & Reporting",
+                "type": "dashboard",
+                "duration_minutes": 60,
+                "required": True
+            },
+            {
+                "id": "sup_compliance",
+                "title": "Compliance & Standards",
+                "type": "certification",
+                "duration_minutes": 80,
+                "required": True
+            }
+        ]
+    },
+    "manager": {
+        "title": "Maintenance Manager Onboarding",
+        "description": "Strategic planning, budget management, and organizational leadership",
+        "duration_days": 7,
+        "modules": [
+            {
+                "id": "mgr_strategy",
+                "title": "Maintenance Strategy & Planning",
+                "type": "strategic",
+                "duration_minutes": 120,
+                "required": True,
+                "content": {
+                    "sections": [
+                        {"title": "Reliability Centered Maintenance", "type": "framework"},
+                        {"title": "Asset Life Cycle Management", "type": "case_study"},
+                        {"title": "Maintenance Strategy Development", "type": "workshop"},
+                        {"title": "Technology Integration", "type": "roadmap"}
+                    ]
+                }
+            },
+            {
+                "id": "mgr_budget",
+                "title": "Budget Management & ROI",
+                "type": "financial",
+                "duration_minutes": 90,
+                "required": True
+            },
+            {
+                "id": "mgr_analytics",
+                "title": "Advanced Analytics & KPIs",
+                "type": "dashboard",
+                "duration_minutes": 75,
+                "required": True
+            },
+            {
+                "id": "mgr_continuous_improvement",
+                "title": "Continuous Improvement",
+                "type": "methodology",
+                "duration_minutes": 80,
+                "required": True
+            }
+        ]
+    }
+}
+
 
 @router.get("/", response_class=HTMLResponse)
 async def onboarding_dashboard(request: Request):
-    """Render the onboarding dashboard"""
-    return templates.TemplateResponse("onboarding/index.html", {"request": request})
+    """Comprehensive onboarding dashboard with role selection"""
+    return templates.TemplateResponse(
+        "onboarding_dashboard.html", 
+        {
+            "request": request, 
+            "roles": ROLE_ONBOARDING_CONFIG,
+            "total_roles": len(ROLE_ONBOARDING_CONFIG)
+        }
+    )
+
+
+@router.get("/role-selection", response_class=HTMLResponse)
+async def role_selection(request: Request):
+    """Role selection page for new users"""
+    return templates.TemplateResponse(
+        "role_selection.html",
+        {
+            "request": request,
+            "roles": ROLE_ONBOARDING_CONFIG
+        }
+    )
+
+
+@router.post("/start-onboarding")
+async def start_role_onboarding(
+    role: str = Form(...),
+    user_name: str = Form(...),
+    user_email: str = Form(...),
+    department: str = Form(None),
+    experience_level: str = Form("beginner")
+):
+    """Start role-specific onboarding for a user"""
+    try:
+        if role not in ROLE_ONBOARDING_CONFIG:
+            return JSONResponse({"error": "Invalid role selected"}, status_code=400)
+        
+        # Create onboarding session
+        db_adapter = get_db_adapter()
+        
+        # Create user onboarding record
+        onboarding_data = {
+            "user_name": user_name,
+            "user_email": user_email,
+            "role": role,
+            "department": department,
+            "experience_level": experience_level,
+            "status": "active",
+            "start_date": datetime.now().isoformat(),
+            "expected_completion": (datetime.now() + timedelta(days=ROLE_ONBOARDING_CONFIG[role]["duration_days"])).isoformat(),
+            "progress": 0,
+            "current_module": 0
+        }
+        
+        # In a real implementation, you'd save this to your database
+        session_id = f"onboard_{user_email}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        
+        return JSONResponse({
+            "success": True,
+            "session_id": session_id,
+            "role_config": ROLE_ONBOARDING_CONFIG[role],
+            "redirect_url": f"/onboarding/role/{role}"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting onboarding: {e}")
+        return JSONResponse({"error": "Failed to start onboarding"}, status_code=500)
+
+
+@router.get("/role/{role}", response_class=HTMLResponse)
+async def role_onboarding_page(request: Request, role: str, user_id: int = None):
+    """Role-specific onboarding interface"""
+    if role not in ROLE_ONBOARDING_CONFIG:
+        return RedirectResponse("/onboarding")
+    
+    config = ROLE_ONBOARDING_CONFIG[role]
+    
+    # Get user progress (simulated for demo)
+    progress_data = {
+        "completed_modules": 0,
+        "total_modules": len(config["modules"]),
+        "current_module": 0,
+        "overall_progress": 0,
+        "estimated_time_remaining": sum(m["duration_minutes"] for m in config["modules"]),
+        "badges_earned": []
+    }
+    
+    return templates.TemplateResponse(
+        "role_onboarding.html",
+        {
+            "request": request,
+            "role": role,
+            "config": config,
+            "progress": progress_data,
+            "user_id": user_id or 1
+        }
+    )
+
+
+@router.get("/module/{module_id}", response_class=HTMLResponse)
+async def onboarding_module(request: Request, module_id: str, role: str = None):
+    """Interactive training module"""
+    if not role or role not in ROLE_ONBOARDING_CONFIG:
+        return RedirectResponse("/onboarding")
+    
+    # Find the module in role config
+    config = ROLE_ONBOARDING_CONFIG[role]
+    module = next((m for m in config["modules"] if m["id"] == module_id), None)
+    
+    if not module:
+        return RedirectResponse(f"/onboarding/role/{role}")
+    
+    # Generate AI-powered content if needed
+    if "content" not in module and gemini_service.model:
+        module["content"] = await generate_module_content(module, role)
+    
+    return templates.TemplateResponse(
+        "training_module_interactive.html",
+        {
+            "request": request,
+            "module": module,
+            "role": role,
+            "role_config": config
+        }
+    )
+
+
+async def generate_module_content(module: Dict[str, Any], role: str) -> Dict[str, Any]:
+    """Generate AI-powered training content"""
+    try:
+        prompt = f"""
+        Create comprehensive training content for {module['title']} for a {role} role.
+        Module type: {module['type']}
+        Duration: {module['duration_minutes']} minutes
+        
+        Generate content with:
+        1. Learning objectives (3-5 bullet points)
+        2. Key concepts with explanations
+        3. Interactive exercises or scenarios
+        4. Assessment questions (5-10 questions)
+        5. Practical tips and best practices
+        6. Common mistakes to avoid
+        
+        Format as structured JSON with sections for each component.
+        Make it engaging, practical, and role-specific.
+        """
+        
+        response = await gemini_service.generate_response(prompt)
+        
+        # Parse and structure the response
+        return {
+            "sections": [
+                {
+                    "title": "Learning Objectives",
+                    "type": "objectives",
+                    "content": response[:200] + "..."  # Simplified for demo
+                },
+                {
+                    "title": "Interactive Content",
+                    "type": "interactive",
+                    "content": "AI-generated interactive content would appear here"
+                },
+                {
+                    "title": "Knowledge Check",
+                    "type": "quiz",
+                    "content": "AI-generated quiz questions"
+                }
+            ],
+            "estimated_completion": module["duration_minutes"],
+            "ai_generated": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating module content: {e}")
+        return {
+            "sections": [
+                {
+                    "title": module["title"],
+                    "type": "default",
+                    "content": f"Training content for {module['title']} is being prepared."
+                }
+            ]
+        }
+
+
+@router.post("/module/{module_id}/complete")
+async def complete_module(
+    module_id: str,
+    role: str = Form(...),
+    user_id: int = Form(...),
+    score: float = Form(None),
+    time_spent: int = Form(None),
+    feedback: str = Form(None)
+):
+    """Mark module as completed and update progress"""
+    try:
+        # Update progress in database
+        completion_data = {
+            "user_id": user_id,
+            "module_id": module_id,
+            "role": role,
+            "completed_at": datetime.now().isoformat(),
+            "score": score,
+            "time_spent_minutes": time_spent,
+            "feedback": feedback
+        }
+        
+        # Calculate badges/achievements
+        badges = []
+        if score and score >= 90:
+            badges.append("Excellence")
+        if time_spent and time_spent <= ROLE_ONBOARDING_CONFIG[role]["modules"][0]["duration_minutes"] * 0.8:
+            badges.append("Efficiency")
+        
+        # Determine next module
+        config = ROLE_ONBOARDING_CONFIG[role]
+        current_index = next((i for i, m in enumerate(config["modules"]) if m["id"] == module_id), 0)
+        next_module = config["modules"][current_index + 1] if current_index + 1 < len(config["modules"]) else None
+        
+        return JSONResponse({
+            "success": True,
+            "badges_earned": badges,
+            "next_module": next_module["id"] if next_module else None,
+            "progress_percent": ((current_index + 1) / len(config["modules"])) * 100,
+            "completion_message": f"Great job completing {config['modules'][current_index]['title']}!"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error completing module: {e}")
+        return JSONResponse({"error": "Failed to update progress"}, status_code=500)
+
+
+@router.get("/progress/{user_id}")
+async def get_onboarding_progress(user_id: int, role: str = None):
+    """Get detailed onboarding progress for user"""
+    try:
+        # In real implementation, fetch from database
+        if not role:
+            role = "technician"  # Default for demo
+            
+        config = ROLE_ONBOARDING_CONFIG.get(role, {})
+        
+        progress = {
+            "user_id": user_id,
+            "role": role,
+            "started_date": datetime.now().isoformat(),
+            "modules": [
+                {
+                    "id": module["id"],
+                    "title": module["title"],
+                    "type": module["type"],
+                    "duration_minutes": module["duration_minutes"],
+                    "required": module["required"],
+                    "status": "not_started",  # not_started, in_progress, completed
+                    "score": None,
+                    "completion_date": None
+                }
+                for module in config.get("modules", [])
+            ],
+            "overall_progress": 0,
+            "badges_earned": [],
+            "estimated_completion": datetime.now() + timedelta(days=config.get("duration_days", 5)),
+            "time_spent_total": 0
+        }
+        
+        return JSONResponse(progress)
+        
+    except Exception as e:
+        logger.error(f"Error getting progress: {e}")
+        return JSONResponse({"error": "Failed to get progress"}, status_code=500)
+
+
+@router.get("/certificate/{user_id}/{role}")
+async def generate_certificate(user_id: int, role: str):
+    """Generate completion certificate"""
+    if role not in ROLE_ONBOARDING_CONFIG:
+        return JSONResponse({"error": "Invalid role"}, status_code=400)
+    
+    config = ROLE_ONBOARDING_CONFIG[role]
+    
+    certificate_data = {
+        "user_id": user_id,
+        "role": role,
+        "program_title": config["title"],
+        "completion_date": datetime.now().strftime("%B %d, %Y"),
+        "total_hours": sum(m["duration_minutes"] for m in config["modules"]) / 60,
+        "modules_completed": len(config["modules"]),
+        "certificate_id": f"CERT-{role.upper()}-{user_id}-{datetime.now().strftime('%Y%m%d')}"
+    }
+    
+    return JSONResponse({
+        "success": True,
+        "certificate": certificate_data,
+        "download_url": f"/onboarding/certificate/{user_id}/{role}/download"
+    })
 
 
 @router.get("/template/{type}")

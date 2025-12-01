@@ -274,6 +274,112 @@ class FirestoreManager:
             logger.error(f"Error getting dashboard data: {e}")
             return {"work_orders": [], "assets": [], "ai_interactions": []}
 
+    async def get_asset_by_tag(self, asset_tag: str) -> Optional[Dict[str, Any]]:
+        """Get asset by asset tag/barcode"""
+        try:
+            assets = await self.get_collection(
+                "assets",
+                limit=1,
+                filters=[{"field": "asset_tag", "operator": "==", "value": asset_tag}]
+            )
+            return assets[0] if assets else None
+        except Exception as e:
+            logger.error(f"Error getting asset by tag: {e}")
+            return None
+
+    async def find_asset_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+        """Find asset by serial number, name, or other identifier"""
+        try:
+            # Try by serial number first
+            assets = await self.get_collection(
+                "assets",
+                limit=1,
+                filters=[{"field": "serial_number", "operator": "==", "value": identifier}]
+            )
+            if assets:
+                return assets[0]
+
+            # Try by name (partial match)
+            assets = await self.get_collection(
+                "assets",
+                limit=10,
+                filters=[{"field": "name", "operator": ">=", "value": identifier}]
+            )
+            # Filter for exact or close matches
+            for asset in assets:
+                if identifier.lower() in asset.get("name", "").lower():
+                    return asset
+
+            return None
+        except Exception as e:
+            logger.error(f"Error finding asset by identifier: {e}")
+            return None
+
+    async def get_asset(self, asset_id: str) -> Optional[Dict[str, Any]]:
+        """Get asset by ID"""
+        try:
+            doc = await self.get_document("assets", str(asset_id))
+            return doc
+        except Exception as e:
+            logger.error(f"Error getting asset: {e}")
+            return None
+
+    async def get_asset_work_orders(self, asset_id: str) -> List[Dict[str, Any]]:
+        """Get work orders for an asset"""
+        try:
+            work_orders = await self.get_collection(
+                "work_orders",
+                order_by="-created_at",
+                filters=[{"field": "asset_id", "operator": "==", "value": str(asset_id)}]
+            )
+            return work_orders
+        except Exception as e:
+            logger.error(f"Error getting asset work orders: {e}")
+            return []
+
+    async def get_asset_parts(self, asset_id: str) -> List[Dict[str, Any]]:
+        """Get parts for an asset"""
+        try:
+            parts = await self.get_collection(
+                "asset_parts",
+                filters=[{"field": "asset_id", "operator": "==", "value": str(asset_id)}]
+            )
+            # Get detailed part information
+            detailed_parts = []
+            for asset_part in parts:
+                part_id = asset_part.get("part_id")
+                if part_id:
+                    part_doc = await self.get_document("parts", part_id)
+                    if part_doc:
+                        part_doc.update({
+                            "quantity_used": asset_part.get("quantity_used"),
+                            "last_replaced": asset_part.get("last_replaced"),
+                            "replacement_interval": asset_part.get("replacement_interval")
+                        })
+                        detailed_parts.append(part_doc)
+            return detailed_parts
+        except Exception as e:
+            logger.error(f"Error getting asset parts: {e}")
+            return []
+
+    async def count_asset_work_orders(self, asset_id: str) -> int:
+        """Count work orders for an asset"""
+        try:
+            work_orders = await self.get_asset_work_orders(asset_id)
+            return len(work_orders)
+        except Exception as e:
+            logger.error(f"Error counting asset work orders: {e}")
+            return 0
+
+    async def count_asset_parts(self, asset_id: str) -> int:
+        """Count parts for an asset"""
+        try:
+            parts = await self.get_asset_parts(asset_id)
+            return len(parts)
+        except Exception as e:
+            logger.error(f"Error counting asset parts: {e}")
+            return 0
+
 
 # Global Firestore manager instance
 firestore_manager = FirestoreManager()

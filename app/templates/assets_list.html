@@ -9,9 +9,14 @@
             <h1>🏭 Asset Management</h1>
             <p>Comprehensive asset tracking and analytics</p>
         </div>
-        <button class="cmms-btn" onclick="document.getElementById('createAssetModal').style.display='block'">
-            <i class="fas fa-plus"></i> New Asset
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn" onclick="document.getElementById('createAssetModal').style.display='block'">
+                <i class="fas fa-plus"></i> New Asset
+            </button>
+            <button class="cmms-btn-secondary" onclick="document.getElementById('barcodeScanModal').style.display='block'">
+                <i class="fas fa-qrcode"></i> Scan Asset
+            </button>
+        </div>
     </div>
 </div>
 
@@ -230,6 +235,62 @@
     </div>
 </div>
 
+<!-- Barcode Scanner Modal -->
+<div id="barcodeScanModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2><i class="fas fa-qrcode"></i> Scan Asset Barcode</h2>
+        <p>Scan a barcode or QR code to quickly find asset information and view work orders.</p>
+
+        <!-- Camera Interface -->
+        <div id="cameraSection" style="text-align: center; margin: 20px 0;">
+            <video id="barcodeVideo" width="400" height="300" style="border: 2px solid #667eea; border-radius: 8px; display: none;"></video>
+            <div id="cameraPlaceholder" style="width: 400px; height: 300px; border: 2px dashed #667eea; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                <div style="text-align: center; color: #999;">
+                    <i class="fas fa-camera" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                    <div>Click "Start Camera" to begin scanning</div>
+                </div>
+            </div>
+            <div style="margin: 10px 0;">
+                <button id="startCameraBtn" class="cmms-btn" onclick="startBarcodeCamera()">
+                    <i class="fas fa-camera"></i> Start Camera
+                </button>
+                <button id="stopCameraBtn" class="cmms-btn" style="display: none; background: #e74c3c;" onclick="stopBarcodeCamera()">
+                    <i class="fas fa-stop"></i> Stop Camera
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Upload Barcode Image</h4>
+            <form id="barcodeUploadForm" enctype="multipart/form-data">
+                <input type="file" id="barcodeFile" name="file" accept="image/*" class="form-control" onchange="uploadBarcode()">
+            </form>
+        </div>
+
+        <!-- Manual Entry Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Enter Asset Tag Manually</h4>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="manualAssetTag" class="form-control" placeholder="Enter asset tag or barcode...">
+                <button class="cmms-btn" onclick="lookupByTag()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="scanResults" style="margin-top: 20px; display: none;"></div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 20px; justify-content: center;">
+            <button type="button" class="cmms-btn" style="background: #555;" onclick="closeBarcodeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
     .assets-grid {
         display: grid;
@@ -300,6 +361,214 @@
             grid.classList.remove('assets-list');
             grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
         }
+    }
+
+    // Barcode Scanner Functions
+    let barcodeStream = null;
+    let isScanning = false;
+
+    function startBarcodeCamera() {
+        if (!navigator.mediaDevices) {
+            alert('Camera access not supported in this browser');
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                barcodeStream = stream;
+                const video = document.getElementById('barcodeVideo');
+                const placeholder = document.getElementById('cameraPlaceholder');
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('stopCameraBtn').style.display = 'inline-block';
+                
+                video.play();
+                isScanning = true;
+                
+                // Start continuous scanning (would need a barcode detection library like QuaggaJS)
+                console.log('Camera started - ready for barcode scanning');
+            })
+            .catch(err => {
+                console.error('Error accessing camera:', err);
+                alert('Could not access camera. Please check permissions.');
+            });
+    }
+
+    function stopBarcodeCamera() {
+        if (barcodeStream) {
+            barcodeStream.getTracks().forEach(track => track.stop());
+            barcodeStream = null;
+        }
+        
+        const video = document.getElementById('barcodeVideo');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        
+        video.style.display = 'none';
+        placeholder.style.display = 'flex';
+        
+        document.getElementById('startCameraBtn').style.display = 'inline-block';
+        document.getElementById('stopCameraBtn').style.display = 'none';
+        
+        isScanning = false;
+    }
+
+    function uploadBarcode() {
+        const fileInput = document.getElementById('barcodeFile');
+        const file = fileInput.files[0];
+        
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/assets/scan-barcode', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error scanning barcode:', error);
+            alert('Error scanning barcode: ' + error.message);
+        });
+    }
+
+    function lookupByTag() {
+        const assetTag = document.getElementById('manualAssetTag').value.trim();
+        
+        if (!assetTag) {
+            alert('Please enter an asset tag');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('asset_tag', assetTag);
+        
+        fetch('/assets/lookup-by-tag', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error looking up asset:', error);
+            alert('Error looking up asset: ' + error.message);
+        });
+    }
+
+    function displayScanResults(data) {
+        const resultsDiv = document.getElementById('scanResults');
+        
+        if (data.success && data.asset) {
+            const asset = data.asset;
+            const workOrders = data.work_orders || [];
+            const parts = data.parts || [];
+            
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.2)); border: 1px solid rgba(39, 174, 96, 0.5); border-radius: 8px; padding: 20px;">
+                    <h3 style="color: #27ae60; margin-bottom: 15px;">
+                        <i class="fas fa-check-circle"></i> Asset Found
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div><strong>Name:</strong> ${asset.name || 'N/A'}</div>
+                        <div><strong>Tag:</strong> ${asset.asset_tag || 'N/A'}</div>
+                        <div><strong>Status:</strong> ${asset.status || 'N/A'}</div>
+                        <div><strong>Location:</strong> ${asset.location || 'N/A'}</div>
+                        <div><strong>Serial:</strong> ${asset.serial_number || 'N/A'}</div>
+                        <div><strong>Model:</strong> ${asset.model || 'N/A'}</div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Work Orders:</strong> ${workOrders.length} active
+                        ${workOrders.length > 0 ? `
+                            <ul style="margin: 5px 0 0 20px;">
+                                ${workOrders.slice(0, 3).map(wo => `
+                                    <li>${wo.title} - ${wo.status} (${wo.priority})</li>
+                                `).join('')}
+                                ${workOrders.length > 3 ? '<li>... and more</li>' : ''}
+                            </ul>
+                        ` : '<div style="margin-left: 20px; font-style: italic;">No active work orders</div>'}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Parts Required:</strong> ${parts.length} items
+                        ${parts.length > 0 ? `
+                            <ul style="margin: 5px 0 0 20px;">
+                                ${parts.slice(0, 3).map(part => `
+                                    <li>${part.name} - ${part.quantity_used || 'N/A'} units</li>
+                                `).join('')}
+                                ${parts.length > 3 ? '<li>... and more</li>' : ''}
+                            </ul>
+                        ` : '<div style="margin-left: 20px; font-style: italic;">No parts information</div>'}
+                    </div>
+                    <div style="text-align: center;">
+                        <a href="/assets/${asset.id}" class="cmms-btn" style="display: inline-block; margin-right: 10px;">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <button class="cmms-btn-secondary" onclick="generateQRCode('${asset.id}')">
+                            <i class="fas fa-qrcode"></i> Generate QR Code
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2)); border: 1px solid rgba(231, 76, 60, 0.5); border-radius: 8px; padding: 20px; text-align: center;">
+                    <h3 style="color: #e74c3c; margin-bottom: 15px;">
+                        <i class="fas fa-times-circle"></i> No Asset Found
+                    </h3>
+                    <p>${data.message || data.error || 'No asset found with this identifier'}</p>
+                    ${data.barcode_data ? `<p><strong>Scanned Data:</strong> ${data.barcode_data}</p>` : ''}
+                </div>
+            `;
+        }
+        
+        resultsDiv.style.display = 'block';
+    }
+
+    function generateQRCode(assetId) {
+        fetch(`/assets/${assetId}/generate-qr`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display QR code in a popup or modal
+                    const qrWindow = window.open('', '_blank', 'width=400,height=500');
+                    qrWindow.document.write(`
+                        <html>
+                            <head><title>Asset QR Code</title></head>
+                            <body style="text-align: center; font-family: Arial; padding: 20px;">
+                                <h2>QR Code for Asset</h2>
+                                <p><strong>${data.asset.name}</strong></p>
+                                <p>Tag: ${data.qr_data}</p>
+                                <img src="${data.qr_code.url}" style="border: 1px solid #ccc;">
+                                <br><br>
+                                <button onclick="window.print()">Print QR Code</button>
+                                <button onclick="window.close()">Close</button>
+                            </body>
+                        </html>
+                    `);
+                } else {
+                    alert('Error generating QR code: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error generating QR code:', error);
+                alert('Error generating QR code');
+            });
+    }
+
+    function closeBarcodeModal() {
+        stopBarcodeCamera();
+        document.getElementById('barcodeScanModal').style.display = 'none';
+        document.getElementById('scanResults').style.display = 'none';
+        document.getElementById('manualAssetTag').value = '';
+        document.getElementById('barcodeFile').value = '';
     }
 </script>
 {% endblock %}

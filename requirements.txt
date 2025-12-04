@@ -47,6 +47,9 @@ gunicorn>=21.2.0
 # MCP Server for demo validation
 mcp>=1.0.0
 
+# Compatibility fixes
+setuptools>=65.0.0
+
 # Barcode scanning dependencies
 pyzbar>=0.1.9
 qrcode[pil]>=7.4.2

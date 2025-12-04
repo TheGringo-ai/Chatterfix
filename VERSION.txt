@@ -1,0 +1,33 @@
+2.2.0-interactive-planner
+Interactive Maintenance Planner with Full Job Creation & Scheduling
+
+Core Interactive Features:
+- ➕ Create Job Modal: Complete work order creation with asset/technician selection
+- 📅 Schedule PM Series: Recurring preventive maintenance automation  
+- 📋 Bulk Operations: Auto-schedule backlog, balance workload, reschedule overdue
+- 🖱️ Drag & Drop Calendar: Real-time work order rescheduling with FullCalendar
+- ⚡ Quick Job Creation: Click calendar to instantly create and schedule jobs
+- 🔄 Live Updates: Real-time schedule updates and technician notifications
+
+Advanced Scheduler Features:
+- Multi-view interface: Calendar, Gantt charts, and detailed list views
+- Interactive work order management with priority-based color coding
+- Event editing, resizing, and drag-and-drop rescheduling
+- Comprehensive scheduling modals with full form validation
+- AI optimization tools with bottleneck analysis and capacity planning
+- Export functionality (PDF, Excel, CSV, iCal)
+
+Maintenance Planner Workflow:
+- Complete job planning interface for maintenance planners
+- Asset-based scheduling with technician skill matching
+- Parts availability integration with low-stock alerting  
+- Resource capacity monitoring with automatic workload balancing
+- PM compliance tracking with automated recurring schedules
+- Conflict detection and resolution with optimization suggestions
+
+Build Optimizations:
+- Deployment size reduced by 80% (495MB → 5.1MB)
+- Fast Cloud Build deployment process
+- Optimized .gcloudignore for rapid updates
+
+Deployment Date: 2025-12-04

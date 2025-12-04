@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
+from jinja2 import Environment, FileSystemLoader
 from datetime import datetime, timedelta
 import random
 from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+# Disable template caching to ensure fresh templates are always loaded
+env = Environment(loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0)
+templates = Jinja2Templates(env=env)
 
 # Sample data for demo mode
 DEMO_ASSETS = [
@@ -242,32 +245,38 @@ async def demo_team(request: Request):
 
 @router.get("/demo/planner", response_class=HTMLResponse)
 async def demo_planner(request: Request):
-    """Demo planner page with sample data"""
-    # Generate sample scheduled maintenance
-    planned_maintenance = []
-    for i, asset in enumerate(DEMO_ASSETS):
-        if asset["next_maintenance"] != "Overdue":
-            planned_maintenance.append(
-                {
-                    "id": f"PM-{i + 1:03d}",
-                    "asset": asset["name"],
-                    "task": f"Scheduled maintenance for {asset['name']}",
-                    "date": asset["next_maintenance"],
-                    "duration": f"{random.randint(2, 8)} hours",
-                    "assigned_to": random.choice(DEMO_TEAM)["name"],
-                    "priority": asset["criticality"],
-                }
-            )
+    """Demo planner page - comprehensive enterprise scheduler interface"""
+    # Return the planner dashboard but mark it as advanced mode for the frontend
+    print(f"🔧 DEBUG: Serving planner with advanced_mode=True")
+    return templates.TemplateResponse("planner_dashboard.html", {
+        "request": request, 
+        "is_demo": True,
+        "advanced_mode": True,
+        "page_title": "Advanced Enterprise Scheduler"
+    })
 
-    return templates.TemplateResponse(
-        "planner_dashboard.html",
-        {
-            "request": request,
-            "planned_maintenance": planned_maintenance,
-            "upcoming_tasks": planned_maintenance[:5],
-            "is_demo": True,
-        },
-    )
+
+@router.get("/demo/planner-debug")
+async def debug_planner_template():
+    """Debug endpoint to check template content"""
+    import os
+    template_path = "app/templates/planner_dashboard.html"
+    if os.path.exists(template_path):
+        with open(template_path, 'r') as f:
+            content = f.read()
+            return {
+                "template_exists": True,
+                "has_advanced_scheduler": "Advanced Enterprise Scheduler" in content,
+                "has_create_job": "Create Job" in content,
+                "has_schedule_pm": "Schedule PM" in content,
+                "has_fullcalendar": "FullCalendar" in content,
+                "content_length": len(content),
+                "first_100_chars": content[:100]
+            }
+    else:
+        return {"template_exists": False}
+
+
 
 
 @router.get("/demo/purchasing", response_class=HTMLResponse)

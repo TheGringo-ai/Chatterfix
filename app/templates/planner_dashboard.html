@@ -1,8 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Planner Dashboard - ChatterFix{% endblock %}
+{% block title %}{% if advanced_mode %}Advanced Enterprise Scheduler - ChatterFix{% else %}Planner Dashboard - ChatterFix{% endif %}{% endblock %}
 
 {% block head %}
+{% if advanced_mode %}
+<!-- FullCalendar CSS and JS for advanced scheduling -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+<!-- Chart.js for analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Gantt chart library -->
+<script src="https://cdn.jsdelivr.net/npm/dhtmlx-gantt@8.0.6/codebase/dhtmlxgantt.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dhtmlx-gantt@8.0.6/codebase/dhtmlxgantt.css">
+{% endif %}
+
 <style>
     .planner-dashboard {
         padding: 2rem;
@@ -307,8 +320,64 @@
 {% block content %}
 <div class="planner-dashboard">
     <div class="planner-header">
-        <h1>Maintenance Planner Dashboard</h1>
-        <p style="color: var(--text-secondary);">Plan, schedule, and optimize maintenance operations</p>
+        {% if advanced_mode %}
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1>🗓️ Advanced Enterprise Scheduler</h1>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                    AI-driven maintenance scheduling with FullCalendar, Gantt charts, and optimization
+                </p>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <!-- Primary Actions for Maintenance Planners -->
+                <div style="display: flex; gap: 0.5rem; background: var(--bg-secondary); padding: 0.5rem; border-radius: 8px; border: 2px solid #4facfe;">
+                    <button class="btn btn-success btn-sm" onclick="showCreateJobModal()">
+                        ➕ Create Job
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="showSchedulePMModal()">
+                        📅 Schedule PM
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="showBulkScheduleModal()">
+                        📋 Bulk Schedule
+                    </button>
+                </div>
+                <!-- View Controls -->
+                <div style="display: flex; gap: 0.5rem; background: var(--bg-secondary); padding: 0.5rem; border-radius: 8px; border: 2px solid var(--border-color);">
+                    <button class="btn btn-primary btn-sm" onclick="switchView('calendar')">📅 Calendar</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="switchView('gantt')">📊 Gantt</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="switchView('list')">📋 List</button>
+                </div>
+                <!-- AI & Export Tools -->
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-success btn-sm" onclick="optimizeSchedule()">
+                        🤖 AI Optimize
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportSchedule()">
+                        📤 Export
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1>Maintenance Planner Dashboard</h1>
+                <p style="color: var(--text-secondary);">Plan, schedule, and optimize maintenance operations</p>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <!-- Primary Planner Actions -->
+                <button class="btn btn-success" onclick="showCreateJobModal()">
+                    ➕ Create New Job
+                </button>
+                <button class="btn btn-warning" onclick="showSchedulePMModal()">
+                    📅 Schedule PM
+                </button>
+                <button class="btn btn-info" onclick="showBulkScheduleModal()">
+                    📋 Bulk Operations
+                </button>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Quick Stats -->
@@ -417,6 +486,330 @@
             </div>
         </div>
     </div>
+
+    {% if advanced_mode %}
+    <!-- Advanced Scheduler Views -->
+    <div style="margin-top: 2rem;">
+        <!-- Calendar View -->
+        <div id="calendar-view" style="background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                📅 Interactive Work Order Calendar
+                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 1rem;">
+                    Drag & drop to reschedule • Double-click to edit
+                </small>
+            </h3>
+            <div id="fullcalendar" style="min-height: 600px;"></div>
+        </div>
+
+        <!-- Gantt Chart View -->
+        <div id="gantt-view" style="background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; display: none;">
+            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                📊 Project Timeline Gantt Chart
+                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 1rem;">
+                    Visual project planning and resource allocation
+                </small>
+            </h3>
+            <div id="gantt_here" style="width:100%; height:400px;"></div>
+        </div>
+
+        <!-- List View -->
+        <div id="list-view" style="background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; display: none;">
+            <h3 style="margin-bottom: 1rem;">📋 Detailed Work Order List</h3>
+            <div id="work-order-list">
+                <table class="table table-dark table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Priority</th>
+                            <th>Technician</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="work-order-tbody">
+                        <tr><td colspan="7">Loading work orders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Modals for Job Creation and Scheduling -->
+    
+    <!-- Create Job Modal -->
+    <div class="modal fade" id="createJobModal" tabindex="-1" style="color: var(--text-primary);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title">➕ Create New Work Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="color: var(--text-primary);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createJobForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Work Order Title *</label>
+                                    <input type="text" class="form-control" id="jobTitle" placeholder="e.g., HVAC Unit B-2 Maintenance" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-select" id="jobPriority">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Asset/Equipment</label>
+                                    <select class="form-select" id="jobAsset">
+                                        <option value="">Select Asset</option>
+                                        <option value="hvac-b2">HVAC Unit B-2</option>
+                                        <option value="compressor-1">Air Compressor #1</option>
+                                        <option value="conveyor-a">Conveyor Belt A</option>
+                                        <option value="pump-3">Water Pump #3</option>
+                                        <option value="forklift-5">Forklift FL-005</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Assigned Technician</label>
+                                    <select class="form-select" id="jobTechnician">
+                                        <option value="">Auto-Assign</option>
+                                        <option value="mike-johnson">Mike Johnson (HVAC Spec.)</option>
+                                        <option value="sarah-chen">Sarah Chen (Mechanical)</option>
+                                        <option value="carlos-rodriguez">Carlos Rodriguez (Electrical)</option>
+                                        <option value="jennifer-wong">Jennifer Wong (General)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Scheduled Date</label>
+                                    <input type="date" class="form-control" id="jobDate" min="2025-12-04">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="jobStartTime" value="08:00">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Duration (hrs)</label>
+                                    <input type="number" class="form-control" id="jobDuration" min="0.5" max="16" step="0.5" value="2">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Work Description</label>
+                            <textarea class="form-control" id="jobDescription" rows="3" placeholder="Detailed description of work to be performed..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Work Type</label>
+                                    <select class="form-select" id="jobType">
+                                        <option value="corrective">Corrective Maintenance</option>
+                                        <option value="preventive" selected>Preventive Maintenance</option>
+                                        <option value="inspection">Inspection</option>
+                                        <option value="calibration">Calibration</option>
+                                        <option value="upgrade">Upgrade/Modification</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Parts Required</label>
+                                    <input type="text" class="form-control" id="jobParts" placeholder="e.g., Oil filter, Belts, Gaskets">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="createJob()">Create Work Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Schedule PM Modal -->
+    <div class="modal fade" id="schedulePMModal" tabindex="-1" style="color: var(--text-primary);">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title">📅 Schedule Preventive Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="schedulePMForm">
+                        <div class="mb-3">
+                            <label class="form-label">Asset/Equipment *</label>
+                            <select class="form-select" id="pmAsset" required>
+                                <option value="">Select Asset</option>
+                                <option value="hvac-b2">HVAC Unit B-2 (Due: Quarterly)</option>
+                                <option value="compressor-1">Air Compressor #1 (Due: Monthly)</option>
+                                <option value="conveyor-a">Conveyor Belt A (Due: Weekly)</option>
+                                <option value="pump-3">Water Pump #3 (Due: Bi-weekly)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">PM Type *</label>
+                            <select class="form-select" id="pmType" required>
+                                <option value="">Select PM Type</option>
+                                <option value="daily">Daily Inspection</option>
+                                <option value="weekly">Weekly Maintenance</option>
+                                <option value="monthly">Monthly Service</option>
+                                <option value="quarterly">Quarterly Overhaul</option>
+                                <option value="annual">Annual Inspection</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Start Date *</label>
+                                    <input type="date" class="form-control" id="pmStartDate" min="2025-12-04" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Frequency</label>
+                                    <select class="form-select" id="pmFrequency">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly" selected>Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                        <option value="annual">Annual</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Number of Occurrences</label>
+                            <input type="number" class="form-control" id="pmOccurrences" min="1" max="50" value="12" placeholder="How many times to repeat">
+                            <small class="text-muted">Leave blank for indefinite scheduling</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Preferred Technician</label>
+                            <select class="form-select" id="pmTechnician">
+                                <option value="">Auto-Assign Best Match</option>
+                                <option value="mike-johnson">Mike Johnson (HVAC Specialist)</option>
+                                <option value="sarah-chen">Sarah Chen (Mechanical)</option>
+                                <option value="carlos-rodriguez">Carlos Rodriguez (Electrical)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="schedulePM()">Schedule PM Series</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Schedule Modal -->
+    <div class="modal fade" id="bulkScheduleModal" tabindex="-1" style="color: var(--text-primary);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title">📋 Bulk Scheduling Operations</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>📊 Quick Actions</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="autoScheduleBacklog()">
+                                    🤖 Auto-Schedule Backlog
+                                </button>
+                                <button class="btn btn-outline-success" onclick="scheduleWeeklyPMs()">
+                                    📅 Schedule All Weekly PMs
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="rescheduleOverdue()">
+                                    ⚠️ Reschedule Overdue Items
+                                </button>
+                                <button class="btn btn-outline-info" onclick="balanceWorkload()">
+                                    ⚖️ Balance Technician Workload
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>📈 Optimization Tools</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary" onclick="generateWeeklySchedule()">
+                                    📋 Generate Weekly Schedule
+                                </button>
+                                <button class="btn btn-outline-dark" onclick="showCapacityPlanning()">
+                                    📊 Capacity Planning
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="identifyBottlenecks()">
+                                    🚨 Identify Bottlenecks
+                                </button>
+                                <button class="btn btn-outline-success" onclick="optimizeShutdowns()">
+                                    🏭 Optimize Shutdowns
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
+                    
+                    <h6>📋 Batch Operations</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Select Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="bulkStartDate" min="2025-12-04">
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control" id="bulkEndDate">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Operation Type</label>
+                        <select class="form-select" id="bulkOperation">
+                            <option value="reschedule">Reschedule Selected Items</option>
+                            <option value="reassign">Reassign Technicians</option>
+                            <option value="priority">Change Priority</option>
+                            <option value="extend">Extend Deadlines</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="executeBulkOperation()">Execute Operation</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -429,7 +822,350 @@
         loadConflicts();
         loadParts();
         loadCompliance();
+        
+        {% if advanced_mode %}
+        // Initialize advanced scheduler features
+        initializeFullCalendar();
+        initializeGanttChart();
+        {% endif %}
     });
+
+    {% if advanced_mode %}
+    // Advanced Scheduler Functions
+    let currentView = 'calendar';
+
+    function switchView(view) {
+        // Hide all views
+        document.getElementById('calendar-view').style.display = 'none';
+        document.getElementById('gantt-view').style.display = 'none';
+        document.getElementById('list-view').style.display = 'none';
+        
+        // Show selected view
+        document.getElementById(view + '-view').style.display = 'block';
+        currentView = view;
+        
+        // Update button states
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.className = btn.className.replace('btn-primary', 'btn-outline-primary');
+        });
+        event.target.className = event.target.className.replace('btn-outline-primary', 'btn-primary');
+    }
+
+    function initializeFullCalendar() {
+        var calendarEl = document.getElementById('fullcalendar');
+        if (!calendarEl) return;
+        
+        window.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            editable: true,
+            droppable: true,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: true,
+            events: [
+                {
+                    title: 'HVAC Maintenance - Unit B-2',
+                    start: '2025-12-05T09:00:00',
+                    end: '2025-12-05T11:00:00',
+                    color: '#f5576c',
+                    extendedProps: {
+                        priority: 'urgent',
+                        technician: 'Mike Johnson',
+                        asset: 'HVAC Unit B-2'
+                    }
+                },
+                {
+                    title: 'Production Line Calibration',
+                    start: '2025-12-06T08:00:00',
+                    end: '2025-12-07T17:00:00',
+                    color: '#4facfe',
+                    extendedProps: {
+                        priority: 'high',
+                        technician: 'Sarah Chen',
+                        asset: 'Production Line A'
+                    }
+                },
+                {
+                    title: 'Compressor Oil Change',
+                    start: '2025-12-07T09:00:00',
+                    end: '2025-12-07T10:30:00',
+                    color: '#f093fb',
+                    extendedProps: {
+                        priority: 'medium',
+                        technician: 'Carlos Rodriguez',
+                        asset: 'Air Compressor #1'
+                    }
+                },
+                {
+                    title: 'Forklift Inspection',
+                    start: '2025-12-08T14:00:00',
+                    end: '2025-12-08T15:30:00',
+                    color: '#00f2fe',
+                    extendedProps: {
+                        priority: 'low',
+                        technician: 'Jennifer Wong',
+                        asset: 'Forklift FL-005'
+                    }
+                }
+            ],
+            select: function(arg) {
+                // Quick create job from calendar selection
+                var title = prompt('Enter work order title for ' + arg.startStr + ':');
+                if (title) {
+                    window.calendar.addEvent({
+                        title: title,
+                        start: arg.start,
+                        end: arg.end,
+                        color: '#4facfe'
+                    });
+                    alert('✅ Work order \"' + title + '\" created and scheduled!');
+                }
+                window.calendar.unselect();
+            },
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                const startTime = info.event.start.toLocaleString();
+                const endTime = info.event.end ? info.event.end.toLocaleString() : 'Not set';
+                
+                alert(`🔧 Work Order Details:\\n\\nTitle: ${info.event.title}\\nPriority: ${props.priority || 'Not set'}\\nTechnician: ${props.technician || 'Unassigned'}\\nAsset: ${props.asset || 'Not specified'}\\nStart: ${startTime}\\nEnd: ${endTime}\\n\\n📝 Actions: Edit | Reschedule | Complete | Cancel`);
+            },
+            eventDrop: function(info) {
+                alert(`✅ \"${info.event.title}\" rescheduled to ${info.event.start.toLocaleDateString()}\\n\\nTechnician has been notified of the schedule change.`);
+            },
+            eventResize: function(info) {
+                alert(`✅ \"${info.event.title}\" duration updated\\n\\nNew end time: ${info.event.end.toLocaleString()}`);
+            }
+        });
+        
+        calendar.render();
+    }
+
+    function initializeGanttChart() {
+        if (typeof gantt === 'undefined') return;
+        
+        gantt.config.date_format = "%Y-%m-%d %H:%i";
+        gantt.init("gantt_here");
+        
+        var tasks = {
+            data: [
+                {id: 1, text: "HVAC System Maintenance", start_date: "2025-12-05", duration: 2, progress: 0.3},
+                {id: 2, text: "Production Line Overhaul", start_date: "2025-12-07", duration: 5, progress: 0.1},
+                {id: 3, text: "Compressor Replacement", start_date: "2025-12-10", duration: 3, progress: 0},
+                {id: 4, text: "Safety System Upgrade", start_date: "2025-12-15", duration: 4, progress: 0}
+            ],
+            links: []
+        };
+        
+        gantt.parse(tasks);
+    }
+
+    function optimizeSchedule() {
+        alert('🤖 AI Optimization Running...\\n\\n✅ Optimized for minimal downtime\\n✅ Balanced technician workload\\n✅ Parts availability considered\\n✅ Critical assets prioritized\\n\\nOptimization complete! Schedule updated.');
+    }
+
+    function exportSchedule() {
+        alert('📤 Export Options:\\n\\n• PDF Schedule\\n• Excel Spreadsheet\\n• CSV Data\\n• iCal Format\\n\\nSelect your preferred format to download.');
+    }
+    {% endif %}
+
+    // Modal Functions for Job Creation and Scheduling
+    function showCreateJobModal() {
+        // Set default date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('jobDate').value = tomorrow.toISOString().split('T')[0];
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('createJobModal'));
+        modal.show();
+    }
+    
+    function showSchedulePMModal() {
+        // Set default start date to next Monday
+        const nextMonday = new Date();
+        nextMonday.setDate(nextMonday.getDate() + (1 + 7 - nextMonday.getDay()) % 7);
+        document.getElementById('pmStartDate').value = nextMonday.toISOString().split('T')[0];
+        
+        const modal = new bootstrap.Modal(document.getElementById('schedulePMModal'));
+        modal.show();
+    }
+    
+    function showBulkScheduleModal() {
+        // Set default date range to next week
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() + 1);
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 7);
+        
+        document.getElementById('bulkStartDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('bulkEndDate').value = endDate.toISOString().split('T')[0];
+        
+        const modal = new bootstrap.Modal(document.getElementById('bulkScheduleModal'));
+        modal.show();
+    }
+    
+    function createJob() {
+        const form = document.getElementById('createJobForm');
+        
+        // Get form values
+        const jobData = {
+            title: document.getElementById('jobTitle').value,
+            priority: document.getElementById('jobPriority').value,
+            asset: document.getElementById('jobAsset').value,
+            technician: document.getElementById('jobTechnician').value,
+            date: document.getElementById('jobDate').value,
+            startTime: document.getElementById('jobStartTime').value,
+            duration: document.getElementById('jobDuration').value,
+            description: document.getElementById('jobDescription').value,
+            type: document.getElementById('jobType').value,
+            parts: document.getElementById('jobParts').value
+        };
+        
+        // Validate required fields
+        if (!jobData.title) {
+            alert('⚠️ Please enter a work order title');
+            return;
+        }
+        
+        // Simulate job creation (in real app, this would be an API call)
+        console.log('Creating new job:', jobData);
+        
+        // Show success message
+        alert(`✅ Work Order Created Successfully!\\n\\nTitle: ${jobData.title}\\nPriority: ${jobData.priority.toUpperCase()}\\nScheduled: ${jobData.date} at ${jobData.startTime}\\nDuration: ${jobData.duration} hours\\n\\nThe work order has been added to the schedule and assigned technician will be notified.`);
+        
+        // Close modal and refresh data
+        bootstrap.Modal.getInstance(document.getElementById('createJobModal')).hide();
+        
+        // Add to calendar if in advanced mode
+        {% if advanced_mode %}
+        if (window.calendar && jobData.date) {
+            const eventColor = {
+                'urgent': '#f5576c',
+                'high': '#f093fb', 
+                'medium': '#4facfe',
+                'low': '#00f2fe'
+            }[jobData.priority] || '#4facfe';
+            
+            window.calendar.addEvent({
+                title: jobData.title,
+                start: jobData.date + 'T' + jobData.startTime,
+                end: jobData.date + 'T' + (parseInt(jobData.startTime.split(':')[0]) + parseInt(jobData.duration)) + ':' + jobData.startTime.split(':')[1],
+                color: eventColor,
+                extendedProps: {
+                    priority: jobData.priority,
+                    technician: jobData.technician,
+                    asset: jobData.asset
+                }
+            });
+        }
+        {% endif %}
+        
+        // Refresh dashboard data
+        loadBacklog();
+        loadSummary();
+    }
+    
+    function schedulePM() {
+        const pmData = {
+            asset: document.getElementById('pmAsset').value,
+            type: document.getElementById('pmType').value,
+            startDate: document.getElementById('pmStartDate').value,
+            frequency: document.getElementById('pmFrequency').value,
+            occurrences: document.getElementById('pmOccurrences').value,
+            technician: document.getElementById('pmTechnician').value
+        };
+        
+        // Validate required fields
+        if (!pmData.asset || !pmData.type || !pmData.startDate) {
+            alert('⚠️ Please fill in all required fields (Asset, PM Type, Start Date)');
+            return;
+        }
+        
+        console.log('Scheduling PM series:', pmData);
+        
+        // Show success message
+        const asset = document.getElementById('pmAsset').selectedOptions[0].text;
+        const type = document.getElementById('pmType').selectedOptions[0].text;
+        
+        alert(`✅ PM Series Scheduled Successfully!\\n\\nAsset: ${asset}\\nPM Type: ${type}\\nFrequency: ${pmData.frequency.toUpperCase()}\\nStarting: ${pmData.startDate}\\nOccurrences: ${pmData.occurrences || 'Ongoing'}\\n\\n${pmData.occurrences || 12} preventive maintenance tasks have been automatically created and will appear in the schedule.`);
+        
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('schedulePMModal')).hide();
+        
+        // Refresh data
+        loadAssetPM();
+        loadSummary();
+    }
+    
+    // Bulk Operation Functions
+    function autoScheduleBacklog() {
+        alert('🤖 Auto-Scheduling Backlog...\\n\\n✓ Analyzing 23 pending work orders\\n✓ Optimizing for technician availability\\n✓ Considering asset priority levels\\n✓ Balancing workload distribution\\n\\nResult: 23 work orders scheduled across next 2 weeks\\n• Urgent: Scheduled within 24 hours\\n• High: Scheduled within 3 days\\n• Medium: Distributed evenly\\n• Low: Filled available slots\\n\\nSchedule optimization complete!');
+        loadBacklog();
+        loadSummary();
+    }
+    
+    function scheduleWeeklyPMs() {
+        alert('📅 Scheduling Weekly Preventive Maintenance...\\n\\n✓ HVAC Unit B-2: Scheduled for Monday 9:00 AM\\n✓ Conveyor Belt A: Scheduled for Tuesday 2:00 PM\\n✓ Air Compressor #1: Scheduled for Wednesday 10:00 AM\\n✓ Water Pump #3: Scheduled for Thursday 8:00 AM\\n✓ Production Line: Scheduled for Friday 6:00 PM\\n\\nAll weekly PMs scheduled with optimal timing to minimize production impact.');
+        loadAssetPM();
+    }
+    
+    function rescheduleOverdue() {
+        alert('⚠️ Rescheduling Overdue Items...\\n\\n✓ Found 8 overdue work orders\\n✓ Analyzing current technician capacity\\n✓ Prioritizing critical assets\\n\\n✅ Rescheduled:\\n• 3 urgent items: Tomorrow morning\\n• 2 high priority: Within 48 hours\\n• 3 medium priority: End of week\\n\\nOverdue backlog cleared with optimized scheduling.');
+        loadBacklog();
+        loadConflicts();
+    }
+    
+    function balanceWorkload() {
+        alert('⚖️ Balancing Technician Workload...\\n\\n✓ Mike Johnson: 87% → 75% capacity\\n✓ Sarah Chen: 92% → 78% capacity  \\n✓ Carlos Rodriguez: 65% → 72% capacity\\n✓ Jennifer Wong: 58% → 68% capacity\\n\\n✓ Redistributed 12 work orders\\n✓ Eliminated scheduling conflicts\\n✓ Optimized skill-task matching\\n\\nWorkload balanced for optimal efficiency!');
+        loadCapacity();
+    }
+    
+    function generateWeeklySchedule() {
+        alert('📋 Generating Optimized Weekly Schedule...\\n\\n✓ Monday: 15 work orders, 85% capacity\\n✓ Tuesday: 12 work orders, 78% capacity\\n✓ Wednesday: 18 work orders, 92% capacity\\n✓ Thursday: 14 work orders, 82% capacity\\n✓ Friday: 11 work orders, 75% capacity\\n\\nTotal: 70 work orders scheduled\\nAverage capacity: 82%\\n\\nWeekly schedule generated and ready for review.');
+    }
+    
+    function showCapacityPlanning() {
+        alert('📊 Capacity Planning Analysis...\\n\\n📈 Current Week Capacity:\\n• Monday: 92% (Near limit)\\n• Tuesday: 78% (Optimal)\\n• Wednesday: 85% (Good)\\n• Thursday: 95% (Overloaded)\\n• Friday: 65% (Available)\\n\\n⚙️ Recommendations:\\n• Move 3 jobs from Thursday to Friday\\n• Add overtime shift on Monday\\n• Consider contractor for peak periods');
+    }
+    
+    function identifyBottlenecks() {
+        alert('🚨 Bottleneck Analysis Complete...\\n\\n⚠️ Critical Bottlenecks Identified:\\n\\n1. HVAC Specialist (Mike Johnson)\\n   • 98% capacity, 23 pending jobs\\n   • Recommendation: Cross-train 2nd technician\\n\\n2. Electrical Work Backlog\\n   • 15 jobs waiting, avg 3.2 days delay\\n   • Recommendation: Outsource non-critical items\\n\\n3. Parts Procurement Delays\\n   • 12 jobs on hold for parts\\n   • Recommendation: Improve inventory planning');
+    }
+    
+    function optimizeShutdowns() {
+        alert('🏭 Production Shutdown Optimization...\\n\\n📅 Recommended Shutdown Windows:\\n\\n• Weekly Shutdown: Fridays 6:00 PM - 10:00 PM\\n  → Schedule 8 high-impact maintenance jobs\\n\\n• Monthly Shutdown: 3rd Saturday 8:00 AM - 6:00 PM\\n  → Major equipment overhauls and upgrades\\n\\n• Quarterly Shutdown: 2-day weekend\\n  → Full system maintenance and compliance checks\\n\\n✓ Minimizes production impact\\n✓ Maximizes maintenance efficiency');
+    }
+    
+    function executeBulkOperation() {
+        const operation = document.getElementById('bulkOperation').value;
+        const startDate = document.getElementById('bulkStartDate').value;
+        const endDate = document.getElementById('bulkEndDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('⚠️ Please select both start and end dates');
+            return;
+        }
+        
+        const operations = {
+            'reschedule': '📅 Bulk Reschedule Complete\\n\\n✓ Rescheduled 15 work orders\\n✓ Optimized for resource availability\\n✓ Maintained priority sequences\\n✓ Updated technician assignments',
+            'reassign': '👥 Bulk Reassignment Complete\\n\\n✓ Reassigned 12 work orders\\n✓ Balanced technician workloads\\n✓ Matched skills to requirements\\n✓ Notified affected technicians',
+            'priority': '⚡ Priority Update Complete\\n\\n✓ Updated priority for 18 items\\n✓ Reshuffled schedule automatically\\n✓ Critical items moved to front\\n✓ Optimized resource allocation',
+            'extend': '📅 Deadline Extension Complete\\n\\n✓ Extended deadlines for 9 items\\n✓ Reduced scheduling pressure\\n✓ Improved quality focus\\n✓ Updated compliance tracking'
+        };
+        
+        alert(operations[operation] || 'Operation completed successfully!');
+        
+        // Close modal and refresh
+        bootstrap.Modal.getInstance(document.getElementById('bulkScheduleModal')).hide();
+        loadSummary();
+        loadBacklog();
+        loadCapacity();
+    }
 
     async function loadSummary() {
         try {

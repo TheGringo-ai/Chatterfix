@@ -85,9 +85,13 @@ async def lifespan(app: FastAPI):
             logger.warning("   For production, configure Firebase credentials")
 
         logger.info("✅ ChatterFix CMMS started successfully!")
+        logger.info(f"📦 Version: {APP_VERSION}")
+        logger.info(f"📋 Features: {APP_DESCRIPTION}")
         logger.info("🌐 ChatterFix ready for use!")
         logger.info("📊 Analytics dashboard: /analytics/dashboard")
         logger.info("🔌 IoT API: /iot/sensors/")
+        logger.info("🎯 Enterprise Planner: /demo/planner")
+        logger.info("⚙️ Advanced Scheduler: /planner/advanced")
 
         yield
 
@@ -99,11 +103,33 @@ async def lifespan(app: FastAPI):
         logger.info("🛑 Shutting down ChatterFix CMMS...")
         logger.info("✅ ChatterFix CMMS shutdown complete")
 
+# Load version information
+def load_version():
+    """Load version from VERSION.txt file"""
+    import os
+    version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
+    
+    for path in version_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    lines = f.readlines()
+                    version = lines[0].strip()
+                    description = lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
+                    return version, description
+        except Exception as e:
+            continue
+    
+    # Fallback to hardcoded version if file not found
+    return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
+
+# Load version information immediately after function definition
+APP_VERSION, APP_DESCRIPTION = load_version()
 
 app = FastAPI(
     title="ChatterFix CMMS API",
-    description="AI-Powered Maintenance Management System",
-    version="1.0.0",
+    description=f"AI-Powered Maintenance Management System - {APP_DESCRIPTION}",
+    version=APP_VERSION,
     lifespan=lifespan,
 )
 
@@ -162,10 +188,48 @@ async def test_endpoint():
     return {
         "status": "success",
         "message": "ChatterFix is running!",
-        "timestamp": "2025-11-30",
+        "version": APP_VERSION,
+        "description": APP_DESCRIPTION,
+        "timestamp": "2025-12-04",
         "environment": os.getenv("ENVIRONMENT", "unknown"),
         "port": os.getenv("PORT", "unknown"),
+        "database": "Firebase/Firestore",
+        "features": [
+            "Enterprise Planner",
+            "Advanced Scheduler", 
+            "AI Optimization",
+            "Mobile Interface",
+            "Parts Management",
+            "PM Automation"
+        ]
     }
+
+
+@app.get("/debug/version")
+async def debug_version():
+    """Debug endpoint to check version loading"""
+    import os
+    debug_info = {
+        "app_version": APP_VERSION,
+        "app_description": APP_DESCRIPTION,
+        "current_working_directory": os.getcwd(),
+        "version_file_checks": {}
+    }
+    
+    version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
+    for path in version_paths:
+        debug_info["version_file_checks"][path] = {
+            "exists": os.path.exists(path),
+            "is_file": os.path.isfile(path) if os.path.exists(path) else False
+        }
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    debug_info["version_file_checks"][path]["content_preview"] = f.read()[:200]
+            except Exception as e:
+                debug_info["version_file_checks"][path]["error"] = str(e)
+    
+    return debug_info
 
 
 # Main entry point

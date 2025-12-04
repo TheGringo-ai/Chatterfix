@@ -606,7 +606,12 @@ let schedulerData = {
     conflicts: []
 };
 
+// Always use main planner API endpoints with Firestore data
+const apiPrefix = '/planner';
+
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Advanced Scheduler initializing...');
+    
     // Set default dates
     const today = new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
@@ -632,7 +637,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initializeScheduler() {
     try {
-        const response = await fetch('/planner/advanced/initialize', {
+        const response = await fetch(`${apiPrefix}/advanced/initialize`, {
             method: 'POST'
         });
         
@@ -651,14 +656,21 @@ async function initializeScheduler() {
 
 async function loadMockData() {
     try {
-        const response = await fetch('/planner/advanced/mock-data');
+        const response = await fetch(`${apiPrefix}/advanced/mock-data`);
         const data = await response.json();
         
-        schedulerData.technicians = data.technicians;
-        schedulerData.assets = data.assets;
-        
-        updateTechniciansList();
-        updateLocationFilters();
+        if (data.data) {
+            schedulerData.workOrders = data.data.work_orders || [];
+            schedulerData.assets = data.data.assets || [];
+            schedulerData.parts = data.data.parts || [];
+            schedulerData.pmSchedules = data.data.pm_schedules || [];
+            
+            // Update UI components
+            updateTechniciansList();
+            updateLocationFilters();
+            updateWorkOrdersDisplay();
+            updatePartsInventory();
+        }
         
     } catch (error) {
         console.error('Error loading mock data:', error);
@@ -668,16 +680,16 @@ async function loadMockData() {
 async function loadSchedulerData() {
     try {
         // Load technicians
-        const techResponse = await fetch('/planner/advanced/technicians');
+        const techResponse = await fetch(`${apiPrefix}/advanced/technicians`);
         const techData = await techResponse.json();
-        schedulerData.technicians = techData.technicians;
+        schedulerData.technicians = techData.technicians || [];
         
         // Load calendar events
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         
         const calendarResponse = await fetch(
-            `/planner/advanced/calendar?start_date=${startDate}&end_date=${endDate}`
+            `${apiPrefix}/advanced/calendar?start_date=${startDate}&end_date=${endDate}`
         );
         const calendarData = await calendarResponse.json();
         schedulerData.events = calendarData.events || [];
@@ -879,7 +891,7 @@ function updateListView() {
 
 async function updateStats() {
     try {
-        const response = await fetch('/planner/advanced/analytics');
+        const response = await fetch(`${apiPrefix}/advanced/analytics`);
         const analytics = await response.json();
         
         document.getElementById('totalTechnicians').textContent = 
@@ -931,7 +943,7 @@ async function runOptimization() {
         
         selectedObjectives.forEach(obj => params.append('objectives', obj));
         
-        const response = await fetch(`/planner/advanced/optimize?${params}`, {
+        const response = await fetch(`${apiPrefix}/advanced/optimize?${params}`, {
             method: 'POST'
         });
         

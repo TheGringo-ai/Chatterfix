@@ -67,3 +67,4 @@ opencv-python-headless>=4.8.0
 # safety>=2.3.0
 # pre-commit>=3.5.0
 setuptools
+packaging>=23.0

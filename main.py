@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 # Load environment variables (override system defaults)
 load_dotenv(override=True)
 
+# Define version information immediately to avoid circular import issues
+APP_VERSION = "2.1.0-enterprise-planner"
+APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -83,10 +87,6 @@ def load_version():
     # Fallback to hardcoded version if file not found
     return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
 
-# Load version information immediately
-# APP_VERSION, APP_DESCRIPTION = load_version()
-APP_VERSION = "2.1.0-enterprise-planner"
-APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
 print(f"DEBUG: main.py loaded. Version: {APP_VERSION}")
 
 from contextlib import asynccontextmanager

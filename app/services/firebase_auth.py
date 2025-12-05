@@ -4,20 +4,11 @@ from typing import Dict, Optional, Any, cast
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-# Import Firebase modules with error handling
-FIREBASE_ADMIN_AVAILABLE = False
-PYREBASE_AVAILABLE = False
+# Import Firebase modules
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
 
-try:
-    import firebase_admin
-    from firebase_admin import credentials, auth, firestore
-    FIREBASE_ADMIN_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Firebase Admin SDK not available: {e}")
-    firebase_admin = None
-    credentials = None
-    auth = None
-    firestore = None
+FIREBASE_ADMIN_AVAILABLE = True
 
 try:
     import pyrebase
@@ -25,9 +16,10 @@ try:
 except ImportError as e:
     logging.warning(f"Pyrebase not available: {e}")
     pyrebase = None
+    PYREBASE_AVAILABLE = False
 
-# Backward compatibility flag (true if admin sdk is available, as it's the critical one)
-FIREBASE_AVAILABLE = FIREBASE_ADMIN_AVAILABLE
+# Backward compatibility flag
+FIREBASE_AVAILABLE = True
 
 logger = logging.getLogger(__name__)
 
@@ -42,20 +34,10 @@ class FirebaseAuthService:
 
     def _initialize_firebase(self):
         """Initialize Firebase Admin SDK and client SDK"""
-        # Check if Firebase modules are available
-        if not FIREBASE_AVAILABLE:
-            logger.info(
-                "🔥 Firebase modules not installed - running in local/SQLite mode"
-            )
-            logger.info(
-                "   To enable Firebase, install: pip install firebase-admin pyrebase4"
-            )
-            return
-
         # Check if Firebase is explicitly disabled
         if os.getenv("DISABLE_FIREBASE", "").lower() in ("true", "1", "yes"):
-            logger.info(
-                "🔥 Firebase disabled via DISABLE_FIREBASE environment variable"
+            logger.warning(
+                "🔥 Firebase disabled via DISABLE_FIREBASE environment variable. This is not recommended for production."
             )
             return
 
@@ -63,13 +45,10 @@ class FirebaseAuthService:
         google_creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         firebase_api_key = os.getenv("FIREBASE_API_KEY")
 
-        # Skip initialization if no credentials are configured
+        # Fail if no credentials are configured
         if not google_creds_path and not firebase_api_key:
-            logger.info("🔥 Firebase not configured - running in local/SQLite mode")
-            logger.info(
-                "   To enable Firebase, set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_API_KEY"
-            )
-            return
+            logger.error("❌ Firebase credentials not found! Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_API_KEY.")
+            raise ValueError("Firebase credentials missing. Cannot start application without Firebase.")
 
         try:
             # Initialize Firebase Admin SDK

@@ -5,18 +5,11 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-try:
-    from google.cloud import firestore  # type: ignore
-    from google.cloud.firestore_v1.base_query import FieldFilter
+# Enforce Firestore availability
+from google.cloud import firestore  # type: ignore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
-    FIRESTORE_AVAILABLE = True
-except ImportError:
-    logger.warning(
-        "⚠️ google-cloud-firestore not available. Firestore features will be disabled."
-    )
-    FIRESTORE_AVAILABLE = False
-    firestore = None
-    FieldFilter = None
+FIRESTORE_AVAILABLE = True
 
 
 class FirestoreDB:

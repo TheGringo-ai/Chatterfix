@@ -9,20 +9,15 @@ class DatabaseAdapter:
 
     def __init__(self):
         self.db_type = "firestore"
-        try:
-            from app.core.firestore_db import get_firestore_manager, FIRESTORE_AVAILABLE
+        
+        # Import Firestore manager directly - fail if not available
+        from app.core.firestore_db import get_firestore_manager, FIRESTORE_AVAILABLE
 
-            if not FIRESTORE_AVAILABLE:
-                logger.error(
-                    "❌ Firestore module not available. Database operations will fail."
-                )
-                self.firestore_manager = None
-            else:
-                self.firestore_manager = get_firestore_manager()
-                logger.info("🔥 Using Firestore database")
-        except ImportError:
-            logger.error("❌ Failed to import Firestore manager")
-            self.firestore_manager = None
+        if not FIRESTORE_AVAILABLE:
+            raise ImportError("Firestore module not available. Cannot initialize database.")
+            
+        self.firestore_manager = get_firestore_manager()
+        logger.info("🔥 Using Firestore database")
 
     async def create_work_order(self, work_order_data: Dict[str, Any]) -> str:
         """Create a work order"""

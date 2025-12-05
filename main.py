@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 # Load environment variables (override system defaults)
 load_dotenv(override=True)
 
+print("DEBUG: STARTING NEW VERSION WITH FIX - 2025-12-05")
+
 # Define version information immediately to avoid circular import issues
 APP_VERSION = "2.1.0-enterprise-planner"
 APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"

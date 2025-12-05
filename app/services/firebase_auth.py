@@ -47,8 +47,8 @@ class FirebaseAuthService:
 
         # Fail if no credentials are configured
         if not google_creds_path and not firebase_api_key:
-            logger.error("❌ Firebase credentials not found! Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_API_KEY.")
-            raise ValueError("Firebase credentials missing. Cannot start application without Firebase.")
+            logger.warning("⚠️ No explicit credentials found. Attempting to use Google Cloud Default Credentials...")
+            # raise ValueError("Firebase credentials missing. Cannot start application without Firebase.")
 
         try:
             # Initialize Firebase Admin SDK

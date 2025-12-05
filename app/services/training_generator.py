@@ -4,7 +4,7 @@ Generates interactive training modules from equipment manuals and documentation
 """
 
 import os
-from app.core.database import get_db_connection
+from app.core.firestore_db import get_firestore_manager
 import logging
 from datetime import datetime
 import json
@@ -95,36 +95,26 @@ class TrainingGenerator:
             response = model.generate_content([prompt, manual_content])
             training_data = json.loads(response.text)
 
-            # Save to database
-            conn = get_db_connection()
-            try:
-                cursor = conn.execute(
-                    """
-                    INSERT INTO training_modules
-                    (title, description, content_type, asset_type, skill_category,
-                     difficulty_level, estimated_duration_minutes, content_path, ai_generated)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-                """,
-                    (
-                        training_data["title"],
-                        training_data["description"],
-                        "ai_generated",
-                        asset_type,
-                        skill_category,
-                        training_data["difficulty_level"],
-                        training_data["estimated_duration_minutes"],
-                        json.dumps(training_data),
-                    ),
-                )
-                conn.commit()
-                module_id = cursor.lastrowid
+            # Save to Firestore database
+            firestore_manager = get_firestore_manager()
+            module_data = {
+                "title": training_data["title"],
+                "description": training_data["description"],
+                "content_type": "ai_generated",
+                "asset_type": asset_type,
+                "skill_category": skill_category,
+                "difficulty_level": training_data["difficulty_level"],
+                "estimated_duration_minutes": training_data["estimated_duration_minutes"],
+                "content_path": json.dumps(training_data),
+                "ai_generated": True
+            }
+            
+            module_id = await firestore_manager.create_training_module(module_data)
 
-                logger.info(
-                    f"Generated training module {module_id}: {training_data['title']}"
-                )
-                return module_id
-            finally:
-                conn.close()
+            logger.info(
+                f"Generated training module {module_id}: {training_data['title']}"
+            )
+            return module_id
 
         except Exception as e:
             logger.error(f"Error generating training from manual: {e}")
@@ -204,62 +194,77 @@ class TrainingGenerator:
             return f"Error: {str(e)}"
 
     @staticmethod
-    def assign_training(user_id: int, module_id: int):
+    async def assign_training(user_id: str, module_id: str):
         """Assign a training module to a user"""
-        conn = get_db_connection()
+        firestore_manager = get_firestore_manager()
         try:
-            conn.execute(
-                """
-                INSERT INTO user_training (user_id, training_module_id, status)
-                VALUES (?, ?, 'assigned')
-            """,
-                (user_id, module_id),
-            )
-            conn.commit()
+            training_data = {
+                "user_id": user_id,
+                "training_module_id": module_id,
+                "status": "assigned",
+                "assigned_date": datetime.now(),
+                "started_date": None,
+                "completed_date": None,
+                "score": None
+            }
+            await firestore_manager.create_user_training(training_data)
             logger.info(f"Assigned training module {module_id} to user {user_id}")
-        finally:
-            conn.close()
+        except Exception as e:
+            logger.error(f"Error assigning training: {e}")
+            raise
 
     @staticmethod
-    def complete_training(user_training_id: int, score: float = None):
+    async def complete_training(user_training_id: str, score: float = None):
         """Mark training as completed"""
-        conn = get_db_connection()
+        firestore_manager = get_firestore_manager()
         try:
-            conn.execute(
-                """
-                UPDATE user_training
-                SET status = 'completed', completed_date = ?, score = ?
-                WHERE id = ?
-            """,
-                (datetime.now(), score, user_training_id),
+            await firestore_manager.update_document(
+                "user_training",
+                user_training_id,
+                {
+                    "status": "completed",
+                    "completed_date": datetime.now(),
+                    "score": score
+                }
             )
-            conn.commit()
-        finally:
-            conn.close()
+            logger.info(f"Completed training {user_training_id} with score {score}")
+        except Exception as e:
+            logger.error(f"Error completing training: {e}")
+            raise
 
     @staticmethod
-    def get_user_training(user_id: int):
+    async def get_user_training(user_id: str):
         """Get all training for a user"""
-        conn = get_db_connection()
+        firestore_manager = get_firestore_manager()
         try:
-            return conn.execute(
-                """
-                SELECT ut.*, tm.title, tm.description, tm.estimated_duration_minutes
-                FROM user_training ut
-                JOIN training_modules tm ON ut.training_module_id = tm.id
-                WHERE ut.user_id = ?
-                ORDER BY
-                    CASE ut.status
-                        WHEN 'assigned' THEN 1
-                        WHEN 'in_progress' THEN 2
-                        WHEN 'completed' THEN 3
-                    END,
-                    ut.started_date DESC
-            """,
-                (user_id,),
-            ).fetchall()
-        finally:
-            conn.close()
+            # Get user training records
+            user_training = await firestore_manager.get_user_training(user_id)
+            
+            # Enrich with module details
+            enriched_training = []
+            for training in user_training:
+                module_id = training.get("training_module_id")
+                if module_id:
+                    module = await firestore_manager.get_document("training_modules", module_id)
+                    if module:
+                        training.update({
+                            "title": module.get("title"),
+                            "description": module.get("description"),
+                            "estimated_duration_minutes": module.get("estimated_duration_minutes")
+                        })
+                enriched_training.append(training)
+            
+            # Sort by status priority and date
+            status_order = {"assigned": 1, "in_progress": 2, "completed": 3}
+            enriched_training.sort(key=lambda x: (
+                status_order.get(x.get("status", "assigned"), 4),
+                x.get("started_date") or datetime.min
+            ), reverse=True)
+            
+            return enriched_training
+        except Exception as e:
+            logger.error(f"Error getting user training: {e}")
+            return []
 
 
 # Global training generator instance

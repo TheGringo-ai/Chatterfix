@@ -380,6 +380,128 @@ class FirestoreManager:
             logger.error(f"Error counting asset parts: {e}")
             return 0
 
+    # Training-specific methods
+    async def create_training_module(self, module_data: Dict[str, Any]) -> str:
+        """Create a new training module"""
+        return await self.create_document("training_modules", module_data)
+
+    async def get_training_modules(
+        self, skill_category: Optional[str] = None, asset_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get training modules with optional filtering"""
+        filters = []
+        if skill_category:
+            filters.append({"field": "skill_category", "operator": "==", "value": skill_category})
+        if asset_type:
+            filters.append({"field": "asset_type", "operator": "==", "value": asset_type})
+
+        return await self.get_collection(
+            "training_modules", 
+            order_by="-created_at", 
+            filters=filters if filters else None
+        )
+
+    async def create_user_training(self, training_data: Dict[str, Any]) -> str:
+        """Create a new user training assignment"""
+        return await self.create_document("user_training", training_data)
+
+    async def get_user_training(
+        self, user_id: str, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get user training assignments"""
+        filters = [{"field": "user_id", "operator": "==", "value": user_id}]
+        if status:
+            filters.append({"field": "status", "operator": "==", "value": status})
+
+        return await self.get_collection(
+            "user_training", 
+            filters=filters
+        )
+
+    async def update_user_training_status(
+        self, user_id: str, module_id: str, status: str, **kwargs
+    ) -> bool:
+        """Update user training status"""
+        try:
+            # Find the training record
+            training_records = await self.get_collection(
+                "user_training",
+                filters=[
+                    {"field": "user_id", "operator": "==", "value": user_id},
+                    {"field": "training_module_id", "operator": "==", "value": module_id}
+                ],
+                limit=1
+            )
+
+            if not training_records:
+                return False
+
+            # Update the record
+            update_data = {"status": status}
+            update_data.update(kwargs)
+            
+            await self.update_document(
+                "user_training", 
+                training_records[0]["id"], 
+                update_data
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error updating user training status: {e}")
+            return False
+
+    async def get_user_performance(
+        self, user_id: str, period: str = "monthly"
+    ) -> List[Dict[str, Any]]:
+        """Get user performance metrics"""
+        filters = [
+            {"field": "user_id", "operator": "==", "value": user_id},
+            {"field": "period", "operator": "==", "value": period}
+        ]
+
+        return await self.get_collection(
+            "user_performance", 
+            order_by="-period_date",
+            filters=filters
+        )
+
+    async def update_user_performance_metrics(
+        self, user_id: str, period: str, period_date: str, metrics: Dict[str, Any]
+    ) -> str:
+        """Update or create user performance metrics"""
+        try:
+            # Check if record exists
+            existing = await self.get_collection(
+                "user_performance",
+                filters=[
+                    {"field": "user_id", "operator": "==", "value": user_id},
+                    {"field": "period", "operator": "==", "value": period},
+                    {"field": "period_date", "operator": "==", "value": period_date}
+                ],
+                limit=1
+            )
+
+            if existing:
+                # Update existing record
+                await self.update_document(
+                    "user_performance", 
+                    existing[0]["id"], 
+                    metrics
+                )
+                return existing[0]["id"]
+            else:
+                # Create new record
+                performance_data = {
+                    "user_id": user_id,
+                    "period": period,
+                    "period_date": period_date,
+                    **metrics
+                }
+                return await self.create_document("user_performance", performance_data)
+        except Exception as e:
+            logger.error(f"Error updating user performance metrics: {e}")
+            raise
+
 
 # Global Firestore manager instance
 firestore_manager = FirestoreManager()

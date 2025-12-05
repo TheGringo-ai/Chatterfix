@@ -85,8 +85,11 @@ async def lifespan(app: FastAPI):
             logger.warning("   For production, configure Firebase credentials")
 
         logger.info("✅ ChatterFix CMMS started successfully!")
-        logger.info(f"📦 Version: {APP_VERSION}")
-        logger.info(f"📋 Features: {APP_DESCRIPTION}")
+        
+        # Load version info for logging
+        app_version, app_description = load_version()
+        logger.info(f"📦 Version: {app_version}")
+        logger.info(f"📋 Features: {app_description}")
         logger.info("🌐 ChatterFix ready for use!")
         logger.info("📊 Analytics dashboard: /analytics/dashboard")
         logger.info("🔌 IoT API: /iot/sensors/")

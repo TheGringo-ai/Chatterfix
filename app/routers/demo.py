@@ -304,37 +304,68 @@ async def demo_purchasing(request: Request):
 @router.get("/demo/training", response_class=HTMLResponse)
 async def demo_training(request: Request):
     """Demo training page with sample data"""
-    return HTMLResponse("<h1>Debug: Hello World</h1>")
-
     try:
         demo_courses = [
             {
                 "id": 1,
-                "title": "HVAC Maintenance Fundamentals",
-                "description": "Learn the basics of HVAC system maintenance and troubleshooting",
-                "duration": "4 hours",
-                "difficulty": "Beginner",
-                "completed_by": 12,
-                "total_enrolled": 15,
+                "title": "Pump Station Maintenance Manual",
+                "description": "Complete technician training based on Grundfos pump system manuals - maintenance procedures, troubleshooting guides, and safety protocols",
+                "duration": "3 hours",
+                "difficulty": "Intermediate",
+                "completed_by": 8,
+                "total_enrolled": 12,
+                "type": "equipment_manual"
             },
             {
                 "id": 2,
-                "title": "Safety Procedures for Industrial Equipment",
-                "description": "Essential safety protocols for working with industrial machinery",
-                "duration": "2 hours",
+                "title": "HVAC System Troubleshooting SOP",
+                "description": "Standard Operating Procedures for diagnosing and repairing HVAC systems - step-by-step guides with AI assistance",
+                "duration": "4 hours",
                 "difficulty": "Intermediate",
-                "completed_by": 18,
+                "completed_by": 15,
                 "total_enrolled": 18,
+                "type": "sop"
             },
             {
                 "id": 3,
-                "title": "Predictive Maintenance Techniques",
-                "description": "Advanced techniques for predicting equipment failures",
-                "duration": "6 hours",
-                "difficulty": "Advanced",
-                "completed_by": 5,
-                "total_enrolled": 8,
+                "title": "Electrical Safety & Lockout/Tagout Procedures",
+                "description": "Essential safety training for electrical work - OSHA compliance, LOTO procedures, and emergency response",
+                "duration": "2 hours",
+                "difficulty": "Beginner",
+                "completed_by": 22,
+                "total_enrolled": 22,
+                "type": "safety_sop"
             },
+            {
+                "id": 4,
+                "title": "Conveyor Belt Maintenance Manual",
+                "description": "Technical training derived from manufacturer manuals - belt tensioning, bearing replacement, and preventive maintenance schedules",
+                "duration": "5 hours",
+                "difficulty": "Advanced",
+                "completed_by": 4,
+                "total_enrolled": 8,
+                "type": "equipment_manual"
+            },
+            {
+                "id": 5,
+                "title": "AI-Assisted Diagnostics Training",
+                "description": "Learn to use ChatterFix's AI assistant for equipment diagnostics, fault analysis, and maintenance recommendations",
+                "duration": "3 hours",
+                "difficulty": "Intermediate",
+                "completed_by": 12,
+                "total_enrolled": 16,
+                "type": "ai_assisted"
+            },
+            {
+                "id": 6,
+                "title": "Compressor Maintenance SOP",
+                "description": "Standard procedures for air compressor maintenance - oil changes, filter replacement, and performance monitoring",
+                "duration": "2 hours",
+                "difficulty": "Beginner",
+                "completed_by": 18,
+                "total_enrolled": 20,
+                "type": "sop"
+            }
         ]
 
         # Map demo courses to the structure expected by the template
@@ -345,19 +376,36 @@ async def demo_training(request: Request):
                 "description": c["description"],
                 "difficulty_level": c["difficulty"],
                 "estimated_duration_minutes": int(c["duration"].split()[0]) * 60,
-                "ai_generated": True if c["id"] == 3 else False
-            } for c in demo_courses
+                "ai_generated": True if c["type"] == "ai_assisted" else False,
+                "content_type": c["type"]
+            } for c in demo_courses[3:]  # Show last 3 as available
         ]
 
-        # Sample user training
+        # Sample user training - show technician has some assigned training
         my_training = [
             {
                 "training_module_id": 1,
-                "title": "HVAC Maintenance Fundamentals",
-                "description": "Learn the basics of HVAC system maintenance and troubleshooting",
+                "title": "Pump Station Maintenance Manual",
+                "description": "Complete technician training based on Grundfos pump system manuals",
                 "status": "in_progress",
+                "estimated_duration_minutes": 180,
+                "score": None
+            },
+            {
+                "training_module_id": 2,
+                "title": "HVAC System Troubleshooting SOP",
+                "description": "Standard Operating Procedures for diagnosing and repairing HVAC systems",
+                "status": "assigned",
                 "estimated_duration_minutes": 240,
                 "score": None
+            },
+            {
+                "training_module_id": 3,
+                "title": "Electrical Safety & Lockout/Tagout Procedures",
+                "description": "Essential safety training for electrical work - OSHA compliance",
+                "status": "completed",
+                "estimated_duration_minutes": 120,
+                "score": 95
             }
         ]
 
@@ -368,10 +416,10 @@ async def demo_training(request: Request):
                 "available_modules": available_modules,
                 "my_training": my_training,
                 "stats": {
-                    "total_assigned": 1,
-                    "completed": 0,
+                    "total_assigned": 3,
+                    "completed": 1,
                     "in_progress": 1,
-                    "avg_score": 0,
+                    "avg_score": 95.0,
                 },
                 "is_demo": True,
                 "user_id": "demo_user"

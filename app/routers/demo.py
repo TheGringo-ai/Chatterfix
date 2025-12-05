@@ -334,17 +334,44 @@ async def demo_training(request: Request):
         },
     ]
 
+    # Map demo courses to the structure expected by the template
+    available_modules = [
+        {
+            "id": c["id"],
+            "title": c["title"],
+            "description": c["description"],
+            "difficulty_level": c["difficulty"],
+            "estimated_duration_minutes": int(c["duration"].split()[0]) * 60,
+            "ai_generated": True if c["id"] == 3 else False
+        } for c in demo_courses
+    ]
+
+    # Sample user training
+    my_training = [
+        {
+            "training_module_id": 1,
+            "title": "HVAC Maintenance Fundamentals",
+            "description": "Learn the basics of HVAC system maintenance and troubleshooting",
+            "status": "in_progress",
+            "estimated_duration_minutes": 240,
+            "score": None
+        }
+    ]
+
     return templates.TemplateResponse(
         "training_center.html",
         {
             "request": request,
-            "courses": demo_courses,
+            "available_modules": available_modules,
+            "my_training": my_training,
             "stats": {
-                "total_courses": len(demo_courses),
-                "completion_rate": "85%",
-                "avg_score": "92%",
+                "total_assigned": 1,
+                "completed": 0,
+                "in_progress": 1,
+                "avg_score": 0,
             },
             "is_demo": True,
+            "user_id": "demo_user"
         },
     )
 

@@ -26,22 +26,22 @@
     <div class="navbar">
         <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
         <div class="nav-links">
-            <a href="/demo" class="nav-link {% if request.url.path == '/demo' %}active{% endif %}">Dashboard</a>
+            <a href="/demo" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">Dashboard</a>
             <a href="/demo/work-orders"
-                class="nav-link {% if request.url.path == '/demo/work-orders' %}active{% endif %}">Work
+                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">Work
                 Orders</a>
             <a href="/demo/assets"
-                class="nav-link {% if request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
             <a href="/analytics/dashboard"
-                class="nav-link {% if request.url.path.startswith('/analytics') %}active{% endif %}">Analytics</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}">Analytics</a>
             <a href="/demo/planner"
-                class="nav-link {% if request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
             <a href="/demo/purchasing"
-                class="nav-link {% if request.url.path.startswith('/demo/purchasing') %}active{% endif %}">Purchasing</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/purchasing') %}active{% endif %}">Purchasing</a>
             <a href="/demo/team"
-                class="nav-link {% if request.url.path.startswith('/demo/team') %}active{% endif %}">Team</a>
-            <a href="https://linesmart-platform-650169261019.us-central1.run.app" target="_blank"
-                class="nav-link">Training</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/team') %}active{% endif %}">Team</a>
+            <a href="/training"
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/training') %}active{% endif %}">Training</a>
             <a href="/demo/ar-mode" class="nav-link">AR Mode</a>
         </div>
         <div class="d-flex align-items-center gap-3">

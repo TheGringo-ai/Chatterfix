@@ -5,20 +5,29 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # Import Firebase modules with error handling
+FIREBASE_ADMIN_AVAILABLE = False
+PYREBASE_AVAILABLE = False
+
 try:
     import firebase_admin
     from firebase_admin import credentials, auth, firestore
-    import pyrebase
-
-    FIREBASE_AVAILABLE = True
+    FIREBASE_ADMIN_AVAILABLE = True
 except ImportError as e:
-    logging.warning(f"Firebase modules not available: {e}")
+    logging.warning(f"Firebase Admin SDK not available: {e}")
     firebase_admin = None
     credentials = None
     auth = None
     firestore = None
+
+try:
+    import pyrebase
+    PYREBASE_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Pyrebase not available: {e}")
     pyrebase = None
-    FIREBASE_AVAILABLE = False
+
+# Backward compatibility flag (true if admin sdk is available, as it's the critical one)
+FIREBASE_AVAILABLE = FIREBASE_ADMIN_AVAILABLE
 
 logger = logging.getLogger(__name__)
 

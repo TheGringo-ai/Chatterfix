@@ -63,8 +63,30 @@ from app.routers import (
 )
 
 # Initialize FastAPI application
-from contextlib import asynccontextmanager
+# Load version information first
+def load_version():
+    """Load version from VERSION.txt file"""
+    import os
+    version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
+    
+    for path in version_paths:
+        try:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    lines = f.readlines()
+                    version = lines[0].strip()
+                    description = lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
+                    return version, description
+        except Exception as e:
+            continue
+    
+    # Fallback to hardcoded version if file not found
+    return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
 
+# Load version information immediately
+APP_VERSION, APP_DESCRIPTION = load_version()
+
+from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -105,29 +127,6 @@ async def lifespan(app: FastAPI):
         # Shutdown
         logger.info("🛑 Shutting down ChatterFix CMMS...")
         logger.info("✅ ChatterFix CMMS shutdown complete")
-
-# Load version information
-def load_version():
-    """Load version from VERSION.txt file"""
-    import os
-    version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
-    
-    for path in version_paths:
-        try:
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    lines = f.readlines()
-                    version = lines[0].strip()
-                    description = lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
-                    return version, description
-        except Exception as e:
-            continue
-    
-    # Fallback to hardcoded version if file not found
-    return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
-
-# Load version information immediately after function definition
-APP_VERSION, APP_DESCRIPTION = load_version()
 
 app = FastAPI(
     title="ChatterFix CMMS API",

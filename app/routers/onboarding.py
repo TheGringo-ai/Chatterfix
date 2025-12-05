@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import gemini_service
 import shutil

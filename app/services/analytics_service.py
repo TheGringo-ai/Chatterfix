@@ -12,9 +12,13 @@ Provides KPIs, metrics, and reporting functionality including:
 import logging
 from datetime import datetime
 from typing import Dict, List, Any
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 
 logger = logging.getLogger(__name__)
+
+
+def get_db_connection():
+    raise NotImplementedError("SQLite support removed")
 
 
 class AnalyticsService:

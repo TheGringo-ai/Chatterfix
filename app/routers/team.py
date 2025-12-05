@@ -12,7 +12,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 from app.services.websocket_manager import websocket_manager
 from app.services.notification_service import notification_service
 from datetime import datetime

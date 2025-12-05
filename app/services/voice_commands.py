@@ -74,7 +74,7 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
             logger.info("XAI_API_KEY not set, using basic voice processing")
 
         # Create AI-enhanced work order
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         cursor = conn.cursor()

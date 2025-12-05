@@ -10,7 +10,7 @@ from enum import Enum
 import logging
 import asyncio
 import random
-from app.core.database import get_database
+from app.core.db_adapter import get_db_adapter
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ class AdvancedSchedulerService:
     """Advanced maintenance scheduling service"""
     
     def __init__(self):
-        self.db = get_database()
+        self.db = get_db_adapter()
         self.technicians: Dict[str, TechnicianProfile] = {}
         self.asset_requirements: Dict[str, AssetRequirement] = {}
         self.active_schedules: Dict[str, Dict] = {}

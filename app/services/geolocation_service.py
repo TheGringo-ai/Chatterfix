@@ -6,7 +6,7 @@ Manages user location tracking with property boundary restrictions and privacy c
 import json
 from typing import Dict, List, Optional
 from datetime import datetime
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 
 
 class GeolocationService:

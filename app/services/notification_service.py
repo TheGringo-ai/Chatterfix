@@ -3,7 +3,7 @@ Intelligent Notification Service
 Handles automatic notification generation and delivery
 """
 
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 from app.services.websocket_manager import websocket_manager
 import logging
 from datetime import datetime

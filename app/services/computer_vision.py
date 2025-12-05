@@ -105,7 +105,7 @@ async def analyze_asset_condition(
 
         # Update asset condition in database if asset_id provided
         if asset_id:
-            from app.core.database import get_db_connection
+            # from app.core.database import get_db_connection
 
             conn = get_db_connection()
             cursor = conn.cursor()

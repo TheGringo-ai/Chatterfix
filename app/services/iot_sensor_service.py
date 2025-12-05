@@ -6,7 +6,7 @@ Handles sensor data collection, threshold monitoring, and automated work order c
 import logging
 from datetime import datetime
 from typing import Dict, List, Any, Optional
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 
 logger = logging.getLogger(__name__)
 

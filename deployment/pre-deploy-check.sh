@@ -170,7 +170,7 @@ fi
 
 # 8. Critical File Existence
 check_start "Checking critical files"
-CRITICAL_FILES=("main.py" "Dockerfile" "requirements.txt" "app/core/database.py")
+CRITICAL_FILES=("main.py" "Dockerfile" "requirements.txt")
 MISSING_FILES=()
 
 for file in "${CRITICAL_FILES[@]}"; do

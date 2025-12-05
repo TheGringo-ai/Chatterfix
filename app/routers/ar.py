@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from app.core.database import get_db_connection
+# # from app.core.database import get_db_connection
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")

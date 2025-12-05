@@ -44,7 +44,7 @@ class ExportService:
 
     def export_work_orders(self, format: str, filters: Dict = None) -> Dict[str, Any]:
         """Export work orders report"""
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -71,7 +71,7 @@ class ExportService:
 
     def export_assets(self, format: str, filters: Dict = None) -> Dict[str, Any]:
         """Export assets report"""
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -96,7 +96,7 @@ class ExportService:
 
     def export_maintenance_history(self, format: str, days: int = 30) -> Dict[str, Any]:
         """Export maintenance history report"""
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:

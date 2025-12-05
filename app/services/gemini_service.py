@@ -257,7 +257,7 @@ class GeminiService:
         priority: str = "Medium",
         asset_id: int = None,
     ):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -286,7 +286,7 @@ class GeminiService:
     async def _update_work_order(
         self, wo_id: int, status: str = None, priority: str = None, notes: str = None
     ):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -321,7 +321,7 @@ class GeminiService:
             conn.close()
 
     async def _update_part_stock(self, part_id: int, quantity_change: int):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -354,7 +354,7 @@ class GeminiService:
     async def _create_asset(
         self, name: str, type: str, location: str, status: str = "Operational"
     ):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         try:
@@ -378,7 +378,7 @@ class GeminiService:
             conn.close()
 
     async def _search_parts(self, query: str):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
         results = conn.execute(
@@ -401,7 +401,7 @@ class GeminiService:
         return {"response": response_text}
 
     async def _get_asset_history(self, asset_name: str):
-        from app.core.database import get_db_connection
+        # from app.core.database import get_db_connection
 
         conn = get_db_connection()
 

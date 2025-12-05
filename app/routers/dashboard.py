@@ -103,7 +103,7 @@ async def get_available_widgets(user_id: int = 1):
     """Get available widgets for user's role"""
     # This would filter based on user role
     # For now, return all widgets
-    from app.core.database import get_db_connection
+    # from app.core.database import get_db_connection
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -144,7 +144,7 @@ async def update_widget_config(widget_id: int, config: dict, user_id: int = 1):
 @router.post("/reset")
 async def reset_dashboard(user_id: int = 1):
     """Reset dashboard to default layout"""
-    from app.core.database import get_db_connection
+    # from app.core.database import get_db_connection
 
     conn = get_db_connection()
     cur = conn.cursor()

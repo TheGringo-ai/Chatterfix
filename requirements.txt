@@ -66,3 +66,4 @@ opencv-python-headless>=4.8.0
 # bandit>=1.7.5
 # safety>=2.3.0
 # pre-commit>=3.5.0
+setuptools

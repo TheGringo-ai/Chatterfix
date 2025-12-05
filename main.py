@@ -84,7 +84,10 @@ def load_version():
     return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
 
 # Load version information immediately
-APP_VERSION, APP_DESCRIPTION = load_version()
+# APP_VERSION, APP_DESCRIPTION = load_version()
+APP_VERSION = "2.1.0-enterprise-planner"
+APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
+print(f"DEBUG: main.py loaded. Version: {APP_VERSION}")
 
 from contextlib import asynccontextmanager
 

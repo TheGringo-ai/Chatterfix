@@ -304,6 +304,8 @@ async def demo_purchasing(request: Request):
 @router.get("/demo/training", response_class=HTMLResponse)
 async def demo_training(request: Request):
     """Demo training page with sample data"""
+    return HTMLResponse("<h1>Debug: Hello World</h1>")
+
     try:
         demo_courses = [
             {

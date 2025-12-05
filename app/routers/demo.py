@@ -304,76 +304,80 @@ async def demo_purchasing(request: Request):
 @router.get("/demo/training", response_class=HTMLResponse)
 async def demo_training(request: Request):
     """Demo training page with sample data"""
-    demo_courses = [
-        {
-            "id": 1,
-            "title": "HVAC Maintenance Fundamentals",
-            "description": "Learn the basics of HVAC system maintenance and troubleshooting",
-            "duration": "4 hours",
-            "difficulty": "Beginner",
-            "completed_by": 12,
-            "total_enrolled": 15,
-        },
-        {
-            "id": 2,
-            "title": "Safety Procedures for Industrial Equipment",
-            "description": "Essential safety protocols for working with industrial machinery",
-            "duration": "2 hours",
-            "difficulty": "Intermediate",
-            "completed_by": 18,
-            "total_enrolled": 18,
-        },
-        {
-            "id": 3,
-            "title": "Predictive Maintenance Techniques",
-            "description": "Advanced techniques for predicting equipment failures",
-            "duration": "6 hours",
-            "difficulty": "Advanced",
-            "completed_by": 5,
-            "total_enrolled": 8,
-        },
-    ]
-
-    # Map demo courses to the structure expected by the template
-    available_modules = [
-        {
-            "id": c["id"],
-            "title": c["title"],
-            "description": c["description"],
-            "difficulty_level": c["difficulty"],
-            "estimated_duration_minutes": int(c["duration"].split()[0]) * 60,
-            "ai_generated": True if c["id"] == 3 else False
-        } for c in demo_courses
-    ]
-
-    # Sample user training
-    my_training = [
-        {
-            "training_module_id": 1,
-            "title": "HVAC Maintenance Fundamentals",
-            "description": "Learn the basics of HVAC system maintenance and troubleshooting",
-            "status": "in_progress",
-            "estimated_duration_minutes": 240,
-            "score": None
-        }
-    ]
-
-    return templates.TemplateResponse(
-        "training_center.html",
-        {
-            "request": request,
-            "available_modules": available_modules,
-            "my_training": my_training,
-            "stats": {
-                "total_assigned": 1,
-                "completed": 0,
-                "in_progress": 1,
-                "avg_score": 0,
+    try:
+        demo_courses = [
+            {
+                "id": 1,
+                "title": "HVAC Maintenance Fundamentals",
+                "description": "Learn the basics of HVAC system maintenance and troubleshooting",
+                "duration": "4 hours",
+                "difficulty": "Beginner",
+                "completed_by": 12,
+                "total_enrolled": 15,
             },
-            "is_demo": True,
-            "user_id": "demo_user"
-        },
-    )
+            {
+                "id": 2,
+                "title": "Safety Procedures for Industrial Equipment",
+                "description": "Essential safety protocols for working with industrial machinery",
+                "duration": "2 hours",
+                "difficulty": "Intermediate",
+                "completed_by": 18,
+                "total_enrolled": 18,
+            },
+            {
+                "id": 3,
+                "title": "Predictive Maintenance Techniques",
+                "description": "Advanced techniques for predicting equipment failures",
+                "duration": "6 hours",
+                "difficulty": "Advanced",
+                "completed_by": 5,
+                "total_enrolled": 8,
+            },
+        ]
+
+        # Map demo courses to the structure expected by the template
+        available_modules = [
+            {
+                "id": c["id"],
+                "title": c["title"],
+                "description": c["description"],
+                "difficulty_level": c["difficulty"],
+                "estimated_duration_minutes": int(c["duration"].split()[0]) * 60,
+                "ai_generated": True if c["id"] == 3 else False
+            } for c in demo_courses
+        ]
+
+        # Sample user training
+        my_training = [
+            {
+                "training_module_id": 1,
+                "title": "HVAC Maintenance Fundamentals",
+                "description": "Learn the basics of HVAC system maintenance and troubleshooting",
+                "status": "in_progress",
+                "estimated_duration_minutes": 240,
+                "score": None
+            }
+        ]
+
+        return templates.TemplateResponse(
+            "training_center.html",
+            {
+                "request": request,
+                "available_modules": available_modules,
+                "my_training": my_training,
+                "stats": {
+                    "total_assigned": 1,
+                    "completed": 0,
+                    "in_progress": 1,
+                    "avg_score": 0,
+                },
+                "is_demo": True,
+                "user_id": "demo_user"
+            },
+        )
+    except Exception as e:
+        import traceback
+        return HTMLResponse(content=f"<h1>Error</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
 
 
 @router.get("/demo/ar-mode", response_class=HTMLResponse)

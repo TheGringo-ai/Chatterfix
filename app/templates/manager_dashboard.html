@@ -4,21 +4,68 @@
 
 {% block extra_head %}
 <style>
+    /* Force light theme for manager dashboard - override dark theme */
+    .container-fluid {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+        min-height: 100vh;
+    }
+    
+    body {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+    }
+    
+    .card {
+        background-color: #ffffff !important;
+        color: #212529 !important;
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .card-body {
+        background-color: #ffffff !important;
+        color: #212529 !important;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #212529 !important;
+    }
+    
+    .text-muted {
+        color: #6c757d !important;
+    }
+    
     .manager-header {
-        background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
-        color: white;
+        background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%) !important;
+        color: white !important;
         padding: 2rem;
         border-radius: 0.5rem;
         margin-bottom: 2rem;
     }
     
+    .manager-header h1 {
+        color: white !important;
+    }
+    
+    .manager-header p {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
     .stat-card {
-        background: white;
+        background: white !important;
+        color: #212529 !important;
         border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         border-left: 4px solid #3b82f6;
         transition: transform 0.2s;
+        border: 1px solid #dee2e6 !important;
     }
     
     .stat-card:hover {
@@ -29,12 +76,12 @@
     .stat-number {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #1e40af;
+        color: #1e40af !important;
         margin-bottom: 0.5rem;
     }
     
     .stat-label {
-        color: #6b7280;
+        color: #6b7280 !important;
         font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -44,12 +91,21 @@
         display: flex;
         align-items: center;
         padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb !important;
         transition: background-color 0.2s;
+        color: #212529 !important;
     }
     
     .activity-item:hover {
-        background-color: #f9fafb;
+        background-color: #f9fafb !important;
+    }
+    
+    .activity-item .activity-content {
+        color: #212529 !important;
+    }
+    
+    .activity-item .activity-content small {
+        color: #6c757d !important;
     }
     
     .activity-icon {
@@ -67,23 +123,31 @@
     .activity-icon.high { background: #fee2e2; color: #ef4444; }
     
     .nav-card {
-        background: white;
+        background: white !important;
+        color: #212529 !important;
         border-radius: 0.5rem;
         padding: 1.5rem;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: all 0.2s;
         text-decoration: none;
-        color: inherit;
-        border: 2px solid transparent;
+        border: 2px solid #dee2e6 !important;
     }
     
     .nav-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        border-color: #3b82f6;
+        border-color: #3b82f6 !important;
         text-decoration: none;
-        color: inherit;
+        color: #212529 !important;
+    }
+    
+    .nav-card h5 {
+        color: #212529 !important;
+    }
+    
+    .nav-card p {
+        color: #6c757d !important;
     }
     
     .nav-card-icon {

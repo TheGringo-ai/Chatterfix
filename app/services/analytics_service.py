@@ -20,10 +20,6 @@ from app.core.firestore_db import get_db_connection
 logger = logging.getLogger(__name__)
 
 
-def get_db_connection():
-    raise NotImplementedError("SQLite support removed")
-
-
 class AnalyticsService:
     """Service for advanced analytics and KPI calculations"""
 

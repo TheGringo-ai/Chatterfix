@@ -3,8 +3,7 @@ Dashboard Service - Widget Data Aggregation
 Provides data for all dashboard widgets based on user role and configuration
 """
 
-import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
 from app.core.firestore_db import get_db_connection

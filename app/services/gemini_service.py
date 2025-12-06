@@ -3,6 +3,8 @@ import logging
 from typing import Optional, Dict, Any
 import json
 
+from app.core.firestore_db import get_db_connection
+
 # Import Google Generative AI with error handling
 try:
     import google.generativeai as genai

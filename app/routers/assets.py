@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from app.core.firestore_db import get_db_connection
+
 # # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import gemini_service
@@ -10,7 +12,6 @@ import shutil
 import os
 from datetime import datetime
 import json
-from typing import List, Dict, Any
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 templates = Jinja2Templates(directory="app/templates")

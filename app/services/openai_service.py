@@ -4,6 +4,8 @@ from openai import OpenAI
 from typing import Optional, Dict, Any
 import json
 
+from app.core.firestore_db import get_db_connection
+
 logger = logging.getLogger(__name__)
 
 

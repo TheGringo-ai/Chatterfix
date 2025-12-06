@@ -7,6 +7,8 @@ import json
 from typing import Dict, List, Optional
 from datetime import datetime
 
+from app.core.firestore_db import get_db_connection
+
 # # from app.core.database import get_db_connection
 
 

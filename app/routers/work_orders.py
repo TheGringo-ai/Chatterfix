@@ -7,6 +7,8 @@ import shutil
 import os
 import logging
 
+from app.core.firestore_db import get_db_connection
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 import os
 
+from app.core.firestore_db import get_db_connection
+
 logger = logging.getLogger(__name__)
 
 XAI_API_KEY = os.getenv("XAI_API_KEY")

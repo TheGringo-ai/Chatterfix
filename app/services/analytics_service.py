@@ -13,6 +13,8 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any
 
+from app.core.firestore_db import get_db_connection
+
 # # from app.core.database import get_db_connection
 
 logger = logging.getLogger(__name__)

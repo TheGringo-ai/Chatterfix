@@ -2,12 +2,12 @@ import os
 import logging
 from typing import Dict, List, Optional, Any, cast
 from datetime import datetime, timezone
+from google.cloud import firestore  # type: ignore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 logger = logging.getLogger(__name__)
 
 # Enforce Firestore availability
-from google.cloud import firestore  # type: ignore
-from google.cloud.firestore_v1.base_query import FieldFilter
 
 FIRESTORE_AVAILABLE = True
 

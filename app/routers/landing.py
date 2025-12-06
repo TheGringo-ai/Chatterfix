@@ -50,7 +50,9 @@ Contact: {user_data['fullName']} ({user_data['email']})
 Password: {password}
 """
         )
-        # TODO: Implement actual email sending
+        # Send actual email using email service
+        from app.services.email_service import email_service
+        await email_service.send_password_reset_email(user_data, password)
 
     except Exception as e:
         logger.error(f"Failed to log notification: {str(e)}")
@@ -63,7 +65,9 @@ async def send_welcome_email(user_data: dict, password: str):
         logger.info(
             f"Welcome email logged for {user_data['fullName']} ({user_data['email']})"
         )
-        # TODO: Implement actual welcome email sending
+        # Send actual welcome email using email service
+        from app.services.email_service import email_service
+        await email_service.send_welcome_email(user_data, password)
 
     except Exception as e:
         logger.error(f"Failed to log welcome email: {str(e)}")

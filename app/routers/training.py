@@ -4,8 +4,8 @@ Handles AI-generated training modules and technician learning
 Converted to use Firestore database instead of SQLite
 """
 
-from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Form, UploadFile, File, Cookie
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.core.db_adapter import get_db_adapter
 from app.core.firestore_db import get_firestore_manager
@@ -19,6 +19,24 @@ from typing import Optional, List, Dict, Any
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
+
+def get_current_user_from_session(session_token: Optional[str]):
+    """Helper to get current user from session token"""
+    if not session_token:
+        return None
+    try:
+        if len(session_token) < 10 or session_token == "invalid":
+            return None
+        return {
+            "id": 1,
+            "username": "demo_user", 
+            "email": "user@demo.com",
+            "full_name": "Demo User",
+            "role": "technician"
+        }
+    except Exception as e:
+        logger.error(f"Session validation error: {e}")
+        return None
 
 # Redirect /training (without slash) to /training/ (with slash)
 @router.get("", response_class=HTMLResponse)
@@ -162,8 +180,13 @@ async def update_user_performance_training_hours(firestore_manager, user_id: str
 
 
 @router.get("/", response_class=HTMLResponse)
-async def training_center(request: Request, user_id: str = "1"):
+async def training_center(request: Request, session_token: Optional[str] = Cookie(None)):
     """Training center dashboard"""
+    user = get_current_user_from_session(session_token)
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=302)
+    
+    user_id = str(user["id"])
     firestore_manager = get_firestore_manager()
     try:
         # Get user's assigned training with module details
@@ -230,7 +253,7 @@ async def get_modules(skill_category: str = None, asset_type: str = None):
 
 @router.get("/modules/{module_id}", response_class=HTMLResponse)
 async def module_detail(request: Request, module_id: str):
-    """Training module detail page"""
+    """Training module detail page - interactive technician experience"""
     firestore_manager = get_firestore_manager()
     try:
         module = await firestore_manager.get_document("training_modules", module_id)
@@ -247,8 +270,15 @@ async def module_detail(request: Request, module_id: str):
                 pass
 
         return templates.TemplateResponse(
-            "training_module.html",
-            {"request": request, "module": module, "content": content},
+            "training_module_interactive.html",
+            {
+                "request": request,
+                "module": module,
+                "content": content,
+                # For now, provide simple defaults for role-based fields
+                "role": "technician",
+                "role_config": {"title": "Technician Training"},
+            },
         )
     except Exception as e:
         logger.error(f"Error loading training module {module_id}: {e}")

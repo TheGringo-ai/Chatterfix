@@ -421,37 +421,142 @@ class HealthMonitor:
             }
 
     async def check_ai_services(self) -> Dict[str, Any]:
-        """Check AI services status"""
-        # This would be expanded to check actual AI service health
-        # For now, simulate based on process availability
-
+        """Check AI services status by testing actual connections and capabilities"""
         ai_metrics = {}
+        overall_status = "healthy"
+        issues = []
 
-        # Check if AI processes are running (simplified)
         try:
-            # This could be enhanced to check actual AI model availability
-            ai_metrics["llama_available"] = HealthMetric(
-                "llama_model", "simulated_healthy", "healthy"
-            )
-            ai_metrics["voice_processing"] = HealthMetric(
-                "voice_processor", "available", "healthy"
-            )
+            # Test Gemini service
+            try:
+                from app.services.gemini_service import GeminiService
+                gemini = GeminiService()
+                
+                if hasattr(gemini, '_get_api_key') and gemini._get_api_key():
+                    if hasattr(gemini, '_get_model'):
+                        model = gemini._get_model()
+                        if model:
+                            ai_metrics["gemini"] = HealthMetric(
+                                "gemini_service", "available", "healthy"
+                            )
+                        else:
+                            ai_metrics["gemini"] = HealthMetric(
+                                "gemini_service", "model_unavailable", "warning"
+                            )
+                            overall_status = "warning"
+                            issues.append("Gemini model unavailable")
+                    else:
+                        ai_metrics["gemini"] = HealthMetric(
+                            "gemini_service", "not_configured", "warning"
+                        )
+                        overall_status = "warning"
+                        issues.append("Gemini not configured")
+                else:
+                    ai_metrics["gemini"] = HealthMetric(
+                        "gemini_service", "no_api_key", "critical"
+                    )
+                    overall_status = "critical"
+                    issues.append("Gemini API key missing")
+                    
+            except Exception as e:
+                ai_metrics["gemini"] = HealthMetric(
+                    "gemini_service", f"error: {str(e)[:50]}", "critical"
+                )
+                overall_status = "critical"
+                issues.append(f"Gemini error: {str(e)[:50]}")
+
+            # Test OpenAI service
+            try:
+                from app.services.openai_service import OpenAIService
+                openai_svc = OpenAIService()
+                
+                if hasattr(openai_svc, '_get_api_key') and openai_svc._get_api_key():
+                    if hasattr(openai_svc, '_get_client'):
+                        client = openai_svc._get_client()
+                        if client:
+                            ai_metrics["openai"] = HealthMetric(
+                                "openai_service", "available", "healthy"
+                            )
+                        else:
+                            ai_metrics["openai"] = HealthMetric(
+                                "openai_service", "client_unavailable", "warning"
+                            )
+                            if overall_status == "healthy":
+                                overall_status = "warning"
+                            issues.append("OpenAI client unavailable")
+                    else:
+                        ai_metrics["openai"] = HealthMetric(
+                            "openai_service", "not_configured", "warning"
+                        )
+                        if overall_status == "healthy":
+                            overall_status = "warning"
+                        issues.append("OpenAI not configured")
+                else:
+                    ai_metrics["openai"] = HealthMetric(
+                        "openai_service", "no_api_key", "warning"
+                    )
+                    if overall_status == "healthy":
+                        overall_status = "warning"
+                    issues.append("OpenAI API key missing")
+                    
+            except Exception as e:
+                ai_metrics["openai"] = HealthMetric(
+                    "openai_service", f"error: {str(e)[:50]}", "warning"
+                )
+                if overall_status == "healthy":
+                    overall_status = "warning"
+                issues.append(f"OpenAI error: {str(e)[:50]}")
+
+            # Test computer vision integration
+            try:
+                from app.services.computer_vision import recognize_part
+                # Quick test without actual image data
+                test_result = await recognize_part()
+                if test_result.get("success"):
+                    ai_metrics["computer_vision"] = HealthMetric(
+                        "computer_vision", "functional", "healthy"
+                    )
+                else:
+                    ai_metrics["computer_vision"] = HealthMetric(
+                        "computer_vision", "degraded", "warning"
+                    )
+                    if overall_status == "healthy":
+                        overall_status = "warning"
+                    issues.append("Computer vision degraded")
+                    
+            except Exception as e:
+                ai_metrics["computer_vision"] = HealthMetric(
+                    "computer_vision", f"error: {str(e)[:50]}", "warning"
+                )
+                if overall_status == "healthy":
+                    overall_status = "warning"
+                issues.append(f"Computer vision error: {str(e)[:50]}")
+
+            # Generate summary
+            healthy_count = len([m for m in ai_metrics.values() if m.status == "healthy"])
+            total_count = len(ai_metrics)
+            
+            if issues:
+                summary = f"AI services: {healthy_count}/{total_count} healthy. Issues: {'; '.join(issues[:3])}"
+            else:
+                summary = f"All AI services operational ({healthy_count}/{total_count})"
 
             return {
-                "status": "healthy",
+                "status": overall_status,
                 "metrics": {k: asdict(v) for k, v in ai_metrics.items()},
-                "summary": "AI services operational",
+                "summary": summary,
             }
 
         except Exception as e:
+            logger.error(f"AI services health check failed: {e}")
             return {
-                "status": "warning",
+                "status": "critical",
                 "metrics": {
-                    "ai_services": HealthMetric(
-                        "ai_services", f"degraded: {str(e)}", "warning"
-                    )
+                    "ai_services": asdict(HealthMetric(
+                        "ai_services", f"health_check_failed: {str(e)}", "critical"
+                    ))
                 },
-                "summary": "AI services degraded",
+                "summary": f"AI services health check failed: {str(e)[:100]}",
             }
 
     async def check_external_dependencies(self) -> Dict[str, Any]:
@@ -565,7 +670,7 @@ class HealthMonitor:
                                     else None
                                 ),
                                 metric_data["status"],
-                                json.dumps(metric_data),
+                                json.dumps(metric_data, default=str),
                             ),
                         )
 
@@ -663,10 +768,76 @@ class HealthMonitor:
                 "recent_incidents": [],
             }
 
-        # TODO: replace this with your real query / logic
-        # example stub:
-        # async with aiosqlite.connect(self.db_path) as db:
-        #     ...
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.cursor()
+                since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+                
+                # Get metrics summary
+                await cursor.execute(
+                    """
+                    SELECT check_name, metric_name, COUNT(*) as count, 
+                           AVG(value) as avg_value, status
+                    FROM health_metrics 
+                    WHERE timestamp > ? AND value IS NOT NULL
+                    GROUP BY check_name, metric_name, status
+                    ORDER BY timestamp DESC
+                    """, 
+                    (since_time.isoformat(),)
+                )
+                
+                metrics_rows = await cursor.fetchall()
+                metrics_summary = [
+                    {
+                        "check_name": row[0],
+                        "metric_name": row[1], 
+                        "count": row[2],
+                        "average_value": round(row[3], 2) if row[3] else 0,
+                        "status": row[4]
+                    }
+                    for row in metrics_rows
+                ]
+                
+                # Get recent incidents
+                await cursor.execute(
+                    """
+                    SELECT type, severity, description, timestamp, resolved
+                    FROM incidents 
+                    WHERE timestamp > ?
+                    ORDER BY timestamp DESC
+                    LIMIT 20
+                    """,
+                    (since_time.isoformat(),)
+                )
+                
+                incident_rows = await cursor.fetchall()
+                recent_incidents = [
+                    {
+                        "type": row[0],
+                        "severity": row[1],
+                        "description": row[2],
+                        "timestamp": row[3],
+                        "resolved": bool(row[4])
+                    }
+                    for row in incident_rows
+                ]
+                
+                return {
+                    "time_range_hours": hours,
+                    "metrics_summary": metrics_summary,
+                    "recent_incidents": recent_incidents,
+                    "total_metrics": len(metrics_summary),
+                    "open_incidents": len([i for i in recent_incidents if not i["resolved"]])
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting health history: {e}")
+            return {
+                "time_range_hours": hours,
+                "metrics_summary": [],
+                "recent_incidents": [],
+                "error": str(e)
+            }
 
 
 # Global health monitor instance

@@ -117,6 +117,59 @@ class DatabaseAdapter:
             return await self.firestore_manager.count_asset_parts(asset_id)
         return 0
 
+    # Training methods
+    async def create_training_module(self, module_data: Dict[str, Any]) -> str:
+        """Create a training module"""
+        if self.firestore_manager:
+            return await self.firestore_manager.create_training_module(module_data)
+        raise NotImplementedError("Firestore not available")
+
+    async def get_training_modules(
+        self, skill_category: Optional[str] = None, asset_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get training modules"""
+        if self.firestore_manager:
+            filters = []
+            if skill_category:
+                filters.append({"field": "skill_category", "operator": "==", "value": skill_category})
+            if asset_type:
+                filters.append({"field": "asset_type", "operator": "==", "value": asset_type})
+            
+            return await self.firestore_manager.get_collection(
+                "training_modules", 
+                order_by="-created_at",
+                filters=filters if filters else None
+            )
+        return []
+
+    async def get_training_module(self, module_id: str) -> Optional[Dict[str, Any]]:
+        """Get a training module by ID"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_document("training_modules", module_id)
+        return None
+
+    async def create_user_training(self, training_data: Dict[str, Any]) -> str:
+        """Create user training assignment"""
+        if self.firestore_manager:
+            return await self.firestore_manager.create_user_training(training_data)
+        raise NotImplementedError("Firestore not available")
+
+    async def get_user_training(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get user training assignments"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_user_training(user_id)
+        return []
+
+    async def update_user_training(
+        self, training_id: str, update_data: Dict[str, Any]
+    ) -> bool:
+        """Update user training record"""
+        if self.firestore_manager:
+            return await self.firestore_manager.update_document(
+                "user_training", training_id, update_data
+            )
+        return False
+
 
 # Global database adapter instance
 db_adapter = DatabaseAdapter()

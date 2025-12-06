@@ -55,16 +55,17 @@ function showModal(title, content, actions = []) {
         style.textContent = `
             .cmms-modal-backdrop {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+                background: var(--modal-overlay); backdrop-filter: blur(5px);
             }
             .cmms-modal-content {
-                background: rgba(255,255,255,0.15); backdrop-filter: blur(15px);
-                border-radius: 15px; border: 1px solid rgba(255,255,255,0.2);
+                background: var(--bg-glass-heavy); backdrop-filter: blur(20px);
+                border-radius: 20px; border: var(--card-border);
                 max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;
-                color: white;
+                color: var(--text-primary);
+                box-shadow: var(--shadow-glass);
             }
             .cmms-modal-header {
-                padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding: 1.5rem; border-bottom: 1px solid var(--border-glass);
                 display: flex; justify-content: space-between; align-items: center;
             }
             .cmms-modal-header h3 { margin: 0; }

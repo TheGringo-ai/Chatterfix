@@ -21,7 +21,12 @@
         text-align: center;
         position: relative;
         overflow: hidden;
+        color: white; /* Ensure text is always white on this dark gradient */
+        box-shadow: var(--shadow-glass);
     }
+    
+    /* ... (animation CSS skipped for brevity if unchanged, but I must provide full block if valid) ... */
+    /* Wait, replace_file_content requires exact context. Using variable replacement is better. */
 
     .ai-brain::before {
         content: '';
@@ -35,13 +40,8 @@
     }
 
     @keyframes rotate {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     .ai-brain-content {
@@ -49,6 +49,7 @@
         z-index: 2;
     }
 
+    /* ... pulsing dot ... */
     .ai-pulse {
         display: inline-block;
         width: 12px;
@@ -57,31 +58,17 @@
         border-radius: 50%;
         animation: pulse 2s infinite;
         margin-left: 10px;
+        box-shadow: 0 0 10px #27ae60;
     }
 
     @keyframes pulse {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.3;
-        }
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
     }
 
-    .predictions {
-        grid-column: 1 / 2;
-    }
-
-    .realtime-monitor {
-        grid-column: 2 / 3;
-    }
-
-    .ai-assistant {
-        grid-column: 3 / 4;
-    }
+    .predictions { grid-column: 1 / 2; }
+    .realtime-monitor { grid-column: 2 / 3; }
+    .ai-assistant { grid-column: 3 / 4; }
 
     .metrics-grid {
         display: grid;
@@ -93,110 +80,117 @@
     .metric {
         text-align: center;
         padding: 1rem;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 10px;
+        background: var(--bg-glass); /* Use variable instead of rgba(0,0,0,0.3) */
+        border-radius: 12px;
+        border: var(--card-border);
+        transition: transform 0.2s;
+    }
+    
+    .metric:hover {
+        transform: translateY(-2px);
+        background: var(--bg-glass-hover);
     }
 
     .metric-value {
         font-size: 2rem;
         font-weight: bold;
-        color: #3498db;
+        color: var(--accent-color);
+        text-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
     }
 
     .metric-label {
         font-size: 0.9rem;
-        opacity: 0.8;
+        opacity: 0.9;
         margin-top: 0.5rem;
+        color: var(--text-primary);
     }
 
     .chat-messages {
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 10px;
+        background: var(--bg-body); /* Better contrast area for chat */
+        border-radius: 12px;
         padding: 1rem;
         height: 200px;
         overflow-y: auto;
         margin: 1rem 0;
+        border: var(--card-border);
     }
 
     .message {
         margin: 0.5rem 0;
-        padding: 0.5rem;
-        border-radius: 8px;
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.4;
     }
 
     .message-ai {
-        background: rgba(52, 152, 219, 0.3);
-        border-left: 3px solid #3498db;
+        background: var(--bg-glass);
+        border-left: 3px solid var(--accent-color);
+        color: var(--text-primary);
     }
 
     .message-user {
-        background: rgba(39, 174, 96, 0.3);
+        background: rgba(39, 174, 96, 0.15);
         border-left: 3px solid #27ae60;
+        color: var(--text-primary);
+        text-align: right;
     }
 
     .ai-capabilities {
         grid-column: 1 / -1;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
         margin-top: 2rem;
     }
 
     .capability-card {
-        background: linear-gradient(135deg, rgba(74, 144, 226, 0.3) 0%, rgba(80, 200, 120, 0.3) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        padding: 1.5rem;
+        background: var(--bg-glass);
+        border: var(--card-border);
+        border-radius: 20px;
+        padding: 2rem;
         text-align: center;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
     }
 
     .capability-card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        box-shadow: var(--shadow-glass);
+        background: var(--bg-glass-hover);
+        border-color: var(--accent-color);
     }
 
     .capability-icon {
         font-size: 3rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         display: block;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
     }
 
     .capability-title {
         font-size: 1.3rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
+        font-weight: 700;
+        margin-bottom: 0.8rem;
+        color: var(--text-primary);
     }
 
     .capability-description {
         opacity: 0.8;
-        font-size: 0.9rem;
-        line-height: 1.4;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
     }
 
     @media (max-width: 1200px) {
-        .dashboard-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .ai-brain {
-            grid-column: 1 / -1;
-        }
-
-        .realtime-monitor {
-            grid-column: 1 / -1;
-        }
+        .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        .ai-brain, .realtime-monitor { grid-column: 1 / -1; }
     }
 
     @media (max-width: 768px) {
-        .dashboard-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .metrics-grid {
-            grid-template-columns: 1fr;
-        }
+        .dashboard-grid { grid-template-columns: 1fr; }
+        .metrics-grid { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}

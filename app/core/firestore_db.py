@@ -533,16 +533,36 @@ class FirestoreSQLiteWrapper:
         if "SELECT" in query.upper():
             if "users" in query.lower():
                 self.last_query_result = [
-                    {"id": 1, "full_name": "Demo User", "role": "technician", "status": "available"},
-                    {"id": 2, "full_name": "Manager Demo", "role": "manager", "status": "available"}
+                    {
+                        "id": 1,
+                        "full_name": "Demo User",
+                        "role": "technician",
+                        "status": "available",
+                    },
+                    {
+                        "id": 2,
+                        "full_name": "Manager Demo",
+                        "role": "manager",
+                        "status": "available",
+                    },
                 ]
             elif "team_messages" in query.lower():
                 self.last_query_result = [
-                    {"id": 1, "sender_name": "Demo User", "message": "Demo message", "created_date": datetime.now()}
+                    {
+                        "id": 1,
+                        "sender_name": "Demo User",
+                        "message": "Demo message",
+                        "created_date": datetime.now(),
+                    }
                 ]
             elif "assets" in query.lower():
                 self.last_query_result = [
-                    {"id": 1, "name": "Demo Asset", "status": "Active", "criticality": "Medium"}
+                    {
+                        "id": 1,
+                        "name": "Demo Asset",
+                        "status": "Active",
+                        "criticality": "Medium",
+                    }
                 ]
             else:
                 self.last_query_result = []

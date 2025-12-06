@@ -2,7 +2,7 @@
 Manager Dashboard Router
 Comprehensive management interface for ChatterFix CMMS
 - Technician onboarding and management
-- Performance reviews and analytics  
+- Performance reviews and analytics
 - Asset performance monitoring
 - Inventory and cost management
 - Complete application control
@@ -29,6 +29,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # ========== MAIN MANAGER DASHBOARD ==========
 
+
 @router.get("/", response_class=HTMLResponse)
 async def manager_dashboard(request: Request):
     """Comprehensive Manager Dashboard - Central Command Center"""
@@ -43,7 +44,7 @@ async def manager_dashboard(request: Request):
             "overdue_maintenance": 8,
             "monthly_costs": 45250.00,
             "efficiency_score": 87.5,
-            "inventory_alerts": 12
+            "inventory_alerts": 12,
         }
 
         # Get recent activities for timeline
@@ -52,40 +53,70 @@ async def manager_dashboard(request: Request):
                 "type": "technician_added",
                 "message": "New technician John Smith completed onboarding",
                 "timestamp": datetime.now() - timedelta(hours=2),
-                "priority": "normal"
+                "priority": "normal",
             },
             {
-                "type": "asset_alert", 
+                "type": "asset_alert",
                 "message": "Pump #347 requires immediate attention",
                 "timestamp": datetime.now() - timedelta(hours=4),
-                "priority": "high"
+                "priority": "high",
             },
             {
                 "type": "performance_review",
-                "message": "Monthly performance reviews ready for 8 technicians", 
+                "message": "Monthly performance reviews ready for 8 technicians",
                 "timestamp": datetime.now() - timedelta(hours=6),
-                "priority": "normal"
+                "priority": "normal",
             },
             {
                 "type": "cost_alert",
                 "message": "Parts inventory costs exceeded budget by 12%",
                 "timestamp": datetime.now() - timedelta(hours=8),
-                "priority": "high"
-            }
+                "priority": "high",
+            },
         ]
 
         # Get top performing technicians
         top_technicians = [
-            {"name": "Sarah Johnson", "completion_rate": 96.5, "avg_time": 2.3, "rating": 4.8},
-            {"name": "Mike Rodriguez", "completion_rate": 94.2, "avg_time": 2.1, "rating": 4.7},
-            {"name": "Lisa Chen", "completion_rate": 92.8, "avg_time": 2.5, "rating": 4.6}
+            {
+                "name": "Sarah Johnson",
+                "completion_rate": 96.5,
+                "avg_time": 2.3,
+                "rating": 4.8,
+            },
+            {
+                "name": "Mike Rodriguez",
+                "completion_rate": 94.2,
+                "avg_time": 2.1,
+                "rating": 4.7,
+            },
+            {
+                "name": "Lisa Chen",
+                "completion_rate": 92.8,
+                "avg_time": 2.5,
+                "rating": 4.6,
+            },
         ]
 
         # Get critical assets requiring attention
         critical_assets = [
-            {"name": "HVAC Unit #12", "criticality": "Critical", "last_service": "2024-11-15", "status": "Overdue"},
-            {"name": "Generator #3", "criticality": "High", "last_service": "2024-11-28", "status": "Due Soon"},
-            {"name": "Pump Station A", "criticality": "Critical", "last_service": "2024-10-30", "status": "Overdue"}
+            {
+                "name": "HVAC Unit #12",
+                "criticality": "Critical",
+                "last_service": "2024-11-15",
+                "status": "Overdue",
+            },
+            {
+                "name": "Generator #3",
+                "criticality": "High",
+                "last_service": "2024-11-28",
+                "status": "Due Soon",
+            },
+            {
+                "name": "Pump Station A",
+                "criticality": "Critical",
+                "last_service": "2024-10-30",
+                "status": "Overdue",
+            },
         ]
 
         return templates.TemplateResponse(
@@ -95,8 +126,8 @@ async def manager_dashboard(request: Request):
                 "overview_stats": overview_stats,
                 "recent_activities": recent_activities,
                 "top_technicians": top_technicians,
-                "critical_assets": critical_assets
-            }
+                "critical_assets": critical_assets,
+            },
         )
     finally:
         conn.close()
@@ -104,7 +135,8 @@ async def manager_dashboard(request: Request):
 
 # ========== TECHNICIAN MANAGEMENT ==========
 
-@router.get("/technicians", response_class=HTMLResponse) 
+
+@router.get("/technicians", response_class=HTMLResponse)
 async def technician_management(request: Request):
     """Technician Management - Onboarding, Performance, Scheduling"""
     conn = get_db_connection()
@@ -114,7 +146,7 @@ async def technician_management(request: Request):
             {
                 "id": 1,
                 "name": "Sarah Johnson",
-                "role": "Senior Technician", 
+                "role": "Senior Technician",
                 "department": "HVAC",
                 "hire_date": "2023-03-15",
                 "status": "Active",
@@ -123,10 +155,10 @@ async def technician_management(request: Request):
                 "customer_rating": 4.8,
                 "certifications": ["HVAC Level 3", "Electrical Basic"],
                 "last_training": "2024-11-01",
-                "onboarding_status": "Complete"
+                "onboarding_status": "Complete",
             },
             {
-                "id": 2, 
+                "id": 2,
                 "name": "Mike Rodriguez",
                 "role": "Technician",
                 "department": "Mechanical",
@@ -137,7 +169,7 @@ async def technician_management(request: Request):
                 "customer_rating": 4.7,
                 "certifications": ["Mechanical Repair", "Safety Level 2"],
                 "last_training": "2024-10-15",
-                "onboarding_status": "Complete"
+                "onboarding_status": "Complete",
             },
             {
                 "id": 3,
@@ -151,39 +183,39 @@ async def technician_management(request: Request):
                 "customer_rating": 0,
                 "certifications": [],
                 "last_training": None,
-                "onboarding_status": "In Progress"
-            }
+                "onboarding_status": "In Progress",
+            },
         ]
 
         # Get onboarding pipeline
         onboarding_pipeline = [
             {
                 "name": "Jessica Wang",
-                "position": "Electrical Apprentice", 
+                "position": "Electrical Apprentice",
                 "start_date": "2024-11-15",
                 "progress": 65,
                 "current_module": "Electrical Safety Protocols",
                 "expected_completion": "2024-12-15",
-                "status": "On Track"
+                "status": "On Track",
             },
             {
-                "name": "David Kim", 
+                "name": "David Kim",
                 "position": "HVAC Technician",
                 "start_date": "2024-12-01",
                 "progress": 25,
                 "current_module": "HVAC Fundamentals",
                 "expected_completion": "2024-12-30",
-                "status": "On Track"
+                "status": "On Track",
             },
             {
                 "name": "Maria Santos",
-                "position": "Maintenance Coordinator", 
+                "position": "Maintenance Coordinator",
                 "start_date": "2024-12-05",
                 "progress": 10,
                 "current_module": "CMMS Overview",
-                "expected_completion": "2025-01-05", 
-                "status": "Just Started"
-            }
+                "expected_completion": "2025-01-05",
+                "status": "Just Started",
+            },
         ]
 
         return templates.TemplateResponse(
@@ -191,8 +223,8 @@ async def technician_management(request: Request):
             {
                 "request": request,
                 "technicians": technicians,
-                "onboarding_pipeline": onboarding_pipeline
-            }
+                "onboarding_pipeline": onboarding_pipeline,
+            },
         )
     finally:
         conn.close()
@@ -204,7 +236,7 @@ async def start_technician_onboarding(
     email: str = Form(...),
     role: str = Form(...),
     department: str = Form(...),
-    start_date: str = Form(...)
+    start_date: str = Form(...),
 ):
     """Start onboarding process for new technician"""
     conn = get_db_connection()
@@ -219,17 +251,19 @@ async def start_technician_onboarding(
             "status": "initiated",
             "progress": 0,
             "created_by": "manager",
-            "created_date": datetime.now()
+            "created_date": datetime.now(),
         }
-        
+
         # In real implementation, would save to Firestore
         logger.info(f"Started onboarding for {name} as {role}")
-        
-        return JSONResponse({
-            "success": True,
-            "message": f"Onboarding initiated for {name}",
-            "onboarding_id": "onboard_001"
-        })
+
+        return JSONResponse(
+            {
+                "success": True,
+                "message": f"Onboarding initiated for {name}",
+                "onboarding_id": "onboard_001",
+            }
+        )
     except Exception as e:
         logger.error(f"Error starting onboarding: {e}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
@@ -238,6 +272,7 @@ async def start_technician_onboarding(
 
 
 # ========== PERFORMANCE ANALYTICS ==========
+
 
 @router.get("/performance", response_class=HTMLResponse)
 async def performance_analytics(request: Request):
@@ -252,15 +287,15 @@ async def performance_analytics(request: Request):
                 "avg_completion_time": 2.3,
                 "customer_satisfaction": 4.8,
                 "efficiency_score": 96.5,
-                "trend": "up"
+                "trend": "up",
             },
             {
-                "name": "Mike Rodriguez", 
+                "name": "Mike Rodriguez",
                 "work_orders_completed": 24,
                 "avg_completion_time": 2.1,
                 "customer_satisfaction": 4.7,
                 "efficiency_score": 94.2,
-                "trend": "up"
+                "trend": "up",
             },
             {
                 "name": "Lisa Chen",
@@ -268,8 +303,8 @@ async def performance_analytics(request: Request):
                 "avg_completion_time": 2.5,
                 "customer_satisfaction": 4.6,
                 "efficiency_score": 92.8,
-                "trend": "stable"
-            }
+                "trend": "stable",
+            },
         ]
 
         # Get asset performance data
@@ -280,7 +315,7 @@ async def performance_analytics(request: Request):
                 "maintenance_cost": 2450.00,
                 "mtbf": 720,  # Mean time between failures
                 "last_failure": "2024-10-15",
-                "efficiency_rating": "Good"
+                "efficiency_rating": "Good",
             },
             {
                 "name": "Generator #3",
@@ -288,7 +323,7 @@ async def performance_analytics(request: Request):
                 "maintenance_cost": 1875.00,
                 "mtbf": 1440,
                 "last_failure": "2024-08-22",
-                "efficiency_rating": "Excellent"
+                "efficiency_rating": "Excellent",
             },
             {
                 "name": "Pump Station A",
@@ -296,8 +331,8 @@ async def performance_analytics(request: Request):
                 "maintenance_cost": 3250.00,
                 "mtbf": 480,
                 "last_failure": "2024-11-28",
-                "efficiency_rating": "Needs Attention"
-            }
+                "efficiency_rating": "Needs Attention",
+            },
         ]
 
         # Get department performance overview
@@ -307,22 +342,22 @@ async def performance_analytics(request: Request):
                 "technicians": 5,
                 "avg_performance": 94.2,
                 "work_orders": 45,
-                "customer_rating": 4.7
+                "customer_rating": 4.7,
             },
             {
                 "department": "Mechanical",
-                "technicians": 4, 
+                "technicians": 4,
                 "avg_performance": 91.8,
                 "work_orders": 38,
-                "customer_rating": 4.5
+                "customer_rating": 4.5,
             },
             {
                 "department": "Electrical",
                 "technicians": 3,
                 "avg_performance": 89.5,
                 "work_orders": 28,
-                "customer_rating": 4.4
-            }
+                "customer_rating": 4.4,
+            },
         ]
 
         return templates.TemplateResponse(
@@ -331,14 +366,15 @@ async def performance_analytics(request: Request):
                 "request": request,
                 "technician_performance": technician_performance,
                 "asset_performance": asset_performance,
-                "department_stats": department_stats
-            }
+                "department_stats": department_stats,
+            },
         )
     finally:
         conn.close()
 
 
 # ========== ASSET MONITORING ==========
+
 
 @router.get("/assets", response_class=HTMLResponse)
 async def asset_monitoring(request: Request):
@@ -358,7 +394,7 @@ async def asset_monitoring(request: Request):
                 "next_service": "2024-12-15",
                 "total_cost_ytd": 4250.00,
                 "downtime_hours": 12.5,
-                "criticality": "Critical"
+                "criticality": "Critical",
             },
             {
                 "id": 2,
@@ -371,7 +407,7 @@ async def asset_monitoring(request: Request):
                 "next_service": "2025-02-28",
                 "total_cost_ytd": 1875.00,
                 "downtime_hours": 2.0,
-                "criticality": "Critical"
+                "criticality": "Critical",
             },
             {
                 "id": 3,
@@ -384,8 +420,8 @@ async def asset_monitoring(request: Request):
                 "next_service": "2024-12-10",
                 "total_cost_ytd": 6750.00,
                 "downtime_hours": 28.5,
-                "criticality": "High"
-            }
+                "criticality": "High",
+            },
         ]
 
         # Get maintenance schedule
@@ -396,15 +432,15 @@ async def asset_monitoring(request: Request):
                 "scheduled_date": "2024-12-15",
                 "technician": "Sarah Johnson",
                 "estimated_duration": 4,
-                "status": "Scheduled"
+                "status": "Scheduled",
             },
             {
-                "asset": "Pump Station A", 
+                "asset": "Pump Station A",
                 "type": "Corrective",
                 "scheduled_date": "2024-12-10",
                 "technician": "Mike Rodriguez",
                 "estimated_duration": 6,
-                "status": "Urgent"
+                "status": "Urgent",
             },
             {
                 "asset": "Elevator #2",
@@ -412,8 +448,8 @@ async def asset_monitoring(request: Request):
                 "scheduled_date": "2024-12-12",
                 "technician": "Lisa Chen",
                 "estimated_duration": 2,
-                "status": "Scheduled"
-            }
+                "status": "Scheduled",
+            },
         ]
 
         # Get cost analysis by asset category
@@ -422,26 +458,26 @@ async def asset_monitoring(request: Request):
                 "category": "HVAC Systems",
                 "total_cost": 18500.00,
                 "percentage": 35.2,
-                "trend": "up"
+                "trend": "up",
             },
             {
                 "category": "Electrical",
                 "total_cost": 12750.00,
                 "percentage": 24.3,
-                "trend": "stable"
+                "trend": "stable",
             },
             {
                 "category": "Mechanical",
                 "total_cost": 15200.00,
                 "percentage": 28.9,
-                "trend": "down"
+                "trend": "down",
             },
             {
                 "category": "Plumbing",
                 "total_cost": 6100.00,
                 "percentage": 11.6,
-                "trend": "stable"
-            }
+                "trend": "stable",
+            },
         ]
 
         return templates.TemplateResponse(
@@ -450,14 +486,15 @@ async def asset_monitoring(request: Request):
                 "request": request,
                 "assets_overview": assets_overview,
                 "maintenance_schedule": maintenance_schedule,
-                "cost_analysis": cost_analysis
-            }
+                "cost_analysis": cost_analysis,
+            },
         )
     finally:
         conn.close()
 
 
 # ========== INVENTORY & COST MANAGEMENT ==========
+
 
 @router.get("/inventory", response_class=HTMLResponse)
 async def inventory_management(request: Request):
@@ -477,10 +514,10 @@ async def inventory_management(request: Request):
                 "total_value": 1137.50,
                 "status": "In Stock",
                 "supplier": "HVAC Supply Co",
-                "last_ordered": "2024-11-15"
+                "last_ordered": "2024-11-15",
             },
             {
-                "part_number": "ELE-SW-205", 
+                "part_number": "ELE-SW-205",
                 "name": "Circuit Breaker 20A",
                 "category": "Electrical",
                 "current_stock": 5,
@@ -490,7 +527,7 @@ async def inventory_management(request: Request):
                 "total_value": 625.00,
                 "status": "Low Stock",
                 "supplier": "Electrical Parts Plus",
-                "last_ordered": "2024-10-28"
+                "last_ordered": "2024-10-28",
             },
             {
                 "part_number": "PMP-SL-440",
@@ -503,16 +540,40 @@ async def inventory_management(request: Request):
                 "total_value": 0.00,
                 "status": "Out of Stock",
                 "supplier": "Industrial Pump Supply",
-                "last_ordered": "2024-09-15"
-            }
+                "last_ordered": "2024-09-15",
+            },
         ]
 
         # Get cost breakdown by month
         monthly_costs = [
-            {"month": "Nov 2024", "labor": 15250.00, "parts": 8975.00, "external": 3200.00, "total": 27425.00},
-            {"month": "Oct 2024", "labor": 16800.00, "parts": 12450.00, "external": 2750.00, "total": 32000.00},
-            {"month": "Sep 2024", "labor": 14600.00, "parts": 9875.00, "external": 4100.00, "total": 28575.00},
-            {"month": "Aug 2024", "labor": 15950.00, "parts": 11250.00, "external": 1850.00, "total": 29050.00}
+            {
+                "month": "Nov 2024",
+                "labor": 15250.00,
+                "parts": 8975.00,
+                "external": 3200.00,
+                "total": 27425.00,
+            },
+            {
+                "month": "Oct 2024",
+                "labor": 16800.00,
+                "parts": 12450.00,
+                "external": 2750.00,
+                "total": 32000.00,
+            },
+            {
+                "month": "Sep 2024",
+                "labor": 14600.00,
+                "parts": 9875.00,
+                "external": 4100.00,
+                "total": 28575.00,
+            },
+            {
+                "month": "Aug 2024",
+                "labor": 15950.00,
+                "parts": 11250.00,
+                "external": 1850.00,
+                "total": 29050.00,
+            },
         ]
 
         # Get supplier performance
@@ -522,22 +583,22 @@ async def inventory_management(request: Request):
                 "orders": 12,
                 "on_time_delivery": 95.8,
                 "quality_rating": 4.7,
-                "total_spent": 18750.00
+                "total_spent": 18750.00,
             },
             {
                 "name": "Electrical Parts Plus",
                 "orders": 8,
                 "on_time_delivery": 88.5,
                 "quality_rating": 4.3,
-                "total_spent": 12450.00
+                "total_spent": 12450.00,
             },
             {
                 "name": "Industrial Pump Supply",
                 "orders": 6,
                 "on_time_delivery": 92.3,
                 "quality_rating": 4.8,
-                "total_spent": 9875.00
-            }
+                "total_spent": 9875.00,
+            },
         ]
 
         # Get pending purchase orders
@@ -549,7 +610,7 @@ async def inventory_management(request: Request):
                 "total_amount": 2450.00,
                 "order_date": "2024-12-03",
                 "expected_delivery": "2024-12-10",
-                "status": "Approved"
+                "status": "Approved",
             },
             {
                 "po_number": "PO-2024-0159",
@@ -558,8 +619,8 @@ async def inventory_management(request: Request):
                 "total_amount": 1875.00,
                 "order_date": "2024-12-05",
                 "expected_delivery": "2024-12-12",
-                "status": "Pending Approval"
-            }
+                "status": "Pending Approval",
+            },
         ]
 
         return templates.TemplateResponse(
@@ -569,14 +630,15 @@ async def inventory_management(request: Request):
                 "inventory_overview": inventory_overview,
                 "monthly_costs": monthly_costs,
                 "supplier_performance": supplier_performance,
-                "pending_orders": pending_orders
-            }
+                "pending_orders": pending_orders,
+            },
         )
     finally:
         conn.close()
 
 
 # ========== REPORTS & ANALYTICS ==========
+
 
 @router.get("/reports", response_class=HTMLResponse)
 async def reports_analytics(request: Request):
@@ -586,13 +648,13 @@ async def reports_analytics(request: Request):
         # Get KPI summary
         kpis = {
             "mttr": 4.2,  # Mean Time To Repair (hours)
-            "mtbf": 168,  # Mean Time Between Failures (hours) 
+            "mtbf": 168,  # Mean Time Between Failures (hours)
             "asset_uptime": 94.7,  # Overall asset uptime percentage
             "work_order_completion": 87.3,  # Work order completion rate
             "cost_variance": -8.2,  # Cost variance from budget
             "technician_utilization": 78.5,  # Technician utilization rate
             "customer_satisfaction": 4.6,  # Average customer satisfaction
-            "preventive_maintenance": 65.8  # Preventive maintenance percentage
+            "preventive_maintenance": 65.8,  # Preventive maintenance percentage
         }
 
         # Get trending data for charts
@@ -600,7 +662,7 @@ async def reports_analytics(request: Request):
             {"period": "Q4 2023", "uptime": 92.1, "costs": 125000, "satisfaction": 4.3},
             {"period": "Q1 2024", "uptime": 93.5, "costs": 118000, "satisfaction": 4.4},
             {"period": "Q2 2024", "uptime": 94.2, "costs": 115000, "satisfaction": 4.5},
-            {"period": "Q3 2024", "uptime": 94.7, "costs": 112000, "satisfaction": 4.6}
+            {"period": "Q3 2024", "uptime": 94.7, "costs": 112000, "satisfaction": 4.6},
         ]
 
         return templates.TemplateResponse(
@@ -608,14 +670,15 @@ async def reports_analytics(request: Request):
             {
                 "request": request,
                 "kpis": kpis,
-                "performance_trends": performance_trends
-            }
+                "performance_trends": performance_trends,
+            },
         )
     finally:
         conn.close()
 
 
 # ========== SYSTEM ADMINISTRATION ==========
+
 
 @router.get("/admin", response_class=HTMLResponse)
 async def system_administration(request: Request):
@@ -631,7 +694,7 @@ async def system_administration(request: Request):
             "last_backup": "2024-12-06 02:00:00",
             "storage_used": 67.3,  # percentage
             "cpu_usage": 23.5,
-            "memory_usage": 41.2
+            "memory_usage": 41.2,
         }
 
         # Get user management data
@@ -641,7 +704,7 @@ async def system_administration(request: Request):
             "managers": 3,
             "technicians": 15,
             "admin_users": 2,
-            "pending_approvals": 2
+            "pending_approvals": 2,
         }
 
         return templates.TemplateResponse(
@@ -649,8 +712,8 @@ async def system_administration(request: Request):
             {
                 "request": request,
                 "system_health": system_health,
-                "user_summary": user_summary
-            }
+                "user_summary": user_summary,
+            },
         )
     finally:
         conn.close()
@@ -658,25 +721,29 @@ async def system_administration(request: Request):
 
 # ========== API ENDPOINTS ==========
 
+
 @router.get("/api/dashboard-stats")
 async def get_dashboard_stats():
     """API endpoint for real-time dashboard statistics"""
-    return JSONResponse({
-        "active_work_orders": 28,
-        "pending_maintenance": 12,
-        "technicians_available": 8,
-        "critical_alerts": 3,
-        "system_efficiency": 87.5,
-        "monthly_budget_used": 78.3,
-        "timestamp": datetime.now().isoformat()
-    })
+    return JSONResponse(
+        {
+            "active_work_orders": 28,
+            "pending_maintenance": 12,
+            "technicians_available": 8,
+            "critical_alerts": 3,
+            "system_efficiency": 87.5,
+            "monthly_budget_used": 78.3,
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
+
 
 @router.post("/api/technician/{technician_id}/performance-review")
 async def create_performance_review(
     technician_id: int,
     rating: float = Form(...),
     comments: str = Form(...),
-    goals: str = Form(...)
+    goals: str = Form(...),
 ):
     """Create performance review for technician"""
     try:
@@ -686,18 +753,18 @@ async def create_performance_review(
             "comments": comments,
             "goals": goals,
             "review_date": datetime.now(),
-            "reviewer": "manager"
+            "reviewer": "manager",
         }
-        
+
         # In real implementation, save to Firestore
         logger.info(f"Performance review created for technician {technician_id}")
-        
-        return JSONResponse({
-            "success": True,
-            "message": "Performance review saved successfully"
-        })
+
+        return JSONResponse(
+            {"success": True, "message": "Performance review saved successfully"}
+        )
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
 
 @router.post("/api/asset/{asset_id}/schedule-maintenance")
 async def schedule_asset_maintenance(
@@ -705,7 +772,7 @@ async def schedule_asset_maintenance(
     maintenance_type: str = Form(...),
     scheduled_date: str = Form(...),
     technician_id: int = Form(...),
-    priority: str = Form(...)
+    priority: str = Form(...),
 ):
     """Schedule maintenance for asset"""
     try:
@@ -716,15 +783,14 @@ async def schedule_asset_maintenance(
             "technician_id": technician_id,
             "priority": priority,
             "status": "scheduled",
-            "created_by": "manager"
+            "created_by": "manager",
         }
-        
+
         # In real implementation, save to Firestore and notify technician
         logger.info(f"Maintenance scheduled for asset {asset_id}")
-        
-        return JSONResponse({
-            "success": True,
-            "message": "Maintenance scheduled successfully"
-        })
+
+        return JSONResponse(
+            {"success": True, "message": "Maintenance scheduled successfully"}
+        )
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)

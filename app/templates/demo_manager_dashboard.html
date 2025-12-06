@@ -235,30 +235,30 @@
                         </h5>
                     </div>
                     <div class="card-body" id="alertsPanel">
-                        <div class="alert alert-warning demo-fade-in" role="alert">
+                        <div class="alert alert-warning demo-fade-in" role="alert" style="background-color: #fff3cd !important; border-color: #ffeaa7 !important; color: #856404 !important;">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <i class="fas fa-exclamation-triangle me-2" style="color: #856404 !important;"></i>
                                 <div>
-                                    <strong>Low Stock Alert</strong><br>
-                                    <small>Water Pump Seals: 8 remaining</small>
+                                    <strong style="color: #856404 !important;">Low Stock Alert</strong><br>
+                                    <small style="color: #6f5f00 !important;">Water Pump Seals: 8 remaining</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="alert alert-danger demo-fade-in" role="alert">
+                        <div class="alert alert-danger demo-fade-in" role="alert" style="background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important;">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-tools me-2"></i>
+                                <i class="fas fa-tools me-2" style="color: #721c24 !important;"></i>
                                 <div>
-                                    <strong>Critical Maintenance</strong><br>
-                                    <small>Water Pump System needs attention</small>
+                                    <strong style="color: #721c24 !important;">Critical Maintenance</strong><br>
+                                    <small style="color: #5a1a1f !important;">Water Pump System needs attention</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="alert alert-info demo-fade-in" role="alert">
+                        <div class="alert alert-info demo-fade-in" role="alert" style="background-color: #d1ecf1 !important; border-color: #bee5eb !important; color: #0c5460 !important;">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-chart-line me-2"></i>
+                                <i class="fas fa-chart-line me-2" style="color: #0c5460 !important;"></i>
                                 <div>
-                                    <strong>Performance Update</strong><br>
-                                    <small>Sarah Chen: 98% completion rate</small>
+                                    <strong style="color: #0c5460 !important;">Performance Update</strong><br>
+                                    <small style="color: #084044 !important;">Sarah Chen: 98% completion rate</small>
                                 </div>
                             </div>
                         </div>
@@ -281,6 +281,143 @@
 
 <!-- Demo Styles -->
 <style>
+/* Fix visibility and contrast issues */
+.container-fluid {
+    color: #212529 !important;
+    background-color: #f8f9fa;
+}
+
+.demo-header {
+    background: linear-gradient(135deg, #007bff, #6f42c1) !important;
+    color: #ffffff !important;
+}
+
+.card {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+.card-header {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.card-body {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.text-primary {
+    color: #007bff !important;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+}
+
+.stat-number {
+    color: #212529 !important;
+    font-weight: bold;
+}
+
+.stat-label {
+    color: #6c757d !important;
+}
+
+.activity-message {
+    color: #212529 !important;
+}
+
+.manager-header h1 {
+    color: #007bff !important;
+}
+
+.manager-header p {
+    color: #6c757d !important;
+}
+
+.nav-tile .card-title {
+    color: #212529 !important;
+}
+
+.nav-tile .card-text {
+    color: #6c757d !important;
+}
+
+#demoCommentary {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+#commentaryText {
+    color: #495057 !important;
+}
+
+.progress {
+    background-color: #e9ecef !important;
+}
+
+.activity-item {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.activity-item .activity-message {
+    color: #212529 !important;
+    font-weight: 500;
+}
+
+.activity-item small {
+    color: #6c757d !important;
+}
+
+.activity-icon i {
+    font-size: 1.1rem;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Ensure button text is visible */
+.btn {
+    color: #212529 !important;
+}
+
+.btn-light {
+    background-color: #f8f9fa !important;
+    border-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.btn-outline-light {
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.btn-outline-light:hover {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
 .demo-highlight {
     transition: all 0.3s ease;
     position: relative;
@@ -290,7 +427,7 @@
 .demo-highlight.active {
     transform: scale(1.02);
     box-shadow: 0 8px 25px rgba(0,123,255,0.3) !important;
-    border: 2px solid #007bff;
+    border: 2px solid #007bff !important;
 }
 
 .demo-highlight.active::before {

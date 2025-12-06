@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Technician Management - ChatterFix CMMS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .technician-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+        margin-bottom: 1rem;
+        border-left: 4px solid #10b981;
+    }
+    
+    .technician-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .technician-card.onboarding {
+        border-left-color: #f59e0b;
+    }
+    
+    .performance-metric {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        background: #f8fafc;
+    }
+    
+    .performance-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1e40af;
+    }
+    
+    .certification-badge {
+        background: #e0f2fe;
+        color: #0277bd;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin: 0.125rem;
+        display: inline-block;
+    }
+    
+    .onboarding-progress {
+        background: #f1f5f9;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    
+    .onboarding-progress-bar {
+        height: 1rem;
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        transition: width 0.3s ease;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-active { background: #dcfce7; color: #166534; }
+    .status-onboarding { background: #fef3c7; color: #92400e; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">
+                <i class="fas fa-users text-primary"></i>
+                Technician Management
+            </h1>
+            <p class="text-muted">Manage technician onboarding, performance, and development</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-primary" onclick="openOnboardingModal()">
+                <i class="fas fa-user-plus"></i>
+                Onboard New Technician
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="technicianTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
+                <i class="fas fa-tachometer-alt"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button">
+                <i class="fas fa-chart-line"></i> Performance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="onboarding-tab" data-bs-toggle="tab" data-bs-target="#onboarding" type="button">
+                <i class="fas fa-graduation-cap"></i> Onboarding Pipeline
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="scheduling-tab" data-bs-toggle="tab" data-bs-target="#scheduling" type="button">
+                <i class="fas fa-calendar"></i> Scheduling
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="technicianTabContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <!-- Team Statistics -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="performance-metric">
+                        <div class="performance-number">{{ technicians|length }}</div>
+                        <div class="text-muted small">Total Technicians</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="performance-metric">
+                        <div class="performance-number">{{ technicians|selectattr("status", "equalto", "Active")|list|length }}</div>
+                        <div class="text-muted small">Active Technicians</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="performance-metric">
+                        <div class="performance-number">{{ technicians|selectattr("onboarding_status", "equalto", "In Progress")|list|length }}</div>
+                        <div class="text-muted small">In Onboarding</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="performance-metric">
+                        <div class="performance-number">4.6</div>
+                        <div class="text-muted small">Avg Rating</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technician Cards -->
+            <div class="row">
+                {% for technician in technicians %}
+                <div class="col-lg-6 mb-3">
+                    <div class="technician-card {% if technician.onboarding_status == 'In Progress' %}onboarding{% endif %}">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h5 class="mb-0">{{ technician.name }}</h5>
+                                    <span class="status-badge status-{{ technician.status.lower() }} ms-2">
+                                        {{ technician.status }}
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-2">
+                                    {{ technician.role }} • {{ technician.department }}
+                                </p>
+                                <div class="mb-2">
+                                    {% for cert in technician.certifications %}
+                                    <span class="certification-badge">{{ cert }}</span>
+                                    {% endfor %}
+                                </div>
+                                <p class="small text-muted mb-0">
+                                    Hired: {{ technician.hire_date }}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                {% if technician.onboarding_status == 'Complete' %}
+                                <div class="performance-metric">
+                                    <div class="performance-number">{{ technician.completion_rate }}%</div>
+                                    <div class="text-muted small">Completion Rate</div>
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    Avg Time: {{ technician.avg_response_time }}h<br>
+                                    Rating: {{ technician.customer_rating }}/5.0
+                                </div>
+                                {% else %}
+                                <div class="text-center">
+                                    <div class="text-warning">
+                                        <i class="fas fa-graduation-cap fa-2x"></i>
+                                    </div>
+                                    <div class="small mt-2">Onboarding in progress</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-primary" onclick="viewTechnician({{ technician.id }})">
+                                <i class="fas fa-eye"></i> View Profile
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editTechnician({{ technician.id }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            {% if technician.onboarding_status == 'Complete' %}
+                            <button class="btn btn-sm btn-success" onclick="createPerformanceReview({{ technician.id }})">
+                                <i class="fas fa-star"></i> Review
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Performance Tab -->
+        <div class="tab-pane fade" id="performance" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Performance Metrics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Technician</th>
+                                            <th>Completion Rate</th>
+                                            <th>Avg Response Time</th>
+                                            <th>Customer Rating</th>
+                                            <th>Work Orders</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tech in technicians %}
+                                        {% if tech.onboarding_status == 'Complete' %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ tech.name }}</strong><br>
+                                                <small class="text-muted">{{ tech.role }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold text-success">{{ tech.completion_rate }}%</span>
+                                                <div class="progress mt-1" style="height: 4px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ tech.completion_rate }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td>{{ tech.avg_response_time }}h</td>
+                                            <td>
+                                                <div class="text-warning">
+                                                    {% for i in range(tech.customer_rating|int) %}
+                                                    <i class="fas fa-star"></i>
+                                                    {% endfor %}
+                                                </div>
+                                                <small>{{ tech.customer_rating }}/5.0</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">28</span>
+                                                <small class="text-muted">this month</small>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewPerformanceDetail({{ tech.id }})">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success" onclick="createPerformanceReview({{ tech.id }})">
+                                                    <i class="fas fa-star"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onboarding Pipeline Tab -->
+        <div class="tab-pane fade" id="onboarding" role="tabpanel">
+            <div class="row">
+                {% for candidate in onboarding_pipeline %}
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ candidate.name }}</h6>
+                            <p class="card-text text-muted">{{ candidate.position }}</p>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Progress</small>
+                                    <small>{{ candidate.progress }}%</small>
+                                </div>
+                                <div class="onboarding-progress">
+                                    <div class="onboarding-progress-bar" style="width: {{ candidate.progress }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <p class="small">
+                                <strong>Current Module:</strong><br>
+                                {{ candidate.current_module }}
+                            </p>
+                            
+                            <p class="small">
+                                <strong>Expected Completion:</strong><br>
+                                {{ candidate.expected_completion }}
+                            </p>
+                            
+                            <span class="badge {% if candidate.status == 'On Track' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ candidate.status }}
+                            </span>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-primary" onclick="viewOnboardingDetail('{{ candidate.name }}')">
+                                    View Progress
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Scheduling Tab -->
+        <div class="tab-pane fade" id="scheduling" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Team Schedule Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div id="scheduleCalendar">
+                        <!-- Calendar would be implemented with FullCalendar.js -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-calendar"></i>
+                            Advanced scheduling calendar will be implemented here.
+                            Features include:
+                            <ul class="mt-2 mb-0">
+                                <li>Drag-and-drop work order assignment</li>
+                                <li>Technician availability tracking</li>
+                                <li>Skill-based automatic assignment</li>
+                                <li>Overtime and workload balancing</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Onboarding Modal -->
+<div class="modal fade" id="onboardingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Onboard New Technician</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="submitOnboarding(event)">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="Senior Technician">Senior Technician</option>
+                                <option value="Technician">Technician</option>
+                                <option value="Apprentice">Apprentice</option>
+                                <option value="Specialist">Specialist</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" name="department" required>
+                                <option value="">Select Department</option>
+                                <option value="HVAC">HVAC</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="General Maintenance">General Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" required>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="sendWelcome" checked>
+                                <label class="form-check-label" for="sendWelcome">
+                                    Send welcome email with onboarding instructions
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Onboarding</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Review Modal -->
+<div class="modal fade" id="performanceReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Performance Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="submitPerformanceReview(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Overall Rating (1-5)</label>
+                        <select class="form-select" name="rating" required>
+                            <option value="">Select Rating</option>
+                            <option value="1">1 - Needs Improvement</option>
+                            <option value="2">2 - Below Expectations</option>
+                            <option value="3">3 - Meets Expectations</option>
+                            <option value="4">4 - Exceeds Expectations</option>
+                            <option value="5">5 - Outstanding</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comments</label>
+                        <textarea class="form-control" name="comments" rows="4" placeholder="Performance feedback and observations..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Goals for Next Period</label>
+                        <textarea class="form-control" name="goals" rows="3" placeholder="Performance goals and development areas..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTechnicianId = null;
+
+function openOnboardingModal() {
+    new bootstrap.Modal(document.getElementById('onboardingModal')).show();
+}
+
+function submitOnboarding(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch('/manager/technicians/onboard', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('onboardingModal')).hide();
+            showAlert('success', 'Onboarding process started successfully!');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('error', data.error || 'Failed to start onboarding process');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Failed to start onboarding process');
+    });
+}
+
+function createPerformanceReview(technicianId) {
+    currentTechnicianId = technicianId;
+    new bootstrap.Modal(document.getElementById('performanceReviewModal')).show();
+}
+
+function submitPerformanceReview(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    
+    fetch(`/manager/api/technician/${currentTechnicianId}/performance-review`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('performanceReviewModal')).hide();
+            showAlert('success', 'Performance review saved successfully!');
+        } else {
+            showAlert('error', data.error || 'Failed to save performance review');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Failed to save performance review');
+    });
+}
+
+function viewTechnician(id) {
+    window.location.href = `/manager/technicians/${id}`;
+}
+
+function editTechnician(id) {
+    window.location.href = `/manager/technicians/${id}/edit`;
+}
+
+function viewPerformanceDetail(id) {
+    window.location.href = `/manager/technicians/${id}/performance`;
+}
+
+function viewOnboardingDetail(name) {
+    window.location.href = `/manager/onboarding/${encodeURIComponent(name)}`;
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

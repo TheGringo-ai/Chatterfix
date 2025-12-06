@@ -54,6 +54,7 @@ from app.routers import (
     health,
     inventory,
     landing,
+    manager,
     onboarding,
     planner,
     purchasing,
@@ -176,6 +177,7 @@ app.include_router(work_orders.router)
 app.include_router(assets.router)
 app.include_router(inventory.router)
 app.include_router(team.router)
+app.include_router(manager.router)  # Manager Dashboard - Complete Control Center
 app.include_router(training.router)
 app.include_router(purchasing.router)
 app.include_router(planner.router)

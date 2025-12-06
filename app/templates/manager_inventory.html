@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory & Cost Management - ChatterFix CMMS{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .inventory-card {
+        border-left: 4px solid #e5e7eb;
+        transition: all 0.2s;
+    }
+    
+    .inventory-card.in-stock { border-left-color: #10b981; }
+    .inventory-card.low-stock { border-left-color: #f59e0b; }
+    .inventory-card.out-of-stock { border-left-color: #ef4444; }
+    
+    .inventory-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stock-indicator {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        margin: 0 auto;
+    }
+    
+    .stock-good { background: #10b981; }
+    .stock-low { background: #f59e0b; }
+    .stock-out { background: #ef4444; }
+    
+    .cost-trend {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .cost-up { background: #fee2e2; color: #991b1b; }
+    .cost-down { background: #dcfce7; color: #166534; }
+    .cost-stable { background: #f3f4f6; color: #374151; }
+    
+    .supplier-rating {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .rating-stars {
+        color: #f59e0b;
+    }
+    
+    .po-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .po-approved { background: #dcfce7; color: #166534; }
+    .po-pending { background: #fef3c7; color: #92400e; }
+    .po-rejected { background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">
+                <i class="fas fa-boxes text-primary"></i>
+                Inventory & Cost Management
+            </h1>
+            <p class="text-muted">Control parts inventory, manage costs, and optimize procurement</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="exportInventoryReport()">
+                    <i class="fas fa-download"></i> Export Report
+                </button>
+                <button class="btn btn-warning" onclick="createPurchaseOrder()">
+                    <i class="fas fa-shopping-cart"></i> Create PO
+                </button>
+                <button class="btn btn-success" onclick="addInventoryItem()">
+                    <i class="fas fa-plus"></i> Add Item
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="h3 text-primary">${{ "{:,.0f}".format(monthly_costs[0].total) }}</div>
+                    <div class="text-muted">Current Month Total</div>
+                    <div class="cost-trend cost-up">
+                        <i class="fas fa-arrow-up"></i> +12% vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="h3 text-success">${{ "{:,.0f}".format(monthly_costs[0].parts) }}</div>
+                    <div class="text-muted">Parts Cost</div>
+                    <div class="cost-trend cost-up">
+                        <i class="fas fa-arrow-up"></i> +8% vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="h3 text-info">${{ "{:,.0f}".format(monthly_costs[0].labor) }}</div>
+                    <div class="text-muted">Labor Cost</div>
+                    <div class="cost-trend cost-down">
+                        <i class="fas fa-arrow-down"></i> -3% vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="h3 text-warning">{{ inventory_overview|selectattr("status", "equalto", "Low Stock")|list|length + inventory_overview|selectattr("status", "equalto", "Out of Stock")|list|length }}</div>
+                    <div class="text-muted">Stock Alerts</div>
+                    <div class="cost-trend cost-stable">
+                        <i class="fas fa-minus"></i> Stable
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="inventoryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button">
+                <i class="fas fa-boxes"></i> Inventory Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button">
+                <i class="fas fa-chart-line"></i> Cost Analysis
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button">
+                <i class="fas fa-truck"></i> Supplier Management
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">
+                <i class="fas fa-file-invoice"></i> Purchase Orders
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="inventoryTabContent">
+        <!-- Inventory Overview Tab -->
+        <div class="tab-pane fade show active" id="inventory" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <input type="search" class="form-control" placeholder="Search inventory..." onkeyup="filterInventory(this.value)">
+                </div>
+                <div class="col-md-6">
+                    <div class="btn-group w-100">
+                        <button class="btn btn-outline-secondary" onclick="filterByStatus('all')">All</button>
+                        <button class="btn btn-outline-success" onclick="filterByStatus('In Stock')">In Stock</button>
+                        <button class="btn btn-outline-warning" onclick="filterByStatus('Low Stock')">Low Stock</button>
+                        <button class="btn btn-outline-danger" onclick="filterByStatus('Out of Stock')">Out of Stock</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="inventoryGrid">
+                {% for item in inventory_overview %}
+                <div class="col-lg-4 mb-4 inventory-item" data-status="{{ item.status }}" data-name="{{ item.name.lower() }}">
+                    <div class="card inventory-card {{ item.status.lower().replace(' ', '-') }}">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-8">
+                                    <h6 class="card-title">{{ item.name }}</h6>
+                                    <p class="text-muted small mb-2">{{ item.part_number }}</p>
+                                    <span class="badge bg-secondary">{{ item.category }}</span>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="stock-indicator stock-{% if item.status == 'In Stock' %}good{% elif item.status == 'Low Stock' %}low{% else %}out{% endif %}">
+                                        {{ item.current_stock }}
+                                    </div>
+                                    <small class="text-muted">Stock</small>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <div class="row small text-muted">
+                                <div class="col-6">
+                                    <strong>Min Stock:</strong><br>
+                                    {{ item.min_stock }}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Unit Cost:</strong><br>
+                                    ${{ "{:.2f}".format(item.unit_cost) }}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="small">Total Value:</span>
+                                    <span class="small fw-bold">${{ "{:,.2f}".format(item.total_value) }}</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 4px;">
+                                    <div class="progress-bar {% if item.current_stock >= item.min_stock %}bg-success{% elif item.current_stock > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {% if item.max_stock > 0 %}{{ (item.current_stock / item.max_stock * 100)|round(1) }}{% else %}0{% endif %}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 d-flex justify-content-between">
+                                <small class="text-muted">Last Ordered: {{ item.last_ordered }}</small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-primary" onclick="viewItemDetail('{{ item.part_number }}')">
+                                    <i class="fas fa-eye"></i> Details
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="orderItem('{{ item.part_number }}')">
+                                    <i class="fas fa-shopping-cart"></i> Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Cost Analysis Tab -->
+        <div class="tab-pane fade" id="costs" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Monthly Cost Trends</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="costTrendChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Cost Breakdown</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="costBreakdownChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Monthly Cost Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Labor</th>
+                                            <th>Parts</th>
+                                            <th>External</th>
+                                            <th>Total</th>
+                                            <th>Trend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for month in monthly_costs %}
+                                        <tr>
+                                            <td><strong>{{ month.month }}</strong></td>
+                                            <td>${{ "{:,.2f}".format(month.labor) }}</td>
+                                            <td>${{ "{:,.2f}".format(month.parts) }}</td>
+                                            <td>${{ "{:,.2f}".format(month.external) }}</td>
+                                            <td class="fw-bold">${{ "{:,.2f}".format(month.total) }}</td>
+                                            <td>
+                                                {% if loop.index > 1 %}
+                                                    {% set prev_total = monthly_costs[loop.index0 - 1].total %}
+                                                    {% if month.total > prev_total %}
+                                                        <span class="text-danger"><i class="fas fa-arrow-up"></i> +{{ "{:.1f}".format(((month.total - prev_total) / prev_total * 100)) }}%</span>
+                                                    {% elif month.total < prev_total %}
+                                                        <span class="text-success"><i class="fas fa-arrow-down"></i> {{ "{:.1f}".format(((month.total - prev_total) / prev_total * 100)) }}%</span>
+                                                    {% else %}
+                                                        <span class="text-muted"><i class="fas fa-minus"></i> Stable</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier Management Tab -->
+        <div class="tab-pane fade" id="suppliers" role="tabpanel">
+            <div class="row">
+                {% for supplier in supplier_performance %}
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ supplier.name }}</h6>
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-6 border-end">
+                                    <div class="h5 text-primary">{{ supplier.orders }}</div>
+                                    <small class="text-muted">Orders</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h5 text-success">${{ "{:,.0f}".format(supplier.total_spent) }}</div>
+                                    <small class="text-muted">Total Spent</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>On-Time Delivery</small>
+                                    <small>{{ supplier.on_time_delivery }}%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: {{ supplier.on_time_delivery }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="supplier-rating mb-3">
+                                <span class="me-2">Quality Rating:</span>
+                                <div class="rating-stars">
+                                    {% for i in range(supplier.quality_rating|int) %}
+                                    <i class="fas fa-star"></i>
+                                    {% endfor %}
+                                    {% if supplier.quality_rating % 1 >= 0.5 %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                    {% endif %}
+                                </div>
+                                <span class="ms-2 small">{{ supplier.quality_rating }}/5.0</span>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary flex-grow-1" onclick="viewSupplierDetail('{{ supplier.name }}')">
+                                    <i class="fas fa-eye"></i> Details
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" onclick="contactSupplier('{{ supplier.name }}')">
+                                    <i class="fas fa-phone"></i> Contact
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Purchase Orders Tab -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Purchase Orders</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>PO Number</th>
+                                    <th>Supplier</th>
+                                    <th>Items</th>
+                                    <th>Amount</th>
+                                    <th>Order Date</th>
+                                    <th>Expected Delivery</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in pending_orders %}
+                                <tr>
+                                    <td><strong>{{ order.po_number }}</strong></td>
+                                    <td>{{ order.supplier }}</td>
+                                    <td>{{ order.items }} items</td>
+                                    <td>${{ "{:,.2f}".format(order.total_amount) }}</td>
+                                    <td>{{ order.order_date }}</td>
+                                    <td>{{ order.expected_delivery }}</td>
+                                    <td>
+                                        <span class="po-status po-{{ order.status.lower().replace(' ', '-') }}">
+                                            {{ order.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewPO('{{ order.po_number }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if order.status == 'Pending Approval' %}
+                                            <button class="btn btn-outline-success" onclick="approvePO('{{ order.po_number }}')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-secondary" onclick="printPO('{{ order.po_number }}')">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize Charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Cost Trend Chart
+    const ctx1 = document.getElementById('costTrendChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: [{% for month in monthly_costs %}'{{ month.month }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Labor',
+                data: [{% for month in monthly_costs %}{{ month.labor }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#3b82f6',
+                tension: 0.4
+            }, {
+                label: 'Parts',
+                data: [{% for month in monthly_costs %}{{ month.parts }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#10b981',
+                tension: 0.4
+            }, {
+                label: 'External',
+                data: [{% for month in monthly_costs %}{{ month.external }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                borderColor: '#f59e0b',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Cost Breakdown Chart
+    const ctx2 = document.getElementById('costBreakdownChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Labor', 'Parts', 'External'],
+            datasets: [{
+                data: [{{ monthly_costs[0].labor }}, {{ monthly_costs[0].parts }}, {{ monthly_costs[0].external }}],
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+
+function filterInventory(searchTerm) {
+    const items = document.querySelectorAll('.inventory-item');
+    items.forEach(item => {
+        const name = item.getAttribute('data-name');
+        if (name.includes(searchTerm.toLowerCase())) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function filterByStatus(status) {
+    const items = document.querySelectorAll('.inventory-item');
+    items.forEach(item => {
+        if (status === 'all' || item.getAttribute('data-status') === status) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function viewItemDetail(partNumber) {
+    window.location.href = `/manager/inventory/${partNumber}/detail`;
+}
+
+function orderItem(partNumber) {
+    alert(`Create order for ${partNumber}`);
+}
+
+function viewSupplierDetail(supplierName) {
+    window.location.href = `/manager/suppliers/${encodeURIComponent(supplierName)}/detail`;
+}
+
+function contactSupplier(supplierName) {
+    alert(`Contact ${supplierName}`);
+}
+
+function createPurchaseOrder() {
+    window.location.href = '/manager/purchase-orders/create';
+}
+
+function addInventoryItem() {
+    window.location.href = '/manager/inventory/add';
+}
+
+function viewPO(poNumber) {
+    window.location.href = `/manager/purchase-orders/${poNumber}`;
+}
+
+function approvePO(poNumber) {
+    if (confirm(`Approve purchase order ${poNumber}?`)) {
+        alert(`Purchase order ${poNumber} approved`);
+    }
+}
+
+function printPO(poNumber) {
+    window.open(`/manager/purchase-orders/${poNumber}/print`, '_blank');
+}
+
+function exportInventoryReport() {
+    const reportData = {
+        generated: new Date().toISOString(),
+        inventory: {{ inventory_overview | tojson }},
+        costs: {{ monthly_costs | tojson }},
+        suppliers: {{ supplier_performance | tojson }},
+        orders: {{ pending_orders | tojson }}
+    };
+    
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], 
+        { type: 'application/json' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventory-report-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

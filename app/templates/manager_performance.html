@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Analytics - ChatterFix CMMS{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .metric-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        border-top: 4px solid #3b82f6;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1e40af;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .trend-indicator {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+    }
+    
+    .trend-up { color: #059669; }
+    .trend-down { color: #dc2626; }
+    .trend-stable { color: #6b7280; }
+    
+    .performance-table th {
+        background-color: #f8fafc;
+        border: none;
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .efficiency-indicator {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        margin: 0 auto;
+    }
+    
+    .efficiency-excellent { background: #10b981; }
+    .efficiency-good { background: #3b82f6; }
+    .efficiency-needs-attention { background: #f59e0b; }
+    .efficiency-poor { background: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3">
+                <i class="fas fa-chart-line text-primary"></i>
+                Performance Analytics
+            </h1>
+            <p class="text-muted">Comprehensive performance monitoring and analytics dashboard</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-filter"></i> Filter Period
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="?period=week">This Week</a></li>
+                    <li><a class="dropdown-item" href="?period=month">This Month</a></li>
+                    <li><a class="dropdown-item" href="?period=quarter">This Quarter</a></li>
+                    <li><a class="dropdown-item" href="?period=year">This Year</a></li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" onclick="generateReport()">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="metric-card">
+                <div class="metric-value">87.5%</div>
+                <div class="metric-label">Overall Efficiency</div>
+                <div class="trend-indicator trend-up">
+                    <i class="fas fa-arrow-up"></i> +2.3% vs last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="metric-card">
+                <div class="metric-value">4.6</div>
+                <div class="metric-label">Avg Customer Rating</div>
+                <div class="trend-indicator trend-up">
+                    <i class="fas fa-arrow-up"></i> +0.2 vs last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="metric-card">
+                <div class="metric-value">2.3h</div>
+                <div class="metric-label">Avg Response Time</div>
+                <div class="trend-indicator trend-down">
+                    <i class="fas fa-arrow-down"></i> -15min vs last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="metric-card">
+                <div class="metric-value">94.2%</div>
+                <div class="metric-label">Work Order Completion</div>
+                <div class="trend-indicator trend-stable">
+                    <i class="fas fa-minus"></i> Stable vs last month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="performanceTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="technician-tab" data-bs-toggle="tab" data-bs-target="#technician-performance" type="button">
+                <i class="fas fa-users"></i> Technician Performance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="asset-tab" data-bs-toggle="tab" data-bs-target="#asset-performance" type="button">
+                <i class="fas fa-cogs"></i> Asset Performance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="department-tab" data-bs-toggle="tab" data-bs-target="#department-performance" type="button">
+                <i class="fas fa-building"></i> Department Analytics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button">
+                <i class="fas fa-chart-area"></i> Trends & Forecasting
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="performanceTabContent">
+        <!-- Technician Performance Tab -->
+        <div class="tab-pane fade show active" id="technician-performance" role="tabpanel">
+            <div class="row">
+                <!-- Performance Table -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Technician Performance Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table performance-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Technician</th>
+                                            <th>Work Orders</th>
+                                            <th>Completion Rate</th>
+                                            <th>Avg Time</th>
+                                            <th>Customer Rating</th>
+                                            <th>Efficiency</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tech in technician_performance %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                        {{ tech.name[0] }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ tech.name }}</div>
+                                                        <small class="text-muted">ID: TECH-{{ loop.index|string|zfill(3) }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold">{{ tech.work_orders_completed }}</span>
+                                                <small class="text-muted d-block">this month</small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2">{{ tech.efficiency_score }}%</span>
+                                                    <div class="progress flex-grow-1" style="height: 4px; width: 60px;">
+                                                        <div class="progress-bar {% if tech.efficiency_score >= 95 %}bg-success{% elif tech.efficiency_score >= 85 %}bg-primary{% elif tech.efficiency_score >= 75 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                             style="width: {{ tech.efficiency_score }}%"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ tech.avg_completion_time }}h</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-1">{{ tech.customer_satisfaction }}</span>
+                                                    <div class="text-warning small">
+                                                        {% for i in range(tech.customer_satisfaction|int) %}
+                                                        <i class="fas fa-star"></i>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="efficiency-indicator efficiency-{% if tech.efficiency_score >= 95 %}excellent{% elif tech.efficiency_score >= 85 %}good{% elif tech.efficiency_score >= 75 %}needs-attention{% else %}poor{% endif %}">
+                                                    {{ tech.efficiency_score }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" onclick="viewTechnicianDetail('{{ tech.name }}')">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-success" onclick="createPerformanceReview('{{ tech.name }}')">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Charts -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Performance Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="performanceDistributionChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Performance Tab -->
+        <div class="tab-pane fade" id="asset-performance" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Asset Performance Metrics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table performance-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset</th>
+                                            <th>Uptime</th>
+                                            <th>MTBF (Hours)</th>
+                                            <th>Maintenance Cost</th>
+                                            <th>Last Failure</th>
+                                            <th>Efficiency Rating</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for asset in asset_performance %}
+                                        <tr>
+                                            <td>
+                                                <div class="fw-medium">{{ asset.name }}</div>
+                                                <small class="text-muted">Critical Asset</small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2 fw-bold {% if asset.uptime >= 95 %}text-success{% elif asset.uptime >= 85 %}text-primary{% else %}text-warning{% endif %}">
+                                                        {{ asset.uptime }}%
+                                                    </span>
+                                                    <div class="progress" style="height: 4px; width: 60px;">
+                                                        <div class="progress-bar {% if asset.uptime >= 95 %}bg-success{% elif asset.uptime >= 85 %}bg-primary{% else %}bg-warning{% endif %}" 
+                                                             style="width: {{ asset.uptime }}%"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>{{ asset.mtbf }}</td>
+                                            <td>
+                                                <span class="fw-bold">${{ "{:,.2f}".format(asset.maintenance_cost) }}</span>
+                                                <small class="text-muted d-block">YTD</small>
+                                            </td>
+                                            <td>{{ asset.last_failure }}</td>
+                                            <td>
+                                                <span class="badge {% if asset.efficiency_rating == 'Excellent' %}bg-success{% elif asset.efficiency_rating == 'Good' %}bg-primary{% elif asset.efficiency_rating == 'Needs Attention' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ asset.efficiency_rating }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" onclick="viewAssetDetail('{{ asset.name }}')">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" onclick="scheduleMaintenanceModal('{{ asset.name }}')">
+                                                        <i class="fas fa-wrench"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Performance Tab -->
+        <div class="tab-pane fade" id="department-performance" role="tabpanel">
+            <div class="row">
+                {% for dept in department_stats %}
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">{{ dept.department }} Department</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 border-end">
+                                    <div class="metric-value small">{{ dept.technicians }}</div>
+                                    <div class="metric-label">Technicians</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="metric-value small">{{ dept.work_orders }}</div>
+                                    <div class="metric-label">Work Orders</div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Performance</small>
+                                    <small>{{ dept.avg_performance }}%</small>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: {{ dept.avg_performance }}%"></div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="small">Customer Rating</span>
+                                <span class="small">{{ dept.customer_rating }}/5.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Trends & Forecasting Tab -->
+        <div class="tab-pane fade" id="trends" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Performance Trends</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="trendsChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Predictive Insights</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-lightbulb"></i> AI Recommendations</h6>
+                                <ul class="mb-0 small">
+                                    <li>Projected 5% efficiency increase next quarter</li>
+                                    <li>Consider additional HVAC training for 3 technicians</li>
+                                    <li>Asset #12 may require replacement in 6 months</li>
+                                    <li>Department workload rebalancing recommended</li>
+                                </ul>
+                            </div>
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Risk Alerts</h6>
+                                <ul class="mb-0 small">
+                                    <li>2 assets approaching critical failure threshold</li>
+                                    <li>Overtime hours increasing by 15%</li>
+                                    <li>Customer satisfaction trend declining</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Review Modal -->
+<div class="modal fade" id="performanceReviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Performance Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Overall Rating</label>
+                        <select class="form-select">
+                            <option value="5">5 - Outstanding</option>
+                            <option value="4" selected>4 - Exceeds Expectations</option>
+                            <option value="3">3 - Meets Expectations</option>
+                            <option value="2">2 - Below Expectations</option>
+                            <option value="1">1 - Needs Improvement</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Review Period</label>
+                        <select class="form-select">
+                            <option>November 2024</option>
+                            <option>Q4 2024</option>
+                            <option>Annual 2024</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Performance Notes</label>
+                        <textarea class="form-control" rows="4" placeholder="Enter detailed performance feedback..."></textarea>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Goals for Next Period</label>
+                        <textarea class="form-control" rows="3" placeholder="Set goals and development objectives..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary">Save Review</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize Charts
+document.addEventListener('DOMContentLoaded', function() {
+    // Performance Distribution Chart
+    const ctx1 = document.getElementById('performanceDistributionChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['Excellent (95%+)', 'Good (85-94%)', 'Average (75-84%)', 'Needs Improvement (<75%)'],
+            datasets: [{
+                data: [3, 8, 4, 2],
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Trends Chart
+    const ctx2 = document.getElementById('trendsChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Overall Efficiency',
+                data: [82, 84, 86, 85, 87, 89, 88, 90, 89, 87, 88, 87.5],
+                borderColor: '#3b82f6',
+                tension: 0.4
+            }, {
+                label: 'Customer Satisfaction',
+                data: [4.2, 4.3, 4.4, 4.3, 4.5, 4.6, 4.5, 4.7, 4.6, 4.5, 4.6, 4.6],
+                borderColor: '#10b981',
+                tension: 0.4,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    min: 0,
+                    max: 100
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    min: 0,
+                    max: 5,
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+});
+
+function viewTechnicianDetail(name) {
+    window.location.href = `/manager/technicians/${encodeURIComponent(name)}/detail`;
+}
+
+function createPerformanceReview(name) {
+    document.querySelector('#performanceReviewModal .modal-title').textContent = `Performance Review - ${name}`;
+    new bootstrap.Modal(document.getElementById('performanceReviewModal')).show();
+}
+
+function viewAssetDetail(name) {
+    window.location.href = `/manager/assets/${encodeURIComponent(name)}/detail`;
+}
+
+function scheduleMaintenanceModal(name) {
+    // Open maintenance scheduling modal
+    alert(`Schedule maintenance for ${name}`);
+}
+
+function generateReport() {
+    // Generate and download performance report
+    const reportData = {
+        generated: new Date().toISOString(),
+        technician_performance: {{ technician_performance | tojson }},
+        asset_performance: {{ asset_performance | tojson }},
+        department_stats: {{ department_stats | tojson }}
+    };
+    
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], 
+        { type: 'application/json' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `performance-report-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

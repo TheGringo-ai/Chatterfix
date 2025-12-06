@@ -181,33 +181,46 @@
         
         /* Dark Mode Toggle Styles */
         .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 25px;
-            padding: 10px 15px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            border-radius: 25px !important;
+            padding: 12px 20px !important;
+            color: white !important;
+            font-size: 16px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            white-space: nowrap !important;
         }
         
         .theme-toggle:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
         }
         
         .theme-toggle i {
-            margin-right: 5px;
+            margin-right: 8px !important;
+            font-size: 16px !important;
             transition: transform 0.3s ease;
         }
         
         [data-theme="dark"] .theme-toggle {
-            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%) !important;
+            color: white !important;
+        }
+        
+        /* Force visibility on all pages */
+        .theme-toggle {
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
         
         /* Ensure manager pages respect theme unless specifically overridden */
@@ -226,8 +239,8 @@
 
 <body>
     <!-- Dark Mode Toggle Button -->
-    <button class="theme-toggle" id="themeToggle">
-        <i class="fas fa-moon"></i>
+    <button class="theme-toggle" id="themeToggle" style="position: fixed !important; top: 20px !important; right: 20px !important; z-index: 9999 !important; background: #007bff !important; color: white !important; border: none !important; padding: 12px 20px !important; border-radius: 25px !important; font-size: 16px !important; cursor: pointer !important;">
+        <i class="fas fa-moon" style="margin-right: 8px;"></i>
         <span id="themeText">Dark Mode</span>
     </button>
     
@@ -805,7 +818,31 @@
         
         // Initialize theme manager when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Ensure toggle button exists
+            let toggleBtn = document.getElementById('themeToggle');
+            if (!toggleBtn) {
+                // Create toggle button if it doesn't exist
+                toggleBtn = document.createElement('button');
+                toggleBtn.id = 'themeToggle';
+                toggleBtn.className = 'theme-toggle';
+                toggleBtn.innerHTML = '<i class="fas fa-moon" style="margin-right: 8px;"></i><span id="themeText">Dark Mode</span>';
+                toggleBtn.style.cssText = 'position: fixed !important; top: 20px !important; right: 20px !important; z-index: 9999 !important; background: #007bff !important; color: white !important; border: none !important; padding: 12px 20px !important; border-radius: 25px !important; font-size: 16px !important; cursor: pointer !important;';
+                document.body.appendChild(toggleBtn);
+                console.log('Created fallback theme toggle button');
+            }
+            
             window.themeManager = new ThemeManager();
+            
+            // Debug: Make sure button is visible
+            setTimeout(() => {
+                const btn = document.getElementById('themeToggle');
+                if (btn) {
+                    console.log('Theme toggle button found:', btn);
+                    console.log('Button styles:', window.getComputedStyle(btn));
+                } else {
+                    console.error('Theme toggle button not found!');
+                }
+            }, 1000);
             
             // Special handling for manager pages
             const isManagerPage = window.location.pathname.startsWith('/manager');

@@ -5,312 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ChatterFix CMMS{% endblock %}</title>
-
-    <!-- PWA Support -->
-    <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#667eea">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ChatterFix">
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
-    <link rel="stylesheet" href="/static/css/style.css">
-    
-    <!-- Voice Input Styles -->
     <style>
-        .pulse-animation {
-            animation: pulse-red 1.5s infinite;
-        }
-        
-        @keyframes pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
-            }
-        }
-        
-        .voice-listening-indicator {
-            background: linear-gradient(135deg, #dc3545, #ff6b6b);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin: 5px 0;
-            text-align: center;
-            animation: voice-pulse 1s ease-in-out infinite alternate;
-        }
-        
-        @keyframes voice-pulse {
-            from {
-                opacity: 0.8;
-                transform: scale(1);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1.02);
-            }
-        }
-        
-        .ai-message-error {
-            background: rgba(220, 53, 69, 0.1);
-            border-left: 3px solid #dc3545;
-            color: #dc3545;
-            padding: 10px;
-            border-radius: 8px;
-            margin: 5px 0;
-            animation: fade-in-error 0.3s ease-in;
-        }
-        
-        @keyframes fade-in-error {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        #voice-btn:hover {
-            transform: scale(1.05);
-            transition: transform 0.2s ease;
-        }
-        
-        /* Real-time text animation while speaking */
-        .voice-transcribing {
-            border-left: 3px solid #007bff !important;
-            animation: transcribe-pulse 1s ease-in-out infinite;
-        }
-        
-        @keyframes transcribe-pulse {
-            0%, 100% {
-                border-left-color: #007bff;
-            }
-            50% {
-                border-left-color: #0056b3;
-            }
-        }
-        
-        /* Demo link styling */
-        .demo-link {
-            background: linear-gradient(135deg, #007bff, #6f42c1) !important;
-            color: white !important;
-            border-radius: 6px !important;
-            margin: 2px 4px !important;
-            animation: demo-glow 3s ease-in-out infinite;
-        }
-        
-        .demo-link:hover {
-            background: linear-gradient(135deg, #0056b3, #5a2a91) !important;
-            color: white !important;
-            transform: scale(1.05);
-        }
-        
-        @keyframes demo-glow {
-            0%, 100% {
-                box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-            }
-            50% {
-                box-shadow: 0 0 20px rgba(0, 123, 255, 0.6), 0 0 30px rgba(111, 66, 193, 0.4);
-            }
-        }
-        
-        /* Theme Variables removed - using app/static/css/style.css */
-        
-        
         /* Interactive Demo Bar Styles */
         .demo-bar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.75rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1040;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(90deg, #2c3e50, #3498db);
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            position: relative;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
             animation: slideDown 0.5s ease-out;
         }
-        
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
+
         .demo-bar-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            padding: 0 20px;
         }
-        
-        .demo-bar-left {
-            display: flex;
-            align-items: center;
-            color: white;
-            gap: 0.5rem;
-        }
-        
-        .demo-description {
-            opacity: 0.9;
-            font-size: 0.9rem;
-            margin-left: 0.5rem;
-        }
-        
-        .demo-bar-right {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-        
-        .demo-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
-        }
-        
-        .demo-btn.primary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .demo-btn.primary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        
-        .demo-btn.secondary {
-            background: transparent;
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-        
-        .demo-btn.secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-        }
-        
-        .demo-btn.dismiss {
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
-            border: none;
-            padding: 0.5rem;
+
+        .demo-pulse {
+            width: 10px;
+            height: 10px;
+            background-color: #e74c3c;
             border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block;
+            animation: pulse-dot 1.5s infinite;
         }
-        
-        .demo-btn.dismiss:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
         }
-        
-        /* Demo overlay styles */
-        .demo-overlay {
-            display: none !important; /* Completely disabled */
+
+        @keyframes pulse-dot {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
         }
-        
+
         .demo-spotlight {
             display: none;
             position: absolute;
             border: 3px solid #007bff;
             border-radius: 8px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
             z-index: 10001;
+            pointer-events: none;
+            transition: all 0.4s ease;
             animation: pulse-border 2s infinite;
         }
-        
+
         @keyframes pulse-border {
-            0%, 100% {
-                border-color: #007bff;
-                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 123, 255, 0.5);
-            }
-            50% {
-                border-color: #0056b3;
-                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 123, 255, 0.8);
-            }
+            0% { border-color: #007bff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 10px rgba(0, 123, 255, 0.5); }
+            50% { border-color: #0056b3; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 123, 255, 0.8); }
+            100% { border-color: #007bff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 10px rgba(0, 123, 255, 0.5); }
         }
-        
+
         .demo-tooltip {
+            display: none;
             position: absolute;
             background: white;
-            color: #333;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            max-width: 300px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             z-index: 10002;
+            width: 320px;
+            max-width: 90vw;
+            animation: fadeIn 0.3s ease-out;
+            border-left: 5px solid #007bff;
         }
         
-        .demo-tooltip::after {
+        .demo-tooltip::before {
             content: '';
             position: absolute;
-            width: 0;
-            height: 0;
-            border: 8px solid transparent;
-        }
-        
-        .demo-tooltip.bottom::after {
-            top: -16px;
+            top: -10px;
             left: 20px;
-            border-bottom-color: white;
+            border-width: 0 10px 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent white transparent;
         }
-        
+
+        .demo-signup-cta {
+            background: rgba(255, 255, 255, 0.1); /* Glassmorphism */
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-badge {
+            background: #e74c3c;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Improvements */
         @media (max-width: 768px) {
-            .demo-bar-content {
-                padding: 0 1rem;
+            .navbar {
                 flex-direction: column;
-                text-align: center;
-                gap: 0.75rem;
+                align-items: flex-start;
             }
             
-            .demo-description {
-                display: none;
+            .nav-links {
+                margin-top: 10px;
+                flex-wrap: wrap;
             }
             
-            .demo-bar-right {
-                justify-content: center;
+            .demo-bar-content {
+                flex-direction: column;
+                gap: 5px;
             }
-        }
-        
-        /* Ensure manager pages respect theme unless specifically overridden */
-        .manager-force-light {
-            --bg-primary: #f8f9fa !important;
-            --bg-secondary: #f8f9fa !important;
-            --text-primary: #212529 !important;
-            --text-secondary: #6c757d !important;
-            --border-color: #dee2e6 !important;
-            --card-bg: #ffffff !important;
         }
     </style>
     
@@ -322,10 +153,6 @@
         
         if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
             document.documentElement.classList.add('dark-mode');
-            // Also add to body when fully loaded if needed, but css targets body.dark-mode
-            // We should target root or ensure body gets it. 
-            // Better: target root in CSS or wait for body. 
-            // Let's stick to adding to body in a script after body open or standard way.
         }
     </script>
 </head>
@@ -401,740 +228,155 @@
     <!-- Interactive Demo Bar -->
     <div id="demoBar" class="demo-bar" style="display: none;">
         <div class="demo-bar-content">
-            <div class="demo-bar-left">
-                <i class="fas fa-play-circle me-2"></i>
-                <strong>Experience ChatterFix Live</strong>
-                <span class="demo-description">Interactive demo with real-time features</span>
-            </div>
-            <div class="demo-bar-right">
-                <button id="startAppDemo" class="demo-btn primary">
-                    <i class="fas fa-rocket me-1"></i>Start Full Demo
-                </button>
-                <button id="quickTour" class="demo-btn secondary">
-                    <i class="fas fa-eye me-1"></i>Quick Tour
-                </button>
-                <button id="dismissDemo" class="demo-btn dismiss">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+            <div class="demo-pulse"></div>
+            <strong>Interactive Demo Mode</strong>
+            <span>Explore the features of ChatterFix at your own pace.</span>
+            <button onclick="window.demoSystem.startFullDemo()" class="btn btn-sm btn-light text-primary fw-bold"
+                style="margin-left: 10px;">Start Interactive Tour</button>
+            <button onclick="window.demoSystem.dismissDemoBar()" class="btn btn-sm btn-outline-light ms-2">Dismiss</button>
         </div>
     </div>
 
-    {% if is_demo %}
-    <!-- Demo Mode Banner -->
-    <div class="demo-banner">
-        <h4><i class="fas fa-play-circle"></i> You're exploring ChatterFix in Demo Mode</h4>
-        <p>This is a fully functional preview with sample data. Ready to set up your own workspace?</p>
-        <button class="cmms-btn" onclick="window.location.href='/landing'">
-            <i class="fas fa-user-plus"></i> Create Your Free Account
-        </button>
-        <span style="margin: 0 1rem; color: rgba(255,255,255,0.6);">or</span>
-        <a href="/" class="cmms-btn" style="background: linear-gradient(135deg, #6c757d, #495057);">
-            <i class="fas fa-home"></i> Back to Landing Page
-        </a>
-    </div>
-    {% endif %}
+    <div class="container-fluid">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
-    <div class="container">
         {% block content %}{% endblock %}
     </div>
 
-    <script src="/static/js/main.js"></script>
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- AI Assistant Floating Widget -->
+    <button class="ai-fab" onclick="toggleAIChat()" title="Chat with AI Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="ai-chat-window" id="aiChatWindow" style="display: none;">
+        <div class="ai-chat-header">
+            <div>
+                <i class="fas fa-robot me-2"></i> ChatterFix Assistant
+                <span class="badge bg-success ms-2" style="font-size: 0.6rem;">ONLINE</span>
+            </div>
+            <button onclick="toggleAIChat()" class="btn btn-sm text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-chat-messages" id="floatingChatMessages">
+            <div class="message message-ai">
+                <strong>AI:</strong> Hello! I'm monitoring your maintenance operations. How can I assist you today?
+            </div>
+        </div>
+        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none;">
+            AI is thinking...
+        </div>
+        <div class="ai-chat-input-area">
+            <div class="input-group">
+                <input type="text" id="floatingChatInput" class="form-control" placeholder="Ask anything..."
+                    onkeypress="handleFloatingChatInput(event)">
+                <button class="btn btn-primary" onclick="sendFloatingChatMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    {% block scripts %}{% endblock %}
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Enhanced Demo System -->
+    <script src="{{ url_for('static', filename='js/demo-system.js') }}"></script>
 
-    <!-- PWA Service Worker Registration -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration);
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration failed:', err);
-                    });
-            });
-        }
-
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
+        // Check if we should show the demo bar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is in demo mode (URL path check or session)
+            if (window.location.pathname.startsWith('/demo')) {
+                // If demo is not active, show the bar
+                const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
+                if (!demoState.active) {
+                    const demoBar = document.getElementById('demoBar');
+                    if(demoBar) demoBar.style.display = 'block';
+                }
+            }
+        });
+        
+        // Expose dismiss function globally for the clear button
+        window.demoSystem.dismissDemoBar = function() {
+             document.getElementById('demoBar').style.display = 'none';
         }
     </script>
-    <!-- AI Assistant Widget -->
-    <div id="ai-assistant-widget">
-        <!-- Floating Action Button -->
-        <button id="ai-fab" class="ai-fab" onclick="toggleAIChat()">
-            <i class="fas fa-robot"></i>
-        </button>
-
-        <!-- Chat Window -->
-        <div id="ai-chat-window" class="ai-chat-window" style="display: none;">
-            <div class="ai-chat-header">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-robot me-2"></i>
-                    <h5 class="mb-0">ChatterFix Assistant</h5>
-                </div>
-                <button class="btn-close btn-close-white" onclick="toggleAIChat()"></button>
-            </div>
-            <div id="ai-chat-messages" class="ai-chat-messages">
-                <div class="ai-message ai-message-assistant">
-                    Hello! I'm your AI Assistant. I can help you create work orders, find parts, or troubleshoot
-                    equipment. How can I help you today?
-                </div>
-            </div>
-            <div class="ai-chat-input-area">
-                <div class="input-group">
-                    <button class="btn btn-outline-secondary" type="button" id="voice-btn" onclick="startVoiceInput()">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <input type="text" id="ai-user-input" class="form-control" placeholder="Type or speak..."
-                        onkeypress="handleAIKeyPress(event)">
-                    <button class="btn btn-primary" type="button" onclick="sendAIMessage()">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Demo Signup Modal -->
-    <div id="demoSignupModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-rocket"></i> Ready to get started with ChatterFix?
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary mb-3">🎯 What you've explored:</h6>
-                            <ul class="demo-features-list">
-                                <li><i class="fas fa-check text-success"></i> Asset management dashboard</li>
-                                <li><i class="fas fa-check text-success"></i> Work order tracking</li>
-                                <li><i class="fas fa-check text-success"></i> Maintenance planning</li>
-                                <li><i class="fas fa-check text-success"></i> Team collaboration tools</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-primary mb-3">🚀 Get full access to:</h6>
-                            <ul class="premium-features-list">
-                                <li><i class="fas fa-star text-warning"></i> Unlimited assets & work orders</li>
-                                <li><i class="fas fa-star text-warning"></i> Advanced AI assistance</li>
-                                <li><i class="fas fa-star text-warning"></i> Custom reporting & analytics</li>
-                                <li><i class="fas fa-star text-warning"></i> Team management features</li>
-                                <li><i class="fas fa-star text-warning"></i> Mobile app access</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="text-center mt-4">
-                        <button class="cmms-btn" onclick="window.location.href='/landing'">
-                            <i class="fas fa-user-plus"></i> Create Free Account
-                        </button>
-                        <p class="mt-2 text-muted small">
-                            <i class="fas fa-shield-alt"></i> No credit card required • 14-day free trial
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // Demo Signup Modal Logic
-        function showSignupModal() {
-            const modal = new bootstrap.Modal(document.getElementById('demoSignupModal'));
-            modal.show();
-        }
-
-        // AI Assistant Logic
+        // Toggle AI Chat Window
         function toggleAIChat() {
-            const chatWindow = document.getElementById('ai-chat-window');
+            const chatWindow = document.getElementById('aiChatWindow');
             if (chatWindow.style.display === 'none') {
                 chatWindow.style.display = 'flex';
-                document.getElementById('ai-user-input').focus();
+                document.getElementById('floatingChatInput').focus();
             } else {
                 chatWindow.style.display = 'none';
             }
         }
 
-        function handleAIKeyPress(event) {
+        function handleFloatingChatInput(event) {
             if (event.key === 'Enter') {
-                sendAIMessage();
+                sendFloatingChatMessage();
             }
         }
 
-        async function sendAIMessage() {
-            const input = document.getElementById('ai-user-input');
-            const message = input.value.trim();
-            if (!message) return;
+        async function sendFloatingChatMessage() {
+            const input = document.getElementById('floatingChatInput');
+            const messages = document.getElementById('floatingChatMessages');
+            const userMessage = input.value.trim();
+
+            if (!userMessage) return;
 
             // Add user message
-            addMessage(message, 'user');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message message-user';
+            userDiv.innerHTML = `<strong>You:</strong> ${userMessage}`;
+            messages.appendChild(userDiv);
+            
             input.value = '';
+            messages.scrollTop = messages.scrollHeight;
 
             // Show typing indicator
-            const typingId = addTypingIndicator();
+            const typing = document.getElementById('aiTypingIndicator');
+            typing.style.display = 'block';
 
             try {
-                const formData = new FormData();
-                formData.append('message', message);
-                // Get current context (page URL, title)
-                const context = `Current Page: ${window.location.href}\nPage Title: ${document.title}`;
-                formData.append('context', context);
-
-                const response = await fetch('/ai/assist', {
+                const response = await fetch('/ai/chat', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage, user_id: 1 })
                 });
-
+                
                 const data = await response.json();
-
-                // Remove typing indicator
-                removeMessage(typingId);
-
+                
+                typing.style.display = 'none';
+                
                 // Add AI response
-                addMessage(data.response, 'assistant');
-
-                // Handle any client-side actions if needed (e.g., redirects)
-                if (data.action) {
-                    handleAIAction(data.action);
-                }
-
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'message message-ai';
+                aiDiv.innerHTML = `<strong>AI:</strong> ${data.response}`;
+                messages.appendChild(aiDiv);
+                messages.scrollTop = messages.scrollHeight;
+                
             } catch (error) {
-                console.error('Error:', error);
-                removeMessage(typingId);
-                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                typing.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message message-ai';
+                errorDiv.innerHTML = `<strong>AI:</strong> Sorry, I'm having trouble connecting to the network.`;
+                messages.appendChild(errorDiv);
             }
         }
-
-        function addMessage(text, sender) {
-            const messagesDiv = document.getElementById('ai-chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `ai-message ai-message-${sender}`;
-            // Simple markdown-like parsing for bold and links could be added here
-            messageDiv.innerHTML = text.replace(/\n/g, '<br>');
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            return messageDiv.id = 'msg-' + Date.now();
-        }
-
-        function addTypingIndicator() {
-            const messagesDiv = document.getElementById('ai-chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'ai-message ai-message-assistant typing-indicator';
-            messageDiv.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Thinking...';
-            messageDiv.id = 'typing-' + Date.now();
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            return messageDiv.id;
-        }
-
-        function removeMessage(id) {
-            const element = document.getElementById(id);
-            if (element) element.remove();
-        }
-
-        // Enhanced Voice Input (Web Speech API)
-        let voiceRecognition = null;
-        let isListening = false;
-
-        function startVoiceInput() {
-            // Check for Speech Recognition support (Chrome, Edge, Safari)
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                showVoiceError('Voice input is not supported in this browser. Please use Chrome, Edge, or Safari.');
-                return;
-            }
-
-            // If already listening, stop
-            if (isListening) {
-                stopVoiceInput();
-                return;
-            }
-
-            const voiceBtn = document.getElementById('voice-btn');
-            const userInput = document.getElementById('ai-user-input');
-
-            try {
-                voiceRecognition = new SpeechRecognition();
-                voiceRecognition.continuous = true;
-                voiceRecognition.interimResults = true;
-                voiceRecognition.lang = 'en-US';
-                voiceRecognition.maxAlternatives = 1;
-
-                // Visual feedback - show recording
-                isListening = true;
-                voiceBtn.classList.add('btn-danger', 'pulse-animation');
-                voiceBtn.classList.remove('btn-outline-secondary');
-                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
-                voiceBtn.setAttribute('title', 'Click to stop listening');
-                userInput.placeholder = '🎤 Listening... Click mic to stop';
-                userInput.classList.add('voice-transcribing');
-                
-                // Show listening indicator
-                addVoiceIndicator();
-
-                let finalTranscript = '';
-
-                voiceRecognition.onresult = function (event) {
-                    let interimTranscript = '';
-                    
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const transcript = event.results[i][0].transcript;
-                        if (event.results[i].isFinal) {
-                            finalTranscript += transcript;
-                        } else {
-                            interimTranscript += transcript;
-                        }
-                    }
-                    
-                    // Show interim results with visual indicator
-                    userInput.value = finalTranscript + (interimTranscript ? `${interimTranscript}...` : '');
-                };
-
-                voiceRecognition.onspeechstart = function () {
-                    updateVoiceIndicator('Speaking detected...');
-                };
-
-                voiceRecognition.onspeechend = function () {
-                    updateVoiceIndicator('Processing...');
-                };
-
-                voiceRecognition.onend = function () {
-                    stopVoiceInput();
-                    if (finalTranscript.trim()) {
-                        userInput.value = finalTranscript.trim();
-                        // Auto-send after 1 second if user doesn't continue typing
-                        setTimeout(() => {
-                            if (userInput.value === finalTranscript.trim()) {
-                                sendAIMessage();
-                            }
-                        }, 1000);
-                    }
-                };
-
-                voiceRecognition.onerror = function (event) {
-                    console.error('Speech recognition error:', event.error);
-                    let errorMessage = 'Voice input error. ';
-                    
-                    switch (event.error) {
-                        case 'no-speech':
-                            errorMessage += 'No speech detected. Please try again.';
-                            break;
-                        case 'audio-capture':
-                            errorMessage += 'No microphone found or access denied.';
-                            break;
-                        case 'not-allowed':
-                            errorMessage += 'Microphone access denied. Please allow microphone access and try again.';
-                            break;
-                        case 'network':
-                            errorMessage += 'Network error. Please check your connection.';
-                            break;
-                        default:
-                            errorMessage += `Error: ${event.error}`;
-                    }
-                    
-                    showVoiceError(errorMessage);
-                    stopVoiceInput();
-                };
-
-                voiceRecognition.start();
-
-            } catch (error) {
-                console.error('Failed to start voice recognition:', error);
-                showVoiceError('Failed to start voice input. Please try again.');
-                stopVoiceInput();
-            }
-        }
-
-        function stopVoiceInput() {
-            if (voiceRecognition) {
-                voiceRecognition.stop();
-                voiceRecognition = null;
-            }
-            
-            isListening = false;
-            const voiceBtn = document.getElementById('voice-btn');
-            const userInput = document.getElementById('ai-user-input');
-            
-            // Reset visual feedback
-            voiceBtn.classList.remove('btn-danger', 'pulse-animation');
-            voiceBtn.classList.add('btn-outline-secondary');
-            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-            voiceBtn.setAttribute('title', 'Click to start voice input');
-            userInput.placeholder = 'Type or speak...';
-            userInput.classList.remove('voice-transcribing');
-            
-            removeVoiceIndicator();
-        }
-
-        function addVoiceIndicator() {
-            const indicator = document.createElement('div');
-            indicator.id = 'voice-indicator';
-            indicator.className = 'voice-listening-indicator';
-            indicator.innerHTML = '🎤 Listening...';
-            
-            const chatMessages = document.getElementById('ai-chat-messages');
-            if (chatMessages) {
-                chatMessages.appendChild(indicator);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        }
-
-        function updateVoiceIndicator(text) {
-            const indicator = document.getElementById('voice-indicator');
-            if (indicator) {
-                indicator.innerHTML = `🎤 ${text}`;
-            }
-        }
-
-        function removeVoiceIndicator() {
-            const indicator = document.getElementById('voice-indicator');
-            if (indicator) {
-                indicator.remove();
-            }
-        }
-
-        function showVoiceError(message) {
-            // Add error message to chat
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'ai-message ai-message-error';
-            errorDiv.innerHTML = `<strong>Voice Error:</strong> ${message}`;
-            
-            const chatMessages = document.getElementById('ai-chat-messages');
-            if (chatMessages) {
-                chatMessages.appendChild(errorDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
-                // Auto-remove after 5 seconds
-                setTimeout(() => errorDiv.remove(), 5000);
-            }
-        }
-
-        function handleAIAction(action) {
-            if (action.type === 'redirect') {
-                window.location.href = action.url;
-            }
-        }
-
-        // Initialize voice features when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const voiceBtn = document.getElementById('voice-btn');
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                // Voice not supported - disable button and show tooltip
-                if (voiceBtn) {
-                    voiceBtn.disabled = true;
-                    voiceBtn.classList.add('btn-outline-secondary');
-                    voiceBtn.setAttribute('title', 'Voice input not supported in this browser. Try Chrome, Edge, or Safari.');
-                    voiceBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-                }
-            } else {
-                // Voice supported - set up tooltip
-                if (voiceBtn) {
-                    voiceBtn.setAttribute('title', 'Click to start voice input');
-                    
-                    // Test microphone permission on first interaction
-                    voiceBtn.addEventListener('click', function() {
-                        if (!window.voicePermissionChecked) {
-                            navigator.mediaDevices.getUserMedia({ audio: true })
-                                .then(function(stream) {
-                                    // Permission granted, stop the stream
-                                    stream.getTracks().forEach(track => track.stop());
-                                    window.voicePermissionChecked = true;
-                                })
-                                .catch(function(error) {
-                                    console.log('Microphone permission denied:', error);
-                                    showVoiceError('Please allow microphone access for voice input to work.');
-                                });
-                        }
-                    }, { once: false });
-                }
-            }
-        });
-    </script>
-    
-    <script>
-        
-        // Comprehensive Demo System for Entire Application
-        class ChatterFixDemoSystem {
-            constructor() {
-                this.currentStep = 0;
-                this.isActive = false;
-                this.demoSteps = [];
-                this.overlay = null;
-                this.spotlight = null;
-                this.tooltip = null;
-                this.init();
-            }
-            
-            init() {
-                this.createDemoElements();
-                this.setupEventListeners();
-                this.showDemoBar();
-                this.setupDemoSteps();
-            }
-            
-            createDemoElements() {
-                // Create overlay
-                this.overlay = document.createElement('div');
-                this.overlay.className = 'demo-overlay';
-                
-                // Create spotlight
-                this.spotlight = document.createElement('div');
-                this.spotlight.className = 'demo-spotlight';
-                
-                // Create tooltip
-                this.tooltip = document.createElement('div');
-                this.tooltip.className = 'demo-tooltip bottom';
-                
-                document.body.appendChild(this.overlay);
-                document.body.appendChild(this.spotlight);
-                document.body.appendChild(this.tooltip);
-            }
-            
-            setupEventListeners() {
-                document.getElementById('startAppDemo')?.addEventListener('click', () => this.startFullDemo());
-                document.getElementById('quickTour')?.addEventListener('click', () => this.startQuickTour());
-                document.getElementById('dismissDemo')?.addEventListener('click', () => this.dismissDemoBar());
-                
-                // Keyboard navigation
-                document.addEventListener('keydown', (e) => {
-                    if (!this.isActive) return;
-                    
-                    if (e.key === 'Escape') this.stopDemo();
-                    if (e.key === 'ArrowRight' || e.key === ' ') this.nextStep();
-                    if (e.key === 'ArrowLeft') this.previousStep();
-                });
-                
-                // Click to continue
-                this.overlay.addEventListener('click', () => this.nextStep());
-            }
-            
-            showDemoBar() {
-                const demoBar = document.getElementById('demoBar');
-                const isDismissed = localStorage.getItem('chatterfix-demo-dismissed') === 'true';
-                
-                if (!isDismissed && demoBar) {
-                    demoBar.style.display = 'block';
-                }
-            }
-            
-            dismissDemoBar() {
-                const demoBar = document.getElementById('demoBar');
-                if (demoBar) {
-                    demoBar.style.display = 'none';
-                    localStorage.setItem('chatterfix-demo-dismissed', 'true');
-                }
-            }
-            
-            setupDemoSteps() {
-                const currentPath = window.location.pathname;
-                
-                if (currentPath.startsWith('/manager')) {
-                    this.demoSteps = this.getManagerDemoSteps();
-                } else if (currentPath.includes('/demo')) {
-                    this.demoSteps = this.getMainAppDemoSteps();
-                } else if (currentPath === '/' || currentPath === '/demo') {
-                    this.demoSteps = this.getDashboardDemoSteps();
-                } else {
-                    this.demoSteps = this.getGenericDemoSteps();
-                }
-            }
-            
-            getManagerDemoSteps() {
-                return [
-                    {
-                        selector: '.manager-header',
-                        title: 'Manager Command Center',
-                        description: 'This is your comprehensive management dashboard. From here you can oversee all ChatterFix CMMS operations, monitor team performance, and make data-driven decisions.',
-                        action: () => this.highlightElement('.manager-header')
-                    },
-                    {
-                        selector: '.stat-card',
-                        title: 'Key Performance Indicators',
-                        description: 'These real-time KPIs give you instant visibility into your operation. Monitor active technicians, work orders, asset health, and costs at a glance.',
-                        action: () => this.highlightElement('.stat-card')
-                    },
-                    {
-                        selector: '.nav-card',
-                        title: 'Management Functions',
-                        description: 'Access all management tools from these navigation cards. Each section provides comprehensive control over that area of your CMMS.',
-                        action: () => this.highlightElement('.nav-card')
-                    },
-                    {
-                        selector: '.activity-item',
-                        title: 'Real-time Activity Feed',
-                        description: 'Stay informed with live updates from across your operation. Critical events are automatically prioritized and highlighted.',
-                        action: () => this.highlightElement('.activity-item')
-                    }
-                ];
-            }
-            
-            getMainAppDemoSteps() {
-                return [
-                    {
-                        selector: '.navbar',
-                        title: 'Navigation System',
-                        description: 'Access all ChatterFix modules from this navigation bar. Each section represents a core CMMS function.',
-                        action: () => this.highlightElement('.navbar')
-                    },
-                    {
-                        selector: '.cmms-card',
-                        title: 'Interactive Cards',
-                        description: 'All data and features are presented in these beautiful glassmorphism cards with real-time updates and interactive elements.',
-                        action: () => this.highlightElement('.cmms-card')
-                    }
-                ];
-            }
-            
-            getDashboardDemoSteps() {
-                return [
-                    {
-                        selector: '.ai-brain',
-                        title: 'AI Command Center',
-                        description: 'The heart of ChatterFix - our AI-powered dashboard that adapts to your needs and provides intelligent insights.',
-                        action: () => this.highlightElement('.ai-brain')
-                    },
-                    {
-                        selector: '.stats-grid',
-                        title: 'Live Statistics',
-                        description: 'Monitor your CMMS performance with real-time statistics and automated reporting.',
-                        action: () => this.highlightElement('.stats-grid')
-                    }
-                ];
-            }
-            
-            getGenericDemoSteps() {
-                return [
-                    {
-                        selector: '.navbar',
-                        title: 'Welcome to ChatterFix CMMS',
-                        description: 'This is a comprehensive computerized maintenance management system designed to streamline your operations.',
-                        action: () => this.highlightElement('.navbar')
-                    },
-                ];
-            }
-            
-            startFullDemo() {
-                this.isActive = true;
-                this.currentStep = 0;
-                this.showStep();
-                this.dismissDemoBar();
-            }
-            
-            startQuickTour() {
-                // Quick tour with fewer steps
-                this.demoSteps = this.demoSteps.slice(0, 2);
-                this.startFullDemo();
-            }
-            
-            showStep() {
-                if (this.currentStep >= this.demoSteps.length) {
-                    this.completeDemo();
-                    return;
-                }
-                
-                const step = this.demoSteps[this.currentStep];
-                
-                // Execute step action
-                if (step.action) step.action();
-                
-                // Show overlay
-                this.overlay.style.display = 'block';
-                
-                // Update tooltip
-                this.tooltip.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                        <h5 style="margin: 0; color: #333;">${step.title}</h5>
-                        <small style="color: #666;">${this.currentStep + 1}/${this.demoSteps.length}</small>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #555;">${step.description}</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                        <small style="color: #888;">Click anywhere or press → to continue</small>
-                        <div>
-                            ${this.currentStep > 0 ? '<button onclick="window.demoSystem.previousStep()" style="margin-right: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">← Back</button>' : ''}
-                            <button onclick="window.demoSystem.nextStep()" style="padding: 0.25rem 0.75rem; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">Next →</button>
-                            <button onclick="window.demoSystem.stopDemo()" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">Skip</button>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            highlightElement(selector) {
-                const element = document.querySelector(selector);
-                if (!element) return;
-                
-                const rect = element.getBoundingClientRect();
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                
-                // Position spotlight
-                this.spotlight.style.left = (rect.left + scrollLeft - 10) + 'px';
-                this.spotlight.style.top = (rect.top + scrollTop - 10) + 'px';
-                this.spotlight.style.width = (rect.width + 20) + 'px';
-                this.spotlight.style.height = (rect.height + 20) + 'px';
-                this.spotlight.style.display = 'block';
-                
-                // Position tooltip
-                this.tooltip.style.left = (rect.left + scrollLeft) + 'px';
-                this.tooltip.style.top = (rect.top + scrollTop + rect.height + 20) + 'px';
-                this.tooltip.style.display = 'block';
-                
-                // Scroll into view
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            
-            nextStep() {
-                this.currentStep++;
-                this.showStep();
-            }
-            
-            previousStep() {
-                if (this.currentStep > 0) {
-                    this.currentStep--;
-                    this.showStep();
-                }
-            }
-            
-            stopDemo() {
-                this.isActive = false;
-                this.overlay.style.display = 'none';
-                this.spotlight.style.display = 'none';
-                this.tooltip.style.display = 'none';
-                this.currentStep = 0;
-            }
-            
-            completeDemo() {
-                this.tooltip.innerHTML = `
-                    <div>
-                        <h5 style="margin: 0 0 0.5rem 0; color: #333;">🎉 Demo Complete!</h5>
-                        <p style="margin: 0.5rem 0; color: #555;">You've explored the key features of ChatterFix CMMS. Ready to set up your own workspace?</p>
-                        <div style="margin-top: 1rem;">
-                            <button onclick="window.location.href='/landing'" style="padding: 0.5rem 1rem; border: none; background: #28a745; color: white; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">Get Started Free</button>
-                            <button onclick="window.demoSystem.stopDemo()" style="padding: 0.5rem 1rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">Continue Exploring</button>
-                        </div>
-                    </div>
-                `;
-                
-                setTimeout(() => {
-                    this.stopDemo();
-                }, 5000);
-            }
-        }
-        
-        // Initialize demo system
-        document.addEventListener('DOMContentLoaded', function() {
-            window.demoSystem = new ChatterFixDemoSystem();
-        });
     </script>
     <script>
         // Theme Toggle Logic

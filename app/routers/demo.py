@@ -3,7 +3,209 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime, timedelta
+import json
 from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
+
+
+def generate_manager_demo_data():
+    """Generate realistic demo data for Manager Dashboard features"""
+
+    # Demo technicians with realistic performance data
+    demo_technicians = [
+        {
+            "id": 1,
+            "name": "Mike Rodriguez",
+            "role": "Senior Technician",
+            "completion_rate": 94,
+            "avg_response_time": "12 min",
+            "certifications": ["HVAC", "Electrical", "Plumbing"],
+            "status": "Active",
+            "last_login": "2 hours ago",
+            "work_orders_today": 8,
+            "efficiency_score": 92,
+            "customer_rating": 4.8,
+        },
+        {
+            "id": 2,
+            "name": "Sarah Chen",
+            "role": "Lead Technician",
+            "completion_rate": 98,
+            "avg_response_time": "8 min",
+            "certifications": ["HVAC", "Refrigeration", "Safety"],
+            "status": "Active",
+            "last_login": "30 min ago",
+            "work_orders_today": 12,
+            "efficiency_score": 96,
+            "customer_rating": 4.9,
+        },
+        {
+            "id": 3,
+            "name": "James Wilson",
+            "role": "Technician",
+            "completion_rate": 87,
+            "avg_response_time": "15 min",
+            "certifications": ["Basic HVAC"],
+            "status": "Training",
+            "last_login": "1 hour ago",
+            "work_orders_today": 5,
+            "efficiency_score": 85,
+            "customer_rating": 4.6,
+        },
+        {
+            "id": 4,
+            "name": "Maria Garcia",
+            "role": "Senior Technician",
+            "completion_rate": 91,
+            "avg_response_time": "11 min",
+            "certifications": ["Electrical", "Plumbing", "Safety"],
+            "status": "Active",
+            "last_login": "45 min ago",
+            "work_orders_today": 9,
+            "efficiency_score": 89,
+            "customer_rating": 4.7,
+        },
+    ]
+
+    # Demo assets with performance metrics
+    demo_assets = [
+        {
+            "id": "HVAC-001",
+            "name": "Main HVAC Unit - Building A",
+            "type": "HVAC System",
+            "health_score": 85,
+            "status": "Operational",
+            "last_maintenance": "2024-11-15",
+            "next_maintenance": "2024-12-15",
+            "cost_this_month": 1250.00,
+            "efficiency": 92,
+            "uptime": 99.2,
+            "critical_alerts": 0,
+        },
+        {
+            "id": "PUMP-002",
+            "name": "Water Pump System",
+            "type": "Pump",
+            "health_score": 72,
+            "status": "Needs Attention",
+            "last_maintenance": "2024-10-20",
+            "next_maintenance": "2024-12-08",
+            "cost_this_month": 890.00,
+            "efficiency": 78,
+            "uptime": 95.5,
+            "critical_alerts": 2,
+        },
+        {
+            "id": "GEN-003",
+            "name": "Backup Generator",
+            "type": "Generator",
+            "health_score": 96,
+            "status": "Excellent",
+            "last_maintenance": "2024-11-20",
+            "next_maintenance": "2025-01-20",
+            "cost_this_month": 450.00,
+            "efficiency": 98,
+            "uptime": 100.0,
+            "critical_alerts": 0,
+        },
+    ]
+
+    # Demo inventory with stock levels
+    demo_inventory = [
+        {
+            "id": "PART-001",
+            "name": "HVAC Air Filters",
+            "category": "Filters",
+            "current_stock": 45,
+            "min_stock": 20,
+            "max_stock": 100,
+            "unit_cost": 25.50,
+            "supplier": "FilterPro Inc",
+            "status": "In Stock",
+            "last_ordered": "2024-11-20",
+            "monthly_usage": 18,
+        },
+        {
+            "id": "PART-002",
+            "name": "Water Pump Seals",
+            "category": "Seals & Gaskets",
+            "current_stock": 8,
+            "min_stock": 15,
+            "max_stock": 50,
+            "unit_cost": 85.00,
+            "supplier": "AquaParts Ltd",
+            "status": "Low Stock",
+            "last_ordered": "2024-10-15",
+            "monthly_usage": 12,
+        },
+        {
+            "id": "PART-003",
+            "name": "Electrical Contactors",
+            "category": "Electrical",
+            "current_stock": 0,
+            "min_stock": 10,
+            "max_stock": 40,
+            "unit_cost": 120.00,
+            "supplier": "ElectroSupply Co",
+            "status": "Out of Stock",
+            "last_ordered": "2024-11-01",
+            "monthly_usage": 8,
+        },
+    ]
+
+    # Recent activities for activity feed
+    recent_activities = [
+        {
+            "type": "work_order",
+            "message": "Work Order #WO-2024-1156 completed by Mike Rodriguez",
+            "timestamp": datetime.now() - timedelta(minutes=15),
+            "priority": "normal",
+        },
+        {
+            "type": "alert",
+            "message": "Critical Alert: Water Pump System pressure warning",
+            "timestamp": datetime.now() - timedelta(minutes=22),
+            "priority": "high",
+        },
+        {
+            "type": "inventory",
+            "message": "Low stock alert: Water Pump Seals (8 remaining)",
+            "timestamp": datetime.now() - timedelta(minutes=35),
+            "priority": "medium",
+        },
+        {
+            "type": "maintenance",
+            "message": "Preventive maintenance scheduled for Backup Generator",
+            "timestamp": datetime.now() - timedelta(hours=1),
+            "priority": "normal",
+        },
+        {
+            "type": "technician",
+            "message": "Sarah Chen achieved 98% completion rate this month",
+            "timestamp": datetime.now() - timedelta(hours=2),
+            "priority": "good",
+        },
+    ]
+
+    # Overview statistics
+    overview_stats = {
+        "total_technicians": len(demo_technicians),
+        "active_work_orders": 24,
+        "assets_monitored": len(demo_assets),
+        "inventory_items": len(demo_inventory),
+        "avg_response_time": "11.5 min",
+        "system_uptime": 98.7,
+        "monthly_costs": 15750.00,
+        "efficiency_score": 91.2,
+    }
+
+    return {
+        "technicians": demo_technicians,
+        "assets": demo_assets,
+        "inventory": demo_inventory,
+        "activities": recent_activities,
+        "overview_stats": overview_stats,
+    }
+
 
 router = APIRouter()
 # Disable template caching to ensure fresh templates are always loaded
@@ -759,5 +961,91 @@ async def demo_training_module(request: Request, role: str, module_id: str):
             "content": demo_content,
             "is_demo": True,
             "demo_banner": f"Demo: {module['title']} - Full interactive experience available",
+        },
+    )
+
+
+# Manager Dashboard Demo Routes
+@router.get("/manager", response_class=HTMLResponse)
+async def demo_manager_dashboard(request: Request):
+    """Interactive Demo Manager Dashboard - Auto-play demonstration of all features"""
+    demo_data = generate_manager_demo_data()
+
+    return templates.TemplateResponse(
+        "demo_manager_dashboard.html",
+        {
+            "request": request,
+            "demo_data": demo_data,
+            "demo_data_json": json.dumps(demo_data, default=str),
+            "is_demo": True,
+            "auto_play": True,
+        },
+    )
+
+
+@router.get("/manager/technicians", response_class=HTMLResponse)
+async def demo_manager_technicians(request: Request):
+    """Demo Manager Technician Management with Interactive Features"""
+    demo_data = generate_manager_demo_data()
+
+    return templates.TemplateResponse(
+        "demo_manager_technicians.html",
+        {
+            "request": request,
+            "technicians": demo_data["technicians"],
+            "demo_data_json": json.dumps(demo_data, default=str),
+            "is_demo": True,
+            "auto_play": True,
+        },
+    )
+
+
+@router.get("/manager/performance", response_class=HTMLResponse)
+async def demo_manager_performance(request: Request):
+    """Demo Manager Performance Analytics with Live Charts"""
+    demo_data = generate_manager_demo_data()
+
+    return templates.TemplateResponse(
+        "demo_manager_performance.html",
+        {
+            "request": request,
+            "technicians": demo_data["technicians"],
+            "demo_data_json": json.dumps(demo_data, default=str),
+            "is_demo": True,
+            "auto_play": True,
+        },
+    )
+
+
+@router.get("/manager/assets", response_class=HTMLResponse)
+async def demo_manager_assets(request: Request):
+    """Demo Manager Asset Management with Health Monitoring"""
+    demo_data = generate_manager_demo_data()
+
+    return templates.TemplateResponse(
+        "demo_manager_assets.html",
+        {
+            "request": request,
+            "assets": demo_data["assets"],
+            "demo_data_json": json.dumps(demo_data, default=str),
+            "is_demo": True,
+            "auto_play": True,
+        },
+    )
+
+
+@router.get("/manager/inventory", response_class=HTMLResponse)
+async def demo_manager_inventory(request: Request):
+    """Demo Manager Inventory Management with Stock Alerts"""
+    demo_data = generate_manager_demo_data()
+
+    return templates.TemplateResponse(
+        "demo_manager_inventory.html",
+        {
+            "request": request,
+            "inventory": demo_data["inventory"],
+            "demo_data_json": json.dumps(demo_data, default=str),
+            "is_demo": True,
+            "auto_play": True,
         },
     )

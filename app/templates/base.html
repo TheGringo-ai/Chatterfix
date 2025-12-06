@@ -100,6 +100,30 @@
                 border-left-color: #0056b3;
             }
         }
+        
+        /* Demo link styling */
+        .demo-link {
+            background: linear-gradient(135deg, #007bff, #6f42c1) !important;
+            color: white !important;
+            border-radius: 6px !important;
+            margin: 2px 4px !important;
+            animation: demo-glow 3s ease-in-out infinite;
+        }
+        
+        .demo-link:hover {
+            background: linear-gradient(135deg, #0056b3, #5a2a91) !important;
+            color: white !important;
+            transform: scale(1.05);
+        }
+        
+        @keyframes demo-glow {
+            0%, 100% {
+                box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 123, 255, 0.6), 0 0 30px rgba(111, 66, 193, 0.4);
+            }
+        }
     </style>
     
     {% block head %}{% endblock %}
@@ -124,7 +148,11 @@
             <a href="/demo/team"
                 class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/team') %}active{% endif %}">Team</a>
             <a href="/manager"
-                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/manager') %}active{% endif %}">Manager</a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/manager') and not request.url.path.startswith('/demo/manager') %}active{% endif %}">Manager</a>
+            <a href="/demo/manager" 
+                class="nav-link demo-link {% if request.url and request.url.path and request.url.path.startswith('/demo/manager') %}active{% endif %}">
+                <i class="fas fa-play-circle me-1"></i>Demo
+            </a>
             <!-- Training module link - demo implementation -->
             <a href="/demo/training"
                 class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/training') %}active{% endif %}">Training</a>

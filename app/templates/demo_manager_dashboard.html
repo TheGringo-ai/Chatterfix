@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}Demo: Manager Dashboard - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Demo Header -->
+    <div class="demo-header mb-4 p-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg text-white">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">
+                    <i class="fas fa-play-circle me-3"></i>
+                    Interactive Manager Dashboard Demo
+                </h1>
+                <p class="mb-0 opacity-90">Watch as we demonstrate all the powerful management features - or click anywhere to interact!</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button id="autoPlayBtn" class="btn btn-light me-2">
+                    <i class="fas fa-pause"></i> Pause Demo
+                </button>
+                <button id="restartBtn" class="btn btn-outline-light">
+                    <i class="fas fa-redo"></i> Restart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="demo-progress mb-4">
+        <div class="progress" style="height: 8px;">
+            <div id="demoProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <small class="text-muted">Demo Progress</small>
+            <small id="progressText" class="text-muted">Starting demonstration...</small>
+        </div>
+    </div>
+
+    <!-- Demo Content Container -->
+    <div id="demoContent">
+        <!-- Manager Dashboard Header -->
+        <div class="manager-header mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="text-primary">
+                        <i class="fas fa-tachometer-alt me-3"></i>
+                        Manager Command Center
+                    </h1>
+                    <p class="text-muted">Complete control and oversight of ChatterFix CMMS operations</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="demo-pointer d-none">
+                        <i class="fas fa-hand-pointer text-primary fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Overview Cards -->
+        <div class="row mb-4" id="kpiCards">
+            <div class="col-md-3">
+                <div class="stat-card h-100 card border-0 shadow-sm demo-highlight">
+                    <div class="card-body text-center">
+                        <div class="stat-icon mb-3">
+                            <i class="fas fa-users fa-2x text-primary"></i>
+                        </div>
+                        <div class="stat-number h3 mb-1" data-count="{{ demo_data.overview_stats.total_technicians }}">0</div>
+                        <div class="stat-label text-muted">Active Technicians</div>
+                        <div class="demo-insight mt-2 d-none">
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up"></i> 98% completion rate across team
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card h-100 card border-0 shadow-sm demo-highlight">
+                    <div class="card-body text-center">
+                        <div class="stat-icon mb-3">
+                            <i class="fas fa-clipboard-list fa-2x text-warning"></i>
+                        </div>
+                        <div class="stat-number h3 mb-1" data-count="{{ demo_data.overview_stats.active_work_orders }}">0</div>
+                        <div class="stat-label text-muted">Active Work Orders</div>
+                        <div class="demo-insight mt-2 d-none">
+                            <small class="text-info">
+                                <i class="fas fa-clock"></i> Avg. {{ demo_data.overview_stats.avg_response_time }} response
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card h-100 card border-0 shadow-sm demo-highlight">
+                    <div class="card-body text-center">
+                        <div class="stat-icon mb-3">
+                            <i class="fas fa-cogs fa-2x text-success"></i>
+                        </div>
+                        <div class="stat-number h3 mb-1" data-count="{{ demo_data.overview_stats.assets_monitored }}">0</div>
+                        <div class="stat-label text-muted">Assets Monitored</div>
+                        <div class="demo-insight mt-2 d-none">
+                            <small class="text-success">
+                                <i class="fas fa-heart"></i> {{ demo_data.overview_stats.system_uptime }}% uptime
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card h-100 card border-0 shadow-sm demo-highlight">
+                    <div class="card-body text-center">
+                        <div class="stat-icon mb-3">
+                            <i class="fas fa-dollar-sign fa-2x text-info"></i>
+                        </div>
+                        <div class="stat-number h3 mb-1">$<span data-count="{{ demo_data.overview_stats.monthly_costs|int }}">0</span>K</div>
+                        <div class="stat-label text-muted">Monthly Costs</div>
+                        <div class="demo-insight mt-2 d-none">
+                            <small class="text-success">
+                                <i class="fas fa-arrow-down"></i> 15% reduction from last month
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Navigation Tiles -->
+        <div class="row mb-4" id="navTiles">
+            <div class="col-md-6 col-lg-3 mb-3">
+                <a href="/demo/manager/technicians" class="nav-tile card h-100 text-decoration-none demo-highlight">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-users-cog fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Technician Management</h5>
+                        <p class="card-text text-muted small">Onboarding, performance, certifications</p>
+                        <div class="demo-typing d-none">
+                            <div class="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <small class="text-primary">Demonstrating onboarding workflow...</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <a href="/demo/manager/performance" class="nav-tile card h-100 text-decoration-none demo-highlight">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Performance Analytics</h5>
+                        <p class="card-text text-muted small">Charts, reports, KPI tracking</p>
+                        <div class="demo-typing d-none">
+                            <div class="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <small class="text-success">Loading performance charts...</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <a href="/demo/manager/assets" class="nav-tile card h-100 text-decoration-none demo-highlight">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-industry fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Asset Performance</h5>
+                        <p class="card-text text-muted small">Health monitoring, maintenance planning</p>
+                        <div class="demo-typing d-none">
+                            <div class="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <small class="text-warning">Checking asset health scores...</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-3">
+                <a href="/demo/manager/inventory" class="nav-tile card h-100 text-decoration-none demo-highlight">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-boxes fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">Inventory & Costs</h5>
+                        <p class="card-text text-muted small">Stock levels, suppliers, purchasing</p>
+                        <div class="demo-typing d-none">
+                            <div class="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <small class="text-info">Analyzing stock levels...</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activities & Alerts -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm demo-highlight">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-activity me-2"></i>
+                            Recent Activities
+                        </h5>
+                    </div>
+                    <div class="card-body" id="activityFeed">
+                        {% for activity in demo_data.activities %}
+                        <div class="activity-item d-flex align-items-center py-2 border-bottom demo-fade-in">
+                            <div class="activity-icon me-3">
+                                {% if activity.type == 'work_order' %}
+                                <i class="fas fa-clipboard-check text-success"></i>
+                                {% elif activity.type == 'alert' %}
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                {% elif activity.type == 'inventory' %}
+                                <i class="fas fa-box text-warning"></i>
+                                {% elif activity.type == 'maintenance' %}
+                                <i class="fas fa-wrench text-info"></i>
+                                {% else %}
+                                <i class="fas fa-user text-primary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="activity-content flex-grow-1">
+                                <div class="activity-message">{{ activity.message }}</div>
+                                <small class="text-muted">{{ activity.timestamp.strftime('%H:%M') }}</small>
+                            </div>
+                            <div class="demo-new-badge d-none">
+                                <span class="badge bg-primary">NEW</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm demo-highlight">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bell me-2"></i>
+                            Critical Alerts
+                        </h5>
+                    </div>
+                    <div class="card-body" id="alertsPanel">
+                        <div class="alert alert-warning demo-fade-in" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>
+                                    <strong>Low Stock Alert</strong><br>
+                                    <small>Water Pump Seals: 8 remaining</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-danger demo-fade-in" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-tools me-2"></i>
+                                <div>
+                                    <strong>Critical Maintenance</strong><br>
+                                    <small>Water Pump System needs attention</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info demo-fade-in" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chart-line me-2"></i>
+                                <div>
+                                    <strong>Performance Update</strong><br>
+                                    <small>Sarah Chen: 98% completion rate</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Commentary -->
+    <div id="demoCommentary" class="mt-4 p-3 bg-light rounded">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-microphone me-2 text-primary"></i>
+            <div id="commentaryText" class="text-muted">
+                Starting the Manager Dashboard demonstration...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Styles -->
+<style>
+.demo-highlight {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.demo-highlight.active {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(0,123,255,0.3) !important;
+    border: 2px solid #007bff;
+}
+
+.demo-highlight.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shine 1s ease-in-out;
+}
+
+@keyframes shine {
+    to {
+        left: 100%;
+    }
+}
+
+.demo-fade-in {
+    opacity: 0;
+    animation: fadeIn 0.8s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+.typing-indicator span {
+    height: 6px;
+    width: 6px;
+    background: #007bff;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 3px;
+    animation: typing 1.4s ease-in-out infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.3;
+    }
+    30% {
+        transform: translateY(-10px);
+        opacity: 1;
+    }
+}
+
+.stat-number {
+    font-weight: bold;
+    color: #333;
+}
+
+.nav-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.demo-pointer {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+.demo-new-badge {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+</style>
+
+<!-- Demo Script -->
+<script>
+const demoData = {{ demo_data_json|safe }};
+let autoPlayEnabled = true;
+let demoStep = 0;
+let demoInterval;
+
+const demoSteps = [
+    {
+        duration: 3000,
+        action: () => {
+            updateProgress(10, "Initializing Manager Dashboard...");
+            highlightElement('#kpiCards');
+            updateCommentary("Welcome to the Manager Dashboard! Let's start by examining our key performance indicators.");
+        }
+    },
+    {
+        duration: 4000,
+        action: () => {
+            updateProgress(25, "Animating KPI counters...");
+            animateCounters();
+            updateCommentary("These KPIs give you instant visibility into your team's performance, active work orders, and system health.");
+        }
+    },
+    {
+        duration: 3000,
+        action: () => {
+            updateProgress(40, "Showing detailed insights...");
+            showInsights();
+            updateCommentary("Notice the real-time insights appearing below each metric - these help you understand trends at a glance.");
+        }
+    },
+    {
+        duration: 5000,
+        action: () => {
+            updateProgress(55, "Demonstrating navigation features...");
+            highlightElement('#navTiles');
+            showTypingIndicators();
+            updateCommentary("The navigation tiles provide quick access to all management functions. Each section offers comprehensive control over that area.");
+        }
+    },
+    {
+        duration: 4000,
+        action: () => {
+            updateProgress(70, "Loading activity feed...");
+            highlightElement('#activityFeed');
+            addNewActivity();
+            updateCommentary("The activity feed shows real-time updates across your entire operation. Critical events are automatically highlighted.");
+        }
+    },
+    {
+        duration: 3000,
+        action: () => {
+            updateProgress(85, "Displaying critical alerts...");
+            highlightElement('#alertsPanel');
+            updateCommentary("Critical alerts ensure you never miss important issues. The system automatically prioritizes alerts by severity.");
+        }
+    },
+    {
+        duration: 3000,
+        action: () => {
+            updateProgress(100, "Demo complete! Click any section to explore.");
+            updateCommentary("Demo complete! You can now click on any section to explore the full interactive features. The system provides complete control over your CMMS operations.");
+            clearHighlights();
+        }
+    }
+];
+
+function startDemo() {
+    if (!autoPlayEnabled) return;
+    
+    demoInterval = setInterval(() => {
+        if (demoStep < demoSteps.length) {
+            demoSteps[demoStep].action();
+            demoStep++;
+        } else {
+            clearInterval(demoInterval);
+            setTimeout(restartDemo, 5000); // Auto-restart after 5 seconds
+        }
+    }, 3000);
+}
+
+function stopDemo() {
+    clearInterval(demoInterval);
+    autoPlayEnabled = false;
+    document.getElementById('autoPlayBtn').innerHTML = '<i class="fas fa-play"></i> Resume Demo';
+}
+
+function restartDemo() {
+    demoStep = 0;
+    clearHighlights();
+    hideInsights();
+    resetCounters();
+    updateProgress(0, "Starting demonstration...");
+    updateCommentary("Starting the Manager Dashboard demonstration...");
+    
+    if (autoPlayEnabled) {
+        setTimeout(startDemo, 1000);
+    }
+}
+
+function updateProgress(percent, text) {
+    document.getElementById('demoProgress').style.width = percent + '%';
+    document.getElementById('progressText').textContent = text;
+}
+
+function updateCommentary(text) {
+    document.getElementById('commentaryText').textContent = text;
+}
+
+function highlightElement(selector) {
+    clearHighlights();
+    const element = document.querySelector(selector);
+    if (element) {
+        element.classList.add('active');
+    }
+}
+
+function clearHighlights() {
+    document.querySelectorAll('.demo-highlight.active').forEach(el => {
+        el.classList.remove('active');
+    });
+    document.querySelectorAll('.demo-pointer').forEach(el => {
+        el.classList.add('d-none');
+    });
+}
+
+function animateCounters() {
+    document.querySelectorAll('[data-count]').forEach(counter => {
+        const target = parseInt(counter.dataset.count);
+        let current = 0;
+        const increment = target / 20;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                counter.textContent = target;
+                clearInterval(timer);
+            } else {
+                counter.textContent = Math.floor(current);
+            }
+        }, 100);
+    });
+}
+
+function showInsights() {
+    document.querySelectorAll('.demo-insight').forEach(insight => {
+        insight.classList.remove('d-none');
+    });
+}
+
+function hideInsights() {
+    document.querySelectorAll('.demo-insight').forEach(insight => {
+        insight.classList.add('d-none');
+    });
+}
+
+function resetCounters() {
+    document.querySelectorAll('[data-count]').forEach(counter => {
+        counter.textContent = '0';
+    });
+}
+
+function showTypingIndicators() {
+    document.querySelectorAll('.demo-typing').forEach(typing => {
+        typing.classList.remove('d-none');
+        setTimeout(() => {
+            typing.classList.add('d-none');
+        }, 2500);
+    });
+}
+
+function addNewActivity() {
+    const newActivity = document.createElement('div');
+    newActivity.className = 'activity-item d-flex align-items-center py-2 border-bottom demo-fade-in';
+    newActivity.innerHTML = `
+        <div class="activity-icon me-3">
+            <i class="fas fa-user-plus text-success"></i>
+        </div>
+        <div class="activity-content flex-grow-1">
+            <div class="activity-message">New technician onboarded: Alex Thompson</div>
+            <small class="text-muted">Just now</small>
+        </div>
+        <div class="demo-new-badge">
+            <span class="badge bg-primary">NEW</span>
+        </div>
+    `;
+    
+    const activityFeed = document.getElementById('activityFeed');
+    activityFeed.insertBefore(newActivity, activityFeed.firstChild);
+}
+
+// Event Listeners
+document.getElementById('autoPlayBtn').addEventListener('click', function() {
+    if (autoPlayEnabled) {
+        stopDemo();
+    } else {
+        autoPlayEnabled = true;
+        this.innerHTML = '<i class="fas fa-pause"></i> Pause Demo';
+        startDemo();
+    }
+});
+
+document.getElementById('restartBtn').addEventListener('click', function() {
+    autoPlayEnabled = true;
+    document.getElementById('autoPlayBtn').innerHTML = '<i class="fas fa-pause"></i> Pause Demo';
+    restartDemo();
+});
+
+// Start demo on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(startDemo, 1000);
+});
+</script>
+{% endblock %}

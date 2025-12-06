@@ -19,6 +19,12 @@ from typing import Optional, List, Dict, Any
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
+
+# Redirect /training (without slash) to /training/ (with slash)
+@router.get("", response_class=HTMLResponse)
+async def training_center_redirect(request: Request):
+    """Redirect /training to /training/ for consistent URL handling"""
+    return RedirectResponse(url="/training/", status_code=301)
 templates = Jinja2Templates(directory="app/templates")
 
 # ========== FIRESTORE HELPER FUNCTIONS ==========

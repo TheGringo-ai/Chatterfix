@@ -19,6 +19,89 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Voice Input Styles -->
+    <style>
+        .pulse-animation {
+            animation: pulse-red 1.5s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+        
+        .voice-listening-indicator {
+            background: linear-gradient(135deg, #dc3545, #ff6b6b);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 5px 0;
+            text-align: center;
+            animation: voice-pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes voice-pulse {
+            from {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1.02);
+            }
+        }
+        
+        .ai-message-error {
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 3px solid #dc3545;
+            color: #dc3545;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            animation: fade-in-error 0.3s ease-in;
+        }
+        
+        @keyframes fade-in-error {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #voice-btn:hover {
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+        }
+        
+        /* Real-time text animation while speaking */
+        .voice-transcribing {
+            border-left: 3px solid #007bff !important;
+            animation: transcribe-pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes transcribe-pulse {
+            0%, 100% {
+                border-left-color: #007bff;
+            }
+            50% {
+                border-left-color: #0056b3;
+            }
+        }
+    </style>
+    
     {% block head %}{% endblock %}
 </head>
 
@@ -304,34 +387,182 @@
             if (element) element.remove();
         }
 
-        // Voice Input (Web Speech API)
+        // Enhanced Voice Input (Web Speech API)
+        let voiceRecognition = null;
+        let isListening = false;
+
         function startVoiceInput() {
-            if (!('webkitSpeechRecognition' in window)) {
-                alert('Voice input is not supported in this browser. Please use Chrome.');
+            // Check for Speech Recognition support (Chrome, Edge, Safari)
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                showVoiceError('Voice input is not supported in this browser. Please use Chrome, Edge, or Safari.');
                 return;
             }
 
-            const recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
+            // If already listening, stop
+            if (isListening) {
+                stopVoiceInput();
+                return;
+            }
 
             const voiceBtn = document.getElementById('voice-btn');
-            voiceBtn.classList.add('btn-danger');
-            voiceBtn.classList.remove('btn-outline-secondary');
+            const userInput = document.getElementById('ai-user-input');
 
-            recognition.onresult = function (event) {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('ai-user-input').value = transcript;
-                sendAIMessage(); // Auto-send on voice end
-            };
+            try {
+                voiceRecognition = new SpeechRecognition();
+                voiceRecognition.continuous = true;
+                voiceRecognition.interimResults = true;
+                voiceRecognition.lang = 'en-US';
+                voiceRecognition.maxAlternatives = 1;
 
-            recognition.onend = function () {
-                voiceBtn.classList.remove('btn-danger');
-                voiceBtn.classList.add('btn-outline-secondary');
-            };
+                // Visual feedback - show recording
+                isListening = true;
+                voiceBtn.classList.add('btn-danger', 'pulse-animation');
+                voiceBtn.classList.remove('btn-outline-secondary');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                voiceBtn.setAttribute('title', 'Click to stop listening');
+                userInput.placeholder = '🎤 Listening... Click mic to stop';
+                userInput.classList.add('voice-transcribing');
+                
+                // Show listening indicator
+                addVoiceIndicator();
 
-            recognition.start();
+                let finalTranscript = '';
+
+                voiceRecognition.onresult = function (event) {
+                    let interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    // Show interim results with visual indicator
+                    userInput.value = finalTranscript + (interimTranscript ? `${interimTranscript}...` : '');
+                };
+
+                voiceRecognition.onspeechstart = function () {
+                    updateVoiceIndicator('Speaking detected...');
+                };
+
+                voiceRecognition.onspeechend = function () {
+                    updateVoiceIndicator('Processing...');
+                };
+
+                voiceRecognition.onend = function () {
+                    stopVoiceInput();
+                    if (finalTranscript.trim()) {
+                        userInput.value = finalTranscript.trim();
+                        // Auto-send after 1 second if user doesn't continue typing
+                        setTimeout(() => {
+                            if (userInput.value === finalTranscript.trim()) {
+                                sendAIMessage();
+                            }
+                        }, 1000);
+                    }
+                };
+
+                voiceRecognition.onerror = function (event) {
+                    console.error('Speech recognition error:', event.error);
+                    let errorMessage = 'Voice input error. ';
+                    
+                    switch (event.error) {
+                        case 'no-speech':
+                            errorMessage += 'No speech detected. Please try again.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage += 'No microphone found or access denied.';
+                            break;
+                        case 'not-allowed':
+                            errorMessage += 'Microphone access denied. Please allow microphone access and try again.';
+                            break;
+                        case 'network':
+                            errorMessage += 'Network error. Please check your connection.';
+                            break;
+                        default:
+                            errorMessage += `Error: ${event.error}`;
+                    }
+                    
+                    showVoiceError(errorMessage);
+                    stopVoiceInput();
+                };
+
+                voiceRecognition.start();
+
+            } catch (error) {
+                console.error('Failed to start voice recognition:', error);
+                showVoiceError('Failed to start voice input. Please try again.');
+                stopVoiceInput();
+            }
+        }
+
+        function stopVoiceInput() {
+            if (voiceRecognition) {
+                voiceRecognition.stop();
+                voiceRecognition = null;
+            }
+            
+            isListening = false;
+            const voiceBtn = document.getElementById('voice-btn');
+            const userInput = document.getElementById('ai-user-input');
+            
+            // Reset visual feedback
+            voiceBtn.classList.remove('btn-danger', 'pulse-animation');
+            voiceBtn.classList.add('btn-outline-secondary');
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            voiceBtn.setAttribute('title', 'Click to start voice input');
+            userInput.placeholder = 'Type or speak...';
+            userInput.classList.remove('voice-transcribing');
+            
+            removeVoiceIndicator();
+        }
+
+        function addVoiceIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'voice-indicator';
+            indicator.className = 'voice-listening-indicator';
+            indicator.innerHTML = '🎤 Listening...';
+            
+            const chatMessages = document.getElementById('ai-chat-messages');
+            if (chatMessages) {
+                chatMessages.appendChild(indicator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function updateVoiceIndicator(text) {
+            const indicator = document.getElementById('voice-indicator');
+            if (indicator) {
+                indicator.innerHTML = `🎤 ${text}`;
+            }
+        }
+
+        function removeVoiceIndicator() {
+            const indicator = document.getElementById('voice-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function showVoiceError(message) {
+            // Add error message to chat
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'ai-message ai-message-error';
+            errorDiv.innerHTML = `<strong>Voice Error:</strong> ${message}`;
+            
+            const chatMessages = document.getElementById('ai-chat-messages');
+            if (chatMessages) {
+                chatMessages.appendChild(errorDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => errorDiv.remove(), 5000);
+            }
         }
 
         function handleAIAction(action) {
@@ -339,6 +570,43 @@
                 window.location.href = action.url;
             }
         }
+
+        // Initialize voice features when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const voiceBtn = document.getElementById('voice-btn');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                // Voice not supported - disable button and show tooltip
+                if (voiceBtn) {
+                    voiceBtn.disabled = true;
+                    voiceBtn.classList.add('btn-outline-secondary');
+                    voiceBtn.setAttribute('title', 'Voice input not supported in this browser. Try Chrome, Edge, or Safari.');
+                    voiceBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                }
+            } else {
+                // Voice supported - set up tooltip
+                if (voiceBtn) {
+                    voiceBtn.setAttribute('title', 'Click to start voice input');
+                    
+                    // Test microphone permission on first interaction
+                    voiceBtn.addEventListener('click', function() {
+                        if (!window.voicePermissionChecked) {
+                            navigator.mediaDevices.getUserMedia({ audio: true })
+                                .then(function(stream) {
+                                    // Permission granted, stop the stream
+                                    stream.getTracks().forEach(track => track.stop());
+                                    window.voicePermissionChecked = true;
+                                })
+                                .catch(function(error) {
+                                    console.log('Microphone permission denied:', error);
+                                    showVoiceError('Please allow microphone access for voice input to work.');
+                                });
+                        }
+                    }, { once: false });
+                }
+            }
+        });
     </script>
 </body>
 

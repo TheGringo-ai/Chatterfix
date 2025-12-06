@@ -80,6 +80,7 @@ async def landing_page(request: Request):
     """Serve the comprehensive public landing page with demo access"""
     return templates.TemplateResponse("public_landing.html", {"request": request})
 
+
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request):
     """Serve the signup page for actual registration"""

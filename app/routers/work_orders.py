@@ -278,6 +278,7 @@ async def complete_work_order(wo_id: str):
 
                     if user_email:
                         from app.services.email_service import email_service
+
                         await email_service.send_work_order_notification(
                             to_email=user_email,
                             to_name=user_name,

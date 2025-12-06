@@ -10,7 +10,6 @@ from app.services.dashboard_service import dashboard_service
 from app.services.real_time_feed_service import real_time_feed
 from app.services.websocket_manager import websocket_manager
 from app.core.db_adapter import get_db_adapter
-from app.services import auth_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")

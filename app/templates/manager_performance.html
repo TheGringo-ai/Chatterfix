@@ -5,51 +5,46 @@
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    /* Force light theme for manager pages - override dark theme */
+    /* Theme aware styling for manager pages */
     .container-fluid {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
         min-height: 100vh;
     }
     
-    body {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
-    }
-    
     .card {
-        background-color: #ffffff !important;
-        color: #212529 !important;
-        border: 1px solid #dee2e6 !important;
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
     }
     
     .card-body {
-        background-color: #ffffff !important;
-        color: #212529 !important;
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
     }
     
     .card-header {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
-        border-bottom: 1px solid #dee2e6 !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .text-muted {
-        color: #6c757d !important;
+        color: var(--text-secondary) !important;
     }
     .metric-card {
-        background: white !important;
-        color: #212529 !important;
+        background: var(--card-bg) !important;
+        color: var(--text-primary) !important;
         border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         text-align: center;
         border-top: 4px solid #3b82f6;
-        border: 1px solid #dee2e6 !important;
+        border: 1px solid var(--border-color) !important;
     }
     
     .metric-value {

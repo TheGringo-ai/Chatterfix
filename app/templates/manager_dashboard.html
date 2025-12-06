@@ -4,41 +4,36 @@
 
 {% block extra_head %}
 <style>
-    /* Force light theme for manager dashboard - override dark theme */
+    /* Manager Dashboard - Theme Aware Styling */
     .container-fluid {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
         min-height: 100vh;
     }
     
-    body {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
-    }
-    
     .card {
-        background-color: #ffffff !important;
-        color: #212529 !important;
-        border: 1px solid #dee2e6 !important;
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
     }
     
     .card-body {
-        background-color: #ffffff !important;
-        color: #212529 !important;
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
     }
     
     .card-header {
-        background-color: #f8f9fa !important;
-        color: #212529 !important;
-        border-bottom: 1px solid #dee2e6 !important;
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border-bottom: 1px solid var(--border-color) !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .text-muted {
-        color: #6c757d !important;
+        color: var(--text-secondary) !important;
     }
     
     .manager-header {
@@ -58,14 +53,14 @@
     }
     
     .stat-card {
-        background: white !important;
-        color: #212529 !important;
+        background: var(--card-bg) !important;
+        color: var(--text-primary) !important;
         border-radius: 0.5rem;
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         border-left: 4px solid #3b82f6;
         transition: transform 0.2s;
-        border: 1px solid #dee2e6 !important;
+        border: 1px solid var(--border-color) !important;
     }
     
     .stat-card:hover {
@@ -81,7 +76,7 @@
     }
     
     .stat-label {
-        color: #6b7280 !important;
+        color: var(--text-secondary) !important;
         font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -91,21 +86,21 @@
         display: flex;
         align-items: center;
         padding: 1rem;
-        border-bottom: 1px solid #e5e7eb !important;
+        border-bottom: 1px solid var(--border-color) !important;
         transition: background-color 0.2s;
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .activity-item:hover {
-        background-color: #f9fafb !important;
+        background-color: var(--bg-secondary) !important;
     }
     
     .activity-item .activity-content {
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .activity-item .activity-content small {
-        color: #6c757d !important;
+        color: var(--text-secondary) !important;
     }
     
     .activity-icon {
@@ -123,15 +118,15 @@
     .activity-icon.high { background: #fee2e2; color: #ef4444; }
     
     .nav-card {
-        background: white !important;
-        color: #212529 !important;
+        background: var(--card-bg) !important;
+        color: var(--text-primary) !important;
         border-radius: 0.5rem;
         padding: 1.5rem;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: all 0.2s;
         text-decoration: none;
-        border: 2px solid #dee2e6 !important;
+        border: 2px solid var(--border-color) !important;
     }
     
     .nav-card:hover {
@@ -139,15 +134,15 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         border-color: #3b82f6 !important;
         text-decoration: none;
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .nav-card h5 {
-        color: #212529 !important;
+        color: var(--text-primary) !important;
     }
     
     .nav-card p {
-        color: #6c757d !important;
+        color: var(--text-secondary) !important;
     }
     
     .nav-card-icon {

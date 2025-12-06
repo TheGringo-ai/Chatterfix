@@ -52,6 +52,7 @@ Password: {password}
         )
         # Send actual email using email service
         from app.services.email_service import email_service
+
         await email_service.send_password_reset_email(user_data, password)
 
     except Exception as e:
@@ -67,6 +68,7 @@ async def send_welcome_email(user_data: dict, password: str):
         )
         # Send actual welcome email using email service
         from app.services.email_service import email_service
+
         await email_service.send_welcome_email(user_data, password)
 
     except Exception as e:

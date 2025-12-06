@@ -23,33 +23,39 @@ async def work_orders_list(request: Request):
     try:
         db_adapter = get_db_adapter()
         work_orders = []
-        
+
         if db_adapter.firestore_manager:
             # Get work orders from Firestore
             work_orders_data = await db_adapter.firestore_manager.get_collection(
-                "work_orders", 
-                order_by="-created_date"  # Descending order
+                "work_orders", order_by="-created_date"  # Descending order
             )
-            
+
             # Enrich with asset information
             for wo in work_orders_data:
                 if wo.get("asset_id"):
-                    asset_data = await db_adapter.firestore_manager.get_document("assets", wo["asset_id"])
+                    asset_data = await db_adapter.firestore_manager.get_document(
+                        "assets", wo["asset_id"]
+                    )
                     if asset_data:
                         wo["asset_image_url"] = asset_data.get("image_url")
                         wo["asset_name"] = asset_data.get("name")
-                
+
                 work_orders.append(wo)
         else:
             logger.warning("Firestore not available for work orders list")
-        
+
         return templates.TemplateResponse(
             "work_orders.html", {"request": request, "work_orders": work_orders}
         )
     except Exception as e:
         logger.error(f"Failed to load work orders: {e}")
         return templates.TemplateResponse(
-            "work_orders.html", {"request": request, "work_orders": [], "error": "Failed to load work orders"}
+            "work_orders.html",
+            {
+                "request": request,
+                "work_orders": [],
+                "error": "Failed to load work orders",
+            },
         )
 
 
@@ -58,11 +64,11 @@ async def work_order_detail(request: Request, wo_id: str):
     """Render work order details"""
     try:
         db_adapter = get_db_adapter()
-        
+
         if not db_adapter.firestore_manager:
             logger.error("Firestore not available for work order detail")
             return RedirectResponse(url="/work-orders")
-        
+
         # Get work order from Firestore
         wo = await db_adapter.firestore_manager.get_document("work_orders", wo_id)
         if not wo:
@@ -72,11 +78,12 @@ async def work_order_detail(request: Request, wo_id: str):
         media_data = await db_adapter.firestore_manager.get_collection(
             "work_order_media",
             filters=[{"field": "work_order_id", "operator": "==", "value": wo_id}],
-            order_by="-uploaded_date"
+            order_by="-uploaded_date",
         )
 
         return templates.TemplateResponse(
-            "work_order_detail.html", {"request": request, "wo": wo, "media": media_data}
+            "work_order_detail.html",
+            {"request": request, "wo": wo, "media": media_data},
         )
     except Exception as e:
         logger.error(f"Failed to load work order detail: {e}")
@@ -134,10 +141,13 @@ async def create_work_order(
         db_adapter = get_db_adapter()
         if not db_adapter.firestore_manager:
             logger.error("Firestore not available for work order creation")
-            return RedirectResponse(url="/work-orders?error=database_unavailable", status_code=303)
-        
+            return RedirectResponse(
+                url="/work-orders?error=database_unavailable", status_code=303
+            )
+
         # Prepare work order data
         from datetime import datetime
+
         work_order_data = {
             "title": title,
             "description": description,
@@ -146,42 +156,48 @@ async def create_work_order(
             "due_date": due_date,
             "asset_id": asset_id,
             "status": "Open",
-            "created_date": datetime.now().isoformat()
+            "created_date": datetime.now().isoformat(),
         }
-        
+
         # Create work order in Firestore
-        wo_id = await db_adapter.firestore_manager.create_document("work_orders", work_order_data)
+        wo_id = await db_adapter.firestore_manager.create_document(
+            "work_orders", work_order_data
+        )
         logger.info(f"Created work order {wo_id}: {title}")
-        
+
         # Handle file uploads if provided
         media_files = []
         if files:
             wo_dir = os.path.join(UPLOAD_DIR, str(wo_id))
             os.makedirs(wo_dir, exist_ok=True)
-            
+
             for file in files:
                 if file.filename:
                     file_path = os.path.join(wo_dir, file.filename)
                     with open(file_path, "wb") as buffer:
                         shutil.copyfileobj(file.file, buffer)
-                    
+
                     rel_path = f"/static/uploads/work_orders/{wo_id}/{file.filename}"
                     file_type = (
-                        "image" if file.content_type and file.content_type.startswith("image/") else "document"
+                        "image"
+                        if file.content_type and file.content_type.startswith("image/")
+                        else "document"
                     )
-                    
+
                     media_data = {
                         "work_order_id": wo_id,
                         "file_path": rel_path,
                         "file_type": file_type,
                         "title": file.filename,
                         "description": "Uploaded during creation",
-                        "uploaded_date": datetime.now().isoformat()
+                        "uploaded_date": datetime.now().isoformat(),
                     }
-                    
-                    media_id = await db_adapter.firestore_manager.create_document("work_order_media", media_data)
+
+                    media_id = await db_adapter.firestore_manager.create_document(
+                        "work_order_media", media_data
+                    )
                     media_files.append(media_id)
-        
+
         # Send notification if assigned to someone
         if assigned_to and assigned_to != "unassigned":
             try:
@@ -190,24 +206,32 @@ async def create_work_order(
                 if technician_id:
                     # Add asset name to work order data if available
                     if asset_id:
-                        asset_data = await db_adapter.firestore_manager.get_document("assets", asset_id)
-                        work_order_data["asset_name"] = asset_data.get("name", "Unknown Asset") if asset_data else "Unknown Asset"
-                    
+                        asset_data = await db_adapter.firestore_manager.get_document(
+                            "assets", asset_id
+                        )
+                        work_order_data["asset_name"] = (
+                            asset_data.get("name", "Unknown Asset")
+                            if asset_data
+                            else "Unknown Asset"
+                        )
+
                     await NotificationService.notify_work_order_assigned(
                         work_order_id=int(wo_id) if wo_id.isdigit() else hash(wo_id),
                         technician_id=technician_id,
                         title=title,
-                        work_order_data=work_order_data
+                        work_order_data=work_order_data,
                     )
                     logger.info(f"Sent work order assignment notification for {wo_id}")
             except Exception as e:
                 logger.error(f"Failed to send work order notification: {e}")
-        
+
         return RedirectResponse(url="/work-orders", status_code=303)
-    
+
     except Exception as e:
         logger.error(f"Failed to create work order: {e}")
-        return RedirectResponse(url="/work-orders?error=creation_failed", status_code=303)
+        return RedirectResponse(
+            url="/work-orders?error=creation_failed", status_code=303
+        )
 
 
 @router.post("/work-orders/{wo_id}/complete")
@@ -215,49 +239,53 @@ async def complete_work_order(wo_id: str):
     """Mark a work order as completed"""
     try:
         db_adapter = get_db_adapter()
-        
+
         if not db_adapter.firestore_manager:
             logger.error("Firestore not available for work order completion")
             return RedirectResponse(url="/work-orders", status_code=303)
-        
+
         # Get work order for notification
         wo = await db_adapter.firestore_manager.get_document("work_orders", wo_id)
-        
+
         # Update status to completed
         from datetime import datetime
+
         await db_adapter.firestore_manager.update_document(
-            "work_orders", 
-            wo_id, 
-            {"status": "Completed", "completed_date": datetime.now().isoformat()}
+            "work_orders",
+            wo_id,
+            {"status": "Completed", "completed_date": datetime.now().isoformat()},
         )
-        
+
         # Send completion notification if work order has assignment
         if wo and wo.get("assigned_to"):
             try:
-                technician_id = int(wo["assigned_to"]) if wo["assigned_to"].isdigit() else None
+                technician_id = (
+                    int(wo["assigned_to"]) if wo["assigned_to"].isdigit() else None
+                )
                 if technician_id:
                     work_order_info = {
                         "id": wo_id,
                         "title": wo.get("title", "Work Order"),
                         "description": wo.get("description", "No description"),
                         "priority": wo.get("priority", "normal"),
-                        "asset_name": wo.get("asset_name", "Unknown Asset")
+                        "asset_name": wo.get("asset_name", "Unknown Asset"),
                     }
-                    
+
                     # Get user data for email
                     user_data = await NotificationService._get_user_data(technician_id)
                     user_email = user_data.get("email")
                     user_name = user_data.get("fullName", "Technician")
-                    
+
                     if user_email:
+                        from app.services.email_service import email_service
                         await email_service.send_work_order_notification(
                             to_email=user_email,
                             to_name=user_name,
                             work_order=work_order_info,
-                            notification_type="completed"
+                            notification_type="completed",
                         )
                         logger.info(f"Sent work order completion email to {user_email}")
-                        
+
                         # Also send in-app notification
                         await NotificationService.send_notification(
                             user_id=technician_id,
@@ -267,10 +295,10 @@ async def complete_work_order(wo_id: str):
                             link=f"/work-orders/{wo_id}",
                             priority="normal",
                         )
-                        
+
             except Exception as e:
                 logger.error(f"Failed to send completion notification: {e}")
-        
+
         return RedirectResponse(url="/work-orders", status_code=303)
     except Exception as e:
         logger.error(f"Failed to complete work order: {e}")

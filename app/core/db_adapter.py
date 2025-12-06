@@ -9,13 +9,15 @@ class DatabaseAdapter:
 
     def __init__(self):
         self.db_type = "firestore"
-        
+
         # Import Firestore manager directly - fail if not available
         from app.core.firestore_db import get_firestore_manager, FIRESTORE_AVAILABLE
 
         if not FIRESTORE_AVAILABLE:
-            raise ImportError("Firestore module not available. Cannot initialize database.")
-            
+            raise ImportError(
+                "Firestore module not available. Cannot initialize database."
+            )
+
         self.firestore_manager = get_firestore_manager()
         logger.info("🔥 Using Firestore database")
 
@@ -81,7 +83,9 @@ class DatabaseAdapter:
             return await self.firestore_manager.get_asset_by_tag(asset_tag)
         return None
 
-    async def find_asset_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+    async def find_asset_by_identifier(
+        self, identifier: str
+    ) -> Optional[Dict[str, Any]]:
         """Find asset by serial number, name, or other identifier"""
         if self.firestore_manager:
             return await self.firestore_manager.find_asset_by_identifier(identifier)
@@ -131,21 +135,31 @@ class DatabaseAdapter:
         if self.firestore_manager:
             filters = []
             if skill_category:
-                filters.append({"field": "skill_category", "operator": "==", "value": skill_category})
+                filters.append(
+                    {
+                        "field": "skill_category",
+                        "operator": "==",
+                        "value": skill_category,
+                    }
+                )
             if asset_type:
-                filters.append({"field": "asset_type", "operator": "==", "value": asset_type})
-            
+                filters.append(
+                    {"field": "asset_type", "operator": "==", "value": asset_type}
+                )
+
             return await self.firestore_manager.get_collection(
-                "training_modules", 
+                "training_modules",
                 order_by="-created_at",
-                filters=filters if filters else None
+                filters=filters if filters else None,
             )
         return []
 
     async def get_training_module(self, module_id: str) -> Optional[Dict[str, Any]]:
         """Get a training module by ID"""
         if self.firestore_manager:
-            return await self.firestore_manager.get_document("training_modules", module_id)
+            return await self.firestore_manager.get_document(
+                "training_modules", module_id
+            )
         return None
 
     async def create_user_training(self, training_data: Dict[str, Any]) -> str:

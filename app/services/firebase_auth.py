@@ -12,6 +12,7 @@ FIREBASE_ADMIN_AVAILABLE = True
 
 try:
     import pyrebase
+
     PYREBASE_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Pyrebase not available: {e}")
@@ -47,7 +48,9 @@ class FirebaseAuthService:
 
         # Fail if no credentials are configured
         if not google_creds_path and not firebase_api_key:
-            logger.warning("⚠️ No explicit credentials found. Attempting to use Google Cloud Default Credentials...")
+            logger.warning(
+                "⚠️ No explicit credentials found. Attempting to use Google Cloud Default Credentials..."
+            )
             # raise ValueError("Firebase credentials missing. Cannot start application without Firebase.")
 
         try:

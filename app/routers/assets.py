@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+
 # # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import gemini_service
@@ -427,51 +428,60 @@ async def scan_asset_barcode(file: UploadFile = File(...)):
     """Scan barcode to find asset and related information"""
     try:
         if not file.filename:
-            return JSONResponse({"success": False, "error": "No file provided"}, status_code=400)
+            return JSONResponse(
+                {"success": False, "error": "No file provided"}, status_code=400
+            )
 
         # Read and scan barcode
         image_data = await file.read()
         barcodes = await media_service.scan_barcode_from_image(image_data)
-        
+
         if not barcodes:
-            return JSONResponse({"success": False, "error": "No barcode found in image"}, status_code=400)
-        
+            return JSONResponse(
+                {"success": False, "error": "No barcode found in image"},
+                status_code=400,
+            )
+
         # Get the first barcode
         barcode_data = barcodes[0]["data"]
-        
+
         # Look up asset by barcode (asset_tag, serial_number, or name)
         db_adapter = get_db_adapter()
-        
+
         # First try to find by asset_tag
         asset = await db_adapter.get_asset_by_tag(barcode_data)
-        
+
         if not asset:
             # Try by serial number or partial name match
             asset = await db_adapter.find_asset_by_identifier(barcode_data)
-        
+
         if asset:
             # Get related information
             work_orders = await db_adapter.get_asset_work_orders(asset["id"])
             parts = await db_adapter.get_asset_parts(asset["id"])
-            
-            return JSONResponse({
-                "success": True,
-                "barcode_data": barcode_data,
-                "asset": asset,
-                "work_orders": work_orders[:5],  # Latest 5 work orders
-                "parts": parts,
-                "scan_result": "asset_found"
-            })
+
+            return JSONResponse(
+                {
+                    "success": True,
+                    "barcode_data": barcode_data,
+                    "asset": asset,
+                    "work_orders": work_orders[:5],  # Latest 5 work orders
+                    "parts": parts,
+                    "scan_result": "asset_found",
+                }
+            )
         else:
-            return JSONResponse({
-                "success": True,
-                "barcode_data": barcode_data,
-                "asset": None,
-                "work_orders": [],
-                "parts": [],
-                "scan_result": "no_asset_found",
-                "message": f"No asset found with identifier: {barcode_data}"
-            })
+            return JSONResponse(
+                {
+                    "success": True,
+                    "barcode_data": barcode_data,
+                    "asset": None,
+                    "work_orders": [],
+                    "parts": [],
+                    "scan_result": "no_asset_found",
+                    "message": f"No asset found with identifier: {barcode_data}",
+                }
+            )
 
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
@@ -483,24 +493,26 @@ async def lookup_asset_by_tag(asset_tag: str = Form(...)):
     try:
         db_adapter = get_db_adapter()
         asset = await db_adapter.get_asset_by_tag(asset_tag)
-        
+
         if asset:
             # Get summary info
             work_orders_count = await db_adapter.count_asset_work_orders(asset["id"])
             parts_count = await db_adapter.count_asset_parts(asset["id"])
-            
-            return JSONResponse({
-                "success": True,
-                "asset": asset,
-                "work_orders_count": work_orders_count,
-                "parts_count": parts_count
-            })
+
+            return JSONResponse(
+                {
+                    "success": True,
+                    "asset": asset,
+                    "work_orders_count": work_orders_count,
+                    "parts_count": parts_count,
+                }
+            )
         else:
-            return JSONResponse({
-                "success": False,
-                "error": f"Asset not found: {asset_tag}"
-            }, status_code=404)
-            
+            return JSONResponse(
+                {"success": False, "error": f"Asset not found: {asset_tag}"},
+                status_code=404,
+            )
+
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
@@ -511,25 +523,27 @@ async def generate_asset_qr_code(asset_id: int):
     try:
         db_adapter = get_db_adapter()
         asset = await db_adapter.get_asset(asset_id)
-        
+
         if not asset:
-            return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
-        
+            return JSONResponse(
+                {"success": False, "error": "Asset not found"}, status_code=404
+            )
+
         # Generate QR code with asset tag or ID
         qr_data = asset.get("asset_tag", f"ASSET-{asset_id}")
-        
+
         barcode_info = await media_service.generate_barcode(
-            data=qr_data,
-            barcode_type="qr",
-            size=(300, 300)
+            data=qr_data, barcode_type="qr", size=(300, 300)
         )
-        
-        return JSONResponse({
-            "success": True,
-            "qr_code": barcode_info,
-            "asset": asset,
-            "qr_data": qr_data
-        })
-        
+
+        return JSONResponse(
+            {
+                "success": True,
+                "qr_code": barcode_info,
+                "asset": asset,
+                "qr_data": qr_data,
+            }
+        )
+
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)

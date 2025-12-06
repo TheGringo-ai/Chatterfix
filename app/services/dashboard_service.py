@@ -6,6 +6,7 @@ Provides data for all dashboard widgets based on user role and configuration
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
+
 # # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
 
@@ -24,7 +25,11 @@ class DashboardService:
             "widgets": [
                 {"widget_type": "workload", "title": "My Workload", "size": "medium"},
                 {"widget_type": "performance", "title": "Performance", "size": "small"},
-                {"widget_type": "notifications", "title": "Notifications", "size": "small"}
+                {
+                    "widget_type": "notifications",
+                    "title": "Notifications",
+                    "size": "small",
+                },
             ],
             "layout": "grid",
             "theme": "dark",
@@ -67,7 +72,7 @@ class DashboardService:
         """Get today's work orders for the user"""
         # Mock data for now
         today = datetime.now().date()
-        
+
         stats = {
             "total": 3,
             "overdue": 1,
@@ -75,7 +80,7 @@ class DashboardService:
             "blocked": 0,
             "in_progress": 1,
         }
-        
+
         wo_list = [
             {
                 "id": 101,
@@ -90,7 +95,7 @@ class DashboardService:
                 "location": "Building A, Roof",
                 "asset_id": "HVAC-003",
                 "status_label": "in_progress",
-                "urgency": "today"
+                "urgency": "today",
             },
             {
                 "id": 102,
@@ -105,7 +110,7 @@ class DashboardService:
                 "location": "Building B, Basement",
                 "asset_id": "AHU-001",
                 "status_label": "pending",
-                "urgency": "overdue"
+                "urgency": "overdue",
             },
             {
                 "id": 103,
@@ -120,8 +125,8 @@ class DashboardService:
                 "location": "Building C, Exterior",
                 "asset_id": "GEN-001",
                 "status_label": "pending",
-                "urgency": "upcoming"
-            }
+                "urgency": "upcoming",
+            },
         ]
 
         return {"work_orders": wo_list, "stats": stats}

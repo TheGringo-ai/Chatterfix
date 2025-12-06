@@ -104,11 +104,13 @@ class TrainingGenerator:
                 "asset_type": asset_type,
                 "skill_category": skill_category,
                 "difficulty_level": training_data["difficulty_level"],
-                "estimated_duration_minutes": training_data["estimated_duration_minutes"],
+                "estimated_duration_minutes": training_data[
+                    "estimated_duration_minutes"
+                ],
                 "content_path": json.dumps(training_data),
-                "ai_generated": True
+                "ai_generated": True,
             }
-            
+
             module_id = await firestore_manager.create_training_module(module_data)
 
             logger.info(
@@ -205,7 +207,7 @@ class TrainingGenerator:
                 "assigned_date": datetime.now(),
                 "started_date": None,
                 "completed_date": None,
-                "score": None
+                "score": None,
             }
             await firestore_manager.create_user_training(training_data)
             logger.info(f"Assigned training module {module_id} to user {user_id}")
@@ -224,8 +226,8 @@ class TrainingGenerator:
                 {
                     "status": "completed",
                     "completed_date": datetime.now(),
-                    "score": score
-                }
+                    "score": score,
+                },
             )
             logger.info(f"Completed training {user_training_id} with score {score}")
         except Exception as e:
@@ -239,28 +241,37 @@ class TrainingGenerator:
         try:
             # Get user training records
             user_training = await firestore_manager.get_user_training(user_id)
-            
+
             # Enrich with module details
             enriched_training = []
             for training in user_training:
                 module_id = training.get("training_module_id")
                 if module_id:
-                    module = await firestore_manager.get_document("training_modules", module_id)
+                    module = await firestore_manager.get_document(
+                        "training_modules", module_id
+                    )
                     if module:
-                        training.update({
-                            "title": module.get("title"),
-                            "description": module.get("description"),
-                            "estimated_duration_minutes": module.get("estimated_duration_minutes")
-                        })
+                        training.update(
+                            {
+                                "title": module.get("title"),
+                                "description": module.get("description"),
+                                "estimated_duration_minutes": module.get(
+                                    "estimated_duration_minutes"
+                                ),
+                            }
+                        )
                 enriched_training.append(training)
-            
+
             # Sort by status priority and date
             status_order = {"assigned": 1, "in_progress": 2, "completed": 3}
-            enriched_training.sort(key=lambda x: (
-                status_order.get(x.get("status", "assigned"), 4),
-                x.get("started_date") or datetime.min
-            ), reverse=True)
-            
+            enriched_training.sort(
+                key=lambda x: (
+                    status_order.get(x.get("status", "assigned"), 4),
+                    x.get("started_date") or datetime.min,
+                ),
+                reverse=True,
+            )
+
             return enriched_training
         except Exception as e:
             logger.error(f"Error getting user training: {e}")

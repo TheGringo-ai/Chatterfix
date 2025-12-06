@@ -33,11 +33,13 @@ async def recognize_part(
         dict: Detected parts with confidence scores and inventory data
     """
     try:
-        logger.info(f"Starting AI-powered part recognition. Image path: {image_path}, Image data: {bool(image_data)}")
-        
+        logger.info(
+            f"Starting AI-powered part recognition. Image path: {image_path}, Image data: {bool(image_data)}"
+        )
+
         # Try AI-powered recognition first, fallback to simulated results
         detected_parts = await _recognize_parts_with_ai(image_data, image_path)
-        
+
         if not detected_parts:
             # Fallback to simulated results if AI fails
             logger.warning("AI recognition failed, using simulated results")
@@ -61,18 +63,30 @@ async def recognize_part(
                 for part in detected_parts:
                     part_number = part.get("part_number")
                     if part_number:
-                        inventory_items = await db_adapter.firestore_manager.get_collection(
-                            "inventory",
-                            filters=[{"field": "part_number", "operator": "==", "value": part_number}]
+                        inventory_items = (
+                            await db_adapter.firestore_manager.get_collection(
+                                "inventory",
+                                filters=[
+                                    {
+                                        "field": "part_number",
+                                        "operator": "==",
+                                        "value": part_number,
+                                    }
+                                ],
+                            )
                         )
                         for item in inventory_items:
-                            inventory_matches.append({
-                                "inventory_id": item.get("id"),
-                                "part_number": item.get("part_number"),
-                                "quantity_available": item.get("quantity_available", 0),
-                                "location": item.get("location"),
-                                "last_updated": item.get("updated_at")
-                            })
+                            inventory_matches.append(
+                                {
+                                    "inventory_id": item.get("id"),
+                                    "part_number": item.get("part_number"),
+                                    "quantity_available": item.get(
+                                        "quantity_available", 0
+                                    ),
+                                    "location": item.get("location"),
+                                    "last_updated": item.get("updated_at"),
+                                }
+                            )
         except Exception as e:
             logger.warning(f"Could not lookup inventory: {e}")
 
@@ -92,7 +106,9 @@ async def recognize_part(
         }
 
 
-async def _recognize_parts_with_ai(image_data: bytes = None, image_path: str = None) -> list:
+async def _recognize_parts_with_ai(
+    image_data: bytes = None, image_path: str = None
+) -> list:
     """Use AI to recognize parts from image"""
     try:
         # Prepare prompt for AI analysis
@@ -110,15 +126,15 @@ async def _recognize_parts_with_ai(image_data: bytes = None, image_path: str = N
         
         If no clear parts are visible, return empty array [].
         """
-        
+
         # Try Gemini first
-        if gemini_service and hasattr(gemini_service, '_get_model'):
+        if gemini_service and hasattr(gemini_service, "_get_model"):
             try:
                 model = gemini_service._get_model()
                 if model and (image_data or image_path):
                     logger.info("Attempting part recognition with Gemini AI")
-                    
-                    # For now, return structured fallback since actual image analysis 
+
+                    # For now, return structured fallback since actual image analysis
                     # requires proper image upload handling
                     return [
                         {
@@ -127,14 +143,14 @@ async def _recognize_parts_with_ai(image_data: bytes = None, image_path: str = N
                             "category": "mechanical",
                             "confidence": 0.90,
                             "location": "AI Analysis",
-                            "maintenance_schedule": "AI-determined schedule"
+                            "maintenance_schedule": "AI-determined schedule",
                         }
                     ]
             except Exception as e:
                 logger.warning(f"Gemini part recognition failed: {e}")
-        
+
         # Try OpenAI as fallback
-        if openai_service and hasattr(openai_service, '_get_client'):
+        if openai_service and hasattr(openai_service, "_get_client"):
             try:
                 client = openai_service._get_client()
                 if client:
@@ -147,20 +163,22 @@ async def _recognize_parts_with_ai(image_data: bytes = None, image_path: str = N
                             "category": "mechanical",
                             "confidence": 0.88,
                             "location": "AI Analysis",
-                            "maintenance_schedule": "AI-determined schedule"
+                            "maintenance_schedule": "AI-determined schedule",
                         }
                     ]
             except Exception as e:
                 logger.warning(f"OpenAI part recognition failed: {e}")
-        
+
         return []  # No AI available or failed
-        
+
     except Exception as e:
         logger.error(f"AI part recognition error: {e}")
         return []
 
 
-async def _analyze_condition_with_ai(image_data: bytes = None, image_path: str = None, asset_id: int = None) -> dict:
+async def _analyze_condition_with_ai(
+    image_data: bytes = None, image_path: str = None, asset_id: int = None
+) -> dict:
     """Use AI to analyze asset condition from image"""
     try:
         # Prepare prompt for condition analysis
@@ -184,14 +202,14 @@ async def _analyze_condition_with_ai(image_data: bytes = None, image_path: str =
             "timestamp": "2024-12-06T12:00:00Z"
         }
         """
-        
+
         # Try Gemini first
-        if gemini_service and hasattr(gemini_service, '_get_model'):
+        if gemini_service and hasattr(gemini_service, "_get_model"):
             try:
                 model = gemini_service._get_model()
                 if model:
                     logger.info("Attempting condition analysis with Gemini AI")
-                    
+
                     # Return structured AI analysis result
                     return {
                         "condition_score": 8.2,
@@ -199,28 +217,28 @@ async def _analyze_condition_with_ai(image_data: bytes = None, image_path: str =
                             {
                                 "type": "minor_wear",
                                 "severity": "low",
-                                "location": "surface_coating", 
+                                "location": "surface_coating",
                                 "confidence": 0.92,
                             }
                         ],
                         "recommendations": [
                             "AI recommends: Monitor for further wear progression",
-                            "Consider preventive coating application"
+                            "Consider preventive coating application",
                         ],
                         "urgency": "low",
                         "timestamp": "2024-12-06T12:00:00Z",
-                        "ai_provider": "gemini"
+                        "ai_provider": "gemini",
                     }
             except Exception as e:
                 logger.warning(f"Gemini condition analysis failed: {e}")
-        
+
         # Try OpenAI as fallback
-        if openai_service and hasattr(openai_service, '_get_client'):
+        if openai_service and hasattr(openai_service, "_get_client"):
             try:
                 client = openai_service._get_client()
                 if client:
                     logger.info("Attempting condition analysis with OpenAI")
-                    
+
                     return {
                         "condition_score": 7.8,
                         "detected_issues": [
@@ -233,17 +251,17 @@ async def _analyze_condition_with_ai(image_data: bytes = None, image_path: str =
                         ],
                         "recommendations": [
                             "OpenAI recommends: Inspect joint connections",
-                            "Apply corrosion preventive measures"
+                            "Apply corrosion preventive measures",
                         ],
                         "urgency": "medium",
                         "timestamp": "2024-12-06T12:00:00Z",
-                        "ai_provider": "openai"
+                        "ai_provider": "openai",
                     }
             except Exception as e:
                 logger.warning(f"OpenAI condition analysis failed: {e}")
-        
+
         return None  # No AI available or failed
-        
+
     except Exception as e:
         logger.error(f"AI condition analysis error: {e}")
         return None
@@ -264,11 +282,13 @@ async def analyze_asset_condition(
         dict: Condition analysis with recommendations
     """
     try:
-        logger.info(f"Starting AI-powered asset condition analysis. Asset ID: {asset_id}, Image path: {image_path}, Image data: {bool(image_data)}")
-        
+        logger.info(
+            f"Starting AI-powered asset condition analysis. Asset ID: {asset_id}, Image path: {image_path}, Image data: {bool(image_data)}"
+        )
+
         # Try AI-powered condition analysis first, fallback to simulated results
         analysis = await _analyze_condition_with_ai(image_data, image_path, asset_id)
-        
+
         if not analysis:
             # Fallback to simulated analysis if AI fails
             logger.warning("AI condition analysis failed, using simulated results")
@@ -294,7 +314,7 @@ async def analyze_asset_condition(
                     "Apply anti-corrosion treatment to base",
                 ],
                 "urgency": "medium",
-                "timestamp": "2024-12-06T12:00:00Z"
+                "timestamp": "2024-12-06T12:00:00Z",
             }
 
         # Update asset condition in Firestore if asset_id provided
@@ -306,13 +326,15 @@ async def analyze_asset_condition(
                     update_data = {
                         "condition_rating": int(analysis["condition_score"]),
                         "last_inspection_date": analysis.get("timestamp", "2024-12-06"),
-                        "condition_notes": f"AI Analysis: {analysis['urgency']} priority"
+                        "condition_notes": f"AI Analysis: {analysis['urgency']} priority",
                     }
-                    
+
                     await db_adapter.firestore_manager.update_document(
                         "assets", str(asset_id), update_data
                     )
-                    logger.info(f"Updated asset {asset_id} condition rating to {analysis['condition_score']}")
+                    logger.info(
+                        f"Updated asset {asset_id} condition rating to {analysis['condition_score']}"
+                    )
             except Exception as e:
                 logger.warning(f"Could not update asset condition: {e}")
 

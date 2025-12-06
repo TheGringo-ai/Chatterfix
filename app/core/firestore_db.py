@@ -273,21 +273,25 @@ class FirestoreManager:
             assets = await self.get_collection(
                 "assets",
                 limit=1,
-                filters=[{"field": "asset_tag", "operator": "==", "value": asset_tag}]
+                filters=[{"field": "asset_tag", "operator": "==", "value": asset_tag}],
             )
             return assets[0] if assets else None
         except Exception as e:
             logger.error(f"Error getting asset by tag: {e}")
             return None
 
-    async def find_asset_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+    async def find_asset_by_identifier(
+        self, identifier: str
+    ) -> Optional[Dict[str, Any]]:
         """Find asset by serial number, name, or other identifier"""
         try:
             # Try by serial number first
             assets = await self.get_collection(
                 "assets",
                 limit=1,
-                filters=[{"field": "serial_number", "operator": "==", "value": identifier}]
+                filters=[
+                    {"field": "serial_number", "operator": "==", "value": identifier}
+                ],
             )
             if assets:
                 return assets[0]
@@ -296,7 +300,7 @@ class FirestoreManager:
             assets = await self.get_collection(
                 "assets",
                 limit=10,
-                filters=[{"field": "name", "operator": ">=", "value": identifier}]
+                filters=[{"field": "name", "operator": ">=", "value": identifier}],
             )
             # Filter for exact or close matches
             for asset in assets:
@@ -323,7 +327,9 @@ class FirestoreManager:
             work_orders = await self.get_collection(
                 "work_orders",
                 order_by="-created_at",
-                filters=[{"field": "asset_id", "operator": "==", "value": str(asset_id)}]
+                filters=[
+                    {"field": "asset_id", "operator": "==", "value": str(asset_id)}
+                ],
             )
             return work_orders
         except Exception as e:
@@ -335,7 +341,9 @@ class FirestoreManager:
         try:
             parts = await self.get_collection(
                 "asset_parts",
-                filters=[{"field": "asset_id", "operator": "==", "value": str(asset_id)}]
+                filters=[
+                    {"field": "asset_id", "operator": "==", "value": str(asset_id)}
+                ],
             )
             # Get detailed part information
             detailed_parts = []
@@ -344,11 +352,15 @@ class FirestoreManager:
                 if part_id:
                     part_doc = await self.get_document("parts", part_id)
                     if part_doc:
-                        part_doc.update({
-                            "quantity_used": asset_part.get("quantity_used"),
-                            "last_replaced": asset_part.get("last_replaced"),
-                            "replacement_interval": asset_part.get("replacement_interval")
-                        })
+                        part_doc.update(
+                            {
+                                "quantity_used": asset_part.get("quantity_used"),
+                                "last_replaced": asset_part.get("last_replaced"),
+                                "replacement_interval": asset_part.get(
+                                    "replacement_interval"
+                                ),
+                            }
+                        )
                         detailed_parts.append(part_doc)
             return detailed_parts
         except Exception as e:
@@ -384,14 +396,18 @@ class FirestoreManager:
         """Get training modules with optional filtering"""
         filters = []
         if skill_category:
-            filters.append({"field": "skill_category", "operator": "==", "value": skill_category})
+            filters.append(
+                {"field": "skill_category", "operator": "==", "value": skill_category}
+            )
         if asset_type:
-            filters.append({"field": "asset_type", "operator": "==", "value": asset_type})
+            filters.append(
+                {"field": "asset_type", "operator": "==", "value": asset_type}
+            )
 
         return await self.get_collection(
-            "training_modules", 
-            order_by="-created_at", 
-            filters=filters if filters else None
+            "training_modules",
+            order_by="-created_at",
+            filters=filters if filters else None,
         )
 
     async def create_user_training(self, training_data: Dict[str, Any]) -> str:
@@ -406,10 +422,7 @@ class FirestoreManager:
         if status:
             filters.append({"field": "status", "operator": "==", "value": status})
 
-        return await self.get_collection(
-            "user_training", 
-            filters=filters
-        )
+        return await self.get_collection("user_training", filters=filters)
 
     async def update_user_training_status(
         self, user_id: str, module_id: str, status: str, **kwargs
@@ -421,9 +434,13 @@ class FirestoreManager:
                 "user_training",
                 filters=[
                     {"field": "user_id", "operator": "==", "value": user_id},
-                    {"field": "training_module_id", "operator": "==", "value": module_id}
+                    {
+                        "field": "training_module_id",
+                        "operator": "==",
+                        "value": module_id,
+                    },
                 ],
-                limit=1
+                limit=1,
             )
 
             if not training_records:
@@ -432,11 +449,9 @@ class FirestoreManager:
             # Update the record
             update_data = {"status": status}
             update_data.update(kwargs)
-            
+
             await self.update_document(
-                "user_training", 
-                training_records[0]["id"], 
-                update_data
+                "user_training", training_records[0]["id"], update_data
             )
             return True
         except Exception as e:
@@ -449,13 +464,11 @@ class FirestoreManager:
         """Get user performance metrics"""
         filters = [
             {"field": "user_id", "operator": "==", "value": user_id},
-            {"field": "period", "operator": "==", "value": period}
+            {"field": "period", "operator": "==", "value": period},
         ]
 
         return await self.get_collection(
-            "user_performance", 
-            order_by="-period_date",
-            filters=filters
+            "user_performance", order_by="-period_date", filters=filters
         )
 
     async def update_user_performance_metrics(
@@ -469,17 +482,15 @@ class FirestoreManager:
                 filters=[
                     {"field": "user_id", "operator": "==", "value": user_id},
                     {"field": "period", "operator": "==", "value": period},
-                    {"field": "period_date", "operator": "==", "value": period_date}
+                    {"field": "period_date", "operator": "==", "value": period_date},
                 ],
-                limit=1
+                limit=1,
             )
 
             if existing:
                 # Update existing record
                 await self.update_document(
-                    "user_performance", 
-                    existing[0]["id"], 
-                    metrics
+                    "user_performance", existing[0]["id"], metrics
                 )
                 return existing[0]["id"]
             else:
@@ -488,7 +499,7 @@ class FirestoreManager:
                     "user_id": user_id,
                     "period": period,
                     "period_date": period_date,
-                    **metrics
+                    **metrics,
                 }
                 return await self.create_document("user_performance", performance_data)
         except Exception as e:

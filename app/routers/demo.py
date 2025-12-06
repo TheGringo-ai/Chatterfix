@@ -8,7 +8,9 @@ from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
 
 router = APIRouter()
 # Disable template caching to ensure fresh templates are always loaded
-env = Environment(loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0)
+env = Environment(
+    loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0
+)
 templates = Jinja2Templates(env=env)
 
 # Sample data for demo mode
@@ -248,21 +250,25 @@ async def demo_planner(request: Request):
     """Demo planner page - comprehensive enterprise scheduler interface"""
     # Return the planner dashboard but mark it as advanced mode for the frontend
     print(f"🔧 DEBUG: Serving planner with advanced_mode=True")
-    return templates.TemplateResponse("planner_dashboard.html", {
-        "request": request, 
-        "is_demo": True,
-        "advanced_mode": True,
-        "page_title": "Advanced Enterprise Scheduler"
-    })
+    return templates.TemplateResponse(
+        "planner_dashboard.html",
+        {
+            "request": request,
+            "is_demo": True,
+            "advanced_mode": True,
+            "page_title": "Advanced Enterprise Scheduler",
+        },
+    )
 
 
 @router.get("/demo/planner-debug")
 async def debug_planner_template():
     """Debug endpoint to check template content"""
     import os
+
     template_path = "app/templates/planner_dashboard.html"
     if os.path.exists(template_path):
-        with open(template_path, 'r') as f:
+        with open(template_path, "r") as f:
             content = f.read()
             return {
                 "template_exists": True,
@@ -271,33 +277,26 @@ async def debug_planner_template():
                 "has_schedule_pm": "Schedule PM" in content,
                 "has_fullcalendar": "FullCalendar" in content,
                 "content_length": len(content),
-                "first_100_chars": content[:100]
+                "first_100_chars": content[:100],
             }
     else:
         return {"template_exists": False}
-
-
 
 
 @router.get("/demo/purchasing", response_class=HTMLResponse)
 async def demo_purchasing(request: Request):
     """Demo purchasing page - full POS system identical to main app"""
     from app.core.firestore_db import get_firestore_manager
-    
+
     db = get_firestore_manager()
-    
+
     # Get live vendors and parts data (same as main POS system)
     vendors = await db.get_collection("vendors", order_by="name")
     parts = await db.get_collection("parts", order_by="name", limit=50)
-    
+
     return templates.TemplateResponse(
-        "purchasing_pos.html", 
-        {
-            "request": request, 
-            "vendors": vendors,
-            "parts": parts,
-            "is_demo": True
-        }
+        "purchasing_pos.html",
+        {"request": request, "vendors": vendors, "parts": parts, "is_demo": True},
     )
 
 
@@ -314,7 +313,7 @@ async def demo_training(request: Request):
                 "difficulty": "Intermediate",
                 "completed_by": 8,
                 "total_enrolled": 12,
-                "type": "equipment_manual"
+                "type": "equipment_manual",
             },
             {
                 "id": 2,
@@ -324,7 +323,7 @@ async def demo_training(request: Request):
                 "difficulty": "Intermediate",
                 "completed_by": 15,
                 "total_enrolled": 18,
-                "type": "sop"
+                "type": "sop",
             },
             {
                 "id": 3,
@@ -334,7 +333,7 @@ async def demo_training(request: Request):
                 "difficulty": "Beginner",
                 "completed_by": 22,
                 "total_enrolled": 22,
-                "type": "safety_sop"
+                "type": "safety_sop",
             },
             {
                 "id": 4,
@@ -344,7 +343,7 @@ async def demo_training(request: Request):
                 "difficulty": "Advanced",
                 "completed_by": 4,
                 "total_enrolled": 8,
-                "type": "equipment_manual"
+                "type": "equipment_manual",
             },
             {
                 "id": 5,
@@ -354,7 +353,7 @@ async def demo_training(request: Request):
                 "difficulty": "Intermediate",
                 "completed_by": 12,
                 "total_enrolled": 16,
-                "type": "ai_assisted"
+                "type": "ai_assisted",
             },
             {
                 "id": 6,
@@ -364,8 +363,8 @@ async def demo_training(request: Request):
                 "difficulty": "Beginner",
                 "completed_by": 18,
                 "total_enrolled": 20,
-                "type": "sop"
-            }
+                "type": "sop",
+            },
         ]
 
         # Map demo courses to the structure expected by the template
@@ -377,8 +376,9 @@ async def demo_training(request: Request):
                 "difficulty_level": c["difficulty"],
                 "estimated_duration_minutes": int(c["duration"].split()[0]) * 60,
                 "ai_generated": True if c["type"] == "ai_assisted" else False,
-                "content_type": c["type"]
-            } for c in demo_courses[3:]  # Show last 3 as available
+                "content_type": c["type"],
+            }
+            for c in demo_courses[3:]  # Show last 3 as available
         ]
 
         # Sample user training - show technician has some assigned training
@@ -389,7 +389,7 @@ async def demo_training(request: Request):
                 "description": "Complete technician training based on Grundfos pump system manuals",
                 "status": "in_progress",
                 "estimated_duration_minutes": 180,
-                "score": None
+                "score": None,
             },
             {
                 "training_module_id": 2,
@@ -397,7 +397,7 @@ async def demo_training(request: Request):
                 "description": "Standard Operating Procedures for diagnosing and repairing HVAC systems",
                 "status": "assigned",
                 "estimated_duration_minutes": 240,
-                "score": None
+                "score": None,
             },
             {
                 "training_module_id": 3,
@@ -405,8 +405,8 @@ async def demo_training(request: Request):
                 "description": "Essential safety training for electrical work - OSHA compliance",
                 "status": "completed",
                 "estimated_duration_minutes": 120,
-                "score": 95
-            }
+                "score": 95,
+            },
         ]
 
         return templates.TemplateResponse(
@@ -422,12 +422,16 @@ async def demo_training(request: Request):
                     "avg_score": 95.0,
                 },
                 "is_demo": True,
-                "user_id": "demo_user"
+                "user_id": "demo_user",
             },
         )
     except Exception as e:
         import traceback
-        return HTMLResponse(content=f"<h1>Error</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
+
+        return HTMLResponse(
+            content=f"<h1>Error</h1><pre>{traceback.format_exc()}</pre>",
+            status_code=500,
+        )
 
 
 @router.get("/demo/ar-mode", response_class=HTMLResponse)
@@ -654,7 +658,7 @@ async def demo_onboarding_dashboard(request: Request):
             "roles": ROLE_ONBOARDING_CONFIG,
             "is_demo": True,
             "page_title": "Demo: Role-Based Onboarding",
-            "demo_banner": "Experience our comprehensive training system - all features available in demo mode"
+            "demo_banner": "Experience our comprehensive training system - all features available in demo mode",
         },
     )
 
@@ -664,16 +668,22 @@ async def demo_role_onboarding(request: Request, role: str):
     """Demo role-specific onboarding experience"""
     if role not in ROLE_ONBOARDING_CONFIG:
         return RedirectResponse(url="/demo/onboarding")
-    
+
     role_config = ROLE_ONBOARDING_CONFIG[role]
-    
+
     # Demo progress simulation - show some modules as completed for showcase
     demo_progress = {}
     if role == "planner":
         # Show planner has made some progress for demo purposes
         demo_progress = {
-            "plan_fundamentals": {"status": "completed", "completion_date": "2025-11-28"},
-            "plan_preventive_maintenance": {"status": "completed", "completion_date": "2025-11-29"},
+            "plan_fundamentals": {
+                "status": "completed",
+                "completion_date": "2025-11-28",
+            },
+            "plan_preventive_maintenance": {
+                "status": "completed",
+                "completion_date": "2025-11-29",
+            },
             "plan_pm_automation": {"status": "in_progress", "progress": 65},
             "plan_inspection_templates": {"status": "pending"},
             "plan_meter_readings": {"status": "pending"},
@@ -683,7 +693,7 @@ async def demo_role_onboarding(request: Request, role: str):
             "tech_safety": {"status": "completed", "completion_date": "2025-11-25"},
             "tech_work_orders": {"status": "in_progress", "progress": 80},
         }
-    
+
     return templates.TemplateResponse(
         "role_onboarding.html",
         {
@@ -703,18 +713,18 @@ async def demo_training_module(request: Request, role: str, module_id: str):
     """Demo individual training module experience"""
     if role not in ROLE_ONBOARDING_CONFIG:
         return RedirectResponse(url="/demo/onboarding")
-    
+
     role_config = ROLE_ONBOARDING_CONFIG[role]
     module = None
-    
+
     for mod in role_config["modules"]:
         if mod["id"] == module_id:
             module = mod
             break
-    
+
     if not module:
         return RedirectResponse(url=f"/demo/onboarding/{role}")
-    
+
     # Demo content simulation with realistic planner examples
     demo_content = {
         "current_section": 0,
@@ -722,7 +732,7 @@ async def demo_training_module(request: Request, role: str, module_id: str):
         "progress": 0,
         "interactive_elements": True,
     }
-    
+
     if role == "planner":
         # Add specific demo content for planner modules
         if module_id == "plan_pm_automation":
@@ -730,16 +740,16 @@ async def demo_training_module(request: Request, role: str, module_id: str):
                 "pm_schedules": 15,
                 "automated_triggers": 8,
                 "meter_readings": 45,
-                "active_routes": 12
+                "active_routes": 12,
             }
         elif module_id == "plan_meter_readings":
             demo_content["demo_data"] = {
                 "meter_points": 127,
                 "daily_readings": 340,
                 "alerts_configured": 23,
-                "trending_charts": 8
+                "trending_charts": 8,
             }
-    
+
     return templates.TemplateResponse(
         "training_module_interactive.html",
         {

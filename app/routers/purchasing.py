@@ -131,25 +131,22 @@ async def get_purchasing_summary():
 # COMPREHENSIVE POS & PARTS MANAGEMENT SYSTEM
 # =============================================================================
 
+
 @router.get("/pos", response_class=HTMLResponse)
 async def pos_system(request: Request):
     """Point of Sale system for purchasing"""
     db = get_firestore_manager()
-    
+
     # Get vendors for dropdown
     vendors = await db.get_collection("vendors", order_by="name")
-    
+
     # Get parts for quick add
     parts = await db.get_collection("parts", order_by="name", limit=50)
-    
+
     return templates.TemplateResponse(
-        "purchasing_pos.html", 
-        {
-            "request": request, 
-            "vendors": vendors,
-            "parts": parts
-        }
+        "purchasing_pos.html", {"request": request, "vendors": vendors, "parts": parts}
     )
+
 
 @router.post("/purchase-orders/create")
 async def create_purchase_order(
@@ -162,7 +159,7 @@ async def create_purchase_order(
 ):
     """Create new purchase order with documents"""
     db = get_firestore_manager()
-    
+
     # Create purchase order data
     po_data = {
         "po_number": po_number,
@@ -170,39 +167,47 @@ async def create_purchase_order(
         "description": description,
         "total_amount": total_amount,
         "delivery_date": delivery_date,
-        "status": "Draft"
+        "status": "Draft",
     }
-    
+
     # Create purchase order
     po_id = await db.create_document("purchase_orders", po_data)
-    
+
     # Handle file uploads
     if files:
         po_dir = os.path.join(PO_UPLOAD_DIR, po_id)
         os.makedirs(po_dir, exist_ok=True)
-        
+
         for file in files:
             if file.filename:
                 file_path = os.path.join(po_dir, file.filename)
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                
+
                 rel_path = f"/static/uploads/purchase_orders/{po_id}/{file.filename}"
                 file_type = (
-                    "image" if file.content_type and file.content_type.startswith("image/") 
+                    "image"
+                    if file.content_type and file.content_type.startswith("image/")
                     else "document"
                 )
-                
+
                 doc_data = {
                     "po_id": po_id,
                     "file_path": rel_path,
                     "file_type": file_type,
                     "filename": file.filename,
-                    "description": "Uploaded during creation"
+                    "description": "Uploaded during creation",
                 }
                 await db.create_document("po_documents", doc_data)
-    
-    return JSONResponse({"success": True, "po_id": po_id, "message": "Purchase order created successfully"})
+
+    return JSONResponse(
+        {
+            "success": True,
+            "po_id": po_id,
+            "message": "Purchase order created successfully",
+        }
+    )
+
 
 @router.post("/parts/add")
 async def add_part_with_media(
@@ -219,7 +224,7 @@ async def add_part_with_media(
 ):
     """Add new part with pictures and documents"""
     db = get_firestore_manager()
-    
+
     # Create part data
     part_data = {
         "name": name,
@@ -231,46 +236,50 @@ async def add_part_with_media(
         "current_stock": current_stock,
         "minimum_stock": minimum_stock,
         "location": location,
-        "image_url": ""
+        "image_url": "",
     }
-    
+
     # Create part
     part_id = await db.create_document("parts", part_data)
-    
+
     # Handle file uploads
     if files:
         part_dir = os.path.join("app/static/uploads/parts", part_id)
         os.makedirs(part_dir, exist_ok=True)
-        
+
         first_image = True
         for file in files:
             if file.filename:
                 file_path = os.path.join(part_dir, file.filename)
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                
+
                 rel_path = f"/static/uploads/parts/{part_id}/{file.filename}"
                 file_type = (
-                    "image" if file.content_type and file.content_type.startswith("image/") 
+                    "image"
+                    if file.content_type and file.content_type.startswith("image/")
                     else "document"
                 )
-                
+
                 # Update part image if it's the first image
                 if file_type == "image" and first_image:
                     await db.update_document("parts", part_id, {"image_url": rel_path})
                     first_image = False
-                
+
                 # Create document record
                 doc_data = {
                     "part_id": part_id,
                     "file_path": rel_path,
                     "file_type": file_type,
                     "title": file.filename,
-                    "description": "Uploaded during creation"
+                    "description": "Uploaded during creation",
                 }
                 await db.create_document("part_media", doc_data)
-    
-    return JSONResponse({"success": True, "part_id": part_id, "message": "Part added successfully"})
+
+    return JSONResponse(
+        {"success": True, "part_id": part_id, "message": "Part added successfully"}
+    )
+
 
 @router.post("/vendors/create")
 async def create_vendor(
@@ -285,7 +294,7 @@ async def create_vendor(
 ):
     """Create vendor with documents"""
     db = get_firestore_manager()
-    
+
     # Create vendor data
     vendor_data = {
         "name": name,
@@ -294,36 +303,43 @@ async def create_vendor(
         "phone": phone,
         "address": address,
         "payment_terms": payment_terms,
-        "tax_id": tax_id
+        "tax_id": tax_id,
     }
-    
+
     # Create vendor
     vendor_id = await db.create_document("vendors", vendor_data)
-    
+
     # Handle file uploads
     if files:
         vendor_dir = os.path.join(VENDOR_UPLOAD_DIR, vendor_id)
         os.makedirs(vendor_dir, exist_ok=True)
-        
+
         for file in files:
             if file.filename:
                 file_path = os.path.join(vendor_dir, file.filename)
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                
+
                 rel_path = f"/static/uploads/vendors/{vendor_id}/{file.filename}"
                 file_type = "document"  # Vendor files are typically documents
-                
+
                 doc_data = {
                     "vendor_id": vendor_id,
                     "file_path": rel_path,
                     "file_type": file_type,
                     "filename": file.filename,
-                    "description": "Uploaded during creation"
+                    "description": "Uploaded during creation",
                 }
                 await db.create_document("vendor_documents", doc_data)
-    
-    return JSONResponse({"success": True, "vendor_id": vendor_id, "message": "Vendor created successfully"})
+
+    return JSONResponse(
+        {
+            "success": True,
+            "vendor_id": vendor_id,
+            "message": "Vendor created successfully",
+        }
+    )
+
 
 @router.post("/invoices/upload")
 async def upload_invoice(
@@ -335,63 +351,72 @@ async def upload_invoice(
 ):
     """Upload invoice with documents"""
     db = get_firestore_manager()
-    
+
     # Create invoice data
     invoice_data = {
         "po_id": po_id,
         "invoice_number": invoice_number,
         "amount": invoice_amount,
         "invoice_date": invoice_date,
-        "status": "Pending"
+        "status": "Pending",
     }
-    
+
     # Create invoice record
     invoice_id = await db.create_document("invoices", invoice_data)
-    
+
     # Handle file uploads
     invoice_dir = os.path.join(INVOICE_UPLOAD_DIR, invoice_id)
     os.makedirs(invoice_dir, exist_ok=True)
-    
+
     for file in files:
         if file.filename:
             file_path = os.path.join(invoice_dir, file.filename)
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            
+
             rel_path = f"/static/uploads/invoices/{invoice_id}/{file.filename}"
             file_type = (
-                "image" if file.content_type and file.content_type.startswith("image/") 
+                "image"
+                if file.content_type and file.content_type.startswith("image/")
                 else "document"
             )
-            
+
             doc_data = {
                 "invoice_id": invoice_id,
                 "file_path": rel_path,
                 "file_type": file_type,
                 "filename": file.filename,
-                "description": "Invoice document"
+                "description": "Invoice document",
             }
             await db.create_document("invoice_documents", doc_data)
-    
-    return JSONResponse({"success": True, "invoice_id": invoice_id, "message": "Invoice uploaded successfully"})
+
+    return JSONResponse(
+        {
+            "success": True,
+            "invoice_id": invoice_id,
+            "message": "Invoice uploaded successfully",
+        }
+    )
+
 
 @router.get("/parts/search")
 async def search_parts(q: str = ""):
     """Search parts by name or part number"""
     db = get_firestore_manager()
-    
+
     # Get all parts first (Firestore doesn't support complex text search)
     parts = await db.get_collection("parts", order_by="name", limit=100)
-    
+
     # Filter by search query if provided
     if q:
         q_lower = q.lower()
         parts = [
-            part for part in parts 
-            if q_lower in part.get("name", "").lower() or 
-               q_lower in part.get("part_number", "").lower()
+            part
+            for part in parts
+            if q_lower in part.get("name", "").lower()
+            or q_lower in part.get("part_number", "").lower()
         ]
-    
+
     # Get vendor names for each part
     for part in parts:
         if part.get("vendor_id"):
@@ -399,33 +424,26 @@ async def search_parts(q: str = ""):
             part["vendor_name"] = vendor.get("name", "") if vendor else ""
         else:
             part["vendor_name"] = ""
-    
-    return JSONResponse({
-        "parts": parts[:50]  # Limit to 50 results
-    })
+
+    return JSONResponse({"parts": parts[:50]})  # Limit to 50 results
+
 
 @router.get("/barcode/{barcode}")
 async def lookup_by_barcode(barcode: str):
     """Lookup part by barcode/part number"""
     db = get_firestore_manager()
-    
+
     # Search by part number or barcode
     parts = await db.get_collection(
-        "parts",
-        filters=[
-            {"field": "part_number", "operator": "==", "value": barcode}
-        ]
+        "parts", filters=[{"field": "part_number", "operator": "==", "value": barcode}]
     )
-    
+
     if not parts:
         # Try searching by barcode field
         parts = await db.get_collection(
-            "parts",
-            filters=[
-                {"field": "barcode", "operator": "==", "value": barcode}
-            ]
+            "parts", filters=[{"field": "barcode", "operator": "==", "value": barcode}]
         )
-    
+
     if parts:
         part = parts[0]
         # Get vendor name if vendor_id exists
@@ -434,25 +452,27 @@ async def lookup_by_barcode(barcode: str):
             part["vendor_name"] = vendor.get("name", "") if vendor else ""
         else:
             part["vendor_name"] = ""
-            
+
         return JSONResponse({"success": True, "part": part})
     else:
         return JSONResponse({"success": False, "message": "Part not found"})
+
 
 @router.get("/inventory/low-stock")
 async def get_low_stock_items():
     """Get items below minimum stock level"""
     db = get_firestore_manager()
-    
+
     # Get all parts (Firestore doesn't support complex filtering)
     all_parts = await db.get_collection("parts")
-    
+
     # Filter for low stock items
     low_stock_items = [
-        part for part in all_parts
+        part
+        for part in all_parts
         if part.get("current_stock", 0) <= part.get("minimum_stock", 0)
     ]
-    
+
     # Get vendor names and sort by stock difference
     for part in low_stock_items:
         if part.get("vendor_id"):
@@ -460,12 +480,10 @@ async def get_low_stock_items():
             part["vendor_name"] = vendor.get("name", "") if vendor else ""
         else:
             part["vendor_name"] = ""
-    
+
     # Sort by stock difference (most critical first)
     low_stock_items.sort(
         key=lambda x: x.get("current_stock", 0) - x.get("minimum_stock", 0)
     )
-    
-    return JSONResponse({
-        "low_stock_items": low_stock_items
-    })
+
+    return JSONResponse({"low_stock_items": low_stock_items})

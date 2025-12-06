@@ -23,8 +23,10 @@ class NotificationService:
             if not db_adapter.firestore_manager:
                 logger.warning("Firestore not available for user data")
                 return {}
-            
-            user_data = await db_adapter.firestore_manager.get_document("users", str(user_id))
+
+            user_data = await db_adapter.firestore_manager.get_document(
+                "users", str(user_id)
+            )
             return user_data if user_data else {}
         except Exception as e:
             logger.error(f"Failed to get user data for user {user_id}: {e}")
@@ -45,7 +47,7 @@ class NotificationService:
             if not db_adapter.firestore_manager:
                 logger.warning("Firestore not available, notification not stored")
                 return f"temp-{datetime.now().timestamp()}"
-            
+
             notification_data = {
                 "user_id": str(user_id),
                 "notification_type": notification_type,
@@ -56,7 +58,7 @@ class NotificationService:
                 "read": False,
                 "created_date": datetime.now().isoformat(),
             }
-            
+
             notification_id = await db_adapter.firestore_manager.create_document(
                 "notifications", notification_data
             )
@@ -101,7 +103,10 @@ class NotificationService:
 
     @staticmethod
     async def notify_work_order_assigned(
-        work_order_id: int, technician_id: int, title: str, work_order_data: Dict[str, Any] = None
+        work_order_id: int,
+        technician_id: int,
+        title: str,
+        work_order_data: Dict[str, Any] = None,
     ):
         """Notify technician of new work order assignment"""
         # Send in-app notification
@@ -113,27 +118,27 @@ class NotificationService:
             link=f"/work-orders/{work_order_id}",
             priority="high",
         )
-        
+
         # Send email notification
         try:
             user_data = await NotificationService._get_user_data(technician_id)
             user_email = user_data.get("email")
             user_name = user_data.get("fullName", "Technician")
-            
+
             if user_email and work_order_data:
                 work_order_info = {
                     "id": work_order_id,
                     "title": title,
                     "description": work_order_data.get("description", "No description"),
                     "priority": work_order_data.get("priority", "normal"),
-                    "asset_name": work_order_data.get("asset_name", "Unknown Asset")
+                    "asset_name": work_order_data.get("asset_name", "Unknown Asset"),
                 }
-                
+
                 await email_service.send_work_order_notification(
                     to_email=user_email,
                     to_name=user_name,
                     work_order=work_order_info,
-                    notification_type="assigned"
+                    notification_type="assigned",
                 )
                 logger.info(f"Sent work order assignment email to {user_email}")
         except Exception as e:
@@ -141,11 +146,14 @@ class NotificationService:
 
     @staticmethod
     async def notify_parts_arrived(
-        requester_id: int, part_name: str, work_order_id: int = None, parts_data: Dict[str, Any] = None
+        requester_id: int,
+        part_name: str,
+        work_order_id: int = None,
+        parts_data: Dict[str, Any] = None,
     ):
         """Notify technician that requested parts have arrived"""
         link = f"/work-orders/{work_order_id}" if work_order_id else "/inventory"
-        
+
         # Send in-app notification
         await NotificationService.send_notification(
             user_id=requester_id,
@@ -155,33 +163,42 @@ class NotificationService:
             link=link,
             priority="high",
         )
-        
+
         # Send email notification
         try:
             user_data = await NotificationService._get_user_data(requester_id)
             user_email = user_data.get("email")
             user_name = user_data.get("fullName", "Technician")
-            
+
             if user_email:
-                parts_info = parts_data if parts_data else {
-                    "name": part_name,
-                    "part_number": "TBD",
-                    "quantity": "Available",
-                    "location": "Warehouse"
-                }
-                
+                parts_info = (
+                    parts_data
+                    if parts_data
+                    else {
+                        "name": part_name,
+                        "part_number": "TBD",
+                        "quantity": "Available",
+                        "location": "Warehouse",
+                    }
+                )
+
                 await email_service.send_parts_notification(
                     to_email=user_email,
                     to_name=user_name,
                     parts_info=parts_info,
-                    notification_type="arrived"
+                    notification_type="arrived",
                 )
                 logger.info(f"Sent parts arrival email to {user_email}")
         except Exception as e:
             logger.error(f"Failed to send parts arrival email: {e}")
 
     @staticmethod
-    async def notify_training_due(user_id: int, training_title: str, training_id: int, notification_type: str = "due"):
+    async def notify_training_due(
+        user_id: int,
+        training_title: str,
+        training_id: int,
+        notification_type: str = "due",
+    ):
         """Notify user of upcoming or overdue training"""
         # Send in-app notification
         await NotificationService.send_notification(
@@ -192,20 +209,20 @@ class NotificationService:
             link=f"/training/modules/{training_id}",
             priority="normal",
         )
-        
+
         # Send email notification
         try:
             user_data = await NotificationService._get_user_data(user_id)
             user_email = user_data.get("email")
             user_name = user_data.get("fullName", "Team Member")
-            
+
             if user_email:
                 await email_service.send_training_notification(
                     to_email=user_email,
                     to_name=user_name,
                     training_title=training_title,
                     training_id=str(training_id),
-                    notification_type=notification_type
+                    notification_type=notification_type,
                 )
                 logger.info(f"Sent training notification email to {user_email}")
         except Exception as e:
@@ -261,16 +278,16 @@ class NotificationService:
             if not db_adapter.firestore_manager:
                 logger.warning("Firestore not available for notifications")
                 return []
-            
+
             filters = [{"field": "user_id", "operator": "==", "value": str(user_id)}]
             if unread_only:
                 filters.append({"field": "read", "operator": "==", "value": False})
-            
+
             notifications = await db_adapter.firestore_manager.get_collection(
-                "notifications", 
-                filters=filters, 
+                "notifications",
+                filters=filters,
                 order_by="-created_date",  # Use - prefix for descending order
-                limit=50
+                limit=50,
             )
             return notifications
         except Exception as e:
@@ -285,7 +302,7 @@ class NotificationService:
             if not db_adapter.firestore_manager:
                 logger.warning("Firestore not available for notifications")
                 return False
-            
+
             await db_adapter.firestore_manager.update_document(
                 "notifications", notification_id, {"read": True}
             )
@@ -301,12 +318,12 @@ class NotificationService:
             db_adapter = get_db_adapter()
             if not db_adapter.firestore_manager:
                 return 0
-            
+
             filters = [
                 {"field": "user_id", "operator": "==", "value": str(user_id)},
-                {"field": "read", "operator": "==", "value": False}
+                {"field": "read", "operator": "==", "value": False},
             ]
-            
+
             notifications = await db_adapter.firestore_manager.get_collection(
                 "notifications", filters=filters
             )

@@ -5,9 +5,8 @@ Converted to use Firestore database instead of SQLite
 """
 
 from fastapi import APIRouter, Request, Form, UploadFile, File, Cookie
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from app.core.db_adapter import get_db_adapter
 from app.core.firestore_db import get_firestore_manager
 from app.services.training_generator import training_generator
 from app.services.notification_service import notification_service
@@ -20,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
 
+
 def get_current_user_from_session(session_token: Optional[str]):
     """Helper to get current user from session token"""
     if not session_token:
@@ -29,129 +29,153 @@ def get_current_user_from_session(session_token: Optional[str]):
             return None
         return {
             "id": 1,
-            "username": "demo_user", 
+            "username": "demo_user",
             "email": "user@demo.com",
             "full_name": "Demo User",
-            "role": "technician"
+            "role": "technician",
         }
     except Exception as e:
         logger.error(f"Session validation error: {e}")
         return None
+
 
 # Redirect /training (without slash) to /training/ (with slash)
 @router.get("", response_class=HTMLResponse)
 async def training_center_redirect(request: Request):
     """Redirect /training to /training/ for consistent URL handling"""
     return RedirectResponse(url="/training/", status_code=301)
+
+
 templates = Jinja2Templates(directory="app/templates")
 
 # ========== FIRESTORE HELPER FUNCTIONS ==========
 
-async def get_user_training_with_modules(firestore_manager, user_id: str) -> List[Dict[str, Any]]:
+
+async def get_user_training_with_modules(
+    firestore_manager, user_id: str
+) -> List[Dict[str, Any]]:
     """Get user's training assignments with module details"""
     try:
         # Get user training records
         user_training = await firestore_manager.get_collection(
             "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}]
+            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
         )
-        
+
         # Enrich with module details
         enriched_training = []
         for training in user_training:
             module_id = training.get("training_module_id")
             if module_id:
-                module = await firestore_manager.get_document("training_modules", module_id)
+                module = await firestore_manager.get_document(
+                    "training_modules", module_id
+                )
                 if module:
-                    training.update({
-                        "title": module.get("title"),
-                        "description": module.get("description"),
-                        "estimated_duration_minutes": module.get("estimated_duration_minutes"),
-                        "difficulty_level": module.get("difficulty_level")
-                    })
+                    training.update(
+                        {
+                            "title": module.get("title"),
+                            "description": module.get("description"),
+                            "estimated_duration_minutes": module.get(
+                                "estimated_duration_minutes"
+                            ),
+                            "difficulty_level": module.get("difficulty_level"),
+                        }
+                    )
             enriched_training.append(training)
-        
+
         # Sort by status priority and date
         status_order = {"assigned": 1, "in_progress": 2, "completed": 3}
-        enriched_training.sort(key=lambda x: (
-            status_order.get(x.get("status", "assigned"), 4),
-            x.get("started_date") or datetime.min
-        ), reverse=True)
-        
+        enriched_training.sort(
+            key=lambda x: (
+                status_order.get(x.get("status", "assigned"), 4),
+                x.get("started_date") or datetime.min,
+            ),
+            reverse=True,
+        )
+
         return enriched_training
     except Exception as e:
         logger.error(f"Error getting user training with modules: {e}")
         return []
 
-async def get_available_training_modules(firestore_manager, user_id: str) -> List[Dict[str, Any]]:
+
+async def get_available_training_modules(
+    firestore_manager, user_id: str
+) -> List[Dict[str, Any]]:
     """Get training modules not assigned to the user"""
     try:
         # Get all modules
         all_modules = await firestore_manager.get_collection(
-            "training_modules",
-            order_by="-created_at"
+            "training_modules", order_by="-created_at"
         )
-        
+
         # Get user's assigned modules
         user_training = await firestore_manager.get_collection(
             "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}]
+            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
         )
-        
+
         assigned_module_ids = {t.get("training_module_id") for t in user_training}
-        
+
         # Filter out assigned modules
         available_modules = [
-            module for module in all_modules
+            module
+            for module in all_modules
             if module.get("id") not in assigned_module_ids
         ]
-        
+
         return available_modules
     except Exception as e:
         logger.error(f"Error getting available training modules: {e}")
         return []
+
 
 async def get_user_training_stats(firestore_manager, user_id: str) -> Dict[str, Any]:
     """Get user training completion statistics"""
     try:
         user_training = await firestore_manager.get_collection(
             "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}]
+            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
         )
-        
+
         total_assigned = len(user_training)
         completed = len([t for t in user_training if t.get("status") == "completed"])
-        in_progress = len([t for t in user_training if t.get("status") == "in_progress"])
-        
+        in_progress = len(
+            [t for t in user_training if t.get("status") == "in_progress"]
+        )
+
         # Calculate average score for completed trainings
         scores = [t.get("score") for t in user_training if t.get("score") is not None]
         avg_score = sum(scores) / len(scores) if scores else None
-        
+
         return {
             "total_assigned": total_assigned,
             "completed": completed,
             "in_progress": in_progress,
-            "avg_score": avg_score
+            "avg_score": avg_score,
         }
     except Exception as e:
         logger.error(f"Error getting user training stats: {e}")
         return {"total_assigned": 0, "completed": 0, "in_progress": 0, "avg_score": 0}
 
-async def update_user_performance_training_hours(firestore_manager, user_id: str, hours: float):
+
+async def update_user_performance_training_hours(
+    firestore_manager, user_id: str, hours: float
+):
     """Update user performance metrics with training hours"""
     try:
         # Get or create monthly performance record
         current_month = datetime.now().strftime("%Y-%m")
-        
+
         performance_records = await firestore_manager.get_collection(
             "user_performance",
             filters=[
                 {"field": "user_id", "operator": "==", "value": user_id},
                 {"field": "period", "operator": "==", "value": "monthly"},
-                {"field": "period_date", "operator": "==", "value": current_month}
-            ]
+                {"field": "period_date", "operator": "==", "value": current_month},
+            ],
         )
-        
+
         if performance_records:
             # Update existing record
             record = performance_records[0]
@@ -159,7 +183,7 @@ async def update_user_performance_training_hours(firestore_manager, user_id: str
             await firestore_manager.update_document(
                 "user_performance",
                 record["id"],
-                {"training_hours": current_hours + hours}
+                {"training_hours": current_hours + hours},
             )
         else:
             # Create new record
@@ -169,23 +193,28 @@ async def update_user_performance_training_hours(firestore_manager, user_id: str
                 "period_date": current_month,
                 "training_hours": hours,
                 "work_orders_completed": 0,
-                "efficiency_rating": 0
+                "efficiency_rating": 0,
             }
-            await firestore_manager.create_document("user_performance", performance_data)
-            
+            await firestore_manager.create_document(
+                "user_performance", performance_data
+            )
+
     except Exception as e:
         logger.error(f"Error updating user performance training hours: {e}")
+
 
 # ========== TRAINING CENTER ==========
 
 
 @router.get("/", response_class=HTMLResponse)
-async def training_center(request: Request, session_token: Optional[str] = Cookie(None)):
+async def training_center(
+    request: Request, session_token: Optional[str] = Cookie(None)
+):
     """Training center dashboard"""
     user = get_current_user_from_session(session_token)
     if not user:
         return RedirectResponse(url="/auth/login", status_code=302)
-    
+
     user_id = str(user["id"])
     firestore_manager = get_firestore_manager()
     try:
@@ -193,7 +222,9 @@ async def training_center(request: Request, session_token: Optional[str] = Cooki
         my_training = await get_user_training_with_modules(firestore_manager, user_id)
 
         # Get available modules (modules not assigned to user)
-        available_modules = await get_available_training_modules(firestore_manager, user_id)
+        available_modules = await get_available_training_modules(
+            firestore_manager, user_id
+        )
 
         # Get completion stats
         stats = await get_user_training_stats(firestore_manager, user_id)
@@ -216,9 +247,14 @@ async def training_center(request: Request, session_token: Optional[str] = Cooki
                 "request": request,
                 "my_training": [],
                 "available_modules": [],
-                "stats": {"total_assigned": 0, "completed": 0, "in_progress": 0, "avg_score": 0},
+                "stats": {
+                    "total_assigned": 0,
+                    "completed": 0,
+                    "in_progress": 0,
+                    "avg_score": 0,
+                },
                 "user_id": user_id,
-                "error": "Failed to load training data"
+                "error": "Failed to load training data",
             },
         )
 
@@ -232,19 +268,23 @@ async def get_modules(skill_category: str = None, asset_type: str = None):
     firestore_manager = get_firestore_manager()
     try:
         filters = []
-        
+
         if skill_category:
-            filters.append({"field": "skill_category", "operator": "==", "value": skill_category})
-        
+            filters.append(
+                {"field": "skill_category", "operator": "==", "value": skill_category}
+            )
+
         if asset_type:
-            filters.append({"field": "asset_type", "operator": "==", "value": asset_type})
+            filters.append(
+                {"field": "asset_type", "operator": "==", "value": asset_type}
+            )
 
         modules = await firestore_manager.get_collection(
-            "training_modules", 
+            "training_modules",
             order_by="-created_at",
-            filters=filters if filters else None
+            filters=filters if filters else None,
         )
-        
+
         return modules
     except Exception as e:
         logger.error(f"Error getting training modules: {e}")
@@ -353,20 +393,17 @@ async def start_training(module_id: str, user_id: str = Form(...)):
             "user_training",
             filters=[
                 {"field": "user_id", "operator": "==", "value": user_id},
-                {"field": "training_module_id", "operator": "==", "value": module_id}
+                {"field": "training_module_id", "operator": "==", "value": module_id},
             ],
-            limit=1
+            limit=1,
         )
 
         if existing_training:
             # Update existing to in_progress
             await firestore_manager.update_document(
-                "user_training", 
-                existing_training[0]["id"], 
-                {
-                    "status": "in_progress", 
-                    "started_date": datetime.now()
-                }
+                "user_training",
+                existing_training[0]["id"],
+                {"status": "in_progress", "started_date": datetime.now()},
             )
         else:
             # Create new training assignment
@@ -376,7 +413,7 @@ async def start_training(module_id: str, user_id: str = Form(...)):
                 "status": "in_progress",
                 "started_date": datetime.now(),
                 "completed_date": None,
-                "score": None
+                "score": None,
             }
             await firestore_manager.create_document("user_training", training_data)
 
@@ -398,9 +435,9 @@ async def complete_training(
             "user_training",
             filters=[
                 {"field": "user_id", "operator": "==", "value": user_id},
-                {"field": "training_module_id", "operator": "==", "value": module_id}
+                {"field": "training_module_id", "operator": "==", "value": module_id},
             ],
-            limit=1
+            limit=1,
         )
 
         if not user_training:
@@ -408,22 +445,20 @@ async def complete_training(
 
         # Update training completion
         await firestore_manager.update_document(
-            "user_training", 
-            user_training[0]["id"], 
-            {
-                "status": "completed",
-                "completed_date": datetime.now(),
-                "score": score
-            }
+            "user_training",
+            user_training[0]["id"],
+            {"status": "completed", "completed_date": datetime.now(), "score": score},
         )
 
         # Get training module for duration
         module = await firestore_manager.get_document("training_modules", module_id)
         if module:
             duration_hours = module.get("estimated_duration_minutes", 0) / 60.0
-            
+
             # Update user performance metrics
-            await update_user_performance_training_hours(firestore_manager, user_id, duration_hours)
+            await update_user_performance_training_hours(
+                firestore_manager, user_id, duration_hours
+            )
 
         return {"success": True}
     except Exception as e:
@@ -456,14 +491,16 @@ async def assign_training(user_id: str = Form(...), module_id: str = Form(...)):
             "assigned_date": datetime.now(),
             "started_date": None,
             "completed_date": None,
-            "score": None
+            "score": None,
         }
-        
+
         await firestore_manager.create_document("user_training", training_data)
 
         # Get module title for notification
         module = await firestore_manager.get_document("training_modules", module_id)
-        module_title = module.get("title", "Training Module") if module else "Training Module"
+        module_title = (
+            module.get("title", "Training Module") if module else "Training Module"
+        )
 
         # Notify user
         await notification_service.notify_training_due(user_id, module_title, module_id)

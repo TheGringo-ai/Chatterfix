@@ -137,6 +137,17 @@
             --navbar-text: #212529;
         }
         
+        /* Force light theme - override any dark styles */
+        html, body {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+        }
+        
+        html[data-theme="dark"], body[data-theme="dark"] {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+        }
+        
         
         /* Apply theme variables */
         body {
@@ -286,7 +297,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
             z-index: 10000;
-            display: none;
+            display: none !important; /* Force hidden by default */
             backdrop-filter: blur(5px);
         }
         

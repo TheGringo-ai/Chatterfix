@@ -157,41 +157,8 @@ async def update_user_performance_training_hours(firestore_manager, user_id: str
 
 @router.get("/", response_class=HTMLResponse)
 async def training_center(request: Request, user_id: str = "1"):
-    """Training center dashboard"""
-    firestore_manager = get_firestore_manager()
-    try:
-        # Get user's assigned training with module details
-        my_training = await get_user_training_with_modules(firestore_manager, user_id)
-
-        # Get available modules (modules not assigned to user)
-        available_modules = await get_available_training_modules(firestore_manager, user_id)
-
-        # Get completion stats
-        stats = await get_user_training_stats(firestore_manager, user_id)
-
-        return templates.TemplateResponse(
-            "training_center.html",
-            {
-                "request": request,
-                "my_training": my_training,
-                "available_modules": available_modules,
-                "stats": stats,
-                "user_id": user_id,
-            },
-        )
-    except Exception as e:
-        logger.error(f"Error loading training center: {e}")
-        return templates.TemplateResponse(
-            "training_center.html",
-            {
-                "request": request,
-                "my_training": [],
-                "available_modules": [],
-                "stats": {"total_assigned": 0, "completed": 0, "in_progress": 0, "avg_score": 0},
-                "user_id": user_id,
-                "error": "Failed to load training data"
-            },
-        )
+    """Redirect to external LineSmart training platform"""
+    return RedirectResponse(url="https://linesmart-platform-650169261019.us-central1.run.app", status_code=302)
 
 
 # ========== TRAINING MODULES ==========

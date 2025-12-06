@@ -77,7 +77,12 @@ async def send_welcome_email(user_data: dict, password: str):
 
 @router.get("/landing", response_class=HTMLResponse)
 async def landing_page(request: Request):
-    """Serve the landing page (now signup page)"""
+    """Serve the comprehensive public landing page with demo access"""
+    return templates.TemplateResponse("public_landing.html", {"request": request})
+
+@router.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    """Serve the signup page for actual registration"""
     return templates.TemplateResponse("landing.html", {"request": request})
 
 

@@ -56,12 +56,13 @@ class DashboardLayoutUpdate(BaseModel):
 
 @router.get("/", response_class=HTMLResponse)
 async def root_dashboard(request: Request, session_token: Optional[str] = Cookie(None)):
-    """Root route - show dashboard if logged in, redirect to login if not"""
+    """Root route - show landing page or dashboard based on authentication"""
     # Validate user session
     user = get_current_user_from_session(session_token)
 
     if not user:
-        return RedirectResponse(url="/auth/login", status_code=302)
+        # Show landing page with demo access instead of redirect to login
+        return RedirectResponse(url="/landing", status_code=302)
 
     # User is authenticated, show dashboard
     return await dashboard(request, user_id=user["id"], current_user=user)

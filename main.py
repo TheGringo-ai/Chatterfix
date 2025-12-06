@@ -66,6 +66,7 @@ from app.routers import (
     iot,
     push,
     media,
+    public_demo,
 )
 
 # Initialize FastAPI application
@@ -166,6 +167,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(health.router)  # Health checks (no prefix)
 app.include_router(dashboard.router)  # Dashboard is now the main landing page
 app.include_router(landing.router)  # Landing page becomes signup page
+app.include_router(public_demo.router)  # Public demo routes (no auth required)
 app.include_router(demo.router)  # Demo routes for app exploration
 app.include_router(auth.router)
 app.include_router(signup.router)

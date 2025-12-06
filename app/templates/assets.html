@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if demo_mode %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> <strong>{{ demo_banner }}</strong>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h2 mb-4">
+                <i class="fas fa-industry text-primary"></i> Asset Management
+            </h1>
+        </div>
+    </div>
+
+    <!-- Asset Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Total Assets</h5>
+                            <h3>{{ assets|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cogs fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Operational</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Operational")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Warning</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Warning")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Critical</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Critical")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Asset Inventory
+                    </h5>
+                    <div>
+                        {% if not demo_mode %}
+                        <button class="btn btn-primary btn-sm" onclick="addAsset()">
+                            <i class="fas fa-plus"></i> Add Asset
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="assetsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asset Name</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Condition</th>
+                                    <th>Last Maintenance</th>
+                                    <th>Next Maintenance</th>
+                                    {% if not demo_mode %}
+                                    <th>Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in assets %}
+                                <tr>
+                                    <td>{{ asset.id }}</td>
+                                    <td>
+                                        <strong>{{ asset.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ asset.type }}</span>
+                                    </td>
+                                    <td>{{ asset.location }}</td>
+                                    <td>
+                                        {% if asset.status == 'Operational' %}
+                                        <span class="badge bg-success">{{ asset.status }}</span>
+                                        {% elif asset.status == 'Warning' %}
+                                        <span class="badge bg-warning">{{ asset.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ asset.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ asset.condition_rating }}/10</span>
+                                            <div class="progress" style="width: 60px;">
+                                                <div class="progress-bar 
+                                                    {% if asset.condition_rating >= 8 %}bg-success
+                                                    {% elif asset.condition_rating >= 6 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    style="width: {{ asset.condition_rating * 10 }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ asset.last_maintenance }}</td>
+                                    <td>{{ asset.next_maintenance }}</td>
+                                    {% if not demo_mode %}
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewAsset('{{ asset.id }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="editAsset('{{ asset.id }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="scheduleMaintenabce('{{ asset.id }}')">
+                                                <i class="fas fa-calendar"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Health Overview -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Asset Health Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="assetHealthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools"></i> Upcoming Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for asset in assets %}
+                        {% if loop.index <= 3 %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ asset.name }}</strong>
+                                <small class="text-muted d-block">{{ asset.location }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ asset.next_maintenance }}</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if demo_mode %}
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <h3>Explore More Features</h3>
+            <a href="/demo/dashboard" class="btn btn-primary me-2">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/demo/work-orders" class="btn btn-outline-primary me-2">
+                <i class="fas fa-clipboard-list"></i> Work Orders
+            </a>
+            <a href="/demo/training" class="btn btn-outline-primary">
+                <i class="fas fa-graduation-cap"></i> Training
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#assetsTable').DataTable({
+        "pageLength": 10,
+        "order": [[ 4, "desc" ]], // Sort by status
+        "responsive": true
+    });
+    
+    // Asset Health Chart
+    const ctx = document.getElementById('assetHealthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Excellent (9-10)', 'Good (7-8)', 'Fair (5-6)', 'Poor (<5)'],
+            datasets: [{
+                data: [
+                    {{ assets|selectattr("condition_rating", ">=", 9)|list|length }},
+                    {{ assets|selectattr("condition_rating", ">=", 7)|selectattr("condition_rating", "<", 9)|list|length }},
+                    {{ assets|selectattr("condition_rating", ">=", 5)|selectattr("condition_rating", "<", 7)|list|length }},
+                    {{ assets|selectattr("condition_rating", "<", 5)|list|length }}
+                ],
+                backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+
+{% if not demo_mode %}
+function addAsset() {
+    // Implementation for adding new asset
+    alert('Add Asset functionality would be implemented here');
+}
+
+function viewAsset(assetId) {
+    // Implementation for viewing asset details
+    window.location.href = `/assets/${assetId}`;
+}
+
+function editAsset(assetId) {
+    // Implementation for editing asset
+    alert(`Edit Asset ${assetId} functionality would be implemented here`);
+}
+
+function scheduleMaintenabce(assetId) {
+    // Implementation for scheduling maintenance
+    alert(`Schedule maintenance for Asset ${assetId} functionality would be implemented here`);
+}
+{% endif %}
+</script>
+{% endblock %}

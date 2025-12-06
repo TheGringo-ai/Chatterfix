@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix Features Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if demo_mode %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> Exploring ChatterFix features with sample data
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h2 mb-4">
+                <i class="fas fa-star text-primary"></i> ChatterFix Features
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- AI-Powered Insights -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot"></i> AI-Powered Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Advanced machine learning algorithms predict equipment failures and optimize maintenance schedules.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Predictive maintenance alerts</li>
+                        <li><i class="fas fa-check text-success"></i> Failure pattern recognition</li>
+                        <li><i class="fas fa-check text-success"></i> Optimization recommendations</li>
+                        <li><i class="fas fa-check text-success"></i> Performance analytics</li>
+                    </ul>
+                    <a href="/demo/ai" class="btn btn-primary">
+                        <i class="fas fa-brain"></i> Try AI Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Dashboard -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tachometer-alt"></i> Real-Time Dashboard
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Live monitoring of all your assets, work orders, and team performance with customizable widgets.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Live asset monitoring</li>
+                        <li><i class="fas fa-check text-success"></i> Customizable widgets</li>
+                        <li><i class="fas fa-check text-success"></i> Real-time notifications</li>
+                        <li><i class="fas fa-check text-success"></i> Performance metrics</li>
+                    </ul>
+                    <a href="/demo/dashboard" class="btn btn-info">
+                        <i class="fas fa-chart-line"></i> View Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Order Management -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list"></i> Work Order Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Comprehensive work order tracking from creation to completion with smart automation.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Automated work order generation</li>
+                        <li><i class="fas fa-check text-success"></i> Priority-based scheduling</li>
+                        <li><i class="fas fa-check text-success"></i> Mobile workforce support</li>
+                        <li><i class="fas fa-check text-success"></i> Completion tracking</li>
+                    </ul>
+                    <a href="/demo/work-orders" class="btn btn-warning">
+                        <i class="fas fa-wrench"></i> View Work Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Management -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Asset Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Complete asset lifecycle management with maintenance history and performance tracking.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Asset health monitoring</li>
+                        <li><i class="fas fa-check text-success"></i> Maintenance history</li>
+                        <li><i class="fas fa-check text-success"></i> Performance analytics</li>
+                        <li><i class="fas fa-check text-success"></i> Lifecycle tracking</li>
+                    </ul>
+                    <a href="/demo/assets" class="btn btn-success">
+                        <i class="fas fa-industry"></i> View Assets
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Center -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-graduation-cap"></i> Training Center
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Interactive training modules for equipment operation, safety procedures, and maintenance protocols.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Interactive modules</li>
+                        <li><i class="fas fa-check text-success"></i> Progress tracking</li>
+                        <li><i class="fas fa-check text-success"></i> Skill assessments</li>
+                        <li><i class="fas fa-check text-success"></i> Certification tracking</li>
+                    </ul>
+                    <a href="/demo/training" class="btn btn-secondary">
+                        <i class="fas fa-book-open"></i> Access Training
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Interface -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-mobile-alt"></i> Mobile-First Design
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>PWA technology ensures your team can access ChatterFix from anywhere, with offline capabilities.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Responsive design</li>
+                        <li><i class="fas fa-check text-success"></i> Offline functionality</li>
+                        <li><i class="fas fa-check text-success"></i> Native app experience</li>
+                        <li><i class="fas fa-check text-success"></i> Touch-optimized interface</li>
+                    </ul>
+                    <a href="/demo/mobile" class="btn btn-dark">
+                        <i class="fas fa-phone"></i> Mobile Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <h3>Ready to Get Started?</h3>
+            <p class="text-muted">Experience the full power of ChatterFix CMMS</p>
+            <a href="/demo/dashboard" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-play"></i> Launch Full Demo
+            </a>
+            <a href="/landing" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus"></i> Sign Up
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -783,9 +783,9 @@ class HealthMonitor:
                 # Get metrics summary
                 await cursor.execute(
                     """
-                    SELECT check_name, metric_name, COUNT(*) as count, 
+                    SELECT check_name, metric_name, COUNT(*) as count,
                            AVG(value) as avg_value, status
-                    FROM health_metrics 
+                    FROM health_metrics
                     WHERE timestamp > ? AND value IS NOT NULL
                     GROUP BY check_name, metric_name, status
                     ORDER BY timestamp DESC
@@ -809,7 +809,7 @@ class HealthMonitor:
                 await cursor.execute(
                     """
                     SELECT type, severity, description, timestamp, resolved
-                    FROM incidents 
+                    FROM incidents
                     WHERE timestamp > ?
                     ORDER BY timestamp DESC
                     LIMIT 20

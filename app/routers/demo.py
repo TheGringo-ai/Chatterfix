@@ -3,7 +3,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from jinja2 import Environment, FileSystemLoader
 from datetime import datetime, timedelta
-import random
 from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
 
 router = APIRouter()
@@ -425,7 +424,7 @@ async def demo_training(request: Request):
                 "user_id": "demo_user",
             },
         )
-    except Exception as e:
+    except Exception:
         import traceback
 
         return HTMLResponse(

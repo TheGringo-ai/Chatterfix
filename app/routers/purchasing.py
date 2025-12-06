@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional
 import shutil
 import os
-from datetime import datetime
 
 from app.services.purchasing_service import purchasing_service
 from app.core.firestore_db import get_firestore_manager

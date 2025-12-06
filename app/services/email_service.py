@@ -205,20 +205,20 @@ ChatterFix CMMS System
 <body style="font-family: Arial, sans-serif; color: #333;">
 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
     <h2 style="color: #2c3e50;">Work Order Notification</h2>
-    
+
     <p>Hello <strong>{to_name}</strong>,</p>
-    
+
     <p>Work Order <strong>#{wo_id}</strong> {action_html}:</p>
-    
+
     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #495057;">{wo_title}</h3>
         <p><strong>Asset:</strong> {asset_name}</p>
         <p><strong>Priority:</strong> <span style="color: {'#e74c3c' if wo_priority.lower() == 'urgent' else '#f39c12' if wo_priority.lower() == 'high' else '#27ae60'};">{wo_priority}</span></p>
         <p><strong>Description:</strong> {wo_description}</p>
     </div>
-    
+
     <p>Please log in to ChatterFix CMMS to view the full details and take appropriate action.</p>
-    
+
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
         <p>Best regards,<br>ChatterFix CMMS System</p>
     </div>
@@ -283,22 +283,22 @@ ChatterFix CMMS Training System
 <body style="font-family: Arial, sans-serif; color: #333;">
 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
     <h2 style="color: #2c3e50;">Training Notification</h2>
-    
+
     <p>Hello <strong>{to_name}</strong>,</p>
-    
+
     <p>The training module <strong>"{training_title}"</strong> {action_html}.</p>
-    
+
     <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #27ae60;">
         <h3 style="margin-top: 0; color: #27ae60;">📚 Training Module</h3>
         <p style="font-size: 16px; margin: 0;"><strong>{training_title}</strong></p>
     </div>
-    
+
     <p>Please log in to ChatterFix CMMS Training Center to access your training materials and complete the required coursework.</p>
-    
+
     <div style="text-align: center; margin: 25px 0;">
         <a href="/training/modules/{training_id or 'pending'}" style="background: #27ae60; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Access Training</a>
     </div>
-    
+
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
         <p>Best regards,<br>ChatterFix CMMS Training System</p>
     </div>
@@ -367,13 +367,13 @@ ChatterFix CMMS Inventory System
 <body style="font-family: Arial, sans-serif; color: #333;">
 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
     <h2 style="color: #2c3e50;">Parts Notification</h2>
-    
+
     <p>Hello <strong>{to_name}</strong>,</p>
-    
+
     <p>Parts notification for <strong>{part_name}</strong> (Part #{part_number}):</p>
-    
+
     <p>The following parts {action_html}:</p>
-    
+
     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
         <ul style="margin: 0; padding-left: 20px;">
             <li><strong>Part Name:</strong> {part_name}</li>
@@ -382,9 +382,9 @@ ChatterFix CMMS Inventory System
             <li><strong>Location:</strong> {location}</li>
         </ul>
     </div>
-    
+
     <p>Please check the inventory system for more details.</p>
-    
+
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
         <p>Best regards,<br>ChatterFix CMMS Inventory System</p>
     </div>

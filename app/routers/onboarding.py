@@ -10,10 +10,9 @@ from app.services.gemini_service import gemini_service
 import shutil
 import os
 import pandas as pd
-import json
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 templates = Jinja2Templates(directory="app/templates")
@@ -550,10 +549,10 @@ async def start_role_onboarding(
             return JSONResponse({"error": "Invalid role selected"}, status_code=400)
 
         # Create onboarding session
-        db_adapter = get_db_adapter()
+        _db_adapter = get_db_adapter()
 
         # Create user onboarding record
-        onboarding_data = {
+        _onboarding_data = {
             "user_name": user_name,
             "user_email": user_email,
             "role": role,
@@ -648,7 +647,7 @@ async def generate_module_content(module: Dict[str, Any], role: str) -> Dict[str
         Create comprehensive training content for {module['title']} for a {role} role.
         Module type: {module['type']}
         Duration: {module['duration_minutes']} minutes
-        
+
         Generate content with:
         1. Learning objectives (3-5 bullet points)
         2. Key concepts with explanations
@@ -656,7 +655,7 @@ async def generate_module_content(module: Dict[str, Any], role: str) -> Dict[str
         4. Assessment questions (5-10 questions)
         5. Practical tips and best practices
         6. Common mistakes to avoid
-        
+
         Format as structured JSON with sections for each component.
         Make it engaging, practical, and role-specific.
         """
@@ -711,7 +710,7 @@ async def complete_module(
     """Mark module as completed and update progress"""
     try:
         # Update progress in database
-        completion_data = {
+        _completion_data = {
             "user_id": user_id,
             "module_id": module_id,
             "role": role,

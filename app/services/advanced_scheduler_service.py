@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, time
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-import asyncio
 import random
 from app.core.db_adapter import get_db_adapter
 
@@ -173,7 +172,7 @@ class AdvancedSchedulerService:
             "vibration_analysis": [3, 4, 5],
         }
 
-        locations = [
+        _locations = [
             "Building A",
             "Building B",
             "Building C",
@@ -392,7 +391,7 @@ class AdvancedSchedulerService:
             shift = shifts[i % 3]
 
             # Create technician profile
-            tech_id = f"tech_{i+1:03d}"
+            tech_id = f"tech_{i + 1:03d}"
             self.technicians[tech_id] = TechnicianProfile(
                 id=tech_id,
                 name=name,

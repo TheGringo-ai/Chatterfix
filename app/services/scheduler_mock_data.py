@@ -12,8 +12,6 @@ from app.services.advanced_scheduler_service import (
     WorkShift,
     AssetRequirement,
     TechnicianStatus,
-    ScheduleType,
-    Priority,
 )
 
 
@@ -137,7 +135,7 @@ class SchedulerMockDataService:
 
         for i in range(min(count, len(names))):
             first_name, last_name = names[i]
-            tech_id = f"tech_{i+1:03d}"
+            tech_id = f"tech_{i + 1:03d}"
 
             # Assign skill combination
             base_skills = random.choice(skill_combinations)
@@ -376,7 +374,7 @@ class SchedulerMockDataService:
         asset_counter = 1
         for asset_type in asset_types:
             for i in range(asset_type["count"]):
-                asset_id = f"{asset_type['prefix']}_{i+1:03d}"
+                asset_id = f"{asset_type['prefix']}_{i + 1:03d}"
 
                 # Determine maintenance timing
                 interval = asset_type["maintenance_interval"]
@@ -483,7 +481,7 @@ class SchedulerMockDataService:
             )
 
             scenario = {
-                "id": f"emergency_{i+1:03d}",
+                "id": f"emergency_{i + 1:03d}",
                 "title": scenario_type["title"],
                 "description": scenario_type["description"],
                 "emergency_time": emergency_time,

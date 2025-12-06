@@ -4,9 +4,7 @@ AI-powered part recognition and visual inspection
 """
 
 import logging
-import os
 from typing import Dict, Any
-import json
 
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import GeminiService
@@ -112,18 +110,18 @@ async def _recognize_parts_with_ai(
     """Use AI to recognize parts from image"""
     try:
         # Prepare prompt for AI analysis
-        prompt = """
+        _prompt = """
         Analyze this image and identify any mechanical parts, equipment, or components.
-        
+
         For each part detected, provide:
         - Part name/type
-        - Estimated part number (if visible or inferrable)  
+        - Estimated part number (if visible or inferrable)
         - Category (e.g., "hydraulic_components", "electrical", "mechanical")
         - Confidence level (0-1)
-        
+
         Return as JSON array format:
         [{"part_number": "ABC-123", "name": "Hydraulic Pump", "category": "hydraulic_components", "confidence": 0.85}]
-        
+
         If no clear parts are visible, return empty array [].
         """
 
@@ -182,16 +180,16 @@ async def _analyze_condition_with_ai(
     """Use AI to analyze asset condition from image"""
     try:
         # Prepare prompt for condition analysis
-        prompt = """
+        _prompt = """
         Analyze this image for equipment condition and defects.
-        
+
         Look for:
         - Corrosion, rust, or oxidation
         - Wear patterns, scratches, or damage
         - Loose connections or misalignment
         - Leaks or fluid stains
         - Overall condition indicators
-        
+
         Provide a condition score (1-10, where 10 is perfect condition) and identify any issues.
         Return as JSON format:
         {

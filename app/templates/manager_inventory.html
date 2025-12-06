@@ -5,43 +5,54 @@
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    /* Theme aware styling for manager pages */
+    /* Manager Pages - Consistent CMMS Styling */
     .container-fluid {
-        background-color: var(--bg-secondary) !important;
-        color: var(--text-primary) !important;
+        background: transparent !important;
+        color: #fff !important;
         min-height: 100vh;
+        padding: 2rem;
     }
     
-    .card {
-        background-color: var(--card-bg) !important;
-        color: var(--text-primary) !important;
-        border: 1px solid var(--border-color) !important;
+    /* CMMS Card styling - glassmorphism */
+    .inventory-card, .card {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-radius: 15px !important;
+        padding: 2rem !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        margin-bottom: 2rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+        color: #fff !important;
     }
     
-    .card-body {
-        background-color: var(--card-bg) !important;
-        color: var(--text-primary) !important;
+    .inventory-card:hover, .card:hover {
+        transform: translateY(-5px) !important;
+        background: rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
     }
     
     .card-header {
-        background-color: var(--bg-secondary) !important;
-        color: var(--text-primary) !important;
-        border-bottom: 1px solid var(--border-color) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .card-body {
+        background: transparent !important;
+        color: #fff !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        color: var(--text-primary) !important;
+        color: #fff !important;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
     }
     
     .text-muted {
-        color: var(--text-secondary) !important;
-    }
-    .inventory-card {
-        background-color: var(--card-bg) !important;
-        color: var(--text-primary) !important;
-        border: 1px solid var(--border-color) !important;
-        border-left: 4px solid #e5e7eb;
-        transition: all 0.2s;
+        color: rgba(255, 255, 255, 0.7) !important;
     }
     
     .inventory-card.in-stock { border-left-color: #10b981; }

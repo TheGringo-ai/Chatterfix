@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      USE_FIRESTORE: "true"
+      ENVIRONMENT: "test"
         
     steps:
       - name: Checkout code
@@ -18,6 +21,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          
+      - name: Create Firestore credentials
+        run: |
+          mkdir -p /tmp
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
           
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -68,17 +77,30 @@ jobs:
           
   docker-test:
     runs-on: ubuntu-latest
+    env:
+      USE_FIRESTORE: "true"
+      ENVIRONMENT: "test"
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Build Docker image
-        run: docker build -t chatterfix-test .
-        
-      - name: Test Docker container
+      - name: Create Firestore credentials for Docker
         run: |
-          docker run -d -p 8000:8080 --name test-container chatterfix-test
+          mkdir -p /tmp
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-key.json
+        
+      - name: Build Docker image
+        run: docker build --build-arg USE_FIRESTORE=true -t chatterfix-test .
+        
+      - name: Test Docker container with Firestore
+        run: |
+          docker run -d -p 8000:8080 --name test-container \
+            -e USE_FIRESTORE=true \
+            -e ENVIRONMENT=test \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json \
+            -v /tmp/gcp-key.json:/tmp/gcp-key.json:ro \
+            chatterfix-test
           sleep 15
           curl -f http://localhost:8000/health || (echo "Health check failed, trying root endpoint..." && curl -f http://localhost:8000/)
           docker stop test-container

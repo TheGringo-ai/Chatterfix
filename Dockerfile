@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy application code
 COPY . .
 
-# Create data directory (for local SQLite fallback)
-RUN mkdir -p /app/data
+# Pure Firestore - no local database needed
+# RUN mkdir -p /app/data
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \

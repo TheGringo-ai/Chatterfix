@@ -158,6 +158,7 @@ async def update_user_performance_training_hours(firestore_manager, user_id: str
 @router.get("/", response_class=HTMLResponse)
 async def training_center(request: Request, user_id: str = "1"):
     """Redirect to external LineSmart training platform"""
+    # Force rebuild test
     return RedirectResponse(url="https://linesmart-platform-650169261019.us-central1.run.app", status_code=302)
 
 

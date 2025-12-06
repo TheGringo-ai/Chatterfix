@@ -125,7 +125,7 @@
             }
         }
         
-        /* Dark Mode Theme Variables */
+        /* Theme Variables */
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f8f9fa;
@@ -137,48 +137,6 @@
             --navbar-text: #212529;
         }
         
-        [data-theme="dark"] {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --text-primary: #ffffff;
-            --text-secondary: #b3b3b3;
-            --border-color: #404040;
-            --card-bg: #2d2d2d;
-            --navbar-bg: #1a1a1a;
-            --navbar-text: #ffffff;
-        }
-        
-        /* Enhanced dark mode for all elements */
-        [data-theme="dark"] body {
-            background-color: var(--bg-primary) !important;
-            color: var(--text-primary) !important;
-        }
-        
-        [data-theme="dark"] .content,
-        [data-theme="dark"] .main-content {
-            background-color: var(--bg-primary) !important;
-            color: var(--text-primary) !important;
-        }
-        
-        [data-theme="dark"] .card,
-        [data-theme="dark"] .task-card,
-        [data-theme="dark"] .dashboard-card {
-            background-color: var(--bg-secondary) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-        }
-        
-        [data-theme="dark"] input,
-        [data-theme="dark"] textarea,
-        [data-theme="dark"] select {
-            background-color: var(--bg-secondary) !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-color) !important;
-        }
-        
-        [data-theme="dark"] .form-group label {
-            color: var(--text-primary) !important;
-        }
         
         /* Apply theme variables */
         body {
@@ -211,63 +169,6 @@
             color: var(--text-secondary) !important;
         }
         
-        /* Elegant Dark Mode Toggle Styles */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            background: #ffffff;
-            color: #333333;
-            border: 2px solid #e0e0e0;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        
-        .theme-toggle:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-color: #007bff;
-        }
-        
-        .theme-toggle i {
-            font-size: 14px;
-            transition: transform 0.2s ease;
-        }
-        
-        .theme-toggle:active {
-            transform: translateY(0);
-        }
-        
-        /* Dark theme toggle styling */
-        [data-theme="dark"] .theme-toggle {
-            background: #2d2d2d;
-            color: #ffffff;
-            border-color: #404040;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        [data-theme="dark"] .theme-toggle:hover {
-            border-color: #ffd89b;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        }
-        
-        /* Force visibility on all pages */
-        .theme-toggle {
-            visibility: visible !important;
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
         
         /* Interactive Demo Bar Styles */
         .demo-bar {
@@ -466,11 +367,6 @@
 </head>
 
 <body>
-    <!-- Dark Mode Toggle Button -->
-    <button class="theme-toggle" id="themeToggle">
-        <i class="fas fa-moon"></i>
-        <span id="themeText">Dark Mode</span>
-    </button>
     
     <div class="navbar">
         <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
@@ -999,137 +895,7 @@
         });
     </script>
     
-    <!-- Dark Mode Toggle Script -->
     <script>
-        // Theme management
-        class ThemeManager {
-            constructor() {
-                this.init();
-            }
-            
-            init() {
-                // Load saved theme or default to light
-                const savedTheme = localStorage.getItem('chatterfix-theme') || 'light';
-                this.setTheme(savedTheme);
-                
-                // Setup toggle button
-                const toggleBtn = document.getElementById('themeToggle');
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', () => this.toggleTheme());
-                }
-                
-                this.updateToggleButton();
-            }
-            
-            setTheme(theme) {
-                document.documentElement.setAttribute('data-theme', theme);
-                localStorage.setItem('chatterfix-theme', theme);
-                this.currentTheme = theme;
-                this.updateToggleButton();
-            }
-            
-            toggleTheme() {
-                const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
-                this.setTheme(newTheme);
-                
-                // Add a nice animation effect
-                document.body.style.transition = 'all 0.3s ease';
-                setTimeout(() => {
-                    document.body.style.transition = '';
-                }, 300);
-            }
-            
-            updateToggleButton() {
-                const toggleBtn = document.getElementById('themeToggle');
-                const toggleText = document.getElementById('themeText');
-                const toggleIcon = toggleBtn?.querySelector('i');
-                
-                if (!toggleBtn) return;
-                
-                // Fix reversed logic - show what will happen when clicked
-                if (this.currentTheme === 'light') {
-                    toggleIcon.className = 'fas fa-moon';
-                    toggleText.textContent = 'Dark Mode';
-                    toggleBtn.title = 'Switch to Dark Mode';
-                } else {
-                    toggleIcon.className = 'fas fa-sun';
-                    toggleText.textContent = 'Light Mode';
-                    toggleBtn.title = 'Switch to Light Mode';
-                }
-            }
-            
-            getCurrentTheme() {
-                return this.currentTheme;
-            }
-        }
-        
-        // Initialize theme manager when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ensure toggle button exists
-            let toggleBtn = document.getElementById('themeToggle');
-            if (!toggleBtn) {
-                // Create toggle button if it doesn't exist
-                toggleBtn = document.createElement('button');
-                toggleBtn.id = 'themeToggle';
-                toggleBtn.className = 'theme-toggle';
-                toggleBtn.innerHTML = '<i class="fas fa-moon"></i><span id="themeText">Dark Mode</span>';
-                document.body.appendChild(toggleBtn);
-                console.log('Created fallback theme toggle button');
-            }
-            
-            window.themeManager = new ThemeManager();
-            
-            // Debug: Make sure button is visible
-            setTimeout(() => {
-                const btn = document.getElementById('themeToggle');
-                if (btn) {
-                    console.log('Theme toggle button found:', btn);
-                    console.log('Button styles:', window.getComputedStyle(btn));
-                } else {
-                    console.error('Theme toggle button not found!');
-                }
-            }, 1000);
-            
-            // Special handling for manager pages
-            const isManagerPage = window.location.pathname.startsWith('/manager');
-            if (isManagerPage) {
-                // Add option to force light mode for manager pages
-                const manageForceLightToggle = document.createElement('button');
-                manageForceLightToggle.innerHTML = '<i class="fas fa-lock"></i> Force Light';
-                manageForceLightToggle.className = 'btn btn-sm btn-outline-secondary me-2';
-                manageForceLightToggle.style.position = 'fixed';
-                manageForceLightToggle.style.top = '70px';
-                manageForceLightToggle.style.right = '20px';
-                manageForceLightToggle.style.zIndex = '1049';
-                manageForceLightToggle.title = 'Force light theme for better readability';
-                
-                let forcedLight = localStorage.getItem('chatterfix-manager-force-light') === 'true';
-                
-                manageForceLightToggle.addEventListener('click', function() {
-                    forcedLight = !forcedLight;
-                    localStorage.setItem('chatterfix-manager-force-light', forcedLight);
-                    
-                    if (forcedLight) {
-                        document.body.classList.add('manager-force-light');
-                        manageForceLightToggle.innerHTML = '<i class="fas fa-unlock"></i> Allow Dark';
-                        manageForceLightToggle.className = 'btn btn-sm btn-warning me-2';
-                    } else {
-                        document.body.classList.remove('manager-force-light');
-                        manageForceLightToggle.innerHTML = '<i class="fas fa-lock"></i> Force Light';
-                        manageForceLightToggle.className = 'btn btn-sm btn-outline-secondary me-2';
-                    }
-                });
-                
-                // Apply forced light mode if enabled
-                if (forcedLight) {
-                    document.body.classList.add('manager-force-light');
-                    manageForceLightToggle.innerHTML = '<i class="fas fa-unlock"></i> Allow Dark';
-                    manageForceLightToggle.className = 'btn btn-sm btn-warning me-2';
-                }
-                
-                document.body.appendChild(manageForceLightToggle);
-            }
-        });
         
         // Comprehensive Demo System for Entire Application
         class ChatterFixDemoSystem {
@@ -1288,12 +1054,6 @@
                         description: 'This is a comprehensive computerized maintenance management system designed to streamline your operations.',
                         action: () => this.highlightElement('.navbar')
                     },
-                    {
-                        selector: '.theme-toggle',
-                        title: 'Dark Mode Toggle',
-                        description: 'Switch between light and dark themes using this toggle button. Your preference is automatically saved.',
-                        action: () => this.highlightElement('.theme-toggle')
-                    }
                 ];
             }
             

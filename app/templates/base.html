@@ -223,6 +223,188 @@
             pointer-events: auto !important;
         }
         
+        /* Interactive Demo Bar Styles */
+        .demo-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .demo-bar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .demo-bar-left {
+            display: flex;
+            align-items: center;
+            color: white;
+            gap: 0.5rem;
+        }
+        
+        .demo-description {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+        
+        .demo-bar-right {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .demo-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        
+        .demo-btn.primary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .demo-btn.primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .demo-btn.secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .demo-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .demo-btn.dismiss {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .demo-btn.dismiss:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        /* Demo overlay styles */
+        .demo-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        .demo-spotlight {
+            position: absolute;
+            border: 3px solid #007bff;
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            animation: pulse-border 2s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0%, 100% {
+                border-color: #007bff;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 123, 255, 0.5);
+            }
+            50% {
+                border-color: #0056b3;
+                box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 123, 255, 0.8);
+            }
+        }
+        
+        .demo-tooltip {
+            position: absolute;
+            background: white;
+            color: #333;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            z-index: 10002;
+        }
+        
+        .demo-tooltip::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+        }
+        
+        .demo-tooltip.bottom::after {
+            top: -16px;
+            left: 20px;
+            border-bottom-color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-bar-content {
+                padding: 0 1rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 0.75rem;
+            }
+            
+            .demo-description {
+                display: none;
+            }
+            
+            .demo-bar-right {
+                justify-content: center;
+            }
+        }
+        
         /* Ensure manager pages respect theme unless specifically overridden */
         .manager-force-light {
             --bg-primary: #f8f9fa !important;
@@ -262,11 +444,7 @@
             <a href="/demo/team"
                 class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/team') %}active{% endif %}">Team</a>
             <a href="/manager"
-                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/manager') and not request.url.path.startswith('/demo/manager') %}active{% endif %}">Manager</a>
-            <a href="/demo/manager" 
-                class="nav-link demo-link {% if request.url and request.url.path and request.url.path.startswith('/demo/manager') %}active{% endif %}">
-                <i class="fas fa-play-circle me-1"></i>Demo
-            </a>
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/manager') %}active{% endif %}">Manager</a>
             <!-- Training module link - demo implementation -->
             <a href="/demo/training"
                 class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/training') %}active{% endif %}">Training</a>
@@ -308,6 +486,28 @@
                 <a href="/landing" class="btn btn-primary btn-sm">Sign Up</a>
             </div>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Interactive Demo Bar -->
+    <div id="demoBar" class="demo-bar" style="display: none;">
+        <div class="demo-bar-content">
+            <div class="demo-bar-left">
+                <i class="fas fa-play-circle me-2"></i>
+                <strong>Experience ChatterFix Live</strong>
+                <span class="demo-description">Interactive demo with real-time features</span>
+            </div>
+            <div class="demo-bar-right">
+                <button id="startAppDemo" class="demo-btn primary">
+                    <i class="fas fa-rocket me-1"></i>Start Full Demo
+                </button>
+                <button id="quickTour" class="demo-btn secondary">
+                    <i class="fas fa-eye me-1"></i>Quick Tour
+                </button>
+                <button id="dismissDemo" class="demo-btn dismiss">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -883,6 +1083,284 @@
                 
                 document.body.appendChild(manageForceLightToggle);
             }
+        });
+        
+        // Comprehensive Demo System for Entire Application
+        class ChatterFixDemoSystem {
+            constructor() {
+                this.currentStep = 0;
+                this.isActive = false;
+                this.demoSteps = [];
+                this.overlay = null;
+                this.spotlight = null;
+                this.tooltip = null;
+                this.init();
+            }
+            
+            init() {
+                this.createDemoElements();
+                this.setupEventListeners();
+                this.showDemoBar();
+                this.setupDemoSteps();
+            }
+            
+            createDemoElements() {
+                // Create overlay
+                this.overlay = document.createElement('div');
+                this.overlay.className = 'demo-overlay';
+                
+                // Create spotlight
+                this.spotlight = document.createElement('div');
+                this.spotlight.className = 'demo-spotlight';
+                
+                // Create tooltip
+                this.tooltip = document.createElement('div');
+                this.tooltip.className = 'demo-tooltip bottom';
+                
+                document.body.appendChild(this.overlay);
+                document.body.appendChild(this.spotlight);
+                document.body.appendChild(this.tooltip);
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startAppDemo')?.addEventListener('click', () => this.startFullDemo());
+                document.getElementById('quickTour')?.addEventListener('click', () => this.startQuickTour());
+                document.getElementById('dismissDemo')?.addEventListener('click', () => this.dismissDemoBar());
+                
+                // Keyboard navigation
+                document.addEventListener('keydown', (e) => {
+                    if (!this.isActive) return;
+                    
+                    if (e.key === 'Escape') this.stopDemo();
+                    if (e.key === 'ArrowRight' || e.key === ' ') this.nextStep();
+                    if (e.key === 'ArrowLeft') this.previousStep();
+                });
+                
+                // Click to continue
+                this.overlay.addEventListener('click', () => this.nextStep());
+            }
+            
+            showDemoBar() {
+                const demoBar = document.getElementById('demoBar');
+                const isDismissed = localStorage.getItem('chatterfix-demo-dismissed') === 'true';
+                
+                if (!isDismissed && demoBar) {
+                    demoBar.style.display = 'block';
+                }
+            }
+            
+            dismissDemoBar() {
+                const demoBar = document.getElementById('demoBar');
+                if (demoBar) {
+                    demoBar.style.display = 'none';
+                    localStorage.setItem('chatterfix-demo-dismissed', 'true');
+                }
+            }
+            
+            setupDemoSteps() {
+                const currentPath = window.location.pathname;
+                
+                if (currentPath.startsWith('/manager')) {
+                    this.demoSteps = this.getManagerDemoSteps();
+                } else if (currentPath.includes('/demo')) {
+                    this.demoSteps = this.getMainAppDemoSteps();
+                } else if (currentPath === '/' || currentPath === '/demo') {
+                    this.demoSteps = this.getDashboardDemoSteps();
+                } else {
+                    this.demoSteps = this.getGenericDemoSteps();
+                }
+            }
+            
+            getManagerDemoSteps() {
+                return [
+                    {
+                        selector: '.manager-header',
+                        title: 'Manager Command Center',
+                        description: 'This is your comprehensive management dashboard. From here you can oversee all ChatterFix CMMS operations, monitor team performance, and make data-driven decisions.',
+                        action: () => this.highlightElement('.manager-header')
+                    },
+                    {
+                        selector: '.stat-card',
+                        title: 'Key Performance Indicators',
+                        description: 'These real-time KPIs give you instant visibility into your operation. Monitor active technicians, work orders, asset health, and costs at a glance.',
+                        action: () => this.highlightElement('.stat-card')
+                    },
+                    {
+                        selector: '.nav-card',
+                        title: 'Management Functions',
+                        description: 'Access all management tools from these navigation cards. Each section provides comprehensive control over that area of your CMMS.',
+                        action: () => this.highlightElement('.nav-card')
+                    },
+                    {
+                        selector: '.activity-item',
+                        title: 'Real-time Activity Feed',
+                        description: 'Stay informed with live updates from across your operation. Critical events are automatically prioritized and highlighted.',
+                        action: () => this.highlightElement('.activity-item')
+                    }
+                ];
+            }
+            
+            getMainAppDemoSteps() {
+                return [
+                    {
+                        selector: '.navbar',
+                        title: 'Navigation System',
+                        description: 'Access all ChatterFix modules from this navigation bar. Each section represents a core CMMS function.',
+                        action: () => this.highlightElement('.navbar')
+                    },
+                    {
+                        selector: '.cmms-card',
+                        title: 'Interactive Cards',
+                        description: 'All data and features are presented in these beautiful glassmorphism cards with real-time updates and interactive elements.',
+                        action: () => this.highlightElement('.cmms-card')
+                    }
+                ];
+            }
+            
+            getDashboardDemoSteps() {
+                return [
+                    {
+                        selector: '.ai-brain',
+                        title: 'AI Command Center',
+                        description: 'The heart of ChatterFix - our AI-powered dashboard that adapts to your needs and provides intelligent insights.',
+                        action: () => this.highlightElement('.ai-brain')
+                    },
+                    {
+                        selector: '.stats-grid',
+                        title: 'Live Statistics',
+                        description: 'Monitor your CMMS performance with real-time statistics and automated reporting.',
+                        action: () => this.highlightElement('.stats-grid')
+                    }
+                ];
+            }
+            
+            getGenericDemoSteps() {
+                return [
+                    {
+                        selector: '.navbar',
+                        title: 'Welcome to ChatterFix CMMS',
+                        description: 'This is a comprehensive computerized maintenance management system designed to streamline your operations.',
+                        action: () => this.highlightElement('.navbar')
+                    },
+                    {
+                        selector: '.theme-toggle',
+                        title: 'Dark Mode Toggle',
+                        description: 'Switch between light and dark themes using this toggle button. Your preference is automatically saved.',
+                        action: () => this.highlightElement('.theme-toggle')
+                    }
+                ];
+            }
+            
+            startFullDemo() {
+                this.isActive = true;
+                this.currentStep = 0;
+                this.showStep();
+                this.dismissDemoBar();
+            }
+            
+            startQuickTour() {
+                // Quick tour with fewer steps
+                this.demoSteps = this.demoSteps.slice(0, 2);
+                this.startFullDemo();
+            }
+            
+            showStep() {
+                if (this.currentStep >= this.demoSteps.length) {
+                    this.completeDemo();
+                    return;
+                }
+                
+                const step = this.demoSteps[this.currentStep];
+                
+                // Execute step action
+                if (step.action) step.action();
+                
+                // Show overlay
+                this.overlay.style.display = 'block';
+                
+                // Update tooltip
+                this.tooltip.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <h5 style="margin: 0; color: #333;">${step.title}</h5>
+                        <small style="color: #666;">${this.currentStep + 1}/${this.demoSteps.length}</small>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #555;">${step.description}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                        <small style="color: #888;">Click anywhere or press → to continue</small>
+                        <div>
+                            ${this.currentStep > 0 ? '<button onclick="window.demoSystem.previousStep()" style="margin-right: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">← Back</button>' : ''}
+                            <button onclick="window.demoSystem.nextStep()" style="padding: 0.25rem 0.75rem; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">Next →</button>
+                            <button onclick="window.demoSystem.stopDemo()" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">Skip</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            highlightElement(selector) {
+                const element = document.querySelector(selector);
+                if (!element) return;
+                
+                const rect = element.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                
+                // Position spotlight
+                this.spotlight.style.left = (rect.left + scrollLeft - 10) + 'px';
+                this.spotlight.style.top = (rect.top + scrollTop - 10) + 'px';
+                this.spotlight.style.width = (rect.width + 20) + 'px';
+                this.spotlight.style.height = (rect.height + 20) + 'px';
+                this.spotlight.style.display = 'block';
+                
+                // Position tooltip
+                this.tooltip.style.left = (rect.left + scrollLeft) + 'px';
+                this.tooltip.style.top = (rect.top + scrollTop + rect.height + 20) + 'px';
+                this.tooltip.style.display = 'block';
+                
+                // Scroll into view
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            nextStep() {
+                this.currentStep++;
+                this.showStep();
+            }
+            
+            previousStep() {
+                if (this.currentStep > 0) {
+                    this.currentStep--;
+                    this.showStep();
+                }
+            }
+            
+            stopDemo() {
+                this.isActive = false;
+                this.overlay.style.display = 'none';
+                this.spotlight.style.display = 'none';
+                this.tooltip.style.display = 'none';
+                this.currentStep = 0;
+            }
+            
+            completeDemo() {
+                this.tooltip.innerHTML = `
+                    <div>
+                        <h5 style="margin: 0 0 0.5rem 0; color: #333;">🎉 Demo Complete!</h5>
+                        <p style="margin: 0.5rem 0; color: #555;">You've explored the key features of ChatterFix CMMS. Ready to set up your own workspace?</p>
+                        <div style="margin-top: 1rem;">
+                            <button onclick="window.location.href='/landing'" style="padding: 0.5rem 1rem; border: none; background: #28a745; color: white; border-radius: 4px; cursor: pointer; margin-right: 0.5rem;">Get Started Free</button>
+                            <button onclick="window.demoSystem.stopDemo()" style="padding: 0.5rem 1rem; border: 1px solid #ddd; background: #f8f9fa; border-radius: 4px; cursor: pointer;">Continue Exploring</button>
+                        </div>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    this.stopDemo();
+                }, 5000);
+            }
+        }
+        
+        // Initialize demo system
+        document.addEventListener('DOMContentLoaded', function() {
+            window.demoSystem = new ChatterFixDemoSystem();
         });
     </script>
 </body>

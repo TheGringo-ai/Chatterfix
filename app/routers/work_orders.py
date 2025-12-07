@@ -216,11 +216,13 @@ async def create_work_order(
         try:
             # Get form data for parts (this would come from the form as parts[0][part_id], etc.)
             # For now, we'll implement the processing logic that can be called from JavaScript
-            
+
             # Extract parts data from request (this is a simplified approach)
             # In a real implementation, you'd parse the form data for parts arrays
-            logger.info("Parts checkout processing will be implemented in separate endpoint")
-            
+            logger.info(
+                "Parts checkout processing will be implemented in separate endpoint"
+            )
+
         except Exception as e:
             logger.error(f"Error processing parts checkout: {e}")
             # Don't fail the work order creation if parts processing fails
@@ -270,49 +272,54 @@ async def checkout_parts_for_work_order(
     try:
         db_adapter = get_db_adapter()
         if not db_adapter.firestore_manager:
-            return JSONResponse({"success": False, "error": "Database unavailable"}, status_code=500)
+            return JSONResponse(
+                {"success": False, "error": "Database unavailable"}, status_code=500
+            )
 
         # Parse parts data
         parts_list = json.loads(parts_data)
-        
+
         for part_info in parts_list:
             part_id = part_info.get("part_id")
             quantity = int(part_info.get("quantity", 0))
-            
+
             if not part_id or quantity <= 0:
                 continue
-                
+
             # Get current part inventory
             part_doc = await db_adapter.firestore_manager.get_document("parts", part_id)
             if not part_doc:
                 logger.warning(f"Part {part_id} not found for checkout")
                 continue
-                
+
             current_stock = part_doc.get("current_stock", 0)
             if current_stock < quantity:
-                return JSONResponse({
-                    "success": False, 
-                    "error": f"Insufficient stock for {part_doc.get('name', 'Unknown Part')}. Available: {current_stock}, Requested: {quantity}"
-                }, status_code=400)
-        
+                return JSONResponse(
+                    {
+                        "success": False,
+                        "error": f"Insufficient stock for {part_doc.get('name', 'Unknown Part')}. Available: {current_stock}, Requested: {quantity}",
+                    },
+                    status_code=400,
+                )
+
         # If we get here, all parts have sufficient stock - proceed with checkout
         for part_info in parts_list:
             part_id = part_info.get("part_id")
             quantity = int(part_info.get("quantity", 0))
-            
+
             if not part_id or quantity <= 0:
                 continue
-                
+
             # Get current stock again (to handle concurrent requests)
             part_doc = await db_adapter.firestore_manager.get_document("parts", part_id)
             current_stock = part_doc.get("current_stock", 0)
             new_stock = max(0, current_stock - quantity)
-            
+
             # Update part inventory
             await db_adapter.firestore_manager.update_document(
                 "parts", part_id, {"current_stock": new_stock}
             )
-            
+
             # Create parts checkout record
             checkout_record = {
                 "work_order_id": wo_id,
@@ -322,11 +329,15 @@ async def checkout_parts_for_work_order(
                 "part_name": part_doc.get("name", ""),
                 "part_number": part_doc.get("part_number", ""),
             }
-            await db_adapter.firestore_manager.create_document("work_order_parts_checkout", checkout_record)
-        
+            await db_adapter.firestore_manager.create_document(
+                "work_order_parts_checkout", checkout_record
+            )
+
         logger.info(f"Parts checkout completed for work order {wo_id}")
-        return JSONResponse({"success": True, "message": "Parts checked out successfully"})
-        
+        return JSONResponse(
+            {"success": True, "message": "Parts checked out successfully"}
+        )
+
     except Exception as e:
         logger.error(f"Error in parts checkout: {e}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
@@ -344,7 +355,7 @@ async def complete_work_order_basic(wo_id: str):
         next_service_date=None,
         follow_up_notes="",
         completion_parts_data="[]",
-        files=None
+        files=None,
     )
 
 
@@ -370,41 +381,46 @@ async def complete_work_order_enhanced(
 
         # Get work order for notification
         wo = await db_adapter.firestore_manager.get_document("work_orders", wo_id)
-        
+
         # Process parts used during completion
         completion_parts = []
         if completion_parts_data and completion_parts_data != "[]":
             try:
                 parts_list = json.loads(completion_parts_data)
-                
+
                 for part_info in parts_list:
                     part_id = part_info.get("part_id")
                     quantity_used = int(part_info.get("quantity_used", 0))
-                    
+
                     if not part_id or quantity_used <= 0:
                         continue
-                    
+
                     # Get part info and update inventory
-                    part_doc = await db_adapter.firestore_manager.get_document("parts", part_id)
+                    part_doc = await db_adapter.firestore_manager.get_document(
+                        "parts", part_id
+                    )
                     if part_doc:
                         current_stock = part_doc.get("current_stock", 0)
                         new_stock = max(0, current_stock - quantity_used)
-                        
+
                         # Update inventory
                         await db_adapter.firestore_manager.update_document(
                             "parts", part_id, {"current_stock": new_stock}
                         )
-                        
+
                         # Record part usage
-                        completion_parts.append({
-                            "part_id": part_id,
-                            "part_name": part_doc.get("name", ""),
-                            "part_number": part_doc.get("part_number", ""),
-                            "quantity_used": quantity_used,
-                            "unit_cost": part_doc.get("unit_cost", 0),
-                            "total_cost": quantity_used * part_doc.get("unit_cost", 0)
-                        })
-                        
+                        completion_parts.append(
+                            {
+                                "part_id": part_id,
+                                "part_name": part_doc.get("name", ""),
+                                "part_number": part_doc.get("part_number", ""),
+                                "quantity_used": quantity_used,
+                                "unit_cost": part_doc.get("unit_cost", 0),
+                                "total_cost": quantity_used
+                                * part_doc.get("unit_cost", 0),
+                            }
+                        )
+
                         # Create parts usage record
                         usage_record = {
                             "work_order_id": wo_id,
@@ -415,10 +431,14 @@ async def complete_work_order_enhanced(
                             "part_number": part_doc.get("part_number", ""),
                             "unit_cost": part_doc.get("unit_cost", 0),
                         }
-                        await db_adapter.firestore_manager.create_document("work_order_parts_usage", usage_record)
-                        
-                        logger.info(f"Used {quantity_used} of part {part_doc.get('name')} in work order {wo_id}")
-                        
+                        await db_adapter.firestore_manager.create_document(
+                            "work_order_parts_usage", usage_record
+                        )
+
+                        logger.info(
+                            f"Used {quantity_used} of part {part_doc.get('name')} in work order {wo_id}"
+                        )
+
             except Exception as e:
                 logger.error(f"Error processing completion parts: {e}")
 
@@ -448,7 +468,7 @@ async def complete_work_order_enhanced(
                         "title": file.filename,
                         "description": "Completion documentation",
                         "uploaded_date": datetime.now().isoformat(),
-                        "upload_stage": "completion"
+                        "upload_stage": "completion",
                     }
 
                     media_id = await db_adapter.firestore_manager.create_document(
@@ -473,18 +493,18 @@ async def complete_work_order_enhanced(
             "completion_media_count": len(completion_media),
             "completed_by": wo.get("assigned_to", "Unknown"),
         }
-        
+
         await db_adapter.firestore_manager.update_document(
             "work_orders", wo_id, completion_data
         )
-        
+
         # Update asset status if asset_id is provided
         if wo.get("asset_id") and asset_status:
             try:
                 asset_update = {"status": asset_status}
                 if next_service_date:
                     asset_update["next_service_date"] = next_service_date
-                
+
                 await db_adapter.firestore_manager.update_document(
                     "assets", wo["asset_id"], asset_update
                 )
@@ -492,7 +512,9 @@ async def complete_work_order_enhanced(
             except Exception as e:
                 logger.error(f"Error updating asset status: {e}")
 
-        logger.info(f"Work order {wo_id} completed successfully with {len(completion_parts)} parts used")
+        logger.info(
+            f"Work order {wo_id} completed successfully with {len(completion_parts)} parts used"
+        )
 
         # Send completion notification if work order has assignment
         if wo and wo.get("assigned_to"):
@@ -572,10 +594,12 @@ async def get_assets_api():
         db_adapter = get_db_adapter()
         if not db_adapter.firestore_manager:
             return JSONResponse({"assets": []})
-            
-        assets = await db_adapter.firestore_manager.get_collection("assets", order_by="name")
+
+        assets = await db_adapter.firestore_manager.get_collection(
+            "assets", order_by="name"
+        )
         return JSONResponse(assets)
-        
+
     except Exception as e:
         logger.error(f"Error fetching assets: {e}")
         return JSONResponse({"assets": []})
@@ -588,25 +612,41 @@ async def get_users_api(role: str = None):
         db_adapter = get_db_adapter()
         if not db_adapter.firestore_manager:
             # Return mock data if no database available
-            return JSONResponse([
-                {"id": "1", "full_name": "John Technician", "name": "John Technician"},
-                {"id": "2", "full_name": "Jane Maintenance", "name": "Jane Maintenance"},
-                {"id": "3", "full_name": "Mike Engineer", "name": "Mike Engineer"},
-            ])
-            
+            return JSONResponse(
+                [
+                    {
+                        "id": "1",
+                        "full_name": "John Technician",
+                        "name": "John Technician",
+                    },
+                    {
+                        "id": "2",
+                        "full_name": "Jane Maintenance",
+                        "name": "Jane Maintenance",
+                    },
+                    {"id": "3", "full_name": "Mike Engineer", "name": "Mike Engineer"},
+                ]
+            )
+
         # For now, return mock technician data
         # In production, you'd query a users collection with role filtering
         users = [
             {"id": "1", "full_name": "John Technician", "name": "John Technician"},
-            {"id": "2", "full_name": "Jane Maintenance", "name": "Jane Maintenance"}, 
+            {"id": "2", "full_name": "Jane Maintenance", "name": "Jane Maintenance"},
             {"id": "3", "full_name": "Mike Engineer", "name": "Mike Engineer"},
         ]
-        
+
         if role == "technician":
-            users = [u for u in users if "technician" in u["full_name"].lower() or "maintenance" in u["full_name"].lower() or "engineer" in u["full_name"].lower()]
-            
+            users = [
+                u
+                for u in users
+                if "technician" in u["full_name"].lower()
+                or "maintenance" in u["full_name"].lower()
+                or "engineer" in u["full_name"].lower()
+            ]
+
         return JSONResponse(users)
-        
+
     except Exception as e:
         logger.error(f"Error fetching users: {e}")
         return JSONResponse([])

@@ -45,7 +45,7 @@ async def recognize_part(
                 {
                     "part_number": "HYD-PUMP-2025",
                     "name": "Smart Hydraulic Pump",
-                    "category": "hydraulic_components", 
+                    "category": "hydraulic_components",
                     "confidence": 0.85,
                     "location": "Warehouse A-12, Bay 7",
                     "maintenance_schedule": "Next service: December 15, 2024",
@@ -53,7 +53,7 @@ async def recognize_part(
                     "estimated_cost": 3200.00,
                     "vendor": "HydroTech Solutions",
                     "installation_date": "2023-03-15",
-                    "warranty_status": "Active - 2 years remaining"
+                    "warranty_status": "Active - 2 years remaining",
                 },
                 {
                     "part_number": "FLT-003",
@@ -64,8 +64,8 @@ async def recognize_part(
                     "maintenance_schedule": "Replacement due in 45 days",
                     "condition_notes": "Filter shows moderate contamination",
                     "estimated_cost": 180.00,
-                    "vendor": "FilterMax Industries"
-                }
+                    "vendor": "FilterMax Industries",
+                },
             ]
 
         # Get real inventory data from Firestore
@@ -139,26 +139,26 @@ async def _recognize_parts_with_ai(
                     return [
                         {
                             "part_number": "AI-DETECT-001",
-                            "name": "Hydraulic Pump Assembly", 
+                            "name": "Hydraulic Pump Assembly",
                             "category": "hydraulic",
                             "confidence": 0.92,
                             "location": "Primary Drive System",
                             "maintenance_schedule": "Next service: 180 days",
                             "condition_notes": "Visual inspection shows normal wear patterns",
                             "estimated_cost": 2850.00,
-                            "vendor": "Industrial Hydraulics Inc"
+                            "vendor": "Industrial Hydraulics Inc",
                         },
                         {
-                            "part_number": "AI-DETECT-002", 
+                            "part_number": "AI-DETECT-002",
                             "name": "Bearing Housing",
                             "category": "mechanical",
                             "confidence": 0.87,
                             "location": "Motor Mount",
                             "maintenance_schedule": "Lubrication due in 30 days",
-                            "condition_notes": "Slight vibration detected", 
+                            "condition_notes": "Slight vibration detected",
                             "estimated_cost": 425.00,
-                            "vendor": "Precision Bearings Ltd"
-                        }
+                            "vendor": "Precision Bearings Ltd",
+                        },
                     ]
             except Exception as e:
                 logger.warning(f"Gemini part recognition failed: {e}")

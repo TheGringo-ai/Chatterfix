@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, cast
 
 from google.cloud import firestore  # type: ignore
@@ -526,44 +526,235 @@ class FirestoreSQLiteWrapper:
 
     def execute(self, query: str, params=None):
         """Execute a SQL-like query (returns self for chaining)"""
-        # For demo/development, we'll return mock data
+        # For demo/development, we'll return comprehensive mock data
         # In production, you'd implement proper SQL->Firestore translation
         logger.warning(f"SQLite-style query not fully implemented: {query[:50]}...")
 
         # Return mock data for common queries to keep the app functional
         if "SELECT" in query.upper():
-            if "users" in query.lower():
+            # Resource capacity query (technicians with work load)
+            if "users" in query.lower() and "total_hours" in query.lower():
                 self.last_query_result = [
                     {
                         "id": 1,
-                        "full_name": "Demo User",
+                        "full_name": "John Smith",
+                        "username": "jsmith",
+                        "status": "available",
+                        "role": "technician",
+                        "active_work_orders": 3,
+                        "urgent_count": 1,
+                        "total_hours": 15.5,
+                    },
+                    {
+                        "id": 2,
+                        "full_name": "Sarah Johnson",
+                        "username": "sjohnson",
+                        "status": "available",
+                        "role": "technician",
+                        "active_work_orders": 2,
+                        "urgent_count": 0,
+                        "total_hours": 8.0,
+                    },
+                    {
+                        "id": 3,
+                        "full_name": "Mike Davis",
+                        "username": "mdavis",
+                        "status": "on_job",
+                        "role": "technician",
+                        "active_work_orders": 4,
+                        "urgent_count": 2,
+                        "total_hours": 22.0,
+                    },
+                ]
+            # Work order backlog query
+            elif "work_orders" in query.lower() and "priority" in query.lower():
+                self.last_query_result = [
+                    {
+                        "id": 1,
+                        "title": "Fix HVAC System - Building A",
+                        "priority": "high",
+                        "status": "pending",
+                        "created_date": (datetime.now() - timedelta(days=2)).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "due_date": (datetime.now() + timedelta(days=5)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "estimated_duration": 4.0,
+                        "asset_name": "HVAC-001",
+                        "asset_id": 1,
+                        "criticality": 4,
+                        "urgency": "due_this_week",
+                    },
+                    {
+                        "id": 2,
+                        "title": "Inspect Fire Suppression System",
+                        "priority": "urgent",
+                        "status": "pending",
+                        "created_date": (datetime.now() - timedelta(days=5)).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "due_date": datetime.now().strftime("%Y-%m-%d"),
+                        "estimated_duration": 2.0,
+                        "asset_name": "FIRE-SUPP-001",
+                        "asset_id": 2,
+                        "criticality": 5,
+                        "urgency": "due_today",
+                    },
+                    {
+                        "id": 3,
+                        "title": "Replace Air Filters",
+                        "priority": "medium",
+                        "status": "pending",
+                        "created_date": (datetime.now() - timedelta(days=1)).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "due_date": (datetime.now() + timedelta(days=10)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "estimated_duration": 1.5,
+                        "asset_name": "HVAC-002",
+                        "asset_id": 3,
+                        "criticality": 2,
+                        "urgency": "future",
+                    },
+                ]
+            # Asset PM status query
+            elif "assets" in query.lower() and "last_maintenance" in query.lower():
+                self.last_query_result = [
+                    {
+                        "id": 1,
+                        "name": "HVAC Unit - Building A",
+                        "asset_id": "HVAC-001",
+                        "category": "HVAC",
+                        "criticality": 4,
+                        "location": "Building A - Roof",
+                        "total_work_orders": 5,
+                        "last_maintenance": (
+                            datetime.now() - timedelta(days=45)
+                        ).strftime("%Y-%m-%d %H:%M:%S"),
+                        "next_pm_date": (datetime.now() + timedelta(days=15)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                    },
+                    {
+                        "id": 2,
+                        "name": "Fire Suppression System",
+                        "asset_id": "FIRE-SUPP-001",
+                        "category": "Safety",
+                        "criticality": 5,
+                        "location": "Building A - Ground Floor",
+                        "total_work_orders": 3,
+                        "last_maintenance": (
+                            datetime.now() - timedelta(days=150)
+                        ).strftime("%Y-%m-%d %H:%M:%S"),
+                        "next_pm_date": datetime.now().strftime("%Y-%m-%d"),
+                    },
+                ]
+            # Scheduling conflicts query
+            elif (
+                "users" in query.lower()
+                and "work_orders" in query.lower()
+                and "total_hours" in query.lower()
+            ):
+                self.last_query_result = [
+                    {
+                        "technician_id": 3,
+                        "technician_name": "Mike Davis",
+                        "due_date": datetime.now().strftime("%Y-%m-%d"),
+                        "work_order_count": 3,
+                        "total_hours": 10.5,
+                        "work_orders": "Fix Elevator | Inspect Boiler | Replace Pump",
+                    }
+                ]
+            # Parts requests/availability query
+            elif "parts_requests" in query.lower() or "parts_inventory" in query.lower():
+                if "parts_requests" in query.lower():
+                    self.last_query_result = [
+                        {
+                            "id": 1,
+                            "part_name": "HVAC Filter",
+                            "quantity": 4,
+                            "status": "pending",
+                            "priority": "high",
+                            "requested_date": (
+                                datetime.now() - timedelta(days=2)
+                            ).strftime("%Y-%m-%d"),
+                            "expected_delivery": (
+                                datetime.now() + timedelta(days=3)
+                            ).strftime("%Y-%m-%d"),
+                            "work_order_title": "Replace Air Filters",
+                            "work_order_due": (
+                                datetime.now() + timedelta(days=10)
+                            ).strftime("%Y-%m-%d"),
+                            "requester": "John Smith",
+                        }
+                    ]
+                else:
+                    self.last_query_result = [
+                        {
+                            "part_name": "Emergency Valve",
+                            "quantity": 2,
+                            "min_quantity": 5,
+                            "location": "Warehouse A",
+                        }
+                    ]
+            # Generic users query
+            elif "users" in query.lower():
+                self.last_query_result = [
+                    {
+                        "id": 1,
+                        "full_name": "John Smith",
+                        "username": "jsmith",
                         "role": "technician",
                         "status": "available",
                     },
                     {
                         "id": 2,
-                        "full_name": "Manager Demo",
+                        "full_name": "Sarah Johnson",
+                        "username": "sjohnson",
+                        "role": "technician",
+                        "status": "available",
+                    },
+                    {
+                        "id": 3,
+                        "full_name": "Mike Davis",
+                        "username": "mdavis",
                         "role": "manager",
                         "status": "available",
                     },
                 ]
+            # Team messages query
             elif "team_messages" in query.lower():
                 self.last_query_result = [
                     {
                         "id": 1,
-                        "sender_name": "Demo User",
-                        "message": "Demo message",
+                        "sender_name": "John Smith",
+                        "message": "HVAC unit in Building A needs urgent attention",
                         "created_date": datetime.now(),
                     }
                 ]
+            # Generic assets query
             elif "assets" in query.lower():
                 self.last_query_result = [
                     {
                         "id": 1,
-                        "name": "Demo Asset",
+                        "name": "HVAC Unit - Building A",
+                        "asset_id": "HVAC-001",
                         "status": "Active",
-                        "criticality": "Medium",
-                    }
+                        "criticality": 4,
+                        "category": "HVAC",
+                        "location": "Building A - Roof",
+                    },
+                    {
+                        "id": 2,
+                        "name": "Fire Suppression System",
+                        "asset_id": "FIRE-SUPP-001",
+                        "status": "Active",
+                        "criticality": 5,
+                        "category": "Safety",
+                        "location": "Building A - Ground Floor",
+                    },
                 ]
             else:
                 self.last_query_result = []
@@ -590,6 +781,10 @@ class FirestoreSQLiteWrapper:
     def close(self):
         """Close connection (no-op)"""
         pass
+
+    def cursor(self):
+        """Return a cursor (returns self for SQLite compatibility)"""
+        return self
 
     @property
     def lastrowid(self):

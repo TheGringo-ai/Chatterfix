@@ -264,6 +264,7 @@ class GeminiService:
             # In a real Firestore implementation, we'd add the work order to Firestore here
             # For now, return a success response with simulated ID
             import random
+
             wo_id = random.randint(1000, 9999)
 
             return {
@@ -286,7 +287,7 @@ class GeminiService:
                 msg += f" Priority: {priority}"
             if notes:
                 msg += f"\n(Note: '{notes}' acknowledged)"
-            
+
             msg += f"\n\n*Note: In demo mode - work order update simulated.*"
 
             return {
@@ -303,15 +304,15 @@ class GeminiService:
             # For now, simulate with mock data
             mock_parts = {
                 1: "Industrial Bearing",
-                2: "Hydraulic Filter", 
+                2: "Hydraulic Filter",
                 3: "Motor Belt",
-                4: "Control Valve"
+                4: "Control Valve",
             }
-            
+
             part_name = mock_parts.get(part_id, f"Part #{part_id}")
             current_stock = 25  # Mock current stock
             new_stock = current_stock + quantity_change
-            
+
             if new_stock < 0:
                 return {
                     "response": f"Cannot reduce stock below 0. Current stock: {current_stock}"
@@ -330,6 +331,7 @@ class GeminiService:
         try:
             # In a real Firestore implementation, we'd add the asset to Firestore here
             import random
+
             asset_id = random.randint(100, 999)
 
             return {
@@ -345,27 +347,54 @@ class GeminiService:
             # In a real Firestore implementation, we'd search parts in Firestore here
             # For now, simulate with mock data
             mock_parts_db = [
-                {"name": "Industrial Bearing", "current_stock": 15, "location": "Warehouse A-1"},
-                {"name": "Hydraulic Filter", "current_stock": 8, "location": "Warehouse B-2"},
-                {"name": "Motor Belt", "current_stock": 12, "location": "Warehouse A-3"},
-                {"name": "Control Valve", "current_stock": 5, "location": "Warehouse C-1"},
-                {"name": "Pressure Sensor", "current_stock": 20, "location": "Warehouse B-1"},
-                {"name": "Gear Assembly", "current_stock": 3, "location": "Warehouse A-2"},
+                {
+                    "name": "Industrial Bearing",
+                    "current_stock": 15,
+                    "location": "Warehouse A-1",
+                },
+                {
+                    "name": "Hydraulic Filter",
+                    "current_stock": 8,
+                    "location": "Warehouse B-2",
+                },
+                {
+                    "name": "Motor Belt",
+                    "current_stock": 12,
+                    "location": "Warehouse A-3",
+                },
+                {
+                    "name": "Control Valve",
+                    "current_stock": 5,
+                    "location": "Warehouse C-1",
+                },
+                {
+                    "name": "Pressure Sensor",
+                    "current_stock": 20,
+                    "location": "Warehouse B-1",
+                },
+                {
+                    "name": "Gear Assembly",
+                    "current_stock": 3,
+                    "location": "Warehouse A-2",
+                },
                 {"name": "Oil Seal", "current_stock": 25, "location": "Warehouse C-2"},
             ]
-            
+
             # Simple search in mock data
             query_lower = query.lower()
-            results = [part for part in mock_parts_db 
-                      if query_lower in part["name"].lower()]
-            
+            results = [
+                part for part in mock_parts_db if query_lower in part["name"].lower()
+            ]
+
             if not results:
-                return {"response": f"I couldn't find any parts matching '{query}'.\n\n*Note: In demo mode - searching simulated inventory.*"}
+                return {
+                    "response": f"I couldn't find any parts matching '{query}'.\n\n*Note: In demo mode - searching simulated inventory.*"
+                }
 
             response_text = f"Found {len(results)} parts matching '{query}':\n\n"
             for part in results:
                 response_text += f"- **{part['name']}** (Stock: {part['current_stock']}) - Location: {part['location']}\n"
-            
+
             response_text += f"\n*Note: In demo mode - search results simulated.*"
             return {"response": response_text}
         except Exception as e:
@@ -381,34 +410,48 @@ class GeminiService:
                 "pump": "Hydraulic Pump Unit",
                 "motor": "Main Drive Motor",
                 "compressor": "Air Compressor",
-                "press": "Hydraulic Press"
+                "press": "Hydraulic Press",
             }
-            
+
             # Find matching asset
             asset_key = None
             asset_full_name = None
             asset_name_lower = asset_name.lower()
-            
+
             for key, full_name in mock_assets.items():
                 if key in asset_name_lower or asset_name_lower in full_name.lower():
                     asset_key = key
                     asset_full_name = full_name
                     break
-            
+
             if not asset_full_name:
-                return {"response": f"I couldn't find an asset named '{asset_name}'.\n\n*Note: In demo mode - searching simulated assets.*"}
+                return {
+                    "response": f"I couldn't find an asset named '{asset_name}'.\n\n*Note: In demo mode - searching simulated assets.*"
+                }
 
             # Mock maintenance history
             mock_history = [
-                {"created_date": "2024-11-25", "description": "Routine belt tension adjustment", "total_cost": 150},
-                {"created_date": "2024-11-10", "description": "Replaced worn roller bearings", "total_cost": 450},
-                {"created_date": "2024-10-28", "description": "Lubrication service", "total_cost": 75},
+                {
+                    "created_date": "2024-11-25",
+                    "description": "Routine belt tension adjustment",
+                    "total_cost": 150,
+                },
+                {
+                    "created_date": "2024-11-10",
+                    "description": "Replaced worn roller bearings",
+                    "total_cost": 450,
+                },
+                {
+                    "created_date": "2024-10-28",
+                    "description": "Lubrication service",
+                    "total_cost": 75,
+                },
             ]
 
             response_text = f"**Recent History for {asset_full_name}:**\n\n"
             for record in mock_history:
                 response_text += f"- {record['created_date']}: {record['description']} (Cost: ${record['total_cost']})\n"
-                
+
             response_text += f"\n*Note: In demo mode - maintenance history simulated.*"
             return {"response": response_text}
         except Exception as e:

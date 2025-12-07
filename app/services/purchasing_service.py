@@ -7,11 +7,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 
 from app.core.db_adapter import get_db_adapter
+from app.core.firestore_db import get_db_connection
 
 
 class PurchasingService:
     """Service for purchasing and procurement management"""
-    
+
     def __init__(self):
         self.db = get_db_adapter()
 
@@ -19,9 +20,9 @@ class PurchasingService:
         """Get purchase orders with optional status filter"""
         # Use Firestore to get purchase orders
         # This would be implemented in the db_adapter with proper Firestore queries
-        if hasattr(self.db, 'get_purchase_orders'):
+        if hasattr(self.db, "get_purchase_orders"):
             return await self.db.get_purchase_orders(status)
-        
+
         # Return mock data for demo purposes until Firestore collection is set up
         mock_orders = [
             {
@@ -33,10 +34,10 @@ class PurchasingService:
                 "requested_date": datetime.now() - timedelta(days=2),
                 "expected_delivery": datetime.now() + timedelta(days=7),
                 "requester": "Mike Johnson",
-                "work_order_title": "Conveyor Belt Maintenance"
+                "work_order_title": "Conveyor Belt Maintenance",
             },
             {
-                "id": "po_002", 
+                "id": "po_002",
                 "part_name": "Hydraulic Pump Seals",
                 "quantity": 5,
                 "status": status or "approved",
@@ -44,18 +45,22 @@ class PurchasingService:
                 "requested_date": datetime.now() - timedelta(days=1),
                 "expected_delivery": datetime.now() + timedelta(days=5),
                 "requester": "Sarah Chen",
-                "work_order_title": "Press Hydraulic System Repair"
-            }
+                "work_order_title": "Press Hydraulic System Repair",
+            },
         ]
-        
-        return mock_orders if not status else [o for o in mock_orders if o["status"] == status]
+
+        return (
+            mock_orders
+            if not status
+            else [o for o in mock_orders if o["status"] == status]
+        )
 
     async def get_pending_approvals(self) -> Dict:
         """Get purchase requests pending approval"""
         # Use Firestore to get pending approvals
-        if hasattr(self.db, 'get_pending_purchase_approvals'):
+        if hasattr(self.db, "get_pending_purchase_approvals"):
             return await self.db.get_pending_purchase_approvals()
-        
+
         # Mock data for demo purposes
         pending_requests = [
             {
@@ -66,7 +71,7 @@ class PurchasingService:
                 "requested_date": datetime.now() - timedelta(hours=6),
                 "requester": "Alex Rodriguez",
                 "work_order_title": "Assembly Line Motor Failure",
-                "work_order_priority": "critical"
+                "work_order_priority": "critical",
             },
             {
                 "id": "pr_002",
@@ -76,10 +81,10 @@ class PurchasingService:
                 "requested_date": datetime.now() - timedelta(days=1),
                 "requester": "Mike Johnson",
                 "work_order_title": "HVAC System Maintenance",
-                "work_order_priority": "medium"
-            }
+                "work_order_priority": "medium",
+            },
         ]
-        
+
         return {"pending_count": len(pending_requests), "requests": pending_requests}
 
     def get_vendor_performance(self) -> List[Dict]:
@@ -121,9 +126,9 @@ class PurchasingService:
     async def get_budget_tracking(self) -> Dict:
         """Get budget tracking by category"""
         # Use Firestore to get budget data
-        if hasattr(self.db, 'get_purchase_budget_data'):
+        if hasattr(self.db, "get_purchase_budget_data"):
             return await self.db.get_purchase_budget_data()
-        
+
         # Mock budget data for demo purposes
         monthly_budget = 50000
         estimated_spend = 32500  # Simulated current month spending

@@ -11,7 +11,10 @@ from app.core.firestore_db import get_db_connection
 from app.routers.auth import get_current_user
 from app.services.ai_assistant import chatterfix_ai
 from app.services.computer_vision import analyze_asset_condition, recognize_part
-from app.services.voice_commands import process_voice_command, get_voice_command_suggestions
+from app.services.voice_commands import (
+    process_voice_command,
+    get_voice_command_suggestions,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -31,7 +34,9 @@ async def chat(request: ChatRequest):
         )
         return JSONResponse({"response": response})
     except Exception as e:
-        return JSONResponse({"response": f"I encountered an error: {str(e)}"}, status_code=500)
+        return JSONResponse(
+            {"response": f"I encountered an error: {str(e)}"}, status_code=500
+        )
 
 
 @router.post("/analyze-image")
@@ -107,20 +112,17 @@ async def troubleshoot(
 
 
 @router.post("/assist")
-async def assist(
-    message: str = Form(...),
-    context: str = Form(""),
-):
+async def assist(request: ChatRequest):
     """Global AI Assistant Endpoint"""
     if not chatterfix_ai.gemini:
         return JSONResponse({"response": "AI features unavailable."})
 
     try:
-        # Use demo user for AI requests
-        demo_user_id = "demo_user_1"
+        # Use user_id from request or default to demo user
+        user_id = request.user_id if request.user_id else "demo_user_1"
         # Call the advanced assistant agent
         result = await chatterfix_ai.gemini.run_assistant_agent(
-            message, context, user_id=demo_user_id
+            request.message, request.context, user_id=user_id
         )
         return JSONResponse(result)
     except Exception as e:

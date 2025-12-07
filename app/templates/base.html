@@ -368,7 +368,17 @@
                     body: JSON.stringify({ message: userMessage, context: '' })
                 });
                 
+                // Check if response is ok (status 200-299)
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                
+                // Validate response structure
+                if (!data || !data.response) {
+                    throw new Error('Invalid response format from server');
+                }
                 
                 typing.style.display = 'none';
                 
@@ -380,11 +390,13 @@
                 messages.scrollTop = messages.scrollHeight;
                 
             } catch (error) {
+                console.error('Chat error:', error);
                 typing.style.display = 'none';
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'message message-ai';
-                errorDiv.innerHTML = `<strong>AI:</strong> Sorry, I'm having trouble connecting to the network.`;
+                errorDiv.innerHTML = `<strong>AI:</strong> I'm having trouble right now. Please try again in a moment.`;
                 messages.appendChild(errorDiv);
+                messages.scrollTop = messages.scrollHeight;
             }
         }
     </script>

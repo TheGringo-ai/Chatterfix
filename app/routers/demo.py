@@ -212,7 +212,10 @@ def generate_manager_demo_data():
 router = APIRouter()
 # Disable template caching to ensure fresh templates are always loaded
 env = Environment(
-    loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0, autoescape=True
+    loader=FileSystemLoader("app/templates"),
+    auto_reload=True,
+    cache_size=0,
+    autoescape=True,
 )
 templates = Jinja2Templates(env=env)
 
@@ -311,7 +314,7 @@ DEMO_TEAM = [
         "id": 1,
         "full_name": "Mike Johnson",
         "username": "mike.johnson@company.com",
-        "role": "Senior Technician", 
+        "role": "Senior Technician",
         "department": "Maintenance",
         "skills": ["HVAC", "Electrical", "Plumbing"],
         "active_work_orders": 3,
@@ -324,7 +327,7 @@ DEMO_TEAM = [
         "full_name": "Sarah Chen",
         "username": "sarah.chen@company.com",
         "role": "Maintenance Manager",
-        "department": "Operations", 
+        "department": "Operations",
         "skills": ["Project Management", "Mechanical", "Safety"],
         "active_work_orders": 5,
         "completed_orders": 128,
@@ -333,7 +336,7 @@ DEMO_TEAM = [
     },
     {
         "id": 3,
-        "full_name": "Alex Rodriguez", 
+        "full_name": "Alex Rodriguez",
         "username": "alex.rodriguez@company.com",
         "role": "Maintenance Technician",
         "department": "Maintenance",
@@ -433,23 +436,25 @@ async def demo_work_orders(request: Request):
 @router.get("/demo/team", response_class=HTMLResponse)
 async def demo_team(request: Request):
     """Demo team page with sample data"""
-    
+
     # Convert DEMO_TEAM dictionaries to objects that support dot notation
     class DictObj:
         def __init__(self, d):
             for k, v in d.items():
                 setattr(self, k, v)
-    
+
     demo_users = [DictObj(user) for user in DEMO_TEAM]
-    
+
     # Add mock user for WebSocket connection - also convert to object
-    mock_user = DictObj({
-        "id": "demo_user_1",
-        "username": "demo@chatterfix.com",
-        "full_name": "Demo Manager",
-        "role": "manager",
-    })
-    
+    mock_user = DictObj(
+        {
+            "id": "demo_user_1",
+            "username": "demo@chatterfix.com",
+            "full_name": "Demo Manager",
+            "role": "manager",
+        }
+    )
+
     return templates.TemplateResponse(
         "team_dashboard.html",
         {

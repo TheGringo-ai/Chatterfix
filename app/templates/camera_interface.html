@@ -78,8 +78,105 @@
         color: white;
     }
 
+    .btn-voice {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
     .recording {
         animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .voice-interface {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .voice-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .voice-recording-btn {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: none;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .voice-recording-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .voice-recording-btn.recording {
+        background: linear-gradient(135deg, #10b981, #059669);
+        animation: pulse-voice 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-voice {
+        0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+        50% { 
+            transform: scale(1.1);
+            box-shadow: 0 8px 40px rgba(16, 185, 129, 0.6);
+        }
+    }
+
+    .voice-status {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        min-height: 1.5rem;
+    }
+
+    .voice-transcript {
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        min-height: 100px;
+        border-left: 4px solid #f59e0b;
+    }
+
+    .voice-transcript p {
+        margin: 0;
+        color: #6b7280;
+        font-style: italic;
+    }
+
+    .voice-transcript.has-content {
+        background: #ecfdf5;
+        border-left-color: #10b981;
+    }
+
+    .voice-transcript.has-content p {
+        color: #064e3b;
+        font-style: normal;
+        font-weight: 500;
+    }
+
+    .voice-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
     }
 
     @keyframes pulse {
@@ -193,12 +290,32 @@
         <button id="record-btn" class="camera-btn btn-record" onclick="toggleRecording()">
             🎥 Start Recording
         </button>
+        <button id="voice-capture-btn" class="camera-btn btn-voice" onclick="toggleVoiceCapture()">
+            🎤 Voice Command
+        </button>
         <button class="camera-btn btn-switch" onclick="switchCamera()">
             🔄 Switch Camera
         </button>
         <button class="camera-btn btn-gallery" onclick="openGallery()">
             🖼️ Gallery
         </button>
+    </div>
+
+    <!-- Voice Capture Interface -->
+    <div id="voice-interface" class="voice-interface" style="display: none;">
+        <div class="voice-controls">
+            <button id="voice-btn" class="voice-recording-btn" onclick="toggleVoiceRecording()">
+                🎤 Start Voice Command
+            </button>
+            <div id="voice-status" class="voice-status"></div>
+        </div>
+        <div id="voice-transcript" class="voice-transcript">
+            <p>Say something like: "Create urgent work order for broken pump in warehouse A"</p>
+        </div>
+        <div id="voice-actions" class="voice-actions" style="display: none;">
+            <button class="camera-btn btn-capture" onclick="processVoiceCommand()">✅ Process Command</button>
+            <button class="camera-btn btn-record" onclick="clearVoiceCommand()">🔄 Clear</button>
+        </div>
     </div>
 
     <!-- Recording Timer -->
@@ -240,8 +357,25 @@
                     <input type="text" id="tags" class="form-input" placeholder="repair, before, equipment">
                 </div>
                 
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="analyze_with_ai" style="margin-right: 0.5rem;">
+                        Analyze with AI (recognize parts or analyze condition)
+                    </label>
+                </div>
+                
+                <div id="ai-analysis-options" class="form-group" style="display: none;">
+                    <label>AI Analysis Type</label>
+                    <select id="analysis_type" class="form-select">
+                        <option value="recognize_part">Recognize Parts</option>
+                        <option value="analyze_condition">Analyze Condition</option>
+                        <option value="general_analysis">General Analysis</option>
+                    </select>
+                </div>
+                
                 <div class="media-actions">
                     <button type="submit" class="camera-btn btn-capture">💾 Save Media</button>
+                    <button type="button" class="camera-btn btn-voice" onclick="analyzeCurrentMedia()">🤖 AI Analysis</button>
                     <button type="button" class="camera-btn btn-record" onclick="retakeMedia()">📸 Retake</button>
                     <button type="button" class="camera-btn btn-switch" onclick="discardMedia()">🗑️ Discard</button>
                 </div>
@@ -262,6 +396,11 @@ let timerInterval;
 let currentMediaBlob;
 let currentMediaType;
 
+// Voice recognition variables
+let recognition;
+let isVoiceRecording = false;
+let voiceTranscript = '';
+
 // Initialize camera
 async function initCamera() {
     video = document.getElementById('video');
@@ -270,8 +409,73 @@ async function initCamera() {
 
     try {
         await requestCameraAccess();
+        initVoiceRecognition();
     } catch (error) {
         showPermissionRequest();
+    }
+}
+
+// Initialize voice recognition
+function initVoiceRecognition() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            isVoiceRecording = true;
+            updateVoiceStatus('🎤 Listening... Speak your command');
+            document.getElementById('voice-btn').classList.add('recording');
+            document.getElementById('voice-btn').textContent = '🛑 Stop Listening';
+        };
+        
+        recognition.onresult = function(event) {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            const transcriptDisplay = document.getElementById('voice-transcript');
+            if (finalTranscript || interimTranscript) {
+                voiceTranscript = finalTranscript || interimTranscript;
+                transcriptDisplay.innerHTML = `<p>"${voiceTranscript}"</p>`;
+                transcriptDisplay.classList.add('has-content');
+                
+                if (finalTranscript) {
+                    document.getElementById('voice-actions').style.display = 'flex';
+                    updateVoiceStatus('✅ Command captured. Process or clear?');
+                }
+            }
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Voice recognition error:', event.error);
+            updateVoiceStatus(`❌ Error: ${event.error}`);
+            stopVoiceRecording();
+        };
+        
+        recognition.onend = function() {
+            if (isVoiceRecording && voiceTranscript) {
+                updateVoiceStatus('✅ Voice command ready to process');
+            } else if (isVoiceRecording) {
+                updateVoiceStatus('🎤 No speech detected. Try again.');
+            }
+            stopVoiceRecording();
+        };
+        
+        console.log('Voice recognition initialized');
+    } else {
+        console.warn('Speech recognition not supported');
+        updateVoiceStatus('❌ Voice recognition not supported in this browser');
     }
 }
 
@@ -509,6 +713,108 @@ function discardMedia() {
     document.getElementById('tags').value = '';
 }
 
+// Voice interface functions
+function toggleVoiceCapture() {
+    const voiceInterface = document.getElementById('voice-interface');
+    if (voiceInterface.style.display === 'none' || voiceInterface.style.display === '') {
+        voiceInterface.style.display = 'block';
+        updateVoiceStatus('🎤 Voice interface ready. Click the microphone to start.');
+    } else {
+        voiceInterface.style.display = 'none';
+        clearVoiceCommand();
+    }
+}
+
+function toggleVoiceRecording() {
+    if (!recognition) {
+        updateVoiceStatus('❌ Voice recognition not available');
+        return;
+    }
+    
+    if (!isVoiceRecording) {
+        startVoiceRecording();
+    } else {
+        stopVoiceRecording();
+    }
+}
+
+function startVoiceRecording() {
+    try {
+        voiceTranscript = '';
+        document.getElementById('voice-actions').style.display = 'none';
+        const transcriptDisplay = document.getElementById('voice-transcript');
+        transcriptDisplay.classList.remove('has-content');
+        transcriptDisplay.innerHTML = '<p>🎤 Listening for your command...</p>';
+        
+        recognition.start();
+        updateVoiceStatus('🎤 Starting voice recognition...');
+    } catch (error) {
+        console.error('Voice recording start error:', error);
+        updateVoiceStatus('❌ Could not start voice recording');
+    }
+}
+
+function stopVoiceRecording() {
+    if (recognition && isVoiceRecording) {
+        recognition.stop();
+    }
+    isVoiceRecording = false;
+    document.getElementById('voice-btn').classList.remove('recording');
+    document.getElementById('voice-btn').textContent = '🎤 Start Voice Command';
+}
+
+function updateVoiceStatus(message) {
+    document.getElementById('voice-status').textContent = message;
+}
+
+async function processVoiceCommand() {
+    if (!voiceTranscript.trim()) {
+        updateVoiceStatus('❌ No voice command to process');
+        return;
+    }
+    
+    updateVoiceStatus('🤖 Processing voice command with AI...');
+    
+    try {
+        const formData = new FormData();
+        formData.append('voice_text', voiceTranscript);
+        formData.append('technician_id', '1'); // TODO: Get from session
+        
+        const response = await fetch('/ai/voice-command', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateVoiceStatus(`✅ Work order created! ID: ${result.work_order_id}`);
+            showStatus(`Voice command processed successfully! Work order ${result.work_order_id} created.`, 'success');
+            
+            // Optionally clear the command after success
+            setTimeout(() => {
+                clearVoiceCommand();
+            }, 3000);
+        } else {
+            updateVoiceStatus(`❌ Error: ${result.error || result.message}`);
+            showStatus(`Voice processing failed: ${result.error || result.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Voice processing error:', error);
+        updateVoiceStatus('❌ Failed to process voice command');
+        showStatus('Voice command processing failed: ' + error.message, 'error');
+    }
+}
+
+function clearVoiceCommand() {
+    voiceTranscript = '';
+    document.getElementById('voice-transcript').innerHTML = '<p>Say something like: "Create urgent work order for broken pump in warehouse A"</p>';
+    document.getElementById('voice-transcript').classList.remove('has-content');
+    document.getElementById('voice-actions').style.display = 'none';
+    updateVoiceStatus('🎤 Voice interface ready. Click the microphone to start.');
+    stopVoiceRecording();
+}
+
 // Open gallery (placeholder)
 function openGallery() {
     alert('Gallery feature will open a list of all uploaded media');
@@ -524,6 +830,125 @@ function showStatus(message, type) {
     setTimeout(() => {
         statusDiv.style.display = 'none';
     }, 3000);
+}
+
+// AI Analysis functionality
+document.getElementById('analyze_with_ai').addEventListener('change', function() {
+    const options = document.getElementById('ai-analysis-options');
+    options.style.display = this.checked ? 'block' : 'none';
+});
+
+async function analyzeCurrentMedia() {
+    if (!currentMediaBlob || currentMediaType !== 'image') {
+        showStatus('AI analysis only available for photos', 'error');
+        return;
+    }
+    
+    const analysisType = document.getElementById('analysis_type').value;
+    showStatus('🤖 Analyzing image with AI...', 'success');
+    
+    try {
+        const formData = new FormData();
+        const filename = `analysis_${Date.now()}.jpg`;
+        formData.append('image', currentMediaBlob, filename);
+        
+        if (analysisType === 'analyze_condition') {
+            const assetId = prompt('Enter Asset ID for condition analysis (optional):');
+            if (assetId) formData.append('asset_id', assetId);
+        }
+        
+        const endpoint = analysisType === 'analyze_condition' 
+            ? '/ai/analyze-condition' 
+            : '/ai/recognize-part';
+            
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displayAiAnalysisResult(result, analysisType);
+        } else {
+            showStatus('AI analysis failed: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('AI analysis error:', error);
+        showStatus('AI analysis error: ' + error.message, 'error');
+    }
+}
+
+function displayAiAnalysisResult(result, analysisType) {
+    let analysisHtml = '<div class="ai-analysis-result" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1rem 0;">';
+    analysisHtml += '<h4>🤖 AI Analysis Result</h4>';
+    
+    if (analysisType === 'analyze_condition' && result.analysis) {
+        const analysis = result.analysis;
+        analysisHtml += `<p><strong>Condition Score:</strong> ${analysis.condition_score}/10</p>`;
+        analysisHtml += `<p><strong>Urgency:</strong> ${analysis.urgency}</p>`;
+        
+        if (analysis.detected_issues && analysis.detected_issues.length > 0) {
+            analysisHtml += '<p><strong>Issues Detected:</strong></p><ul>';
+            analysis.detected_issues.forEach(issue => {
+                analysisHtml += `<li>${issue.type} (${issue.severity}) at ${issue.location}</li>`;
+            });
+            analysisHtml += '</ul>';
+        }
+        
+        if (analysis.recommendations && analysis.recommendations.length > 0) {
+            analysisHtml += '<p><strong>Recommendations:</strong></p><ul>';
+            analysis.recommendations.forEach(rec => {
+                analysisHtml += `<li>${rec}</li>`;
+            });
+            analysisHtml += '</ul>';
+        }
+    } else if (analysisType === 'recognize_part' && result.detected_parts) {
+        analysisHtml += '<p><strong>Parts Detected:</strong></p>';
+        result.detected_parts.forEach(part => {
+            analysisHtml += `<div style="margin: 0.5rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+            analysisHtml += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">`;
+            analysisHtml += `<strong style="color: #1f2937; font-size: 1.1rem;">${part.name}</strong>`;
+            analysisHtml += `<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${(part.confidence * 100).toFixed(1)}%</span>`;
+            analysisHtml += `</div>`;
+            analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Part #:</strong> ${part.part_number}</p>`;
+            analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Category:</strong> ${part.category}</p>`;
+            if (part.estimated_cost) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Est. Cost:</strong> $${part.estimated_cost.toLocaleString()}</p>`;
+            }
+            if (part.vendor) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Vendor:</strong> ${part.vendor}</p>`;
+            }
+            if (part.maintenance_schedule) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #f59e0b;"><strong>Maintenance:</strong> ${part.maintenance_schedule}</p>`;
+            }
+            if (part.condition_notes) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #059669;"><strong>Condition:</strong> ${part.condition_notes}</p>`;
+            }
+            analysisHtml += `</div>`;
+        });
+        
+        if (result.inventory_matches && result.inventory_matches.length > 0) {
+            analysisHtml += '<p><strong>Inventory Matches:</strong></p>';
+            result.inventory_matches.forEach(match => {
+                analysisHtml += `<div style="margin: 0.5rem 0; padding: 0.5rem; background: #ecfdf5; border-radius: 4px;">`;
+                analysisHtml += `${match.part_number}: ${match.quantity_available} available at ${match.location}`;
+                analysisHtml += `</div>`;
+            });
+        }
+    }
+    
+    analysisHtml += '</div>';
+    
+    // Insert analysis result before form actions
+    const mediaContent = document.getElementById('media-content');
+    const existingAnalysis = mediaContent.querySelector('.ai-analysis-result');
+    if (existingAnalysis) {
+        existingAnalysis.remove();
+    }
+    mediaContent.insertAdjacentHTML('beforeend', analysisHtml);
+    
+    showStatus('✅ AI analysis completed!', 'success');
 }
 
 // Initialize when page loads

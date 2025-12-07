@@ -10,7 +10,7 @@ from app.core.firestore_db import get_db_connection
 from app.routers.auth import get_current_user
 from app.services.ai_assistant import chatterfix_ai
 from app.services.computer_vision import analyze_asset_condition, recognize_part
-from app.services.voice_commands import process_voice_command
+from app.services.voice_commands import process_voice_command, get_voice_command_suggestions
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -165,3 +165,10 @@ async def analyze_condition_endpoint(
             os.remove(temp_path)
 
     return JSONResponse(result)
+
+
+@router.get("/voice-suggestions")
+async def voice_suggestions():
+    """Get intelligent voice command suggestions"""
+    suggestions = await get_voice_command_suggestions()
+    return JSONResponse(suggestions)

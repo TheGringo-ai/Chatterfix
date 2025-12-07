@@ -14,8 +14,8 @@
     <div class="row">
         <!-- Team Members -->
         <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
+            <div class="card h-100 cmms-card p-0 overflow-hidden">
+                <div class="card-header bg-transparent border-bottom border-secondary">
                     <h5 class="mb-0">👥 Team Members</h5>
                 </div>
                 <div class="card-body" style="max-height: 600px; overflow-y: auto;">
@@ -57,10 +57,10 @@
 
         <!-- Message Feed -->
         <div class="col-md-8 mb-4">
-            <div class="card h-100">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <div class="card h-100 cmms-card p-0 overflow-hidden">
+                <div class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">💬 Team Messages</h5>
-                    <button class="btn btn-sm btn-light" onclick="toggleChatView()">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChatView()">
                         <span id="chat-view-icon">📋</span> <span id="chat-view-text">List View</span>
                     </button>
                 </div>
@@ -107,8 +107,8 @@
     <!-- Quick Actions -->
     <div class="row">
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-info text-white">
+            <div class="card cmms-card p-0 overflow-hidden bg-transparent">
+                <div class="card-header bg-transparent border-bottom border-secondary">
                     <h5 class="mb-0">🔧 Quick Actions</h5>
                 </div>
                 <div class="card-body">
@@ -128,8 +128,8 @@
         </div>
 
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
+            <div class="card cmms-card p-0 overflow-hidden bg-transparent">
+                <div class="card-header bg-transparent border-bottom border-secondary">
                     <h5 class="mb-0">🔔 Recent Notifications</h5>
                 </div>
                 <div class="card-body" style="max-height: 200px; overflow-y: auto;">
@@ -144,11 +144,14 @@
 
 <!-- WebSocket Connection -->
 <script>
-    const currentUserId = 1; // TODO: Get from session
+    const currentUserId = "{{ user.id }}";
     let ws = null;
 
     function connectWebSocket() {
-        ws = new WebSocket(`ws://localhost:8000/team/ws/${currentUserId}`);
+        // Dynamic protocol (ws or wss)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // Connect to dynamic host
+        ws = new WebSocket(`${protocol}//${window.location.host}/team/ws/${currentUserId}`);
 
         ws.onopen = () => {
             console.log('WebSocket connected');
@@ -269,10 +272,17 @@
 
     .message-item {
         transition: background-color 0.3s;
+        background: var(--bg-glass);
+        color: var(--text-primary);
     }
 
     .message-item:hover {
-        background-color: #f8f9fa;
+        background-color: var(--bg-glass-hover);
+    }
+    
+    /* Ensure cards inherit glass styles */
+    .card-header h5 {
+        color: var(--text-primary);
     }
 </style>
 {% endblock %}

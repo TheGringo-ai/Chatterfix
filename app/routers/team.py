@@ -21,6 +21,9 @@ from app.services.notification_service import notification_service
 
 # # from app.core.database import get_db_connection
 from app.services.websocket_manager import websocket_manager
+from app.services import auth_service
+from app.services.firebase_auth import firebase_auth_service
+from fastapi import RedirectResponse
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,38 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/", response_class=HTMLResponse)
 async def team_dashboard(request: Request):
     """Team dashboard with live status and messaging"""
+    # Verify Authentication
+    session_token = request.cookies.get("session_token")
+    current_user = None
+
+    if session_token:
+        # Try Firebase first
+        try:
+            user_data = await firebase_auth_service.verify_token(session_token)
+            if user_data:
+                # Normalize user object for template
+                current_user = {
+                    "id": user_data["uid"],
+                    "username": user_data["email"],
+                    "full_name": user_data["name"] or user_data["email"],
+                    "role": user_data["user_data"].get("role", "technician"),
+                    "avatar_url": user_data["user_data"].get("profile", {}).get(
+                        "avatar_url"
+                    ),
+                }
+        except Exception:
+            pass
+
+        # Fallback to local SQL
+        if not current_user:
+            local_user = auth_service.validate_session(session_token)
+            if local_user:
+                current_user = dict(local_user)
+
+    # Redirect if not logged in
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/team", status_code=302)
+
     conn = get_db_connection()
     try:
         # Get all team members
@@ -72,6 +107,7 @@ async def team_dashboard(request: Request):
                 "users": users,
                 "messages": messages,
                 "online_users": online_users,
+                "user": current_user,  # Pass current user to template
             },
         )
     finally:

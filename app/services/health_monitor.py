@@ -4,10 +4,11 @@ ChatterFix CMMS - Enhanced Health Monitoring & SLO System
 Comprehensive system health, uptime tracking, and error budget monitoring
 """
 
+import json
 import os
 import sys
 import time
-import json
+
 import psutil
 
 try:
@@ -17,12 +18,12 @@ except ImportError:
 except OSError:
     # Handle cases where sqlite3 library is missing/broken (e.g. dlopen errors)
     aiosqlite = None  # type: ignore
-import logging
 import asyncio
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional
-from dataclasses import dataclass, asdict
+import logging
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 # Configure logging
 logging.basicConfig(

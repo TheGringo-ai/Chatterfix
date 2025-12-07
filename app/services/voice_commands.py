@@ -4,10 +4,11 @@ AI-powered voice command processing with Grok integration
 """
 
 import logging
-import httpx
+import os
 from datetime import datetime, timedelta
 from typing import Optional
-import os
+
+import httpx
 
 from app.core.firestore_db import get_db_connection
 

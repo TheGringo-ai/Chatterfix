@@ -5,7 +5,7 @@ Handles sensor data collection, threshold monitoring, and automated work order c
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from app.core.firestore_db import get_db_connection
 

@@ -4,9 +4,11 @@ Handles file uploads, barcode scanning, document processing
 """
 
 from typing import List
-from fastapi import APIRouter, Request, File, UploadFile, Form, HTTPException
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
+
 from app.services.media_service import media_service
 
 router = APIRouter(prefix="/media", tags=["media"])

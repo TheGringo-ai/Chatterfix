@@ -3,12 +3,13 @@ Intelligent Notification Service
 Handles automatic notification generation and delivery
 """
 
-from app.core.db_adapter import get_db_adapter
-from app.services.websocket_manager import websocket_manager
-from app.services.email_service import email_service
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
+
+from app.core.db_adapter import get_db_adapter
+from app.services.email_service import email_service
+from app.services.websocket_manager import websocket_manager
 
 logger = logging.getLogger(__name__)
 

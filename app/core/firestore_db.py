@@ -1,7 +1,8 @@
-import os
 import logging
-from typing import Dict, List, Optional, Any, cast
+import os
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, cast
+
 from google.cloud import firestore  # type: ignore
 from google.cloud.firestore_v1.base_query import FieldFilter
 

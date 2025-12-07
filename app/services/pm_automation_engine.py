@@ -3,15 +3,16 @@ PM Automation Engine - Advanced Preventive Maintenance Scheduling
 Supports time-based, usage-based, condition-based, and predictive maintenance scheduling
 """
 
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from dataclasses import dataclass, field
-from enum import Enum
 import logging
 import random
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 from app.services.advanced_scheduler_service import (
-    ScheduleType,
     Priority,
+    ScheduleType,
 )
 
 logger = logging.getLogger(__name__)

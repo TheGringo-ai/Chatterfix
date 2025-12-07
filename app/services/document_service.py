@@ -3,14 +3,14 @@ Document Service
 Handles import/export of parts, assets, and documentation
 """
 
-import os
 import csv
 import json
 import logging
-from typing import Dict, List, Any
-from datetime import datetime
+import os
 import uuid
-from io import StringIO, BytesIO
+from datetime import datetime
+from io import BytesIO, StringIO
+from typing import Any, Dict, List
 
 # Import with error handling
 try:
@@ -22,16 +22,16 @@ except ImportError:
     PANDAS_AVAILABLE = False
 
 try:
+    from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.platypus import (
+        Paragraph,
         SimpleDocTemplate,
+        Spacer,
         Table,
         TableStyle,
-        Paragraph,
-        Spacer,
     )
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib import colors
 
     REPORTLAB_AVAILABLE = True
 except ImportError:

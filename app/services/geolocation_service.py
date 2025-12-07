@@ -4,8 +4,8 @@ Manages user location tracking with property boundary restrictions and privacy c
 """
 
 import json
-from typing import Dict, List, Optional
 from datetime import datetime
+from typing import Dict, List, Optional
 
 from app.core.firestore_db import get_db_connection
 
@@ -147,7 +147,7 @@ class GeolocationService:
         radius = circle["radius"]
 
         # Haversine formula for distance
-        from math import radians, cos, sin, asin, sqrt
+        from math import asin, cos, radians, sin, sqrt
 
         lon1, lat1, lon2, lat2 = map(radians, [lon, lat, center_lon, center_lat])
         dlon = lon2 - lon1

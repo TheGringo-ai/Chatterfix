@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File
+import logging
+import os
+import shutil
+
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from app.core.db_adapter import get_db_adapter
-from app.services.notification_service import NotificationService
-import shutil
-import os
-import logging
 
+from app.core.db_adapter import get_db_adapter
 from app.core.firestore_db import get_db_connection
+from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 

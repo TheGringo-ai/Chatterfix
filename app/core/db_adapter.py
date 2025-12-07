@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class DatabaseAdapter:
         self.db_type = "firestore"
 
         # Import Firestore manager directly - fail if not available
-        from app.core.firestore_db import get_firestore_manager, FIRESTORE_AVAILABLE
+        from app.core.firestore_db import FIRESTORE_AVAILABLE, get_firestore_manager
 
         if not FIRESTORE_AVAILABLE:
             raise ImportError(

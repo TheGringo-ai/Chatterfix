@@ -4,12 +4,11 @@ Provides data for all dashboard widgets based on user role and configuration
 """
 
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-
-from app.core.firestore_db import get_db_connection
+from typing import Any, Dict, List, Optional
 
 # # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
+from app.core.firestore_db import get_db_connection
 
 
 class DashboardService:

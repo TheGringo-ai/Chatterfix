@@ -3,15 +3,17 @@ Authentication Routes
 Login, logout, and user authentication endpoints
 """
 
-from fastapi import APIRouter, Request, Form, Cookie, Response, Depends, HTTPException
+import os
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+
 from app.services import auth_service
 from app.services.firebase_auth import (
     firebase_auth_service,
 )
-from typing import Optional, Dict, Any
-import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")

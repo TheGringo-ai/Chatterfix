@@ -1,12 +1,12 @@
-import os
 import logging
-from typing import Dict, Optional, Any, cast
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
+from typing import Any, Dict, Optional, cast
 
 # Import Firebase modules
 import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from firebase_admin import auth, credentials, firestore
 
 FIREBASE_ADMIN_AVAILABLE = True
 

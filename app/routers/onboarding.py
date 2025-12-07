@@ -1,18 +1,18 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+import logging
+import os
+import shutil
+from datetime import datetime, timedelta
+from typing import Any, Dict
 
-from app.core.firestore_db import get_db_connection
+import pandas as pd
+from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 
 # # from app.core.database import get_db_connection
 from app.core.db_adapter import get_db_adapter
+from app.core.firestore_db import get_db_connection
 from app.services.gemini_service import gemini_service
-import shutil
-import os
-import pandas as pd
-import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 templates = Jinja2Templates(directory="app/templates")

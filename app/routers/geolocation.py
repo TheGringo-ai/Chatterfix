@@ -1,6 +1,7 @@
+from typing import Optional
+
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from typing import Optional
 from pydantic import BaseModel
 
 from app.services.geolocation_service import geolocation_service

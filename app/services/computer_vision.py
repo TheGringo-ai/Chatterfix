@@ -4,7 +4,7 @@ AI-powered part recognition and visual inspection
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import GeminiService
@@ -109,21 +109,6 @@ async def _recognize_parts_with_ai(
 ) -> list:
     """Use AI to recognize parts from image"""
     try:
-        # Prepare prompt for AI analysis
-        _prompt = """
-        Analyze this image and identify any mechanical parts, equipment, or components.
-
-        For each part detected, provide:
-        - Part name/type
-        - Estimated part number (if visible or inferrable)
-        - Category (e.g., "hydraulic_components", "electrical", "mechanical")
-        - Confidence level (0-1)
-
-        Return as JSON array format:
-        [{"part_number": "ABC-123", "name": "Hydraulic Pump", "category": "hydraulic_components", "confidence": 0.85}]
-
-        If no clear parts are visible, return empty array [].
-        """
 
         # Try Gemini first
         if gemini_service and hasattr(gemini_service, "_get_model"):
@@ -179,27 +164,6 @@ async def _analyze_condition_with_ai(
 ) -> dict:
     """Use AI to analyze asset condition from image"""
     try:
-        # Prepare prompt for condition analysis
-        _prompt = """
-        Analyze this image for equipment condition and defects.
-
-        Look for:
-        - Corrosion, rust, or oxidation
-        - Wear patterns, scratches, or damage
-        - Loose connections or misalignment
-        - Leaks or fluid stains
-        - Overall condition indicators
-
-        Provide a condition score (1-10, where 10 is perfect condition) and identify any issues.
-        Return as JSON format:
-        {
-            "condition_score": 7.5,
-            "detected_issues": [{"type": "corrosion", "severity": "minor", "location": "base", "confidence": 0.85}],
-            "recommendations": ["Schedule maintenance"],
-            "urgency": "medium",
-            "timestamp": "2024-12-06T12:00:00Z"
-        }
-        """
 
         # Try Gemini first
         if gemini_service and hasattr(gemini_service, "_get_model"):

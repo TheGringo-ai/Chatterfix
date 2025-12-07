@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect, Cookie
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from typing import Optional, List
-from pydantic import BaseModel
 import json
 import logging
+from typing import List, Optional
 
+from fastapi import APIRouter, Cookie, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+
+from app.core.db_adapter import get_db_adapter
 from app.services.dashboard_service import dashboard_service
 from app.services.real_time_feed_service import real_time_feed
 from app.services.websocket_manager import websocket_manager
-from app.core.db_adapter import get_db_adapter
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")

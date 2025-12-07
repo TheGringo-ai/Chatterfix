@@ -1,8 +1,9 @@
-import os
-import logging
-from openai import OpenAI
-from typing import Optional, Dict, Any
 import json
+import logging
+import os
+from typing import Any, Dict, Optional
+
+from openai import OpenAI
 
 from app.core.firestore_db import get_db_connection
 

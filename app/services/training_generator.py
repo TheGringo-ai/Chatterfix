@@ -3,11 +3,12 @@ AI Training Content Generator
 Generates interactive training modules from equipment manuals and documentation
 """
 
-import os
-from app.core.firestore_db import get_firestore_manager
-import logging
-from datetime import datetime
 import json
+import logging
+import os
+from datetime import datetime
+
+from app.core.firestore_db import get_firestore_manager
 
 # Import Google Generative AI with error handling
 try:

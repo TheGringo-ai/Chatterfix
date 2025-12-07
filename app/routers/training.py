@@ -4,16 +4,18 @@ Handles AI-generated training modules and technician learning
 Converted to use Firestore database instead of SQLite
 """
 
-from fastapi import APIRouter, Request, Form, UploadFile, File, Cookie
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from app.core.firestore_db import get_firestore_manager
-from app.services.training_generator import training_generator
-from app.services.notification_service import notification_service
 import json
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Cookie, File, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from app.core.firestore_db import get_firestore_manager
+from app.services.notification_service import notification_service
+from app.services.training_generator import training_generator
 
 logger = logging.getLogger(__name__)
 

@@ -3,15 +3,15 @@ Settings Routes
 User settings, API key management, and user administration
 """
 
-from fastapi import APIRouter, Request, Form, Cookie
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from app.services import auth_service
-
-from app.core.firestore_db import get_db_connection
-
 # # from app.core.database import get_db_connection
 from typing import Optional
+
+from fastapi import APIRouter, Cookie, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from app.core.firestore_db import get_db_connection
+from app.services import auth_service
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 templates = Jinja2Templates(directory="app/templates")

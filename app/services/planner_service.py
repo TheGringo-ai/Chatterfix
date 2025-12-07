@@ -3,8 +3,8 @@ Planner Dashboard Service - Maintenance Planning & Scheduling
 Provides data for preventive maintenance scheduling, resource allocation, and capacity planning
 """
 
-from typing import Dict, List
 from datetime import datetime, timedelta
+from typing import Dict, List
 
 from app.core.firestore_db import get_db_connection
 

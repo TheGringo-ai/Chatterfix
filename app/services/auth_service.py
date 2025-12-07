@@ -6,7 +6,8 @@ Handles user authentication, password hashing, and session management
 import os
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from passlib.context import CryptContext
 
 from app.core.firestore_db import get_db_connection

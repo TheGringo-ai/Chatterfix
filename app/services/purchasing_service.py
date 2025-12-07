@@ -3,8 +3,8 @@ Purchasing Dashboard Service - Procurement & Vendor Management
 Provides data for purchase orders, vendor management, budget tracking, and spend analytics
 """
 
-from typing import Dict, List
 from datetime import datetime, timedelta
+from typing import Dict, List
 
 from app.core.firestore_db import get_db_connection
 

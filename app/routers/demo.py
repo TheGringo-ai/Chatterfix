@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
-from jinja2 import Environment, FileSystemLoader
-from datetime import datetime, timedelta
 import json
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
+
 from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
 
 

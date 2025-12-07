@@ -6,10 +6,10 @@ Provides PDF and Excel export functionality for reports and analytics
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
-from app.services.analytics_service import analytics_service
+from typing import Any, Dict, List
 
 from app.core.firestore_db import get_db_connection
+from app.services.analytics_service import analytics_service
 
 logger = logging.getLogger(__name__)
 

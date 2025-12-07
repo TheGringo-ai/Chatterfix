@@ -5,10 +5,11 @@ Manages real-time data feeds for dashboard widgets
 
 import asyncio
 import json
-from typing import Dict, Set, List, Any
 from datetime import datetime
-from app.services.websocket_manager import websocket_manager
+from typing import Any, Dict, List, Set
+
 from app.services.dashboard_service import dashboard_service
+from app.services.websocket_manager import websocket_manager
 
 
 class RealTimeFeedService:

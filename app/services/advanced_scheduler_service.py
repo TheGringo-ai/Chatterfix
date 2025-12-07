@@ -3,12 +3,13 @@ Advanced Scheduler Service - Next-Generation Maintenance Planning & Scheduling
 Designed to surpass MaintainX capabilities with AI-driven optimization
 """
 
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta, time
-from dataclasses import dataclass, field
-from enum import Enum
 import logging
 import random
+from dataclasses import dataclass, field
+from datetime import datetime, time, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
+
 from app.core.db_adapter import get_db_adapter
 
 logger = logging.getLogger(__name__)
@@ -172,13 +173,6 @@ class AdvancedSchedulerService:
             "vibration_analysis": [3, 4, 5],
         }
 
-        _locations = [
-            "Building A",
-            "Building B",
-            "Building C",
-            "Warehouse",
-            "Outdoor Yard",
-        ]
         shifts = [
             WorkShift(time(7, 0), time(15, 0)),  # Day shift
             WorkShift(time(15, 0), time(23, 0)),  # Evening shift

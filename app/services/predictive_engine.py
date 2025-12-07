@@ -4,14 +4,14 @@ ChatterFix Predictive Maintenance Engine
 Baseline statistical risk scoring with upgrade path to advanced ML models
 """
 
+import asyncio
 import json
 import logging
-import asyncio
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 # ML imports
 try:
     from sklearn.ensemble import (
-        RandomForestClassifier,
         GradientBoostingRegressor,
+        RandomForestClassifier,
         RandomForestRegressor,
     )
     from sklearn.preprocessing import StandardScaler

@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File
+import os
+import shutil
+from typing import Optional
+
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from typing import Optional
-import shutil
-import os
 
-from app.services.purchasing_service import purchasing_service
 from app.core.firestore_db import get_firestore_manager
+from app.services.purchasing_service import purchasing_service
 
 router = APIRouter(prefix="/purchasing", tags=["purchasing"])
 templates = Jinja2Templates(directory="app/templates")

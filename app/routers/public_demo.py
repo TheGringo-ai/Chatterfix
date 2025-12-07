@@ -3,12 +3,14 @@ Public Demo Router
 Provides full demo access without authentication requirements
 """
 
+import logging
+from datetime import datetime
+
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+
 from app.core.db_adapter import get_db_adapter
-import logging
-from datetime import datetime
 
 router = APIRouter(prefix="/demo", tags=["demo"])
 templates = Jinja2Templates(directory="app/templates")
@@ -32,7 +34,7 @@ async def demo_dashboard(request: Request):
         # Use mock data for demo dashboard - always works
         work_orders = [
             {"id": 1, "status": "active", "title": "HVAC Maintenance"},
-            {"id": 2, "status": "pending", "title": "Conveyor Repair"}, 
+            {"id": 2, "status": "pending", "title": "Conveyor Repair"},
             {"id": 3, "status": "completed", "title": "Pump Inspection"},
         ]
         assets = [
@@ -44,7 +46,7 @@ async def demo_dashboard(request: Request):
         workload = {
             "stats": {
                 "active": 12,
-                "pending": 8, 
+                "pending": 8,
                 "completed": 45,
                 "total": 65,
             }
@@ -59,11 +61,11 @@ async def demo_dashboard(request: Request):
             }
         }
 
-        # Demo equipment status  
+        # Demo equipment status
         equipment = {
             "total_assets": 150,
             "healthy": 142,
-            "warning": 6, 
+            "warning": 6,
             "critical": 2,
             "uptime_percentage": 95.3,
         }

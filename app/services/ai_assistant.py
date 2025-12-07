@@ -1,7 +1,8 @@
 import logging
-from .predictive_engine import PredictiveMaintenanceEngine
+
 from .health_monitor import HealthMonitor
 from .openai_service import openai_service
+from .predictive_engine import PredictiveMaintenanceEngine
 
 logger = logging.getLogger(__name__)
 

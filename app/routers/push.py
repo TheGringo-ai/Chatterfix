@@ -3,10 +3,12 @@ Push Notification Router for ChatterFix CMMS
 Handles push notification subscriptions and sending
 """
 
-from fastapi import APIRouter, HTTPException, Body
-from fastapi.responses import JSONResponse
 from typing import Optional
+
+from fastapi import APIRouter, Body, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
 from app.services.push_notification_service import push_service
 
 router = APIRouter(prefix="/api/push", tags=["push-notifications"])

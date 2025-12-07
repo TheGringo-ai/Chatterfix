@@ -11,7 +11,7 @@ Provides KPIs, metrics, and reporting functionality including:
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from app.core.firestore_db import get_db_connection
 

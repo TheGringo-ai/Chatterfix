@@ -3,15 +3,16 @@ Advanced Scheduler Mock Data Service
 Generates comprehensive mock data for demonstration of enterprise-level scheduling capabilities
 """
 
-from typing import Dict, List, Any
-from datetime import datetime, timedelta, time
 import random
+from datetime import datetime, time, timedelta
+from typing import Any, Dict, List
+
 from app.services.advanced_scheduler_service import (
-    TechnicianProfile,
-    Skill,
-    WorkShift,
     AssetRequirement,
+    Skill,
+    TechnicianProfile,
     TechnicianStatus,
+    WorkShift,
 )
 
 

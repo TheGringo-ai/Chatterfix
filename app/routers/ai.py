@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Form, UploadFile, File, Depends
+import os
+import shutil
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from app.services.ai_assistant import chatterfix_ai
-from app.services.voice_commands import process_voice_command
-from app.services.computer_vision import recognize_part, analyze_asset_condition
 
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
 from app.routers.auth import get_current_user
-import shutil
-import os
+from app.services.ai_assistant import chatterfix_ai
+from app.services.computer_vision import analyze_asset_condition, recognize_part
+from app.services.voice_commands import process_voice_command
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 

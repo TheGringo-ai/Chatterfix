@@ -3,10 +3,12 @@ IoT Router for ChatterFix CMMS
 Provides API endpoints for IoT sensor data collection and monitoring
 """
 
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
-from typing import List, Optional
 from pydantic import BaseModel
+
 from app.services.iot_sensor_service import iot_sensor_service
 
 router = APIRouter(prefix="/iot", tags=["iot"])

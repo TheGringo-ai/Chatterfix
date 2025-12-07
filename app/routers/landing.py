@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from datetime import datetime
-
 # Email functionality - temporarily simplified
 # from email.mime.text import MimeText
 # from email.mime.multipart import MimeMultipart
 import logging
 import secrets
 import string
+from datetime import datetime
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+
 from app.core.db_adapter import get_db_adapter
 
 router = APIRouter()

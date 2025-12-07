@@ -3,8 +3,8 @@ Mock Data Service
 Generate demo/sample data for new users and guest mode
 """
 
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
 
 from app.core.firestore_db import get_db_connection
 

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File
+import os
+
+# # from app.core.database import get_db_connection
+import shutil
+
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.core.firestore_db import get_db_connection
-
-# # from app.core.database import get_db_connection
-import shutil
-import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")

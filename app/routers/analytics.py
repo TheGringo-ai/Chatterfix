@@ -3,11 +3,13 @@ Analytics Router for ChatterFix CMMS
 Provides API endpoints for advanced analytics, KPIs, and reporting
 """
 
-from fastapi import APIRouter, Request, Query, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
-from typing import Optional
 from pydantic import BaseModel
+
 from app.services.analytics_service import analytics_service
 from app.services.export_service import export_service
 

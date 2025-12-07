@@ -8,18 +8,19 @@ Comprehensive management interface for ChatterFix CMMS
 - Complete application control
 """
 
-from fastapi import APIRouter, Request, Form, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
 import json
 import logging
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from app.core.firestore_db import get_db_connection
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
 from app.core.db_adapter import get_db_adapter
-from app.services.notification_service import notification_service
+from app.core.firestore_db import get_db_connection
 from app.services.gemini_service import gemini_service
+from app.services.notification_service import notification_service
 
 logger = logging.getLogger(__name__)
 

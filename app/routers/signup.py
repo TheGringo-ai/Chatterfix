@@ -4,9 +4,11 @@ User registration and account creation
 """
 
 import os
-from fastapi import APIRouter, Request, Form, Response
+
+from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+
 from app.services import auth_service
 from app.services.firebase_auth import firebase_auth_service
 from app.services.mock_data_service import create_demo_data

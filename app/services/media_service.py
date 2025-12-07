@@ -3,17 +3,17 @@ Media Service
 Handles file uploads, image/video processing, document scanning, and barcode operations
 """
 
-import uuid
 import logging
-from typing import Dict, List, Any
+import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List
 
 # Import with error handling
 try:
-    from PIL import Image, ImageEnhance
     import cv2
     import numpy as np
+    from PIL import Image, ImageEnhance
 
     IMAGING_AVAILABLE = True
 except ImportError:

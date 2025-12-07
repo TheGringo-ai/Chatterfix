@@ -3,6 +3,9 @@ Feedback Router
 Handles work order feedback and quality tracking
 """
 
+import logging
+import os
+
 from fastapi import APIRouter, Form
 from fastapi.templating import Jinja2Templates
 
@@ -10,8 +13,6 @@ from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
 from app.services.notification_service import notification_service
-import os
-import logging
 
 # Import Google Generative AI with error handling
 try:

@@ -3,12 +3,12 @@ Basic Email Service for ChatterFix
 Simple SMTP email sending for notifications
 """
 
-import smtplib
-import os
 import logging
-from email.mime.text import MIMEText
+import os
+import smtplib
 from email.mime.multipart import MIMEMultipart
-from typing import Dict, Any
+from email.mime.text import MIMEText
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 

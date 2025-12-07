@@ -24,6 +24,10 @@ env:
   MIN_INSTANCES: 1
   MAX_INSTANCES: 10
 
+permissions:
+  contents: read
+  id-token: write  # Required for OIDC authentication with Google Cloud
+
 jobs:
   deploy:
     name: Build and Deploy to Cloud Run

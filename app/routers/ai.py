@@ -3,6 +3,7 @@ import shutil
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.core.firestore_db import get_db_connection
 
@@ -15,17 +16,22 @@ from app.services.voice_commands import process_voice_command, get_voice_command
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
+class ChatRequest(BaseModel):
+    message: str
+    context: str = ""
+    user_id: int = 1
+
+
 @router.post("/chat")
-async def chat(
-    message: str = Form(...),
-    context: str = Form(""),
-    current_user: dict = Depends(get_current_user),
-):
+async def chat(request: ChatRequest):
     """General AI Chat"""
-    response = await chatterfix_ai.process_message(
-        message, context, user_id=current_user["id"]
-    )
-    return JSONResponse({"response": response})
+    try:
+        response = await chatterfix_ai.process_message(
+            request.message, request.context, user_id=request.user_id
+        )
+        return JSONResponse({"response": response})
+    except Exception as e:
+        return JSONResponse({"response": f"I encountered an error: {str(e)}"}, status_code=500)
 
 
 @router.post("/analyze-image")

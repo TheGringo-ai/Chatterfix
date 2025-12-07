@@ -14,6 +14,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=3">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}">
 
     <style>
         /* Interactive Demo Bar Styles */
@@ -364,7 +365,7 @@
                 const response = await fetch('/ai/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userMessage, user_id: 1 })
+                    body: JSON.stringify({ message: userMessage, context: '' })
                 });
                 
                 const data = await response.json();

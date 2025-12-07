@@ -430,19 +430,22 @@ async def demo_work_orders(request: Request):
 @router.get("/demo/team", response_class=HTMLResponse)
 async def demo_team(request: Request):
     """Demo team page with sample data"""
+    # Add mock user for WebSocket connection (prevents "user is not defined" error)
+    mock_user = {
+        "id": "demo_user_1",
+        "username": "demo@chatterfix.com",
+        "full_name": "Demo Manager",
+        "role": "manager",
+    }
+    
     return templates.TemplateResponse(
         "team_dashboard.html",
         {
             "request": request,
-            "team_members": DEMO_TEAM,
-            "stats": {
-                "total_members": len(DEMO_TEAM),
-                "available": len(
-                    [t for t in DEMO_TEAM if t["availability"] == "Available"]
-                ),
-                "busy": len([t for t in DEMO_TEAM if t["availability"] == "Busy"]),
-                "total_active_orders": sum(t["active_orders"] for t in DEMO_TEAM),
-            },
+            "users": DEMO_TEAM,  # Match expected variable name from team_dashboard.html
+            "messages": [],  # Empty messages for demo
+            "online_users": [],  # No online users in demo mode
+            "user": mock_user,  # Pass current user for WebSocket
             "is_demo": True,
         },
     )

@@ -2,216 +2,6 @@
 
 {% block title %}Manager Dashboard - ChatterFix CMMS{% endblock %}
 
-{% block extra_head %}
-<style>
-    /* Manager Dashboard - Consistent CMMS Styling */
-    .container-fluid {
-        background: transparent !important;
-        color: #fff !important;
-        min-height: 100vh;
-        padding: 2rem;
-    }
-    
-    /* Use consistent CMMS header styling */
-    .manager-header {
-        background: rgba(0, 0, 0, 0.3) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 15px !important;
-        padding: 2rem !important;
-        text-align: center !important;
-        margin-bottom: 2rem !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-    }
-    
-    .manager-header h1 {
-        color: #fff !important;
-        font-size: 2.5rem !important;
-        margin-bottom: 0.5rem !important;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    .manager-header p {
-        color: rgba(255, 255, 255, 0.9) !important;
-        opacity: 0.9 !important;
-        font-size: 1.1rem !important;
-    }
-    
-    /* CMMS Card styling - glassmorphism */
-    .stat-card, .card {
-        background: rgba(255, 255, 255, 0.15) !important;
-        border-radius: 15px !important;
-        padding: 2rem !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        margin-bottom: 2rem !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-        color: #fff !important;
-    }
-    
-    .stat-card:hover, .card:hover {
-        transform: translateY(-5px) !important;
-        background: rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-    }
-    
-    .card-header {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-        color: #fff !important;
-        border-radius: 15px 15px 0 0 !important;
-    }
-    
-    .card-body {
-        background: transparent !important;
-        color: #fff !important;
-    }
-    
-    .stat-number {
-        font-size: 2.5rem !important;
-        font-weight: bold !important;
-        color: #3498db !important;
-        margin-bottom: 0.5rem !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    .stat-label {
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-size: 0.875rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        opacity: 0.9 !important;
-    }
-    
-    .activity-item {
-        display: flex !important;
-        align-items: center !important;
-        padding: 1rem !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        transition: background-color 0.2s !important;
-        color: #fff !important;
-        border-radius: 8px !important;
-        margin-bottom: 0.5rem !important;
-    }
-    
-    .activity-item:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    .activity-item .activity-content {
-        color: #fff !important;
-    }
-    
-    .activity-item .activity-content small {
-        color: rgba(255, 255, 255, 0.7) !important;
-    }
-    
-    .activity-icon {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        font-size: 1.5rem;
-    }
-    
-    .activity-icon.normal { background: #dbeafe; color: #3b82f6; }
-    .activity-icon.high { background: #fee2e2; color: #ef4444; }
-    
-    .nav-card {
-        background: rgba(255, 255, 255, 0.15) !important;
-        color: #fff !important;
-        border-radius: 15px !important;
-        padding: 2rem !important;
-        text-align: center !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-        transition: all 0.3s ease !important;
-        text-decoration: none !important;
-        display: block !important;
-    }
-    
-    .nav-card:hover {
-        transform: translateY(-5px) !important;
-        background: rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25) !important;
-        border-color: rgba(52, 152, 219, 0.6) !important;
-        text-decoration: none !important;
-        color: #fff !important;
-    }
-    
-    .nav-card h5 {
-        color: #fff !important;
-        margin-bottom: 1rem !important;
-        font-weight: 600 !important;
-    }
-    
-    .nav-card p {
-        color: rgba(255, 255, 255, 0.8) !important;
-        opacity: 0.9 !important;
-    }
-    
-    .nav-card-icon {
-        color: #3498db !important;
-        margin-bottom: 1rem !important;
-        filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)) !important;
-    }
-    
-    /* Override default text colors */
-    h1, h2, h3, h4, h5, h6 {
-        color: #fff !important;
-    }
-    
-    .text-muted {
-        color: rgba(255, 255, 255, 0.7) !important;
-    }
-    
-    /* Alert styling to match theme */
-    .alert {
-        background: rgba(255, 255, 255, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 10px !important;
-        backdrop-filter: blur(10px) !important;
-        color: #fff !important;
-    }
-    
-    .alert-warning {
-        border-color: rgba(255, 193, 7, 0.5) !important;
-        background: rgba(255, 193, 7, 0.1) !important;
-    }
-    
-    .alert-danger {
-        border-color: rgba(220, 53, 69, 0.5) !important;
-        background: rgba(220, 53, 69, 0.1) !important;
-    }
-    
-    .alert-info {
-        border-color: rgba(13, 202, 240, 0.5) !important;
-        background: rgba(13, 202, 240, 0.1) !important;
-    }
-    
-    .progress-bar {
-        width: 100%;
-        height: 0.5rem;
-        background-color: #e5e7eb;
-        border-radius: 0.25rem;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #10b981, #34d399);
-        transition: width 0.3s ease;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -456,7 +246,7 @@
 <div class="row">
     <!-- Recent Activity Feed -->
     <div class="col-lg-6 mb-4">
-        <div class="card">
+        <div class="card cmms-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-bell text-primary"></i>
@@ -541,8 +331,8 @@
 <!-- Critical Assets Alert -->
 <div class="row">
     <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
+        <div class="card cmms-card border-warning">
+            <div class="card-header bg-transparent border-bottom border-warning">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-exclamation-triangle"></i>
                     Critical Assets Requiring Attention

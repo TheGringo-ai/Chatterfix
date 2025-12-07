@@ -162,7 +162,30 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app_dir = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(app_dir, "app", "static")
+if os.path.isdir(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    logger.info(f"✅ Static files mounted from {static_dir}")
+else:
+    logger.error(f"❌ Static directory not found at {static_dir}")
+
+@app.get("/debug/routes")
+async def debug_routes():
+    """List all registered routes for debugging"""
+    routes = []
+    for route in app.routes:
+        routes.append({
+            "name": getattr(route, "name", None),
+            "path": getattr(route, "path", None),
+            "methods": list(getattr(route, "methods", [])) if hasattr(route, "methods") else None
+        })
+    return {
+        "routes": routes,
+        "static_dir": static_dir,
+        "static_exists": os.path.isdir(static_dir),
+        "cwd": os.getcwd()
+    }
 
 # Include all routers
 app.include_router(health.router)  # Health checks (no prefix)
@@ -190,6 +213,13 @@ app.include_router(analytics.router)  # Advanced analytics dashboard
 app.include_router(iot.router)  # IoT sensor integration
 app.include_router(push.router)  # Push notifications
 app.include_router(media.router)  # Media upload and barcode functionality
+
+
+# Root endpoint - redirect to landing page
+@app.get("/")
+async def root():
+    """Root endpoint - redirect to landing page"""
+    return RedirectResponse(url="/landing", status_code=302)
 
 
 # Simple test endpoint to verify deployment

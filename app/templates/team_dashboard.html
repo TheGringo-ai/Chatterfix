@@ -20,6 +20,7 @@
                 </div>
                 <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                     {% for user in users %}
+                    {% if user %}
                     <div class="d-flex align-items-center mb-3 p-2 border-bottom">
                         <div class="position-relative">
                             {% if user.avatar_url %}
@@ -27,29 +28,30 @@
                             {% else %}
                             <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
                                 style="width: 40px; height: 40px;">
-                                {{ user.full_name[0] if user.full_name else user.username[0] }}
+                                {{ (user.full_name[0] if user.full_name else user.username[0]) if user else 'U' }}
                             </div>
                             {% endif %}
                             <span class="position-absolute bottom-0 end-0 status-indicator 
-                                         {% if user.id in online_users %}bg-success{% else %}bg-secondary{% endif %}"
+                                         {% if user and user.id in online_users %}bg-success{% else %}bg-secondary{% endif %}"
                                 style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;">
                             </span>
                         </div>
                         <div class="ms-3 flex-grow-1">
-                            <a href="/team/users/{{ user.id }}" class="text-decoration-none">
-                                <strong>{{ user.full_name or user.username }}</strong>
+                            <a href="/team/users/{{ user.id if user else '#' }}" class="text-decoration-none">
+                                <strong>{{ (user.full_name or user.username) if user else 'Unknown User' }}</strong>
                             </a>
                             <br>
-                            <small class="text-muted">{{ user.role }}</small>
-                            {% if user.active_work_orders > 0 %}
+                            <small class="text-muted">{{ user.role if user else 'No Role' }}</small>
+                            {% if user and user.active_work_orders > 0 %}
                             <span class="badge bg-warning ms-2">{{ user.active_work_orders }} WO</span>
                             {% endif %}
                         </div>
                         <button class="btn btn-sm btn-outline-primary"
-                            onclick="openChat({{ user.id }}, '{{ user.full_name or user.username }}')">
+                            onclick="openChat({{ user.id if user else 0 }}, '{{ (user.full_name or user.username) if user else 'Unknown' }}')">
                             💬
                         </button>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -94,7 +96,9 @@
                         <select id="recipient-select" class="form-select" style="max-width: 200px;">
                             <option value="">Everyone</option>
                             {% for user in users %}
-                            <option value="{{ user.id }}">{{ user.full_name or user.username }}</option>
+                            {% if user %}
+                            <option value="{{ user.id }}">{{ user.full_name or user.username or 'Unknown User' }}</option>
+                            {% endif %}
                             {% endfor %}
                         </select>
                         <button type="submit" class="btn btn-primary">Send</button>

@@ -433,13 +433,6 @@ async def demo_work_orders(request: Request):
 @router.get("/demo/team", response_class=HTMLResponse)
 async def demo_team(request: Request):
     """Demo team page with sample data"""
-    # Add mock user for WebSocket connection (prevents "user is not defined" error)
-    mock_user = {
-        "id": "demo_user_1",
-        "username": "demo@chatterfix.com",
-        "full_name": "Demo Manager",
-        "role": "manager",
-    }
     
     # Convert DEMO_TEAM dictionaries to objects that support dot notation
     class DictObj:
@@ -449,6 +442,14 @@ async def demo_team(request: Request):
     
     demo_users = [DictObj(user) for user in DEMO_TEAM]
     
+    # Add mock user for WebSocket connection - also convert to object
+    mock_user = DictObj({
+        "id": "demo_user_1",
+        "username": "demo@chatterfix.com",
+        "full_name": "Demo Manager",
+        "role": "manager",
+    })
+    
     return templates.TemplateResponse(
         "team_dashboard.html",
         {
@@ -456,7 +457,7 @@ async def demo_team(request: Request):
             "users": demo_users,  # Convert dictionaries to objects with dot notation
             "messages": [],  # Empty messages for demo
             "online_users": [],  # No online users in demo mode
-            "user": mock_user,  # Pass current user for WebSocket
+            "user": mock_user,  # Pass current user for WebSocket as object
             "is_demo": True,
         },
     )

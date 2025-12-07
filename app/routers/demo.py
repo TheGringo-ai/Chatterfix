@@ -441,11 +441,19 @@ async def demo_team(request: Request):
         "role": "manager",
     }
     
+    # Convert DEMO_TEAM dictionaries to objects that support dot notation
+    class DictObj:
+        def __init__(self, d):
+            for k, v in d.items():
+                setattr(self, k, v)
+    
+    demo_users = [DictObj(user) for user in DEMO_TEAM]
+    
     return templates.TemplateResponse(
         "team_dashboard.html",
         {
             "request": request,
-            "users": DEMO_TEAM,  # Match expected variable name from team_dashboard.html
+            "users": demo_users,  # Convert dictionaries to objects with dot notation
             "messages": [],  # Empty messages for demo
             "online_users": [],  # No online users in demo mode
             "user": mock_user,  # Pass current user for WebSocket

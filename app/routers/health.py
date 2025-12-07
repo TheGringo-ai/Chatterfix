@@ -31,7 +31,7 @@ async def health_check():
                 # SQLite health check
                 db_status = "sqlite_disabled"
         except Exception:
-            db_status = f"error"
+            db_status = "error"
 
         return JSONResponse(
             {

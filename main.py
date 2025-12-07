@@ -13,6 +13,7 @@ APP_VERSION = "2.1.0-enterprise-planner"
 APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
 
 import uvicorn
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -151,6 +152,7 @@ app = FastAPI(
 )
 
 # Add middleware
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")  # Trust Cloud Run proxy
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Configure appropriately for production

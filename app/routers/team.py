@@ -13,7 +13,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.core.firestore_db import get_db_connection
@@ -23,7 +23,6 @@ from app.services.notification_service import notification_service
 from app.services.websocket_manager import websocket_manager
 from app.services import auth_service
 from app.services.firebase_auth import firebase_auth_service
-from fastapi import RedirectResponse
 
 logger = logging.getLogger(__name__)
 

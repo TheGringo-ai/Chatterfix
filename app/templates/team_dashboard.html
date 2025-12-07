@@ -144,7 +144,7 @@
 
 <!-- WebSocket Connection -->
 <script>
-    const currentUserId = "{{ user.id }}";
+    const currentUserId = "{{ user.id if user else 'demo_user_1' }}";
     let ws = null;
 
     function connectWebSocket() {

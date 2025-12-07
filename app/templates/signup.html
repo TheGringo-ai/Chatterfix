@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - ChatterFix CMMS</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
     <style>
         .signup-container {
             display: flex;
@@ -200,6 +205,29 @@
     </div>
 
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "{{ firebase_config.api_key if firebase_config else '' }}",
+            authDomain: "{{ firebase_config.auth_domain if firebase_config else '' }}",
+            projectId: "{{ firebase_config.project_id if firebase_config else '' }}",
+            storageBucket: "{{ firebase_config.storage_bucket if firebase_config else '' }}",
+            messagingSenderId: "{{ firebase_config.messaging_sender_id if firebase_config else '' }}",
+            appId: "{{ firebase_config.app_id if firebase_config else '' }}"
+        };
+
+        // Initialize Firebase (only if config is available)
+        let auth = null;
+        let db = null;
+        if (firebaseConfig.apiKey) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+            } catch (error) {
+                console.warn('Firebase initialization failed:', error);
+            }
+        }
+
         const passwordInput = document.getElementById('password');
         const confirmInput = document.getElementById('confirm_password');
         const strengthBar = document.getElementById('strengthBar');
@@ -224,14 +252,17 @@
             else strengthBar.classList.add('strength-strong');
         });
 
-        // Form validation
+        // Form validation and submission
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
 
+            const email = document.getElementById('email').value;
             const password = passwordInput.value;
             const confirm = confirmInput.value;
+            const fullName = document.getElementById('full_name').value;
+            const username = document.getElementById('username').value;
 
             if (password !== confirm) {
                 errorMsg.textContent = 'Passwords do not match';
@@ -248,8 +279,84 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Creating Account...';
 
-            // Submit form
-            this.submit();
+            try {
+                if (auth) {
+                    // Firebase Authentication
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    // Update user profile
+                    await user.updateProfile({
+                        displayName: fullName || username
+                    });
+
+                    // Send email verification
+                    await user.sendEmailVerification();
+
+                    // Get ID token for backend authentication
+                    const idToken = await user.getIdToken();
+
+                    // Create user document in Firestore
+                    if (db) {
+                        await db.collection('users').doc(user.uid).set({
+                            uid: user.uid,
+                            email: email,
+                            username: username,
+                            full_name: fullName,
+                            created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                            role: 'technician',
+                            status: 'active'
+                        });
+                    }
+
+                    // Send token to backend for session creation
+                    const response = await fetch('/auth/firebase-signin', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            idToken: idToken,
+                            username: username,
+                            full_name: fullName 
+                        })
+                    });
+
+                    if (response.ok) {
+                        successMsg.textContent = 'Account created successfully! Please check your email to verify your account.';
+                        successMsg.style.display = 'block';
+                        
+                        // Redirect to dashboard after short delay
+                        setTimeout(() => {
+                            window.location.href = '/dashboard?welcome=true';
+                        }, 2000);
+                    } else {
+                        throw new Error('Backend authentication failed');
+                    }
+                } else {
+                    // Fallback to form submission for local development
+                    this.submit();
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                let errorMessage = 'Account creation failed. ';
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage += 'An account with this email already exists.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage += 'Password is too weak. Please choose a stronger password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage += 'Please enter a valid email address.';
+                } else {
+                    errorMessage += error.message || 'Please try again.';
+                }
+                
+                errorMsg.textContent = errorMessage;
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
         });
     </script>
 </body>

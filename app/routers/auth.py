@@ -256,6 +256,59 @@ async def update_firebase_profile(
         )
 
 
+@router.post("/firebase-signin")
+async def firebase_signin(
+    response: Response,
+    request: Request
+):
+    """Handle Firebase authentication tokens from client-side signup/login"""
+    try:
+        body = await request.json()
+        id_token = body.get("idToken")
+        username = body.get("username", "")
+        full_name = body.get("full_name", "")
+        
+        if not id_token:
+            raise HTTPException(status_code=400, detail="ID token required")
+        
+        # Verify Firebase token and get user data
+        user_data = await firebase_auth_service.verify_token(id_token)
+        
+        # Create session token for the application
+        if firebase_auth_service.is_available:
+            # Use Firebase custom token as session token
+            session_token = await firebase_auth_service.create_custom_token(user_data["uid"])
+        else:
+            # Fallback to local session creation
+            ip_address = request.client.host if (request and request.client) else "unknown"
+            user_agent = request.headers.get("user-agent", "unknown") if request else "unknown"
+            session_token = auth_service.create_session(user_data["uid"], ip_address, user_agent)
+        
+        # Set session cookie
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            max_age=86400,  # 24 hours
+            samesite="lax",
+        )
+        
+        return JSONResponse({
+            "success": True,
+            "user": {
+                "uid": user_data["uid"],
+                "email": user_data["email"],
+                "name": user_data["name"],
+                "verified": user_data["verified"]
+            }
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+
 @router.get("/config")
 async def get_auth_config():
     """Get authentication configuration for frontend"""

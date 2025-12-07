@@ -91,7 +91,20 @@ async def public_landing(request: Request):
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request):
     """Serve the signup page for actual registration"""
-    return templates.TemplateResponse("landing.html", {"request": request})
+    # Firebase configuration for client-side auth
+    firebase_config = {
+        "api_key": os.getenv("FIREBASE_API_KEY", ""),
+        "auth_domain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
+        "project_id": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
+        "storage_bucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
+        "messaging_sender_id": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
+        "app_id": os.getenv("FIREBASE_APP_ID", "")
+    } if os.getenv("FIREBASE_API_KEY") else None
+    
+    return templates.TemplateResponse("signup.html", {
+        "request": request,
+        "firebase_config": firebase_config
+    })
 
 
 @router.post("/api/landing/signup")

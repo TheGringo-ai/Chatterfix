@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
 
 # Load environment variables (override system defaults)
@@ -12,14 +13,14 @@ APP_VERSION = "2.1.0-enterprise-planner"
 APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.core.db_adapter import get_db_adapter
 
@@ -44,6 +45,7 @@ limiter = Limiter(key_func=get_remote_address)
 # Import all routers
 from app.routers import (
     ai,
+    analytics,
     ar,
     assets,
     auth,
@@ -53,21 +55,20 @@ from app.routers import (
     geolocation,
     health,
     inventory,
+    iot,
     landing,
     manager,
+    media,
     onboarding,
     planner,
+    public_demo,
     purchasing,
+    push,
     settings,
     signup,
     team,
     training,
     work_orders,
-    analytics,
-    iot,
-    push,
-    media,
-    public_demo,
 )
 
 
@@ -89,7 +90,7 @@ def load_version():
                         lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
                     )
                     return version, description
-        except Exception as e:
+        except Exception:
             continue
 
     # Fallback to hardcoded version if file not found

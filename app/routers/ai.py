@@ -104,16 +104,17 @@ async def troubleshoot(
 async def assist(
     message: str = Form(...),
     context: str = Form(""),
-    current_user: dict = Depends(get_current_user),
 ):
     """Global AI Assistant Endpoint"""
     if not chatterfix_ai.gemini:
         return JSONResponse({"response": "AI features unavailable."})
 
     try:
+        # Use demo user for AI requests
+        demo_user_id = "demo_user_1"
         # Call the advanced assistant agent
         result = await chatterfix_ai.gemini.run_assistant_agent(
-            message, context, user_id=current_user["id"]
+            message, context, user_id=demo_user_id
         )
         return JSONResponse(result)
     except Exception as e:

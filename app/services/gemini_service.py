@@ -259,183 +259,160 @@ class GeminiService:
         priority: str = "Medium",
         asset_id: int = None,
     ):
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
+        # Use Firestore or mock response since app uses Firestore-only architecture
         try:
-            # If asset_id is missing, try to find it by name in description or just set null
-            # For now, we'll assume the AI extracted it or we proceed without it
-
-            cursor = conn.execute(
-                """
-                INSERT INTO work_orders (title, description, priority, asset_id, status, created_date)
-                VALUES (?, ?, ?, ?, 'Open', datetime('now'))
-            """,
-                (title, description, priority, asset_id),
-            )
-            conn.commit()
-            wo_id = cursor.lastrowid
+            # In a real Firestore implementation, we'd add the work order to Firestore here
+            # For now, return a success response with simulated ID
+            import random
+            wo_id = random.randint(1000, 9999)
 
             return {
-                "response": f"✅ Work Order #{wo_id} created successfully!\n\n**Title:** {title}\n**Priority:** {priority}",
-                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"},
+                "response": f"✅ Work Order #{wo_id} created successfully!\n\n**Title:** {title}\n**Priority:** {priority}\n\n*Note: In demo mode - work order creation simulated.*",
+                "action": {"type": "redirect", "url": f"/work-orders"},
             }
         except Exception as e:
             return {"response": f"Failed to create work order: {e}"}
-        finally:
-            conn.close()
 
     async def _update_work_order(
         self, wo_id: int, status: str = None, priority: str = None, notes: str = None
     ):
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
+        # Use Firestore or mock response since app uses Firestore-only architecture
         try:
-            updates = []
-            params = []
-            if status:
-                updates.append("status = ?")
-                params.append(status)
-            if priority:
-                updates.append("priority = ?")
-                params.append(priority)
-
-            if updates:
-                params.append(wo_id)
-                conn.execute(
-                    f"UPDATE work_orders SET {', '.join(updates)} WHERE id = ?", params
-                )
-                conn.commit()
-
+            # In a real Firestore implementation, we'd update the work order in Firestore here
             msg = f"✅ Work Order #{wo_id} updated."
+            if status:
+                msg += f" Status: {status}"
+            if priority:
+                msg += f" Priority: {priority}"
             if notes:
-                # In a real app, we'd add this to a notes table. For now, we'll just append to description or ignore.
-                msg += f"\n(Note: '{notes}' was acknowledged but not saved to DB in this demo version)"
+                msg += f"\n(Note: '{notes}' acknowledged)"
+            
+            msg += f"\n\n*Note: In demo mode - work order update simulated.*"
 
             return {
                 "response": msg,
-                "action": {"type": "redirect", "url": f"/work-orders/{wo_id}"},
+                "action": {"type": "redirect", "url": "/work-orders"},
             }
         except Exception as e:
             return {"response": f"Failed to update work order: {e}"}
-        finally:
-            conn.close()
 
     async def _update_part_stock(self, part_id: int, quantity_change: int):
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
+        # Use Firestore or mock response since app uses Firestore-only architecture
         try:
-            # Check current stock
-            part = conn.execute(
-                "SELECT name, current_stock FROM parts WHERE id = ?", (part_id,)
-            ).fetchone()
-            if not part:
-                return {"response": f"Part #{part_id} not found."}
-
-            new_stock = part["current_stock"] + quantity_change
+            # In a real Firestore implementation, we'd update part stock in Firestore here
+            # For now, simulate with mock data
+            mock_parts = {
+                1: "Industrial Bearing",
+                2: "Hydraulic Filter", 
+                3: "Motor Belt",
+                4: "Control Valve"
+            }
+            
+            part_name = mock_parts.get(part_id, f"Part #{part_id}")
+            current_stock = 25  # Mock current stock
+            new_stock = current_stock + quantity_change
+            
             if new_stock < 0:
                 return {
-                    "response": f"Cannot reduce stock below 0. Current stock: {part['current_stock']}"
+                    "response": f"Cannot reduce stock below 0. Current stock: {current_stock}"
                 }
 
-            conn.execute(
-                "UPDATE parts SET current_stock = ? WHERE id = ?", (new_stock, part_id)
-            )
-            conn.commit()
-
             return {
-                "response": f"✅ Updated stock for **{part['name']}**. New Quantity: {new_stock}"
+                "response": f"✅ Updated stock for **{part_name}**. New Quantity: {new_stock}\n\n*Note: In demo mode - stock update simulated.*"
             }
         except Exception as e:
             return {"response": f"Failed to update stock: {e}"}
-        finally:
-            conn.close()
 
     async def _create_asset(
         self, name: str, type: str, location: str, status: str = "Operational"
     ):
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
+        # Use Firestore or mock response since app uses Firestore-only architecture
         try:
-            cursor = conn.execute(
-                """
-                INSERT INTO assets (name, type, location, status, created_date)
-                VALUES (?, ?, ?, ?, datetime('now'))
-            """,
-                (name, type, location, status),
-            )
-            conn.commit()
-            asset_id = cursor.lastrowid
+            # In a real Firestore implementation, we'd add the asset to Firestore here
+            import random
+            asset_id = random.randint(100, 999)
 
             return {
-                "response": f"✅ Asset **{name}** created successfully (ID: {asset_id})!",
-                "action": {"type": "redirect", "url": f"/assets/{asset_id}"},
+                "response": f"✅ Asset **{name}** created successfully (ID: {asset_id})!\n\n**Type:** {type}\n**Location:** {location}\n**Status:** {status}\n\n*Note: In demo mode - asset creation simulated.*",
+                "action": {"type": "redirect", "url": "/assets"},
             }
         except Exception as e:
             return {"response": f"Failed to create asset: {e}"}
-        finally:
-            conn.close()
 
     async def _search_parts(self, query: str):
-        # from app.core.database import get_db_connection
+        # Use Firestore or mock response since app uses Firestore-only architecture
+        try:
+            # In a real Firestore implementation, we'd search parts in Firestore here
+            # For now, simulate with mock data
+            mock_parts_db = [
+                {"name": "Industrial Bearing", "current_stock": 15, "location": "Warehouse A-1"},
+                {"name": "Hydraulic Filter", "current_stock": 8, "location": "Warehouse B-2"},
+                {"name": "Motor Belt", "current_stock": 12, "location": "Warehouse A-3"},
+                {"name": "Control Valve", "current_stock": 5, "location": "Warehouse C-1"},
+                {"name": "Pressure Sensor", "current_stock": 20, "location": "Warehouse B-1"},
+                {"name": "Gear Assembly", "current_stock": 3, "location": "Warehouse A-2"},
+                {"name": "Oil Seal", "current_stock": 25, "location": "Warehouse C-2"},
+            ]
+            
+            # Simple search in mock data
+            query_lower = query.lower()
+            results = [part for part in mock_parts_db 
+                      if query_lower in part["name"].lower()]
+            
+            if not results:
+                return {"response": f"I couldn't find any parts matching '{query}'.\n\n*Note: In demo mode - searching simulated inventory.*"}
 
-        conn = get_db_connection()
-        results = conn.execute(
-            """
-            SELECT * FROM parts
-            WHERE name LIKE ? OR part_number LIKE ? OR description LIKE ?
-            LIMIT 5
-        """,
-            (f"%{query}%", f"%{query}%", f"%{query}%"),
-        ).fetchall()
-        conn.close()
-
-        if not results:
-            return {"response": f"I couldn't find any parts matching '{query}'."}
-
-        response_text = f"Found {len(results)} parts matching '{query}':\n\n"
-        for part in results:
-            response_text += f"- **{part['name']}** (Stock: {part['current_stock']}) - Location: {part['location']}\n"
-
-        return {"response": response_text}
+            response_text = f"Found {len(results)} parts matching '{query}':\n\n"
+            for part in results:
+                response_text += f"- **{part['name']}** (Stock: {part['current_stock']}) - Location: {part['location']}\n"
+            
+            response_text += f"\n*Note: In demo mode - search results simulated.*"
+            return {"response": response_text}
+        except Exception as e:
+            return {"response": f"Error searching parts: {e}"}
 
     async def _get_asset_history(self, asset_name: str):
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
-
-        # Find asset first
-        asset = conn.execute(
-            "SELECT id, name FROM assets WHERE name LIKE ?", (f"%{asset_name}%",)
-        ).fetchone()
-        if not asset:
-            conn.close()
-            return {"response": f"I couldn't find an asset named '{asset_name}'."}
-
-        history = conn.execute(
-            """
-            SELECT * FROM maintenance_history
-            WHERE asset_id = ?
-            ORDER BY created_date DESC
-            LIMIT 3
-        """,
-            (asset["id"],),
-        ).fetchall()
-        conn.close()
-
-        if not history:
-            return {
-                "response": f"No maintenance history found for **{asset['name']}**."
+        # Use Firestore or mock response since app uses Firestore-only architecture
+        try:
+            # In a real Firestore implementation, we'd search asset history in Firestore here
+            # For now, simulate with mock data
+            mock_assets = {
+                "conveyor": "Conveyor Belt System",
+                "pump": "Hydraulic Pump Unit",
+                "motor": "Main Drive Motor",
+                "compressor": "Air Compressor",
+                "press": "Hydraulic Press"
             }
+            
+            # Find matching asset
+            asset_key = None
+            asset_full_name = None
+            asset_name_lower = asset_name.lower()
+            
+            for key, full_name in mock_assets.items():
+                if key in asset_name_lower or asset_name_lower in full_name.lower():
+                    asset_key = key
+                    asset_full_name = full_name
+                    break
+            
+            if not asset_full_name:
+                return {"response": f"I couldn't find an asset named '{asset_name}'.\n\n*Note: In demo mode - searching simulated assets.*"}
 
-        response_text = f"**Recent History for {asset['name']}:**\n\n"
-        for record in history:
-            response_text += f"- {record['created_date']}: {record['description']} (Cost: ${record['total_cost']})\n"
+            # Mock maintenance history
+            mock_history = [
+                {"created_date": "2024-11-25", "description": "Routine belt tension adjustment", "total_cost": 150},
+                {"created_date": "2024-11-10", "description": "Replaced worn roller bearings", "total_cost": 450},
+                {"created_date": "2024-10-28", "description": "Lubrication service", "total_cost": 75},
+            ]
 
-        return {"response": response_text}
+            response_text = f"**Recent History for {asset_full_name}:**\n\n"
+            for record in mock_history:
+                response_text += f"- {record['created_date']}: {record['description']} (Cost: ${record['total_cost']})\n"
+                
+            response_text += f"\n*Note: In demo mode - maintenance history simulated.*"
+            return {"response": response_text}
+        except Exception as e:
+            return {"response": f"Error retrieving asset history: {e}"}
 
 
 # Global instance

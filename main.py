@@ -70,30 +70,36 @@ from app.routers import (
     public_demo,
 )
 
+
 # Initialize FastAPI application
 # Load version information first
 def load_version():
     """Load version from VERSION.txt file"""
     import os
+
     version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
-    
+
     for path in version_paths:
         try:
             if os.path.exists(path):
                 with open(path, "r") as f:
                     lines = f.readlines()
                     version = lines[0].strip()
-                    description = lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
+                    description = (
+                        lines[1].strip() if len(lines) > 1 else "ChatterFix CMMS"
+                    )
                     return version, description
         except Exception as e:
             continue
-    
+
     # Fallback to hardcoded version if file not found
     return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
+
 
 print(f"DEBUG: main.py loaded. Version: {APP_VERSION}")
 
 from contextlib import asynccontextmanager
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -114,7 +120,7 @@ async def lifespan(app: FastAPI):
             logger.warning("   For production, configure Firebase credentials")
 
         logger.info("✅ ChatterFix CMMS started successfully!")
-        
+
         # Load version info for logging
         app_version, app_description = load_version()
         logger.info(f"📦 Version: {app_version}")
@@ -134,6 +140,7 @@ async def lifespan(app: FastAPI):
         # Shutdown
         logger.info("🛑 Shutting down ChatterFix CMMS...")
         logger.info("✅ ChatterFix CMMS shutdown complete")
+
 
 app = FastAPI(
     title="ChatterFix CMMS API",
@@ -170,22 +177,30 @@ if os.path.isdir(static_dir):
 else:
     logger.error(f"❌ Static directory not found at {static_dir}")
 
+
 @app.get("/debug/routes")
 async def debug_routes():
     """List all registered routes for debugging"""
     routes = []
     for route in app.routes:
-        routes.append({
-            "name": getattr(route, "name", None),
-            "path": getattr(route, "path", None),
-            "methods": list(getattr(route, "methods", [])) if hasattr(route, "methods") else None
-        })
+        routes.append(
+            {
+                "name": getattr(route, "name", None),
+                "path": getattr(route, "path", None),
+                "methods": (
+                    list(getattr(route, "methods", []))
+                    if hasattr(route, "methods")
+                    else None
+                ),
+            }
+        )
     return {
         "routes": routes,
         "static_dir": static_dir,
         "static_exists": os.path.isdir(static_dir),
-        "cwd": os.getcwd()
+        "cwd": os.getcwd(),
     }
+
 
 # Include all routers
 app.include_router(health.router)  # Health checks (no prefix)
@@ -237,12 +252,12 @@ async def test_endpoint():
         "database": "Firebase/Firestore",
         "features": [
             "Enterprise Planner",
-            "Advanced Scheduler", 
+            "Advanced Scheduler",
             "AI Optimization",
             "Mobile Interface",
             "Parts Management",
-            "PM Automation"
-        ]
+            "PM Automation",
+        ],
     }
 
 
@@ -250,26 +265,29 @@ async def test_endpoint():
 async def debug_version():
     """Debug endpoint to check version loading"""
     import os
+
     debug_info = {
         "app_version": APP_VERSION,
         "app_description": APP_DESCRIPTION,
         "current_working_directory": os.getcwd(),
-        "version_file_checks": {}
+        "version_file_checks": {},
     }
-    
+
     version_paths = ["VERSION.txt", "/app/VERSION.txt", "./VERSION.txt"]
     for path in version_paths:
         debug_info["version_file_checks"][path] = {
             "exists": os.path.exists(path),
-            "is_file": os.path.isfile(path) if os.path.exists(path) else False
+            "is_file": os.path.isfile(path) if os.path.exists(path) else False,
         }
         if os.path.exists(path):
             try:
                 with open(path, "r") as f:
-                    debug_info["version_file_checks"][path]["content_preview"] = f.read()[:200]
+                    debug_info["version_file_checks"][path][
+                        "content_preview"
+                    ] = f.read()[:200]
             except Exception as e:
                 debug_info["version_file_checks"][path]["error"] = str(e)
-    
+
     return debug_info
 
 

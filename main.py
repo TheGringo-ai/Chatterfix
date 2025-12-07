@@ -24,6 +24,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.core.db_adapter import get_db_adapter
+from app.middleware import ErrorTrackingMiddleware
 
 # Configure logging (Cloud Run friendly)
 try:
@@ -153,6 +154,14 @@ app = FastAPI(
 
 # Add middleware
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")  # Trust Cloud Run proxy
+
+# Add error tracking middleware
+app.add_middleware(
+    ErrorTrackingMiddleware,
+    sentry_dsn=os.getenv("SENTRY_DSN"),  # Optional: set SENTRY_DSN env var
+    environment=os.getenv("ENVIRONMENT", "development"),
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Configure appropriately for production

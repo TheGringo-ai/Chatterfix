@@ -181,7 +181,7 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="modulesDropdown" style="background: var(--bg-glass-heavy); backdrop-filter: blur(15px); border: var(--card-border);">
                     <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/purchasing') %}active{% endif %}" href="/demo/purchasing"><i class="fas fa-shopping-cart me-2"></i> Purchasing</a></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/team') %}active{% endif %}" href="/demo/team"><i class="fas fa-users me-2"></i> Team</a></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/team') or request.url and request.url.path.startswith('/team') %}active{% endif %}" href="/demo/team"><i class="fas fa-users me-2"></i> Team</a></li>
                     <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/manager') %}active{% endif %}" href="/manager"><i class="fas fa-chart-line me-2"></i> Manager</a></li>
                     <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/user-management') %}active{% endif %}" href="/user-management/"><i class="fas fa-user-plus me-2"></i> User Management</a></li>
                     <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/training') %}active{% endif %}" href="/demo/training"><i class="fas fa-graduation-cap me-2"></i> Training</a></li>

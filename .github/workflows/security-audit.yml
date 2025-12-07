@@ -1,0 +1,155 @@
+name: Security Audit
+
+on:
+  schedule:
+    # Run security audit daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  python-security:
+    name: Python Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit pip-audit
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+        
+    - name: Run Safety check
+      run: safety check --json --output safety-report.json || true
+      
+    - name: Run Bandit security analysis
+      run: bandit -r . -f json -o bandit-report.json || true
+      
+    - name: Run pip-audit
+      run: pip-audit --format=json --output=pip-audit-report.json || true
+      
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: python-security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+          pip-audit-report.json
+
+  mobile-security:
+    name: Mobile Security Audit  
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mobile
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: mobile/package-lock.json
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run npm audit
+      run: |
+        npm audit --audit-level=low --json > npm-audit-report.json || true
+        
+    - name: Check for high/critical vulnerabilities
+      run: |
+        CRITICAL=$(npm audit --audit-level=critical --json | jq '.metadata.vulnerabilities.critical // 0')
+        HIGH=$(npm audit --audit-level=high --json | jq '.metadata.vulnerabilities.high // 0')
+        echo "Critical vulnerabilities: $CRITICAL"
+        echo "High vulnerabilities: $HIGH"
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "❌ Critical vulnerabilities found!"
+          exit 1
+        fi
+        if [ "$HIGH" -gt 5 ]; then
+          echo "⚠️  Too many high vulnerabilities found!"
+          exit 1
+        fi
+        
+    - name: Upload mobile security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mobile-security-reports
+        path: mobile/npm-audit-report.json
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: high
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+        
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [python-security, mobile-security]
+    if: always()
+    
+    steps:
+    - name: Download all security reports
+      uses: actions/download-artifact@v4
+      with:
+        path: security-reports
+        
+    - name: Create security summary
+      run: |
+        echo "# 🔒 Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+        echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## Python Security Status" >> $GITHUB_STEP_SUMMARY
+        if [ -f security-reports/python-security-reports/safety-report.json ]; then
+          echo "✅ Safety check completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Safety check failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f security-reports/python-security-reports/bandit-report.json ]; then
+          echo "✅ Bandit analysis completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Bandit analysis failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Mobile Security Status" >> $GITHUB_STEP_SUMMARY
+        if [ -f security-reports/mobile-security-reports/npm-audit-report.json ]; then
+          echo "✅ npm audit completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ npm audit failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📊 Security reports available in workflow artifacts"

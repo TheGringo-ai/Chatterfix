@@ -80,6 +80,47 @@ updates:
       - "github-actions"
       - "ci/cd"
 
+  # Node.js dependencies (mobile app)
+  - package-ecosystem: "npm"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "TheGringo-ai"
+    assignees:
+      - "TheGringo-ai"
+    commit-message:
+      prefix: "deps-mobile"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "mobile"
+      - "react-native"
+    # Group mobile dependencies
+    groups:
+      expo:
+        patterns:
+          - "expo*"
+          - "@expo/*"
+      react:
+        patterns:
+          - "react*"
+          - "@react-*"
+      navigation:
+        patterns:
+          - "@react-navigation/*"
+          - "react-navigation*"
+      ui-components:
+        patterns:
+          - "@tanstack/*"
+          - "axios*"
+    # Security updates for mobile
+    allow:
+      - dependency-type: "all"
+
   # Docker (if you have Dockerfile dependencies)
   - package-ecosystem: "docker"
     directory: "/"

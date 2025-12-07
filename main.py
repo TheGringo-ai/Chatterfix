@@ -70,6 +70,7 @@ from app.routers import (
     signup,
     team,
     training,
+    user_management,
     work_orders,
 )
 
@@ -229,6 +230,7 @@ app.include_router(inventory.router)
 app.include_router(team.router)
 app.include_router(manager.router)  # Manager Dashboard - Complete Control Center
 app.include_router(training.router)
+app.include_router(user_management.router)  # User Management with Application Training
 app.include_router(purchasing.router)
 app.include_router(planner.router)
 app.include_router(feedback.router)

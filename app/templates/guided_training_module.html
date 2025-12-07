@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.title }} - Training Module{% endblock %}
+
+{% block head %}
+<style>
+    .training-container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .training-header {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .module-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+
+    .module-description {
+        font-size: 1.1rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .progress-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .progress-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .progress-bar {
+        width: 200px;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #059669);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .steps-container {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .training-step {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .training-step.completed {
+        border-left: 4px solid #10b981;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(255, 255, 255, 0.9));
+    }
+
+    .training-step.active {
+        border-left: 4px solid #3b82f6;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(255, 255, 255, 0.9));
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+    }
+
+    .step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .step-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .status-active {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-completed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .step-content {
+        margin-bottom: 1.5rem;
+    }
+
+    .step-description {
+        font-size: 1rem;
+        color: #374151;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .step-objectives {
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .objective {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    .objective:last-child {
+        margin-bottom: 0;
+    }
+
+    .interactive-demo {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .demo-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .demo-instructions {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+
+    .demo-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .demo-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .demo-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .step-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .action-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .completion-certificate {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        text-align: center;
+        margin-top: 2rem;
+        display: none;
+    }
+
+    .completion-certificate.show {
+        display: block;
+        animation: slideInUp 0.5s ease;
+    }
+
+    @keyframes slideInUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .certificate-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .certificate-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .certificate-text {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+
+    .navigation-bar {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .nav-btn {
+        padding: 0.5rem;
+        border: none;
+        border-radius: 6px;
+        background: #f3f4f6;
+        color: #374151;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="training-container">
+    <!-- Training Header -->
+    <div class="training-header">
+        <h1 class="module-title">🎯 {{ module.title }}</h1>
+        <p class="module-description">{{ module.description }}</p>
+        
+        <div class="progress-section">
+            <div class="progress-info">
+                <span style="font-weight: 600; color: #374151;">Progress:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ progress_percentage }}%;"></div>
+                </div>
+                <span style="font-size: 0.9rem; color: #6b7280;">{{ completed_steps }}/{{ total_steps }} steps completed</span>
+            </div>
+            <div style="font-size: 0.9rem; color: #6b7280;">
+                Estimated time: {{ module.estimated_time }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Steps -->
+    <div class="steps-container">
+        {% for step in module.steps %}
+        <div class="training-step {% if step.completed %}completed{% elif step.active %}active{% endif %}" id="step-{{ step.id }}">
+            <div class="step-header">
+                <h3 class="step-title">
+                    {% if step.completed %}
+                        ✅
+                    {% elif step.active %}
+                        🔄
+                    {% else %}
+                        ⏳
+                    {% endif %}
+                    {{ step.title }}
+                </h3>
+                <span class="step-status status-{% if step.completed %}completed{% elif step.active %}active{% else %}pending{% endif %}">
+                    {% if step.completed %}Completed{% elif step.active %}In Progress{% else %}Pending{% endif %}
+                </span>
+            </div>
+
+            <div class="step-content">
+                <p class="step-description">{{ step.description }}</p>
+                
+                {% if step.objectives %}
+                <div class="step-objectives">
+                    <strong style="color: #374151; margin-bottom: 0.5rem; display: block;">Learning Objectives:</strong>
+                    {% for objective in step.objectives %}
+                    <div class="objective">
+                        <span>•</span>
+                        <span>{{ objective }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if step.demo_type %}
+                <div class="interactive-demo">
+                    <div class="demo-title">
+                        🎮 Interactive Demo: {{ step.demo_title }}
+                    </div>
+                    <div class="demo-instructions">
+                        {{ step.demo_instructions }}
+                    </div>
+                    <div class="demo-actions">
+                        {% if step.demo_type == 'work_order_creation' %}
+                            <a href="/demo/work-order-creation" class="demo-btn" target="_blank">
+                                📝 Try Creating a Work Order
+                            </a>
+                            <a href="/work-orders" class="demo-btn" target="_blank">
+                                👀 View Existing Work Orders
+                            </a>
+                        {% elif step.demo_type == 'parts_checkout' %}
+                            <a href="/demo/parts-checkout" class="demo-btn" target="_blank">
+                                🔧 Practice Parts Checkout
+                            </a>
+                            <a href="/inventory" class="demo-btn" target="_blank">
+                                📦 Browse Inventory
+                            </a>
+                        {% elif step.demo_type == 'mobile_features' %}
+                            <a href="/demo/mobile-tour" class="demo-btn" target="_blank">
+                                📱 Mobile Feature Tour
+                            </a>
+                        {% elif step.demo_type == 'voice_commands' %}
+                            <button class="demo-btn" onclick="startVoiceDemo()">
+                                🎤 Try Voice Commands
+                            </button>
+                        {% elif step.demo_type == 'analytics' %}
+                            <a href="/analytics" class="demo-btn" target="_blank">
+                                📊 Explore Analytics Dashboard
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="step-actions">
+                <div>
+                    {% if not loop.first %}
+                    <button class="action-btn btn-secondary" onclick="previousStep()">
+                        ← Previous Step
+                    </button>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if step.active %}
+                        {% if step.requires_completion %}
+                        <button class="action-btn btn-primary" onclick="checkCompletion({{ step.id }})">
+                            🔍 Check My Progress
+                        </button>
+                        {% endif %}
+                        <button class="action-btn btn-success" onclick="completeStep({{ step.id }})">
+                            ✅ Mark as Complete
+                        </button>
+                    {% elif not step.completed and not step.active %}
+                        <button class="action-btn btn-primary" onclick="startStep({{ step.id }})">
+                            ▶️ Start This Step
+                        </button>
+                    {% endif %}
+                    {% if not loop.last %}
+                    <button class="action-btn btn-secondary" onclick="nextStep()" {% if not step.completed %}disabled{% endif %}>
+                        Next Step →
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Completion Certificate -->
+    <div class="completion-certificate" id="completion-certificate">
+        <div class="certificate-icon">🏆</div>
+        <h2 class="certificate-title">Congratulations!</h2>
+        <p class="certificate-text">
+            You have successfully completed the {{ module.title }} training module.
+            You're now ready to apply these skills in your daily work!
+        </p>
+        <button class="action-btn btn-primary" onclick="returnToDashboard()">
+            🏠 Return to Dashboard
+        </button>
+    </div>
+</div>
+
+<!-- Navigation Bar -->
+<div class="navigation-bar">
+    <button class="nav-btn" onclick="window.history.back()" title="Go Back">←</button>
+    <button class="nav-btn" onclick="showHelp()" title="Help">?</button>
+    <button class="nav-btn" onclick="restartModule()" title="Restart Module">↻</button>
+</div>
+
+<script>
+let currentStep = {{ current_step_id }};
+let totalSteps = {{ total_steps }};
+let completedSteps = {{ completed_steps }};
+
+function startStep(stepId) {
+    fetch(`/user-management/training/step/${stepId}/start`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to start step: ' + data.message);
+        }
+    });
+}
+
+function completeStep(stepId) {
+    if (confirm('Are you sure you want to mark this step as complete?')) {
+        fetch(`/user-management/training/step/${stepId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                completedSteps++;
+                updateProgress();
+                
+                // Check if module is complete
+                if (completedSteps >= totalSteps) {
+                    setTimeout(() => {
+                        document.getElementById('completion-certificate').classList.add('show');
+                    }, 500);
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert('Failed to complete step: ' + data.message);
+            }
+        });
+    }
+}
+
+function checkCompletion(stepId) {
+    fetch(`/user-management/training/step/${stepId}/check`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.completed) {
+            alert('Great job! You have completed the required tasks for this step.');
+            completeStep(stepId);
+        } else {
+            alert('You still need to complete some tasks. Check the demo instructions and try again.');
+        }
+    });
+}
+
+function nextStep() {
+    const nextStepElement = document.querySelector('.training-step.active').nextElementSibling;
+    if (nextStepElement) {
+        nextStepElement.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function previousStep() {
+    const prevStepElement = document.querySelector('.training-step.active').previousElementSibling;
+    if (prevStepElement) {
+        prevStepElement.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+function updateProgress() {
+    const progressBar = document.querySelector('.progress-fill');
+    const progressText = document.querySelector('.progress-section span:last-child');
+    const percentage = Math.round((completedSteps / totalSteps) * 100);
+    
+    progressBar.style.width = percentage + '%';
+    progressText.textContent = `${completedSteps}/${totalSteps} steps completed`;
+}
+
+function startVoiceDemo() {
+    if ('speechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const recognition = new (window.speechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+            alert('Voice recognition started. Try saying: "Create work order", "Show inventory", or "Voice help"');
+        };
+
+        recognition.onresult = function(event) {
+            const command = event.results[0][0].transcript.toLowerCase();
+            alert(`You said: "${command}"\n\nIn ChatterFix, this would trigger the corresponding action!`);
+        };
+
+        recognition.onerror = function(event) {
+            alert('Voice recognition error: ' + event.error);
+        };
+
+        recognition.start();
+    } else {
+        alert('Voice recognition is not supported in your browser. Try using Chrome or Edge.');
+    }
+}
+
+function showHelp() {
+    const helpText = `
+Training Module Help:
+
+🎯 Objective: Complete all training steps to master ChatterFix features
+📝 Interactive Demos: Practice with real features in a safe environment
+✅ Progress Tracking: Mark steps complete as you finish them
+🔄 Navigation: Use arrows to move between steps
+📞 Support: Contact your supervisor if you need help
+
+Tips:
+• Take your time with each step
+• Practice in the demo areas before using live features
+• Ask questions if anything is unclear
+• Complete steps in order for best results
+    `;
+    alert(helpText);
+}
+
+function restartModule() {
+    if (confirm('Are you sure you want to restart this training module? All progress will be reset.')) {
+        fetch(`/user-management/training/module/{{ module.id }}/restart`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function returnToDashboard() {
+    window.location.href = '/user-management/';
+}
+
+// Auto-save progress periodically
+setInterval(() => {
+    fetch('/user-management/training/save-progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            module_id: {{ module.id }},
+            current_step: currentStep,
+            time_spent: Date.now() - sessionStart
+        })
+    });
+}, 30000); // Save every 30 seconds
+
+const sessionStart = Date.now();
+
+// Smooth scroll to active step on load
+document.addEventListener('DOMContentLoaded', () => {
+    const activeStep = document.querySelector('.training-step.active');
+    if (activeStep) {
+        setTimeout(() => {
+            activeStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+    }
+});
+</script>
+{% endblock %}

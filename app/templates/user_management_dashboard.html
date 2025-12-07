@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<style>
+    .management-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .management-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .management-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .add-user-btn {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: transform 0.2s ease;
+    }
+
+    .add-user-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .stat-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-description {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .role-stats {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .role-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .role-stat:last-child {
+        border-bottom: none;
+    }
+
+    .role-name {
+        font-weight: 600;
+        color: #374151;
+        text-transform: capitalize;
+    }
+
+    .role-count {
+        background: #3b82f6;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .main-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    .recent-users {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .users-table th,
+    .users-table td {
+        text-align: left;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .users-table th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .user-email {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-training {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .role-badge {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .quick-actions {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn {
+        display: block;
+        width: 100%;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-decoration: none;
+        color: #374151;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .action-btn:hover {
+        background: #3b82f6;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .action-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: background 0.2s ease;
+    }
+
+    .action-btn:hover .action-icon {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .training-progress {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        margin: 0.5rem 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="management-container">
+    <!-- Header -->
+    <div class="management-header">
+        <h1 class="management-title">👥 User Management</h1>
+        <a href="/user-management/add-user" class="add-user-btn">
+            ➕ Add New User
+        </a>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Total Users</span>
+                <div class="stat-icon" style="background: #dbeafe;">👥</div>
+            </div>
+            <div class="stat-value">{{ users_stats|length or 0 }}</div>
+            <div class="stat-description">Across all roles and departments</div>
+            
+            <div class="role-stats">
+                {% for stat in users_stats %}
+                <div class="role-stat">
+                    <span class="role-name">{{ stat.role }}</span>
+                    <span class="role-count">{{ stat.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Training Progress</span>
+                <div class="stat-icon" style="background: #dcfce7;">📚</div>
+            </div>
+            <div class="stat-value">{{ training_stats.completed_training }}</div>
+            <div class="stat-description">Users completed training</div>
+            
+            <div class="training-progress">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.9rem; color: #6b7280;">In Training</span>
+                    <span style="font-size: 0.9rem; color: #6b7280;">{{ training_stats.users_in_training }}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 65%;"></div>
+                </div>
+                <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">
+                    Avg completion: {{ training_stats.average_completion_time }} days
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">System Access</span>
+                <div class="stat-icon" style="background: #fef3c7;">🔑</div>
+            </div>
+            <div class="stat-value">{{ users_stats|selectattr('active_count')|map(attribute='active_count')|sum or 0 }}</div>
+            <div class="stat-description">Active users with system access</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-title">Available Roles</span>
+                <div class="stat-icon" style="background: #ede9fe;">🎯</div>
+            </div>
+            <div class="stat-value">{{ available_roles|length }}</div>
+            <div class="stat-description">Different role types configured</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Recent Users Table -->
+        <div class="recent-users">
+            <h2 class="section-title">
+                👤 Recent Users
+            </h2>
+            
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    {{ user.full_name[:2] }}
+                                </div>
+                                <div class="user-details">
+                                    <div class="user-name">{{ user.full_name }}</div>
+                                    <div class="user-email">{{ user.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge">{{ user.role }}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ user.status }}">
+                                {{ user.status|title }}
+                            </span>
+                        </td>
+                        <td>{{ user.created_date[:10] if user.created_date else 'N/A' }}</td>
+                        <td>
+                            <a href="/user-management/user/{{ user.id }}" style="color: #3b82f6; text-decoration: none;">
+                                View →
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2 class="section-title">
+                ⚡ Quick Actions
+            </h2>
+
+            <a href="/user-management/add-user" class="action-btn">
+                <div class="action-icon">👤</div>
+                <div>
+                    <div style="font-weight: 600;">Add New User</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">Create technicians, purchasers, supervisors</div>
+                </div>
+            </a>
+
+            <a href="/user-management/bulk-import" class="action-btn">
+                <div class="action-icon">📋</div>
+                <div>
+                    <div style="font-weight: 600;">Bulk Import</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">Import multiple users from CSV</div>
+                </div>
+            </a>
+
+            <a href="/user-management/training-analytics" class="action-btn">
+                <div class="action-icon">📊</div>
+                <div>
+                    <div style="font-weight: 600;">Training Analytics</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">View completion reports & progress</div>
+                </div>
+            </a>
+
+            <a href="/team" class="action-btn">
+                <div class="action-icon">👥</div>
+                <div>
+                    <div style="font-weight: 600;">Team Dashboard</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">Manage active team members</div>
+                </div>
+            </a>
+
+            <div class="action-btn" style="margin-top: 2rem; background: #f0f9ff; border: 1px solid #0ea5e9;">
+                <div class="action-icon" style="background: #0ea5e9; color: white;">🎯</div>
+                <div>
+                    <div style="font-weight: 600; color: #0369a1;">Application Training</div>
+                    <div style="font-size: 0.8rem; color: #075985;">
+                        Hands-on training for using ChatterFix:<br>
+                        • Work order creation & management<br>
+                        • Parts checkout & inventory<br>
+                        • Mobile features & voice commands<br>
+                        • Analytics & reporting tools
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh data every 30 seconds
+setInterval(() => {
+    // Could implement real-time updates here
+}, 30000);
+
+// Add smooth animations
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.stat-card, .recent-users, .quick-actions');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

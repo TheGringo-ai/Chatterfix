@@ -1,0 +1,97 @@
+# Dependabot configuration for ChatterFix CMMS
+# Automatically updates dependencies and monitors security vulnerabilities
+
+version: 2
+updates:
+  # Python dependencies (requirements.txt and requirements-dev.txt)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "TheGringo-ai"
+    assignees:
+      - "TheGringo-ai"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    # Group updates for better management
+    groups:
+      fastapi-core:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+      firebase:
+        patterns:
+          - "google-cloud-*"
+          - "firebase-*"
+          - "pyrebase*"
+      ai-services:
+        patterns:
+          - "openai*"
+          - "google-generativeai*"
+      development:
+        patterns:
+          - "black*"
+          - "pytest*"
+          - "pre-commit*"
+          - "flake8*"
+          - "mypy*"
+          - "isort*"
+      security:
+        patterns:
+          - "bandit*"
+          - "safety*"
+    # Security updates - immediate
+    allow:
+      - dependency-type: "all"
+    # Ignore specific packages if needed
+    ignore:
+      # Example: ignore major version updates for stable packages
+      - dependency-name: "fastapi"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "uvicorn"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "TheGringo-ai"
+    assignees:
+      - "TheGringo-ai"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci/cd"
+
+  # Docker (if you have Dockerfile dependencies)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "11:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "TheGringo-ai"
+    commit-message:
+      prefix: "docker"
+    labels:
+      - "dependencies"
+      - "docker"

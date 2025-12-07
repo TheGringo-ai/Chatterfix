@@ -14,5 +14,6 @@ exclude =
 per-file-ignores =
     __init__.py:F401
     tests/*:S101
+    main.py:E402
 import-order-style = google
 application-import-names = app

@@ -7,11 +7,19 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 
 # Read version from VERSION.txt
+APP_VERSION = "unknown"
 try:
-    with open("VERSION.txt", "r") as f:
+    version_file = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "VERSION.txt"
+    )
+    with open(version_file, "r") as f:
         APP_VERSION = f.readline().strip()
-except Exception:
-    APP_VERSION = "2.2.0-interactive-planner"
+except Exception as e:
+    # Log warning if VERSION.txt is missing (indicates deployment issue)
+    import logging
+
+    logging.warning(f"Could not read VERSION.txt: {e}. Using 'unknown' as version.")
+    APP_VERSION = "unknown"
 
 
 @router.get("/health")

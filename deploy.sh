@@ -7,6 +7,11 @@
 set -e
 
 # ============================================================================
+# CONSTANTS
+# ============================================================================
+UNKNOWN_PROJECT="unknown"
+
+# ============================================================================
 # CONFIGURATION
 # ============================================================================
 PROJECT_ID="fredfix"
@@ -40,7 +45,7 @@ echo
 echo "🔍 Running pre-deployment checks..."
 
 # Verify GCP project
-CURRENT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "unknown")
+CURRENT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "$UNKNOWN_PROJECT")
 if [ "$CURRENT_PROJECT" != "$PROJECT_ID" ]; then
     if [ "$IS_CI" = true ]; then
         echo "⚠️  Warning: GCP project mismatch in CI/CD (expected: $PROJECT_ID, got: $CURRENT_PROJECT)"

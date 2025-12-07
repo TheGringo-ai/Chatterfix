@@ -114,6 +114,9 @@ jobs:
           echo "🚀 Deploying to Cloud Run..."
           
           # Deploy to Cloud Run
+          # Note: For enhanced security, consider using Google Secret Manager with --update-secrets
+          # instead of --set-env-vars for sensitive values. This workflow uses --set-env-vars
+          # for compatibility with existing setup. Secrets are masked in GitHub Actions logs.
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image=${{ steps.build.outputs.image_tag }} \
             --region=${{ env.REGION }} \
@@ -155,20 +158,22 @@ jobs:
           
           MAX_RETRIES=5
           RETRY_DELAY=10
+          HEALTH_RESPONSE=$(mktemp)
           
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Attempt $i/$MAX_RETRIES..."
             
-            HTTP_CODE=$(curl -s -o /tmp/health_response.json -w '%{http_code}' "$SERVICE_URL/health" || echo "000")
+            HTTP_CODE=$(curl -s -o "$HEALTH_RESPONSE" -w '%{http_code}' "$SERVICE_URL/health" || echo "000")
             
             if [ "$HTTP_CODE" = "200" ]; then
               echo "✅ Health check passed!"
-              cat /tmp/health_response.json | jq '.' || cat /tmp/health_response.json
+              cat "$HEALTH_RESPONSE" | jq '.' || cat "$HEALTH_RESPONSE"
+              rm -f "$HEALTH_RESPONSE"
               exit 0
             else
               echo "⚠️ Health check returned HTTP $HTTP_CODE"
-              if [ -f /tmp/health_response.json ]; then
-                cat /tmp/health_response.json
+              if [ -f "$HEALTH_RESPONSE" ]; then
+                cat "$HEALTH_RESPONSE"
               fi
               
               if [ $i -lt $MAX_RETRIES ]; then
@@ -178,6 +183,7 @@ jobs:
             fi
           done
           
+          rm -f "$HEALTH_RESPONSE"
           echo "❌ Health check failed after $MAX_RETRIES attempts"
           exit 1
       

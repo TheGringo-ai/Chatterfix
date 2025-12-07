@@ -42,9 +42,11 @@ ChatterFix CMMS is deployed to Google Cloud Run, a fully managed serverless plat
 
 The repository includes multiple deployment workflows:
 
-#### 1. **Production Deployment** (`.github/workflows/deploy.yml`)
+#### 1. **Production Deployment** (`.github/workflows/deploy.yml` and `.github/workflows/deploy-cloud-run.yml`)
 
 Automatically deploys to production on push to `main` branch.
+
+**Note:** Both `deploy.yml` and `deploy-cloud-run.yml` provide production deployment. The `deploy-cloud-run.yml` is the newer, more optimized version.
 
 **Triggers:**
 - Push to `main` branch

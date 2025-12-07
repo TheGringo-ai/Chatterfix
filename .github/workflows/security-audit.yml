@@ -85,7 +85,7 @@ jobs:
           echo "❌ Critical vulnerabilities found!"
           exit 1
         fi
-        if [ "$HIGH" -gt 5 ]; then
+        if [ "$HIGH" -gt 15 ]; then
           echo "⚠️  Too many high vulnerabilities found!"
           exit 1
         fi

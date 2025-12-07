@@ -39,19 +39,62 @@
                     <option value="Critical" style="color: black;">Critical</option>
                 </select>
             </div>
+            
+            <!-- Asset Selection -->
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-cogs"></i> Asset</label>
+                <select name="asset_id" id="assetSelect"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Asset...</option>
+                </select>
+                <small style="color: #6c757d; display: block; margin-top: 0.3rem;">
+                    Choose the asset this work order relates to
+                </small>
+            </div>
+            
+            <!-- Work Order Type -->
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Work Order Type</label>
+                <select name="work_order_type"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="Corrective">Corrective Maintenance</option>
+                    <option value="Preventive">Preventive Maintenance</option>
+                    <option value="Emergency">Emergency Repair</option>
+                    <option value="Inspection">Inspection</option>
+                    <option value="Installation">Installation</option>
+                </select>
+            </div>
+
             <div style="grid-column: 1 / -1;">
                 <label style="display: block; margin-bottom: 0.5rem;">Description</label>
                 <textarea name="description" rows="3"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
             </div>
+            
+            <!-- Scheduling Section -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Assigned To</label>
-                <input type="text" name="assigned_to"
+                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar"></i> Due Date</label>
+                <input type="date" name="due_date"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
+            
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Due Date</label>
-                <input type="date" name="due_date"
+                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Scheduled Time</label>
+                <input type="datetime-local" name="scheduled_time"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-user"></i> Assigned To</label>
+                <select name="assigned_to" id="technicianSelect"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Technician...</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Estimated Hours</label>
+                <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="2.5"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div style="grid-column: 1 / -1;">
@@ -63,6 +106,59 @@
                 </small>
             </div>
         </div>
+
+        <!-- Parts Checkout Section -->
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+            <h3 style="margin-bottom: 1rem; color: #495057;"><i class="fas fa-tools"></i> Parts & Materials Checkout</h3>
+            <div id="partsContainer">
+                <div class="parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                        <select name="parts[0][part_id]" class="part-select"
+                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                            <option value="">Select Part...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                        <input type="number" name="parts[0][quantity]" min="1" placeholder="1"
+                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                        <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+                    </div>
+                    <div>
+                        <button type="button" class="remove-part-btn" onclick="removePart(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+                <button type="button" onclick="addPart()" class="cmms-btn-secondary">
+                    <i class="fas fa-plus"></i> Add Another Part
+                </button>
+                <div style="font-size: 0.9em; color: #6c757d;">
+                    <i class="fas fa-info-circle"></i> Parts will be automatically deducted from inventory when work order is created
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Instructions Section -->
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
+            <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Detailed Instructions for Technician</label>
+                <textarea name="work_instructions" rows="4" placeholder="Enter step-by-step instructions, safety requirements, special tools needed, etc."
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                <small style="color: #856404; display: block; margin-top: 0.3rem;">
+                    <i class="fas fa-exclamation-triangle"></i> Include safety precautions, required PPE, and any special procedures
+                </small>
+            </div>
+        </div>
+
         <button type="submit" class="cmms-btn" style="margin-top: 1rem;">📋 Create Work Order</button>
     </form>
 </div>
@@ -130,9 +226,8 @@
             <button class="cmms-btn cmms-btn-sm"
                 onclick="openEditModal('{{ wo.id }}', '{{ wo.title }}', '{{ wo.description }}', '{{ wo.priority }}', '{{ wo.assigned_to }}', '{{ wo.due_date }}')">Edit</button>
             {% if wo.status != 'Completed' %}
-            <form action="/work-orders/{{ wo.id }}/complete" method="post" style="display: inline;">
-                <button type="submit" class="cmms-btn cmms-btn-success cmms-btn-sm">Complete</button>
-            </form>
+            <button onclick="openCompletionModal('{{ wo.id }}', '{{ wo.title }}')" 
+                class="cmms-btn cmms-btn-success cmms-btn-sm">Complete</button>
             {% endif %}
         </div>
     </div>
@@ -160,8 +255,8 @@
 
 <!-- Edit Work Order Modal -->
 <div id="editWOModal" class="modal"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 5% auto; width: 600px; padding: 30px;">
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px;">
         <h2>✏️ Edit Work Order</h2>
         <form id="edit-wo-form" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -180,26 +275,242 @@
                         <option value="Critical" style="color: black;">Critical</option>
                     </select>
                 </div>
+
+                <!-- Enhanced Edit Fields -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-cogs"></i> Asset</label>
+                    <select name="asset_id" id="edit-asset-select"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="">Select Asset...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Work Order Type</label>
+                    <select name="work_order_type" id="edit-work-order-type"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="Corrective">Corrective Maintenance</option>
+                        <option value="Preventive">Preventive Maintenance</option>
+                        <option value="Emergency">Emergency Repair</option>
+                        <option value="Inspection">Inspection</option>
+                        <option value="Installation">Installation</option>
+                    </select>
+                </div>
+
                 <div style="grid-column: 1 / -1;">
                     <label style="display: block; margin-bottom: 0.5rem;">Description</label>
                     <textarea name="description" id="edit-description" rows="3"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
                 </div>
+
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Assigned To</label>
-                    <input type="text" name="assigned_to" id="edit-assigned-to"
-                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Due Date</label>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar"></i> Due Date</label>
                     <input type="date" name="due_date" id="edit-due-date"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Scheduled Time</label>
+                    <input type="datetime-local" name="scheduled_time" id="edit-scheduled-time"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-user"></i> Assigned To</label>
+                    <select name="assigned_to" id="edit-assigned-to"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="">Select Technician...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Estimated Hours</label>
+                    <input type="number" name="estimated_hours" id="edit-estimated-hours" min="0" step="0.5"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
             </div>
+
+            <!-- Edit Parts Checkout Section -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                <h3 style="margin-bottom: 1rem; color: #495057;"><i class="fas fa-tools"></i> Additional Parts Checkout</h3>
+                <div id="editPartsContainer">
+                    <div class="parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                            <select name="edit_parts[0][part_id]" class="edit-part-select" onchange="updateEditPartStock(this)"
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                                <option value="">Select Part...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                            <input type="number" name="edit_parts[0][quantity]" min="1" placeholder="1" onchange="validateEditQuantity(this)"
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                            <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+                        </div>
+                        <div>
+                            <button type="button" onclick="removeEditPart(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="addEditPart()" class="cmms-btn-secondary">
+                    <i class="fas fa-plus"></i> Add Part
+                </button>
+            </div>
+
+            <!-- Work Instructions Section -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
+                <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Updated Instructions</label>
+                    <textarea name="work_instructions" id="edit-work-instructions" rows="4"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                </div>
+            </div>
+
             <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
                 <button type="button" onclick="document.getElementById('editWOModal').style.display='none'"
                     class="cmms-btn" style="background: #e74c3c;">Cancel</button>
                 <button type="submit" class="cmms-btn">Update Work Order</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Work Order Completion Modal -->
+<div id="completionModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 700px; padding: 30px;">
+        <h2 style="color: #28a745;"><i class="fas fa-check-circle"></i> Complete Work Order</h2>
+        <div id="completion-wo-title" style="margin-bottom: 2rem; padding: 1rem; background: rgba(40, 167, 69, 0.1); border-radius: 8px; border-left: 4px solid #28a745;">
+            <h3 style="margin: 0; color: #155724;">Work Order Title</h3>
+        </div>
+
+        <form id="completion-form" method="post">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Actual Hours Worked</label>
+                    <input type="number" name="actual_hours" id="completion-actual-hours" min="0" step="0.25" placeholder="2.5" required
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <small style="color: #6c757d;">Enter the actual time spent on this work order</small>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar-check"></i> Completion Date & Time</label>
+                    <input type="datetime-local" name="completion_time" id="completion-time" required
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+            </div>
+
+            <!-- Work Summary Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #c3e6cb;">
+                <h3 style="margin-bottom: 1rem; color: #155724;"><i class="fas fa-clipboard-check"></i> Work Performed Summary</h3>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                        Detailed Description of Work Completed *
+                    </label>
+                    <textarea name="work_summary" id="completion-work-summary" rows="6" required
+                        placeholder="Please provide a detailed description of the work performed, including:&#10;- What specific tasks were completed&#10;- Any problems encountered and how they were resolved&#10;- Parts used and why&#10;- Testing performed&#10;- Current status of the asset"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529; min-height: 120px;"></textarea>
+                    <small style="color: #856404; display: block; margin-top: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle"></i> This field is required. Please provide comprehensive details about the work performed.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Parts Used Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                <h3 style="margin-bottom: 1rem; color: #495057;"><i class="fas fa-tools"></i> Parts Used During Work</h3>
+                <div id="completionPartsContainer">
+                    <div class="completion-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                            <select name="completion_parts[0][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                                <option value="">Select Part...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                            <input type="number" name="completion_parts[0][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                            <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+                        </div>
+                        <div>
+                            <button type="button" onclick="removeCompletionPart(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="addCompletionPart()" class="cmms-btn-secondary">
+                    <i class="fas fa-plus"></i> Add Used Part
+                </button>
+                <div style="font-size: 0.9em; color: #6c757d; margin-top: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Parts used will be deducted from inventory
+                </div>
+            </div>
+
+            <!-- Follow-up Actions Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
+                <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-exclamation-triangle"></i> Follow-up Actions & Recommendations</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Asset Status After Completion</label>
+                        <select name="asset_status" id="completion-asset-status"
+                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                            <option value="Operational">Fully Operational</option>
+                            <option value="Operational-Monitor">Operational - Monitor</option>
+                            <option value="Limited">Limited Function</option>
+                            <option value="Down">Out of Service</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Next Service Due (Optional)</label>
+                        <input type="date" name="next_service_date" id="completion-next-service"
+                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Additional Recommendations or Follow-up Required</label>
+                    <textarea name="follow_up_notes" id="completion-follow-up" rows="3"
+                        placeholder="Describe any additional maintenance needed, parts to order, or follow-up work orders required..."
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                </div>
+            </div>
+
+            <!-- Completion Photos/Documents -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e3f2fd; border-radius: 8px; border: 1px solid #bbdefb;">
+                <h3 style="margin-bottom: 1rem; color: #0d47a1;"><i class="fas fa-camera"></i> Completion Documentation</h3>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Upload Photos/Documents (Optional)</label>
+                    <input type="file" name="completion_files" id="completion-files" multiple accept="image/*,.pdf,.doc,.docx"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <small style="color: #1565c0; display: block; margin-top: 0.3rem;">
+                        Upload photos of completed work, before/after pictures, or supporting documents
+                    </small>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #dee2e6; padding-top: 1rem;">
+                <button type="button" onclick="closeCompletionModal()" class="cmms-btn" style="background: #6c757d;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="cmms-btn" style="background: #28a745;">
+                    <i class="fas fa-check-circle"></i> Complete Work Order
+                </button>
             </div>
         </form>
     </div>
@@ -281,8 +592,34 @@
         document.getElementById('edit-title').value = title;
         document.getElementById('edit-description').value = description;
         document.getElementById('edit-priority').value = priority;
-        document.getElementById('edit-assigned-to').value = assignedTo;
         document.getElementById('edit-due-date').value = dueDate;
+
+        // Populate dropdowns if available parts are loaded
+        if (availableParts && availableParts.length > 0) {
+            // Populate asset dropdown
+            const assetSelect = document.getElementById('edit-asset-select');
+            // This will be populated when loadInitialData runs
+
+            // Populate technician dropdown
+            const techSelect = document.getElementById('edit-assigned-to');
+            // Set the assigned value if it's a select dropdown
+            if (techSelect.tagName === 'SELECT') {
+                techSelect.value = assignedTo;
+            }
+
+            // Populate edit parts selects
+            const editPartSelects = document.querySelectorAll('.edit-part-select');
+            editPartSelects.forEach(select => {
+                select.innerHTML = '<option value="">Select Part...</option>';
+                availableParts.forEach(part => {
+                    const option = document.createElement('option');
+                    option.value = part.id;
+                    option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+                    option.dataset.stock = part.current_stock || 0;
+                    select.appendChild(option);
+                });
+            });
+        }
 
         modal.style.display = 'block';
     }
@@ -490,5 +827,550 @@
         document.getElementById('woManualAssetTag').value = '';
         document.getElementById('woBarcodeFile').value = '';
     }
+
+    // Load initial data
+    async function loadInitialData() {
+        try {
+            // Load assets for dropdown
+            const assetResponse = await fetch('/api/assets');
+            if (assetResponse.ok) {
+                const assets = await assetResponse.json();
+                populateAssetDropdown(assets);
+            }
+
+            // Load technicians for dropdown
+            const techResponse = await fetch('/api/users?role=technician');
+            if (techResponse.ok) {
+                const technicians = await techResponse.json();
+                populateTechnicianDropdown(technicians);
+            }
+
+            // Load parts for parts checkout
+            const partsResponse = await fetch('/purchasing/parts/search');
+            if (partsResponse.ok) {
+                const partsData = await partsResponse.json();
+                populatePartSelects(partsData.parts);
+            }
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+        }
+    }
+
+    function populateAssetDropdown(assets) {
+        const select = document.getElementById('assetSelect');
+        select.innerHTML = '<option value="">Select Asset...</option>';
+        
+        assets.forEach(asset => {
+            const option = document.createElement('option');
+            option.value = asset.id;
+            option.textContent = `${asset.name} (${asset.asset_tag || 'No Tag'})`;
+            select.appendChild(option);
+        });
+    }
+
+    function populateTechnicianDropdown(technicians) {
+        const select = document.getElementById('technicianSelect');
+        select.innerHTML = '<option value="">Select Technician...</option>';
+        
+        technicians.forEach(tech => {
+            const option = document.createElement('option');
+            option.value = tech.id;
+            option.textContent = tech.full_name || tech.name;
+            select.appendChild(option);
+        });
+    }
+
+    let availableParts = [];
+
+    function populatePartSelects(parts) {
+        availableParts = parts;
+        updateAllPartSelects();
+    }
+
+    function updateAllPartSelects() {
+        const partSelects = document.querySelectorAll('.part-select');
+        partSelects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Select Part...</option>';
+            
+            availableParts.forEach(part => {
+                const option = document.createElement('option');
+                option.value = part.id;
+                option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+                option.dataset.stock = part.current_stock || 0;
+                option.dataset.cost = part.unit_cost || 0;
+                select.appendChild(option);
+            });
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+    }
+
+    // Parts management functions
+    let partCounter = 0;
+
+    function addPart() {
+        partCounter++;
+        const container = document.getElementById('partsContainer');
+        
+        const partRow = document.createElement('div');
+        partRow.className = 'parts-row';
+        partRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;';
+        
+        partRow.innerHTML = `
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                <select name="parts[${partCounter}][part_id]" class="part-select" onchange="updatePartStock(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Part...</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                <input type="number" name="parts[${partCounter}][quantity]" min="1" placeholder="1" onchange="validateQuantity(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+            </div>
+            <div>
+                <button type="button" class="remove-part-btn" onclick="removePart(this)" 
+                    style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(partRow);
+        
+        // Populate the new select with available parts
+        const newSelect = partRow.querySelector('.part-select');
+        availableParts.forEach(part => {
+            const option = document.createElement('option');
+            option.value = part.id;
+            option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+            option.dataset.stock = part.current_stock || 0;
+            option.dataset.cost = part.unit_cost || 0;
+            newSelect.appendChild(option);
+        });
+    }
+
+    function removePart(button) {
+        const partRow = button.closest('.parts-row');
+        partRow.remove();
+    }
+
+    function updatePartStock(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const stockDisplay = select.closest('.parts-row').querySelector('.stock-display');
+        
+        if (selectedOption && selectedOption.dataset.stock !== undefined) {
+            const stock = parseInt(selectedOption.dataset.stock);
+            stockDisplay.textContent = stock;
+            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
+            
+            // Update quantity validation
+            const quantityInput = select.closest('.parts-row').querySelector('input[type="number"]');
+            quantityInput.max = stock;
+            
+            if (stock === 0) {
+                stockDisplay.style.background = '#f8d7da';
+                stockDisplay.style.color = '#721c24';
+            } else if (stock <= 5) {
+                stockDisplay.style.background = '#fff3cd';
+                stockDisplay.style.color = '#856404';
+            } else {
+                stockDisplay.style.background = '#d4edda';
+                stockDisplay.style.color = '#155724';
+            }
+        } else {
+            stockDisplay.textContent = '-';
+            stockDisplay.style.background = '#e9ecef';
+            stockDisplay.style.color = '#495057';
+        }
+    }
+
+    function validateQuantity(input) {
+        const partRow = input.closest('.parts-row');
+        const stockDisplay = partRow.querySelector('.stock-display');
+        const availableStock = parseInt(stockDisplay.textContent) || 0;
+        const requestedQty = parseInt(input.value) || 0;
+        
+        if (requestedQty > availableStock) {
+            input.style.borderColor = '#dc3545';
+            input.title = `Only ${availableStock} available in stock`;
+            
+            // Show warning message
+            let warning = partRow.querySelector('.qty-warning');
+            if (!warning) {
+                warning = document.createElement('small');
+                warning.className = 'qty-warning';
+                warning.style.cssText = 'color: #dc3545; display: block; margin-top: 0.25rem;';
+                input.parentNode.appendChild(warning);
+            }
+            warning.textContent = `Only ${availableStock} available`;
+        } else {
+            input.style.borderColor = '#dee2e6';
+            input.title = '';
+            
+            const warning = partRow.querySelector('.qty-warning');
+            if (warning) {
+                warning.remove();
+            }
+        }
+    }
+
+    // Edit modal functions
+    let editPartCounter = 0;
+
+    function addEditPart() {
+        editPartCounter++;
+        const container = document.getElementById('editPartsContainer');
+        
+        const partRow = document.createElement('div');
+        partRow.className = 'parts-row';
+        partRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;';
+        
+        partRow.innerHTML = `
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                <select name="edit_parts[${editPartCounter}][part_id]" class="edit-part-select" onchange="updateEditPartStock(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Part...</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                <input type="number" name="edit_parts[${editPartCounter}][quantity]" min="1" placeholder="1" onchange="validateEditQuantity(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+            </div>
+            <div>
+                <button type="button" onclick="removeEditPart(this)" 
+                    style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(partRow);
+        
+        // Populate the new select with available parts
+        const newSelect = partRow.querySelector('.edit-part-select');
+        availableParts.forEach(part => {
+            const option = document.createElement('option');
+            option.value = part.id;
+            option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+            option.dataset.stock = part.current_stock || 0;
+            newSelect.appendChild(option);
+        });
+    }
+
+    function removeEditPart(button) {
+        button.closest('.parts-row').remove();
+    }
+
+    function updateEditPartStock(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const stockDisplay = select.closest('.parts-row').querySelector('.stock-display');
+        
+        if (selectedOption && selectedOption.dataset.stock !== undefined) {
+            const stock = parseInt(selectedOption.dataset.stock);
+            stockDisplay.textContent = stock;
+            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
+            
+            const quantityInput = select.closest('.parts-row').querySelector('input[type="number"]');
+            quantityInput.max = stock;
+            
+            if (stock === 0) {
+                stockDisplay.style.background = '#f8d7da';
+                stockDisplay.style.color = '#721c24';
+            } else if (stock <= 5) {
+                stockDisplay.style.background = '#fff3cd';
+                stockDisplay.style.color = '#856404';
+            } else {
+                stockDisplay.style.background = '#d4edda';
+                stockDisplay.style.color = '#155724';
+            }
+        } else {
+            stockDisplay.textContent = '-';
+            stockDisplay.style.background = '#e9ecef';
+            stockDisplay.style.color = '#495057';
+        }
+    }
+
+    function validateEditQuantity(input) {
+        const partRow = input.closest('.parts-row');
+        const stockDisplay = partRow.querySelector('.stock-display');
+        const availableStock = parseInt(stockDisplay.textContent) || 0;
+        const requestedQty = parseInt(input.value) || 0;
+        
+        if (requestedQty > availableStock) {
+            input.style.borderColor = '#dc3545';
+            input.title = `Only ${availableStock} available in stock`;
+        } else {
+            input.style.borderColor = '#dee2e6';
+            input.title = '';
+        }
+    }
+
+    // Completion modal functions
+    let completionPartCounter = 0;
+
+    function openCompletionModal(woId, woTitle) {
+        const modal = document.getElementById('completionModal');
+        const form = document.getElementById('completion-form');
+        const titleDiv = document.getElementById('completion-wo-title');
+        
+        form.action = `/work-orders/${woId}/complete-enhanced`;
+        titleDiv.querySelector('h3').textContent = woTitle;
+        
+        // Set current date/time
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('completion-time').value = localDateTime;
+        
+        // Populate parts selects
+        updateCompletionPartSelects();
+        
+        modal.style.display = 'block';
+    }
+
+    function closeCompletionModal() {
+        document.getElementById('completionModal').style.display = 'none';
+        
+        // Reset form
+        document.getElementById('completion-form').reset();
+        
+        // Reset parts container to single row
+        const container = document.getElementById('completionPartsContainer');
+        container.innerHTML = `
+            <div class="completion-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                    <select name="completion_parts[0][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="">Select Part...</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                    <input type="number" name="completion_parts[0][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                    <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+                </div>
+                <div>
+                    <button type="button" onclick="removeCompletionPart(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        updateCompletionPartSelects();
+        completionPartCounter = 0;
+    }
+
+    function addCompletionPart() {
+        completionPartCounter++;
+        const container = document.getElementById('completionPartsContainer');
+        
+        const partRow = document.createElement('div');
+        partRow.className = 'completion-parts-row';
+        partRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;';
+        
+        partRow.innerHTML = `
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                <select name="completion_parts[${completionPartCounter}][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Part...</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                <input type="number" name="completion_parts[${completionPartCounter}][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+            </div>
+            <div>
+                <button type="button" onclick="removeCompletionPart(this)" 
+                    style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(partRow);
+        
+        // Populate the new select with available parts
+        const newSelect = partRow.querySelector('.completion-part-select');
+        availableParts.forEach(part => {
+            const option = document.createElement('option');
+            option.value = part.id;
+            option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+            option.dataset.stock = part.current_stock || 0;
+            newSelect.appendChild(option);
+        });
+    }
+
+    function removeCompletionPart(button) {
+        button.closest('.completion-parts-row').remove();
+    }
+
+    function updateCompletionPartStock(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const stockDisplay = select.closest('.completion-parts-row').querySelector('.stock-display');
+        
+        if (selectedOption && selectedOption.dataset.stock !== undefined) {
+            const stock = parseInt(selectedOption.dataset.stock);
+            stockDisplay.textContent = stock;
+            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
+            
+            const quantityInput = select.closest('.completion-parts-row').querySelector('input[type="number"]');
+            quantityInput.max = stock;
+            
+            if (stock === 0) {
+                stockDisplay.style.background = '#f8d7da';
+                stockDisplay.style.color = '#721c24';
+            } else if (stock <= 5) {
+                stockDisplay.style.background = '#fff3cd';
+                stockDisplay.style.color = '#856404';
+            } else {
+                stockDisplay.style.background = '#d4edda';
+                stockDisplay.style.color = '#155724';
+            }
+        } else {
+            stockDisplay.textContent = '-';
+            stockDisplay.style.background = '#e9ecef';
+            stockDisplay.style.color = '#495057';
+        }
+    }
+
+    function validateCompletionQuantity(input) {
+        const partRow = input.closest('.completion-parts-row');
+        const stockDisplay = partRow.querySelector('.stock-display');
+        const availableStock = parseInt(stockDisplay.textContent) || 0;
+        const requestedQty = parseInt(input.value) || 0;
+        
+        if (requestedQty > availableStock) {
+            input.style.borderColor = '#dc3545';
+            input.title = `Only ${availableStock} available in stock`;
+        } else {
+            input.style.borderColor = '#dee2e6';
+            input.title = '';
+        }
+    }
+
+    function updateCompletionPartSelects() {
+        const partSelects = document.querySelectorAll('.completion-part-select');
+        partSelects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Select Part...</option>';
+            
+            availableParts.forEach(part => {
+                const option = document.createElement('option');
+                option.value = part.id;
+                option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+                option.dataset.stock = part.current_stock || 0;
+                select.appendChild(option);
+            });
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadInitialData();
+        
+        // Set up form validation
+        const form = document.getElementById('create-wo-form');
+        form.addEventListener('submit', function(e) {
+            // Validate parts quantities before submission
+            const partRows = document.querySelectorAll('.parts-row');
+            let hasErrors = false;
+            
+            partRows.forEach(row => {
+                const select = row.querySelector('.part-select');
+                const input = row.querySelector('input[type="number"]');
+                
+                if (select.value && input.value) {
+                    const stockDisplay = row.querySelector('.stock-display');
+                    const availableStock = parseInt(stockDisplay.textContent) || 0;
+                    const requestedQty = parseInt(input.value) || 0;
+                    
+                    if (requestedQty > availableStock) {
+                        hasErrors = true;
+                        input.style.borderColor = '#dc3545';
+                    }
+                }
+            });
+            
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Please check part quantities. Some requested quantities exceed available stock.');
+            }
+        });
+        
+        // Set up completion form submission
+        const completionForm = document.getElementById('completion-form');
+        completionForm.addEventListener('submit', function(e) {
+            // Collect parts data
+            const partRows = document.querySelectorAll('.completion-parts-row');
+            const partsData = [];
+            
+            partRows.forEach(row => {
+                const partId = row.querySelector('.completion-part-select').value;
+                const quantity = row.querySelector('input[type="number"]').value;
+                
+                if (partId && quantity && parseInt(quantity) > 0) {
+                    partsData.push({
+                        part_id: partId,
+                        quantity_used: parseInt(quantity)
+                    });
+                }
+            });
+            
+            // Add parts data as hidden input
+            let partsInput = document.querySelector('input[name="completion_parts_data"]');
+            if (!partsInput) {
+                partsInput = document.createElement('input');
+                partsInput.type = 'hidden';
+                partsInput.name = 'completion_parts_data';
+                completionForm.appendChild(partsInput);
+            }
+            partsInput.value = JSON.stringify(partsData);
+            
+            // Validate required fields
+            const workSummary = document.getElementById('completion-work-summary').value.trim();
+            if (workSummary.length < 20) {
+                e.preventDefault();
+                alert('Please provide a detailed work summary (at least 20 characters).');
+                return;
+            }
+            
+            const actualHours = document.getElementById('completion-actual-hours').value;
+            if (!actualHours || parseFloat(actualHours) <= 0) {
+                e.preventDefault();
+                alert('Please enter the actual hours worked.');
+                return;
+            }
+        });
+    });
 </script>
 {% endblock %}

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Performance Analytics - ChatterFix CMMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .performance-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .performance-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .metric-trend {
+            font-size: 0.9rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .technician-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .performance-rating {
+            display: flex;
+            align-items: center;
+        }
+        .rating-stars {
+            color: #ffc107;
+        }
+        .performance-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .excellent { background: rgba(40, 167, 69, 0.8); color: white; }
+        .good { background: rgba(23, 162, 184, 0.8); color: white; }
+        .average { background: rgba(255, 193, 7, 0.8); color: #212529; }
+        .needs-improvement { background: rgba(220, 53, 69, 0.8); color: white; }
+        .filter-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .comparison-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .modal-content {
+            background: rgba(20, 20, 20, 0.95);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/manager/dashboard">
+                <i class="fas fa-tools me-2"></i>ChatterFix CMMS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/manager/dashboard">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="performance-card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Technician Performance Analytics
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">Comprehensive performance tracking, analytics, and insights for your technician workforce.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Date Range -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">Time Period</label>
+                            <select class="form-select" id="timePeriod" onchange="updateAnalytics()">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 3 Months</option>
+                                <option value="365">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" id="department" onchange="updateAnalytics()">
+                                <option value="all">All Departments</option>
+                                <option value="hvac">HVAC</option>
+                                <option value="electrical">Electrical</option>
+                                <option value="mechanical">Mechanical</option>
+                                <option value="plumbing">Plumbing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Performance Level</label>
+                            <select class="form-select" id="performanceFilter" onchange="updateAnalytics()">
+                                <option value="all">All Levels</option>
+                                <option value="excellent">Excellent (90%+)</option>
+                                <option value="good">Good (80-89%)</option>
+                                <option value="average">Average (70-79%)</option>
+                                <option value="needs-improvement">Needs Improvement (<70%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-success me-2" onclick="generateReport()">
+                                <i class="fas fa-download me-1"></i>Generate Report
+                            </button>
+                            <button class="btn btn-info" onclick="refreshAnalytics()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Performance Metrics -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="performance-card text-center p-4">
+                    <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                    <div class="metric-value" id="totalTechnicians">24</div>
+                    <div class="text-muted">Active Technicians</div>
+                    <div class="metric-trend text-success">
+                        <i class="fas fa-arrow-up"></i> +3 this month
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-card text-center p-4">
+                    <i class="fas fa-percentage fa-2x text-success mb-3"></i>
+                    <div class="metric-value text-success" id="avgEfficiency">87.4%</div>
+                    <div class="text-muted">Average Efficiency</div>
+                    <div class="metric-trend text-success">
+                        <i class="fas fa-arrow-up"></i> +2.1% vs last month
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-card text-center p-4">
+                    <i class="fas fa-clock fa-2x text-warning mb-3"></i>
+                    <div class="metric-value text-warning" id="avgResponseTime">2.3h</div>
+                    <div class="text-muted">Avg Response Time</div>
+                    <div class="metric-trend text-success">
+                        <i class="fas fa-arrow-down"></i> -15min improvement
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="performance-card text-center p-4">
+                    <i class="fas fa-star fa-2x text-warning mb-3"></i>
+                    <div class="metric-value text-warning" id="avgRating">4.6</div>
+                    <div class="text-muted">Customer Rating</div>
+                    <div class="metric-trend text-success">
+                        <i class="fas fa-arrow-up"></i> +0.2 vs last month
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Performance Trends</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="performanceTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="performance-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Department Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Technician Performance -->
+        <div class="row">
+            <div class="col-12">
+                <div class="performance-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Individual Performance</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-light" onclick="sortTechnicians('efficiency')">Sort by Efficiency</button>
+                            <button class="btn btn-outline-light" onclick="sortTechnicians('rating')">Sort by Rating</button>
+                            <button class="btn btn-outline-light" onclick="sortTechnicians('workorders')">Sort by Work Orders</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Technician</th>
+                                        <th>Department</th>
+                                        <th>Work Orders</th>
+                                        <th>Efficiency</th>
+                                        <th>Avg Response</th>
+                                        <th>Rating</th>
+                                        <th>Performance</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="techniciansTable">
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="technician-avatar me-3">SJ</div>
+                                                <div>
+                                                    <div class="fw-bold">Sarah Johnson</div>
+                                                    <small class="text-muted">Senior Technician</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-info">HVAC</span></td>
+                                        <td>
+                                            <div>45 completed</div>
+                                            <small class="text-success">+8 this month</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">96.5%</div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-success" style="width: 96.5%"></div>
+                                            </div>
+                                        </td>
+                                        <td>1.8h</td>
+                                        <td>
+                                            <div class="rating-stars">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <small class="ms-1">4.9</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="performance-badge excellent">Excellent</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-light" onclick="viewDetails('tech1')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" onclick="assignTraining('tech1')">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="technician-avatar me-3">MR</div>
+                                                <div>
+                                                    <div class="fw-bold">Mike Rodriguez</div>
+                                                    <small class="text-muted">Technician</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-warning">Mechanical</span></td>
+                                        <td>
+                                            <div>38 completed</div>
+                                            <small class="text-success">+5 this month</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-info">89.2%</div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-info" style="width: 89.2%"></div>
+                                            </div>
+                                        </td>
+                                        <td>2.1h</td>
+                                        <td>
+                                            <div class="rating-stars">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="far fa-star"></i>
+                                                <small class="ms-1">4.2</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="performance-badge good">Good</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-light" onclick="viewDetails('tech2')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" onclick="assignTraining('tech2')">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="technician-avatar me-3">LC</div>
+                                                <div>
+                                                    <div class="fw-bold">Lisa Chen</div>
+                                                    <small class="text-muted">Technician</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-success">Electrical</span></td>
+                                        <td>
+                                            <div>32 completed</div>
+                                            <small class="text-muted">+2 this month</small>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-warning">75.8%</div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-warning" style="width: 75.8%"></div>
+                                            </div>
+                                        </td>
+                                        <td>3.2h</td>
+                                        <td>
+                                            <div class="rating-stars">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="far fa-star"></i>
+                                                <small class="ms-1">3.8</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="performance-badge average">Average</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-light" onclick="viewDetails('tech3')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="assignTraining('tech3')">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Comparison and Insights -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="performance-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Performance Comparison</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="comparison-section">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Top Performers</h6>
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item bg-transparent text-light">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Sarah Johnson</span>
+                                                <span class="text-success">96.5%</span>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-light">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Mike Rodriguez</span>
+                                                <span class="text-info">89.2%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Needs Attention</h6>
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item bg-transparent text-light">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Lisa Chen</span>
+                                                <span class="text-warning">75.8%</span>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-light">
+                                            <div class="d-flex justify-content-between">
+                                                <span>John Smith</span>
+                                                <span class="text-danger">68.3%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="performance-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>AI Insights</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <strong>Recommendation:</strong> Lisa Chen would benefit from additional electrical safety training. Consider pairing with Sarah Johnson for mentorship.
+                        </div>
+                        <div class="alert alert-success">
+                            <strong>Success:</strong> HVAC department is exceeding efficiency targets by 12%.
+                        </div>
+                        <div class="alert alert-warning">
+                            <strong>Attention:</strong> Response times have increased by 8% this month. Review workload distribution.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technician Details Modal -->
+    <div class="modal fade" id="technicianModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Technician Performance Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="technicianDetails">
+                    <!-- Detailed performance data will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="scheduleReview()">Schedule Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Charts
+        let performanceChart, departmentChart;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+        });
+
+        function initializeCharts() {
+            // Performance Trend Chart
+            const perfCtx = document.getElementById('performanceTrendChart').getContext('2d');
+            performanceChart = new Chart(perfCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        {
+                            label: 'Team Efficiency',
+                            data: [85, 87, 89, 87],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Customer Satisfaction',
+                            data: [4.2, 4.4, 4.6, 4.6],
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            ticks: { color: 'white' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+
+            // Department Chart
+            const deptCtx = document.getElementById('departmentChart').getContext('2d');
+            departmentChart = new Chart(deptCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['HVAC', 'Electrical', 'Mechanical', 'Plumbing'],
+                    datasets: [{
+                        data: [8, 6, 7, 3],
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f39c12',
+                            '#e74c3c'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAnalytics() {
+            // Simulate data refresh based on filters
+            console.log('Updating analytics with current filters...');
+            // In real implementation, would fetch new data from API
+        }
+
+        function refreshAnalytics() {
+            // Refresh all data
+            updateAnalytics();
+            // Show loading indicator
+            console.log('Refreshing analytics data...');
+        }
+
+        function generateReport() {
+            // Generate and download performance report
+            const reportData = {
+                period: document.getElementById('timePeriod').value,
+                department: document.getElementById('department').value,
+                timestamp: new Date().toISOString(),
+                metrics: {
+                    totalTechnicians: 24,
+                    avgEfficiency: 87.4,
+                    avgResponseTime: 2.3,
+                    avgRating: 4.6
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], 
+                { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `technician-performance-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function sortTechnicians(criteria) {
+            console.log(`Sorting technicians by ${criteria}`);
+            // In real implementation, would sort the table data
+        }
+
+        function viewDetails(techId) {
+            // Load detailed performance data for technician
+            const modalBody = document.getElementById('technicianDetails');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Performance Metrics</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light">Work Orders Completed: 45</li>
+                            <li class="list-group-item bg-transparent text-light">Efficiency Rating: 96.5%</li>
+                            <li class="list-group-item bg-transparent text-light">Average Response Time: 1.8 hours</li>
+                            <li class="list-group-item bg-transparent text-light">Customer Rating: 4.9/5</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Recent Activity</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item bg-transparent text-light">Completed HVAC maintenance - Building A</li>
+                            <li class="list-group-item bg-transparent text-light">Emergency repair - Pump Station B</li>
+                            <li class="list-group-item bg-transparent text-light">Preventive maintenance - Generator #3</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            new bootstrap.Modal(document.getElementById('technicianModal')).show();
+        }
+
+        function assignTraining(techId) {
+            alert(`Assigning training for technician ${techId}`);
+            // In real implementation, would open training assignment interface
+        }
+
+        function scheduleReview() {
+            alert('Performance review scheduled successfully!');
+            // In real implementation, would schedule a performance review
+        }
+    </script>
+</body>
+</html>

@@ -238,6 +238,7 @@
     </div>
 
     <div class="container-fluid">
+        {% if get_flashed_messages is defined %}
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -248,6 +249,7 @@
         {% endfor %}
         {% endif %}
         {% endwith %}
+        {% endif %}
 
         {% block content %}{% endblock %}
     </div>

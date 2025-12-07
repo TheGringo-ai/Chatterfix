@@ -212,7 +212,7 @@ def generate_manager_demo_data():
 router = APIRouter()
 # Disable template caching to ensure fresh templates are always loaded
 env = Environment(
-    loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0
+    loader=FileSystemLoader("app/templates"), auto_reload=True, cache_size=0, autoescape=True
 )
 templates = Jinja2Templates(env=env)
 

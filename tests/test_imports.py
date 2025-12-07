@@ -193,7 +193,10 @@ class TestCoreImports:
     def test_import_db_adapter(self):
         """Test that database adapter can be imported"""
         try:
-            from app.core.db_adapter import get_db_adapter  # noqa: F401
+            from app.core.db_adapter import get_db_adapter
+
+            # Verify it's a callable function
+            assert callable(get_db_adapter), "get_db_adapter should be callable"
 
             print("\n✅ Successfully imported db_adapter")
 

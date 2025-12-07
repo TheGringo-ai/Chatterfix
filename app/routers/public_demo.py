@@ -29,27 +29,24 @@ DEMO_USER = {
 async def demo_dashboard(request: Request):
     """Full dashboard demo without authentication"""
     try:
-        # Get real-time demo data from Firestore
-        db_adapter = get_db_adapter()
-        dashboard_data = await db_adapter.get_dashboard_data(str(DEMO_USER["id"]))
-
-        # Extract data for template
-        work_orders = dashboard_data.get("work_orders", [])
-        assets = dashboard_data.get("assets", [])
+        # Use mock data for demo dashboard - always works
+        work_orders = [
+            {"id": 1, "status": "active", "title": "HVAC Maintenance"},
+            {"id": 2, "status": "pending", "title": "Conveyor Repair"}, 
+            {"id": 3, "status": "completed", "title": "Pump Inspection"},
+        ]
+        assets = [
+            {"id": 1, "name": "Production Line A", "status": "operational"},
+            {"id": 2, "name": "HVAC Unit B", "status": "maintenance"},
+        ]
 
         # Build demo workload stats
-        active_count = len([wo for wo in work_orders if wo.get("status") == "active"])
-        pending_count = len([wo for wo in work_orders if wo.get("status") == "pending"])
-        completed_count = len(
-            [wo for wo in work_orders if wo.get("status") == "completed"]
-        )
-
         workload = {
             "stats": {
-                "active": max(active_count, 12),  # Ensure demo has interesting numbers
-                "pending": max(pending_count, 8),
-                "completed": max(completed_count, 45),
-                "total": max(len(work_orders), 65),
+                "active": 12,
+                "pending": 8, 
+                "completed": 45,
+                "total": 65,
             }
         }
 
@@ -57,16 +54,16 @@ async def demo_dashboard(request: Request):
         performance = {
             "today": {
                 "completion_rate": 94.7,
-                "total_work_orders": workload["stats"]["total"],
+                "total_work_orders": 65,
                 "completed_today": 7,
             }
         }
 
-        # Demo equipment status
+        # Demo equipment status  
         equipment = {
-            "total_assets": max(len(assets), 150),
-            "healthy": max(len(assets) - 5, 142),
-            "warning": 6,
+            "total_assets": 150,
+            "healthy": 142,
+            "warning": 6, 
             "critical": 2,
             "uptime_percentage": 95.3,
         }

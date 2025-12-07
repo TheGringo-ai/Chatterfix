@@ -81,6 +81,12 @@ async def landing_page(request: Request):
     return templates.TemplateResponse("public_landing.html", {"request": request})
 
 
+@router.get("/public", response_class=HTMLResponse)
+async def public_landing(request: Request):
+    """Public landing page (same as /landing for compatibility)"""
+    return templates.TemplateResponse("public_landing.html", {"request": request})
+
+
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request):
     """Serve the signup page for actual registration"""

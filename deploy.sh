@@ -16,6 +16,13 @@ DOMAIN="chatterfix.com"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 DEPLOY_MODE=${1:-"direct"}
 
+# Detect CI/CD environment
+IS_CI=false
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] || [ -n "$GITLAB_CI" ] || [ -n "$CIRCLECI" ]; then
+    IS_CI=true
+    echo "🤖 CI/CD environment detected"
+fi
+
 echo "🚀 ChatterFix Unified Deployment"
 echo "================================"
 echo "🎯 Project: $PROJECT_ID"
@@ -24,6 +31,7 @@ echo "🎯 Region: $REGION"
 echo "🎯 Domain: $DOMAIN"
 echo "🎯 Image: $IMAGE_NAME"
 echo "🔧 Mode: $DEPLOY_MODE"
+echo "🤖 CI/CD: $IS_CI"
 echo
 
 # ============================================================================
@@ -32,33 +40,47 @@ echo
 echo "🔍 Running pre-deployment checks..."
 
 # Verify GCP project
-CURRENT_PROJECT=$(gcloud config get-value project)
+CURRENT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "unknown")
 if [ "$CURRENT_PROJECT" != "$PROJECT_ID" ]; then
-    echo "❌ ERROR: Wrong GCP project!"
-    echo "   Current: $CURRENT_PROJECT"
-    echo "   Expected: $PROJECT_ID"
-    echo "   Run: gcloud config set project $PROJECT_ID"
-    exit 1
-fi
-
-# Verify service exists
-if ! gcloud run services describe $SERVICE_NAME --region=$REGION --quiet > /dev/null 2>&1; then
-    echo "❌ ERROR: Service '$SERVICE_NAME' does not exist!"
-    echo "   Available services:"
-    gcloud run services list --region=$REGION
-    exit 1
-fi
-
-# Check git status
-if ! git diff --quiet; then
-    echo "⚠️  WARNING: Uncommitted changes detected!"
-    git status --porcelain
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Deployment cancelled."
+    if [ "$IS_CI" = true ]; then
+        echo "⚠️  Warning: GCP project mismatch in CI/CD (expected: $PROJECT_ID, got: $CURRENT_PROJECT)"
+        echo "   This is normal in CI/CD - authentication will be handled by workflow"
+    else
+        echo "❌ ERROR: Wrong GCP project!"
+        echo "   Current: $CURRENT_PROJECT"
+        echo "   Expected: $PROJECT_ID"
+        echo "   Run: gcloud config set project $PROJECT_ID"
         exit 1
     fi
+fi
+
+# Verify service exists (skip in CI if service doesn't exist yet)
+if ! gcloud run services describe $SERVICE_NAME --region=$REGION --quiet > /dev/null 2>&1; then
+    if [ "$IS_CI" = true ]; then
+        echo "⚠️  Service '$SERVICE_NAME' does not exist yet"
+        echo "   It will be created during deployment"
+    else
+        echo "❌ ERROR: Service '$SERVICE_NAME' does not exist!"
+        echo "   Available services:"
+        gcloud run services list --region=$REGION
+        exit 1
+    fi
+fi
+
+# Check git status (skip in CI/CD)
+if [ "$IS_CI" = false ]; then
+    if ! git diff --quiet; then
+        echo "⚠️  WARNING: Uncommitted changes detected!"
+        git status --porcelain
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Deployment cancelled."
+            exit 1
+        fi
+    fi
+else
+    echo "✅ Skipping git status check in CI/CD environment"
 fi
 
 echo "✅ Pre-deployment checks passed"

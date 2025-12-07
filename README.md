@@ -1,5 +1,9 @@
 # ChatterFix CMMS (Enhanced with AI)
 
+[![Deploy to Production](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml)
+[![Deploy to Cloud Run](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy-cloud-run.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy-cloud-run.yml)
+[![Security Scan](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml)
+
 This is the enhanced version of the ChatterFix CMMS application, combining modular architecture with advanced AI capabilities.
 
 ## Features
@@ -67,3 +71,55 @@ POST `/ai/voice-command` - Process voice commands to create work orders
 -   **Database:** By default, the app uses a local SQLite database in `./data/cmms.db`.
 -   **Port:** Default port is 8000. You can change it via the `CMMS_PORT` environment variable.
 -   **AI Features:** Require API keys in `.env` file. Gemini for general AI, XAI for voice commands.
+
+## Deployment
+
+### Automated Deployment (GitHub Actions)
+
+The application automatically deploys to Google Cloud Run on every push to the `main` branch.
+
+**Live Application:** [https://chatterfix.com](https://chatterfix.com)
+
+### Manual Deployment
+
+**Prerequisites:**
+- Google Cloud SDK installed and configured
+- Docker installed
+- Authenticated to GCP project `fredfix`
+
+**Quick Deploy:**
+```bash
+# Direct deployment (fast)
+./deploy.sh direct
+
+# Cloud Build deployment (recommended for CI/CD)
+./deploy.sh cloudbuild
+```
+
+**Using gcloud directly:**
+```bash
+gcloud run deploy chatterfix-cmms \
+  --source . \
+  --region us-central1 \
+  --project fredfix \
+  --allow-unauthenticated
+```
+
+### Deployment Documentation
+
+For comprehensive deployment documentation, including:
+- Setting up GitHub Actions secrets
+- Configuring Google Cloud service accounts
+- Troubleshooting deployment issues
+- Rollback procedures
+- Monitoring and logging
+
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+
+### Quick Links
+
+- 📱 **Production**: https://chatterfix.com
+- 📚 **Deployment Docs**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 🔧 **GitHub Actions**: [.github/workflows/](.github/workflows/)
+- 🐳 **Dockerfile**: [Dockerfile](Dockerfile)
+- ☁️ **Cloud Build**: [cloudbuild.yaml](cloudbuild.yaml)

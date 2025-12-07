@@ -1,0 +1,317 @@
+name: Deploy to Cloud Run
+
+# Automated deployment workflow for ChatterFix CMMS to Google Cloud Run
+# Triggers on push to main branch and supports manual deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip health checks and tests'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PROJECT_ID: fredfix
+  SERVICE_NAME: chatterfix-cmms
+  REGION: us-central1
+  MEMORY: 4Gi
+  CPU: 2
+  MIN_INSTANCES: 1
+  MAX_INSTANCES: 10
+
+jobs:
+  deploy:
+    name: Build and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Validate Required Secrets
+        run: |
+          echo "🔍 Validating deployment configuration..."
+          
+          MISSING_SECRETS=()
+          
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+            MISSING_SECRETS+=("GCP_SA_KEY")
+          fi
+          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
+            MISSING_SECRETS+=("FIREBASE_API_KEY")
+          fi
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            MISSING_SECRETS+=("GEMINI_API_KEY")
+          fi
+          
+          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
+            echo "❌ Missing required secrets: ${MISSING_SECRETS[*]}"
+            echo "Please configure these secrets in GitHub repository settings"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured"
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker
+      
+      - name: Get Current Revision (for rollback)
+        id: current_revision
+        run: |
+          CURRENT=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format='value(status.latestReadyRevisionName)' 2>/dev/null || echo "none")
+          echo "revision=$CURRENT" >> $GITHUB_OUTPUT
+          echo "📦 Current active revision: $CURRENT"
+      
+      - name: Build Docker Image
+        id: build
+        run: |
+          IMAGE_TAG="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          IMAGE_LATEST="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest"
+          
+          echo "🏗️ Building Docker image..."
+          docker build \
+            --tag "$IMAGE_TAG" \
+            --tag "$IMAGE_LATEST" \
+            --build-arg USE_FIRESTORE=true \
+            --build-arg GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }} \
+            .
+          
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_latest=$IMAGE_LATEST" >> $GITHUB_OUTPUT
+          echo "✅ Docker image built successfully"
+      
+      - name: Push Docker Image to GCR
+        run: |
+          echo "📤 Pushing image to Google Container Registry..."
+          docker push ${{ steps.build.outputs.image_tag }}
+          docker push ${{ steps.build.outputs.image_latest }}
+          echo "✅ Image pushed to GCR"
+      
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          echo "🚀 Deploying to Cloud Run..."
+          
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ steps.build.outputs.image_tag }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=${{ env.MEMORY }} \
+            --cpu=${{ env.CPU }} \
+            --min-instances=${{ env.MIN_INSTANCES }} \
+            --max-instances=${{ env.MAX_INSTANCES }} \
+            --timeout=300 \
+            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ENVIRONMENT=production,CMMS_PORT=8080,LOG_LEVEL=info" \
+            --update-secrets="FIREBASE_API_KEY=FIREBASE_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,GROK_API_KEY=GROK_API_KEY:latest" \
+            --service-account=chatterfix-service@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --labels="managed-by=github-actions,environment=production,version=${{ github.sha }}" \
+            --quiet
+          
+          echo "✅ Deployment initiated successfully"
+      
+      - name: Get Service URL
+        id: service_url
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "🌐 Service URL: $URL"
+      
+      - name: Wait for Deployment Stabilization
+        run: |
+          echo "⏳ Waiting for deployment to stabilize..."
+          sleep 45
+          echo "✅ Deployment stabilization period complete"
+      
+      - name: Run Health Check
+        id: health_check
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          SERVICE_URL="${{ steps.service_url.outputs.url }}"
+          echo "🏥 Running health check on $SERVICE_URL/health"
+          
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i/$MAX_RETRIES..."
+            
+            HTTP_CODE=$(curl -s -o /tmp/health_response.json -w '%{http_code}' "$SERVICE_URL/health" || echo "000")
+            
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed!"
+              cat /tmp/health_response.json | jq '.' || cat /tmp/health_response.json
+              exit 0
+            else
+              echo "⚠️ Health check returned HTTP $HTTP_CODE"
+              if [ -f /tmp/health_response.json ]; then
+                cat /tmp/health_response.json
+              fi
+              
+              if [ $i -lt $MAX_RETRIES ]; then
+                echo "Retrying in ${RETRY_DELAY}s..."
+                sleep $RETRY_DELAY
+              fi
+            fi
+          done
+          
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          exit 1
+      
+      - name: Verify Deployment
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          echo "🔍 Verifying deployment..."
+          
+          # Get new revision
+          NEW_REVISION=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.latestReadyRevisionName)')
+          
+          echo "📦 New revision: $NEW_REVISION"
+          
+          # Check traffic distribution
+          echo "🚦 Traffic distribution:"
+          gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format="table(status.traffic[].revisionName,status.traffic[].percent)"
+          
+          # Verify 100% traffic to new revision
+          TRAFFIC=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format="value(status.traffic[0].percent)")
+          
+          if [ "$TRAFFIC" = "100" ]; then
+            echo "✅ All traffic routed to new revision"
+          else
+            echo "⚠️ Traffic split detected: ${TRAFFIC}%"
+          fi
+      
+      - name: Run Smoke Tests
+        if: ${{ !inputs.skip_tests }}
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ steps.service_url.outputs.url }}"
+          echo "🧪 Running smoke tests..."
+          
+          # Test landing page
+          if curl -f "$SERVICE_URL" --max-time 30 --silent > /dev/null; then
+            echo "✅ Landing page accessible"
+          else
+            echo "⚠️ Landing page test failed"
+          fi
+          
+          # Test API endpoint
+          if curl -f "$SERVICE_URL/api/landing/health" --max-time 30 --silent > /dev/null; then
+            echo "✅ API endpoint accessible"
+          else
+            echo "⚠️ API endpoint test failed"
+          fi
+          
+          echo "✅ Smoke tests completed"
+      
+      - name: Deployment Success Summary
+        if: success()
+        run: |
+          cat << EOF
+          
+          ╔════════════════════════════════════════════════════════════════╗
+          ║           🎉 DEPLOYMENT SUCCESSFUL                             ║
+          ╚════════════════════════════════════════════════════════════════╝
+          
+          Service:    ${{ env.SERVICE_NAME }}
+          Region:     ${{ env.REGION }}
+          Project:    ${{ env.PROJECT_ID }}
+          URL:        ${{ steps.service_url.outputs.url }}
+          Commit:     ${{ github.sha }}
+          Image:      ${{ steps.build.outputs.image_tag }}
+          
+          Previous:   ${{ steps.current_revision.outputs.revision }}
+          
+          🔥 Features:
+            - Firebase Authentication enabled
+            - Firestore database configured
+            - AI services integrated
+            - Auto-scaling enabled (min: ${{ env.MIN_INSTANCES }}, max: ${{ env.MAX_INSTANCES }})
+          
+          📱 Access your application:
+            - Production: ${{ steps.service_url.outputs.url }}
+            - Custom domain: https://chatterfix.com
+          
+          EOF
+      
+      - name: Rollback on Failure
+        if: failure() && steps.current_revision.outputs.revision != 'none'
+        run: |
+          echo "❌ Deployment failed - initiating rollback..."
+          
+          PREVIOUS_REVISION="${{ steps.current_revision.outputs.revision }}"
+          
+          gcloud run services update-traffic ${{ env.SERVICE_NAME }} \
+            --to-revisions="$PREVIOUS_REVISION=100" \
+            --region=${{ env.REGION }}
+          
+          echo "↩️ Rolled back to revision: $PREVIOUS_REVISION"
+          
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          
+          # Verify rollback
+          if curl -f "$SERVICE_URL/health" --max-time 30 --silent > /dev/null; then
+            echo "✅ Rollback successful - service is healthy"
+          else
+            echo "❌ Rollback verification failed - manual intervention required"
+            exit 1
+          fi
+      
+      - name: Deployment Failure Summary
+        if: failure()
+        run: |
+          cat << EOF
+          
+          ╔════════════════════════════════════════════════════════════════╗
+          ║           ❌ DEPLOYMENT FAILED                                 ║
+          ╚════════════════════════════════════════════════════════════════╝
+          
+          Check the logs above for details.
+          
+          Debugging steps:
+          1. Check Cloud Run logs:
+             gcloud logging read "resource.type=cloud_run_revision" --limit 50
+          
+          2. Verify service status:
+             gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }}
+          
+          3. Manual rollback (if automatic rollback failed):
+             gcloud run services update-traffic ${{ env.SERVICE_NAME }} \
+               --to-revisions=${{ steps.current_revision.outputs.revision }}=100 \
+               --region ${{ env.REGION }}
+          
+          For more help, see docs/DEPLOYMENT.md
+          
+          EOF

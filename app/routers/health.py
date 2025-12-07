@@ -6,6 +6,13 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
+# Read version from VERSION.txt
+try:
+    with open("VERSION.txt", "r") as f:
+        APP_VERSION = f.readline().strip()
+except Exception:
+    APP_VERSION = "2.2.0-interactive-planner"
+
 
 @router.get("/health")
 async def health_check():
@@ -23,24 +30,24 @@ async def health_check():
             else:
                 # SQLite health check
                 db_status = "sqlite_disabled"
-        except Exception as e:
-            db_status = f"error: {str(e)}"
+        except Exception:
+            db_status = f"error"
 
         return JSONResponse(
             {
                 "status": "healthy",
                 "timestamp": datetime.utcnow().isoformat(),
                 "database": db_status,
-                "version": "2.0.0",
+                "version": APP_VERSION,
                 "service": "chatterfix-cmms",
             }
         )
-    except Exception as e:
+    except Exception:
         return JSONResponse(
             status_code=503,
             content={
                 "status": "unhealthy",
-                "error": str(e),
+                "error": "Service unavailable",
                 "timestamp": datetime.utcnow().isoformat(),
             },
         )

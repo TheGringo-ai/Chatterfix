@@ -67,3 +67,99 @@ POST `/ai/voice-command` - Process voice commands to create work orders
 -   **Database:** By default, the app uses a local SQLite database in `./data/cmms.db`.
 -   **Port:** Default port is 8000. You can change it via the `CMMS_PORT` environment variable.
 -   **AI Features:** Require API keys in `.env` file. Gemini for general AI, XAI for voice commands.
+
+## Development
+
+### Code Quality and Linting
+
+ChatterFix uses comprehensive linting and code quality tools to maintain high standards:
+
+#### Installation
+
+Install development dependencies:
+```bash
+pip install -r requirements-dev.txt
+```
+
+#### Linting Tools
+
+- **Black**: Code formatter (88 character line length)
+  ```bash
+  black app/
+  ```
+
+- **isort**: Import statement organizer
+  ```bash
+  isort app/ --profile=black
+  ```
+
+- **Flake8**: Style guide enforcement and error detection
+  ```bash
+  flake8 app/
+  ```
+
+- **Pylint**: Advanced static analysis with import checking
+  ```bash
+  pylint app/ --disable=all --enable=import-error,cyclic-import
+  ```
+
+- **MyPy**: Static type checking
+  ```bash
+  mypy app/ --ignore-missing-imports
+  ```
+
+#### Pre-commit Hooks
+
+Install pre-commit hooks to automatically check code before commits:
+
+```bash
+# Install hooks
+pre-commit install
+
+# Run hooks manually on all files
+pre-commit run --all-files
+```
+
+The hooks will automatically:
+- Format code with Black
+- Organize imports with isort
+- Check for errors with Flake8
+- Run type checking with MyPy
+- Check security with Bandit
+- Run tests with pytest
+
+#### Import Validation
+
+Validate that all modules can be imported correctly:
+
+```bash
+# Run import validation tests
+pytest tests/test_imports.py -v
+
+# Check specific routers
+python -c "from app.routers import team, landing"
+```
+
+### Error Monitoring
+
+ChatterFix includes comprehensive error monitoring with special handling for import errors. See [MONITORING.md](MONITORING.md) for details on:
+
+- Error tracking middleware configuration
+- Integration with Sentry and Cloud Logging
+- Structured logging format
+- Troubleshooting import errors
+
+### Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest tests/test_imports.py -v
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+```

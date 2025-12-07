@@ -227,6 +227,18 @@ class FirebaseAuthService:
             logger.error(f"Error updating user profile: {e}")
             return False
 
+    async def sign_in_with_email_password(self, email: str, password: str) -> Dict[str, Any]:
+        """Sign in with email and password using Pyrebase"""
+        if not self.auth_client:
+            raise Exception("Client-side authentication not available (Pyrebase init failed)")
+
+        try:
+            user = self.auth_client.sign_in_with_email_and_password(email, password)
+            return user
+        except Exception as e:
+            logger.error(f"Firebase sign-in failed: {e}")
+            raise HTTPException(status_code=400, detail="Invalid credentials")
+
     async def create_user_with_email_password(
         self, email: str, password: str, display_name: Optional[str] = None
     ) -> Any:

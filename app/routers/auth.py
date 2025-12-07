@@ -27,7 +27,30 @@ async def login(
     request: Request = None,
 ):
     """User login endpoint"""
-    # Authenticate user
+    # Try Firebase authentication first
+    if firebase_auth_service.is_available:
+        try:
+            # Sign in with Firebase
+            auth_result = await firebase_auth_service.sign_in_with_email_password(
+                username, password
+            )
+            token = auth_result["idToken"]
+
+            # Set cookie
+            response = RedirectResponse(url="/dashboard", status_code=302)
+            response.set_cookie(
+                key="session_token",
+                value=token,
+                httponly=True,
+                max_age=86400,  # 24 hours
+                samesite="lax",
+            )
+            return response
+        except Exception:
+            # If Firebase login fails, fall through to try local DB (legacy/backup)
+            pass
+
+    # Authenticate user (Local SQL fallback)
     user = auth_service.authenticate_user(username, password)
 
     if not user:
@@ -76,6 +99,27 @@ async def get_current_user(session_token: Optional[str] = Cookie(None)):
     """Get current logged-in user"""
     if not session_token:
         return JSONResponse({"authenticated": False}, status_code=401)
+
+    # Try validating as Firebase token first
+    try:
+        user_data = await firebase_auth_service.verify_token(session_token)
+        return JSONResponse(
+            {
+                "authenticated": True,
+                "user": {
+                    "id": user_data["uid"],
+                    "username": user_data["email"],
+                    "email": user_data["email"],
+                    "full_name": user_data["name"] or user_data["email"],
+                    "role": user_data["user_data"].get(
+                        "role", "technician"
+                    ),  # Get role from Firestore
+                },
+            }
+        )
+    except Exception:
+        # Fallback to local SQL session validation
+        pass
 
     user = auth_service.validate_session(session_token)
 

@@ -12,6 +12,7 @@ import time
 
 from .gemini_service import GeminiService
 from .openai_service import OpenAIService
+from .voice_commands import process_voice_command
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,14 @@ class AIOrchestrator:
     def __init__(self):
         self.gemini_service = GeminiService()
         self.openai_service = OpenAIService()
+        
+        # Import config for API key checking
+        try:
+            from app.core.config import settings
+            self.config = settings.get_ai_config()
+        except Exception as e:
+            logger.warning(f"⚠️ Config system not available: {e}")
+            self.config = None
         
         # Performance tracking
         self.performance_metrics = {
@@ -155,8 +164,8 @@ class AIOrchestrator:
             elif model == AIModel.OPENAI:
                 return hasattr(self.openai_service, 'default_api_key') and self.openai_service.default_api_key
             elif model == AIModel.GROK:
-                # Would check Grok availability
-                return False  # Not yet implemented
+                # Check if Grok/XAI API key is configured
+                return self.config and self.config.grok_api_key and len(self.config.grok_api_key) > 10
             
             return False
             
@@ -192,8 +201,44 @@ class AIOrchestrator:
                 )
                 
             elif model == AIModel.GROK:
-                # Would implement Grok integration
-                raise NotImplementedError("Grok integration pending")
+                # Handle Grok through voice command service for now
+                if task_type == TaskType.VOICE_COMMAND:
+                    result = await process_voice_command(str(input_data), user_id)
+                    return result.get('response', 'Grok processing completed')
+                else:
+                    # Use Grok for general text processing
+                    import httpx
+                    import os
+                    
+                    xai_key = os.getenv('XAI_API_KEY')
+                    if not xai_key:
+                        raise ValueError("XAI_API_KEY not configured")
+                    
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        headers = {
+                            "Authorization": f"Bearer {xai_key}",
+                            "Content-Type": "application/json",
+                        }
+                        
+                        payload = {
+                            "model": "grok-beta",
+                            "messages": [
+                                {"role": "system", "content": f"Context: {context}"},
+                                {"role": "user", "content": str(input_data)},
+                            ],
+                            "temperature": 0.3,
+                            "max_tokens": 1000,
+                        }
+                        
+                        response = await client.post(
+                            "https://api.x.ai/v1/chat/completions",
+                            headers=headers,
+                            json=payload
+                        )
+                        response.raise_for_status()
+                        
+                        data = response.json()
+                        return data["choices"][0]["message"]["content"]
             
             else:
                 raise ValueError(f"Unknown model: {model}")

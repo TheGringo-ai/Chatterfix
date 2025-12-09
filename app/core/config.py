@@ -7,7 +7,12 @@ Handles API keys, database connections, and environment-specific settings
 import os
 import logging
 from typing import Optional, List
-from pydantic import BaseSettings, Field, validator
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field, validator
+except ImportError:
+    # Fallback for older pydantic versions
+    from pydantic import BaseSettings, Field, validator
 from functools import lru_cache
 
 logger = logging.getLogger(__name__)
@@ -19,7 +24,7 @@ class AIServiceConfig(BaseSettings):
     # Primary AI Services
     gemini_api_key: Optional[str] = Field(None, env="GEMINI_API_KEY")
     openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")  
-    grok_api_key: Optional[str] = Field(None, env="GROK_API_KEY")
+    grok_api_key: Optional[str] = Field(None, env="XAI_API_KEY")
     
     # Extended AI Services
     anthropic_api_key: Optional[str] = Field(None, env="ANTHROPIC_API_KEY")

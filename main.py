@@ -217,6 +217,11 @@ async def debug_routes():
 
 # Include all routers
 app.include_router(health.router)  # Health checks (no prefix)
+
+# Enterprise RBAC Authentication (New)
+from app.routers import rbac_auth
+app.include_router(rbac_auth.router)  # Enterprise authentication system
+
 app.include_router(dashboard.router)  # Dashboard is now the main landing page
 app.include_router(landing.router)  # Landing page becomes signup page
 app.include_router(public_demo.router)  # Public demo routes (no auth required)

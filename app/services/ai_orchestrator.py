@@ -221,7 +221,7 @@ class AIOrchestrator:
                         }
                         
                         payload = {
-                            "model": "grok-beta",
+                            "model": "grok-4-latest",
                             "messages": [
                                 {"role": "system", "content": f"Context: {context}"},
                                 {"role": "user", "content": str(input_data)},

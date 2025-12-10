@@ -44,44 +44,35 @@ logger = logging.getLogger(__name__)
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 
-# TEMPORARILY DISABLE COMPLEX IMPORTS FOR DEBUGGING
-# Import all routers - only import existing routers
-# from app.routers import (
-#     ai,
-#     analytics,
-#     ar,
-#     assets,
-#     auth,
-#     dashboard,
-#     demo,
-#     feedback,
-#     geolocation,
-#     health,
-#     inventory,
-#     iot,
-#     landing,
-#     manager,
-#     media,
-#     onboarding,
-#     planner,
-#     public_demo,
-#     purchasing,
-#     push,
-#     rbac_auth,
-#     settings,
-#     signup,
-#     team,
-#     training,
-#     user_management,
-#     work_orders,
-# )
-
-# Import minimal routers for testing
+# GRADUALLY RE-ENABLE ROUTERS - Start with core functionality
 try:
-    from app.routers import health
-    HEALTH_ROUTER_AVAILABLE = True
-except ImportError:
-    HEALTH_ROUTER_AVAILABLE = False
+    from app.routers import (
+        health,
+        landing,
+        dashboard,
+        auth,
+        signup,
+        settings,
+    )
+    CORE_ROUTERS_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import core routers: {e}")
+    CORE_ROUTERS_AVAILABLE = False
+
+# Import additional routers
+try:
+    from app.routers import (
+        demo,
+        work_orders,
+        assets,
+        inventory,
+        team,
+        planner,
+    )
+    EXTENDED_ROUTERS_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import extended routers: {e}")
+    EXTENDED_ROUTERS_AVAILABLE = False
 
 
 # Initialize FastAPI application
@@ -224,33 +215,40 @@ async def debug_routes():
     }
 
 
-# MINIMAL ROUTER SETUP FOR DEBUGGING
-# Include only essential routers
-if HEALTH_ROUTER_AVAILABLE:
+# REBUILD APPLICATION WITH CORE FUNCTIONALITY
+# Include essential routers first
+if CORE_ROUTERS_AVAILABLE:
     app.include_router(health.router)  # Health checks (no prefix)
+    app.include_router(dashboard.router)  # Dashboard is the main landing page
+    app.include_router(landing.router)  # Landing page
+    app.include_router(auth.router)     # Authentication
+    app.include_router(signup.router)   # User signup
+    app.include_router(settings.router) # Settings
 
-# Disable all other routers for debugging
-# app.include_router(rbac_auth.router)
-# app.include_router(dashboard.router)
-# app.include_router(landing.router)
-# ... (all other routers disabled)
+# Include extended functionality
+if EXTENDED_ROUTERS_AVAILABLE:
+    app.include_router(demo.router)        # Demo routes
+    app.include_router(work_orders.router) # Work orders
+    app.include_router(assets.router)      # Assets
+    app.include_router(inventory.router)   # Inventory
+    app.include_router(team.router)        # Team management
+    app.include_router(planner.router)     # Planner functionality
 
 
-# Root endpoint - show working status instead of redirect
+# Root endpoint - redirect to landing page
 @app.get("/")
 async def root():
-    """Root endpoint - show service status"""
-    return {
-        "message": "🚀 ChatterFix CMMS is running!",
-        "status": "healthy",
-        "version": APP_VERSION,
-        "environment": os.getenv("ENVIRONMENT", "development"),
-        "endpoints": {
-            "health": "/health",
-            "test": "/test",
-            "debug": "/debug/version"
+    """Root endpoint - redirect to landing page"""
+    if CORE_ROUTERS_AVAILABLE:
+        return RedirectResponse(url="/landing", status_code=302)
+    else:
+        # Fallback if routers not available
+        return {
+            "message": "🚀 ChatterFix CMMS is running!",
+            "status": "healthy",
+            "version": APP_VERSION,
+            "note": "Some routers disabled due to import issues"
         }
-    }
 
 
 # Simple test endpoint to verify deployment

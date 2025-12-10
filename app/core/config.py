@@ -104,7 +104,7 @@ class SecurityConfig(BaseSettings):
     
     # Security Headers
     enable_https_only: bool = Field(True, env="ENABLE_HTTPS_ONLY") 
-    allowed_hosts: List[str] = Field(["chatterfix.com", "*.chatterfix.com"], env="ALLOWED_HOSTS")
+    allowed_hosts: List[str] = Field(["*"], env="ALLOWED_HOSTS")  # Allow all hosts for Cloud Run
     
     # Rate Limiting
     rate_limit_requests: int = Field(100, env="RATE_LIMIT_REQUESTS")

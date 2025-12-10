@@ -70,7 +70,7 @@ jobs:
             --max-instances=10
             --timeout=300
             --port=8080
-            --set-env-vars=ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+            --set-env-vars=ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ALLOWED_HOSTS=*
 
       - name: 🧪 Health Check
         run: |

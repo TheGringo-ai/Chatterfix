@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install minimal dependencies
+RUN pip install fastapi uvicorn
+
+# Copy test app
+COPY test_simple.py .
+
+# Set environment
+ENV PORT=8080
+EXPOSE 8080
+
+# Simple startup
+CMD ["python", "test_simple.py"]

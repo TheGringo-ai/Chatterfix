@@ -44,36 +44,44 @@ logger = logging.getLogger(__name__)
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 
+# TEMPORARILY DISABLE COMPLEX IMPORTS FOR DEBUGGING
 # Import all routers - only import existing routers
-from app.routers import (
-    ai,
-    analytics,
-    ar,
-    assets,
-    auth,
-    dashboard,
-    demo,
-    feedback,
-    geolocation,
-    health,
-    inventory,
-    iot,
-    landing,
-    manager,
-    media,
-    onboarding,
-    planner,
-    public_demo,
-    purchasing,
-    push,
-    rbac_auth,
-    settings,
-    signup,
-    team,
-    training,
-    user_management,
-    work_orders,
-)
+# from app.routers import (
+#     ai,
+#     analytics,
+#     ar,
+#     assets,
+#     auth,
+#     dashboard,
+#     demo,
+#     feedback,
+#     geolocation,
+#     health,
+#     inventory,
+#     iot,
+#     landing,
+#     manager,
+#     media,
+#     onboarding,
+#     planner,
+#     public_demo,
+#     purchasing,
+#     push,
+#     rbac_auth,
+#     settings,
+#     signup,
+#     team,
+#     training,
+#     user_management,
+#     work_orders,
+# )
+
+# Import minimal routers for testing
+try:
+    from app.routers import health
+    HEALTH_ROUTER_AVAILABLE = True
+except ImportError:
+    HEALTH_ROUTER_AVAILABLE = False
 
 
 # Initialize FastAPI application
@@ -216,37 +224,16 @@ async def debug_routes():
     }
 
 
-# Include all routers
-app.include_router(health.router)  # Health checks (no prefix)
+# MINIMAL ROUTER SETUP FOR DEBUGGING
+# Include only essential routers
+if HEALTH_ROUTER_AVAILABLE:
+    app.include_router(health.router)  # Health checks (no prefix)
 
-# Enterprise RBAC Authentication (New)
-app.include_router(rbac_auth.router)  # Enterprise authentication system
-
-app.include_router(dashboard.router)  # Dashboard is now the main landing page
-app.include_router(landing.router)  # Landing page becomes signup page
-app.include_router(public_demo.router)  # Public demo routes (no auth required)
-app.include_router(demo.router)  # Demo routes for app exploration
-app.include_router(auth.router)
-app.include_router(signup.router)
-app.include_router(settings.router)
-app.include_router(work_orders.router)
-app.include_router(assets.router)
-app.include_router(inventory.router)
-app.include_router(team.router)
-app.include_router(manager.router)  # Manager Dashboard - Complete Control Center
-app.include_router(training.router)
-app.include_router(user_management.router)  # User Management with Application Training
-app.include_router(purchasing.router)
-app.include_router(planner.router)
-app.include_router(feedback.router)
-app.include_router(ai.router)
-app.include_router(ar.router)
-app.include_router(geolocation.router)
-app.include_router(onboarding.router)
-app.include_router(analytics.router)  # Advanced analytics dashboard
-app.include_router(iot.router)  # IoT sensor integration
-app.include_router(push.router)  # Push notifications
-app.include_router(media.router)  # Media upload and barcode functionality
+# Disable all other routers for debugging
+# app.include_router(rbac_auth.router)
+# app.include_router(dashboard.router)
+# app.include_router(landing.router)
+# ... (all other routers disabled)
 
 
 # Root endpoint - redirect to landing page

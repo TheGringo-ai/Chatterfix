@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
@@ -32,9 +32,9 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8080
 
-# Add health check endpoint with proper PORT expansion
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
+# Remove health check that might be causing issues
+# HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+#   CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
-# Use shell form for proper environment variable expansion
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0 --preload main:app"]
+# Simple uvicorn command for Cloud Run
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]

@@ -68,6 +68,7 @@ try:
         inventory,
         team,
         planner,
+        ai_team_collaboration,
     )
     EXTENDED_ROUTERS_AVAILABLE = True
 except ImportError as e:
@@ -233,6 +234,7 @@ if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(inventory.router)   # Inventory
     app.include_router(team.router)        # Team management
     app.include_router(planner.router)     # Planner functionality
+    app.include_router(ai_team_collaboration.router)  # AI Team gRPC Collaboration
 
 
 # Root endpoint - redirect to landing page

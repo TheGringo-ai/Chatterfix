@@ -17,7 +17,7 @@ on:
 
 env:
   PROJECT_ID: fredfix
-  SERVICE_NAME: chatterfix-cmms
+  SERVICE_NAME: gringo-core
   REGION: us-central1
   MEMORY: 4Gi
   CPU: 2

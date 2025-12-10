@@ -1,0 +1,96 @@
+name: 🚀 Production Deployment - Smart Monorepo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+
+jobs:
+  # 🧠 Detect Changes - Smart Path Filtering
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      monolith: ${{ steps.filter.outputs.monolith }}
+      predictor: ${{ steps.filter.outputs.predictor }}
+      linesmart: ${{ steps.filter.outputs.linesmart }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            monolith:
+              - 'app/**'
+              - 'Dockerfile'
+              - 'main.py'
+              - 'requirements.txt'
+              - 'deploy.sh'
+            predictor:
+              - 'services/predictive-engine/**'
+            linesmart:
+              - 'services/linesmart-training-service/**'
+
+  # 🏭 Job A: ChatterFix Core Monolith
+  deploy-monolith:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.monolith == 'true' }}
+    steps:
+      - name: 🚚 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ⚙️ Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: 🐳 Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            gcr.io/${{ env.PROJECT_ID }}/gringo-core:latest
+            gcr.io/${{ env.PROJECT_ID }}/gringo-core:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🚀 Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: gringo-core
+          image: gcr.io/${{ env.PROJECT_ID }}/gringo-core:latest
+          region: ${{ env.REGION }}
+          flags: |
+            --allow-unauthenticated
+            --memory=1Gi
+            --cpu=1
+            --concurrency=100
+            --max-instances=10
+            --timeout=300
+            --port=8080
+            --set-env-vars=ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }}
+
+      - name: 🧪 Health Check
+        run: |
+          SERVICE_URL=$(gcloud run services describe gringo-core --region=${{ env.REGION }} --format="value(status.url)")
+          echo "🌍 Deployed URL: $SERVICE_URL"
+          
+          # Wait for deployment to be ready
+          sleep 10
+          
+          # Test health endpoint
+          if curl -s -f "$SERVICE_URL/health" > /dev/null; then
+            echo "✅ Health check passed!"
+          else
+            echo "⚠️ Health check failed"
+            exit 1
+          fi

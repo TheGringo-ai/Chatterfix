@@ -174,7 +174,7 @@ app.add_middleware(
 # Add trusted host middleware for production
 if os.getenv("ENVIRONMENT") == "production":
     app.add_middleware(
-        TrustedHostMiddleware, allowed_hosts=["chatterfix.com", "*.chatterfix.com"]
+        TrustedHostMiddleware, allowed_hosts=["*"]  # Allow all hosts for Cloud Run flexibility
     )
 
 # Add rate limiting

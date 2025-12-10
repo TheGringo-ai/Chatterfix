@@ -36,6 +36,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Run with gunicorn optimized for Cloud Run
-CMD exec gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0 main:app
+# Run with uvicorn using Cloud Run's PORT environment variable
+CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1
 ENV FORCE_REBUILD=1765069302

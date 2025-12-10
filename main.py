@@ -172,11 +172,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add trusted host middleware for production
-if os.getenv("ENVIRONMENT") == "production":
-    app.add_middleware(
-        TrustedHostMiddleware, allowed_hosts=["*"]  # Allow all hosts for Cloud Run flexibility
-    )
+# Add trusted host middleware for production - DISABLED for Cloud Run
+# if os.getenv("ENVIRONMENT") == "production":
+#     app.add_middleware(
+#         TrustedHostMiddleware, allowed_hosts=["*"]  # Allow all hosts for Cloud Run flexibility
+#     )
 
 # Add rate limiting
 app.state.limiter = limiter

@@ -69,6 +69,8 @@ try:
         team,
         planner,
         ai_team_collaboration,
+        fix_it_fred,
+        linesmart_integration,
     )
     EXTENDED_ROUTERS_AVAILABLE = True
 except ImportError as e:
@@ -235,6 +237,8 @@ if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(team.router)        # Team management
     app.include_router(planner.router)     # Planner functionality
     app.include_router(ai_team_collaboration.router)  # AI Team gRPC Collaboration
+    app.include_router(fix_it_fred.router)  # Fix it Fred AI-powered autonomous fixing
+    app.include_router(linesmart_integration.router)  # LineSmart training service integration
 
 
 # Root endpoint - redirect to landing page
@@ -269,13 +273,345 @@ async def test_endpoint():
         "database": "Firebase/Firestore",
         "features": [
             "Enterprise Planner",
-            "Advanced Scheduler",
+            "Advanced Scheduler", 
             "AI Optimization",
             "Mobile Interface",
             "Parts Management",
             "PM Automation",
+            "AI Team Collaboration",
+            "Fix it Fred Autonomous Fixing",
+            "LineSmart Training Integration"
         ],
+        "ai_services": {
+            "ai_team": "/ai-team",
+            "fix_it_fred": "/fix-it-fred", 
+            "linesmart": "/linesmart",
+            "unified_integration": "/unified-ai"
+        }
     }
+
+
+@app.get("/unified-ai/health")
+async def unified_ai_health():
+    """Health check for unified AI integration"""
+    try:
+        from app.services.unified_ai_integration import get_unified_integration
+        integration = await get_unified_integration()
+        health_status = await integration.get_integration_health()
+        return health_status
+    except Exception as e:
+        logger.error(f"Unified AI health check failed: {e}")
+        return {"healthy": False, "error": str(e)}
+
+
+@app.post("/unified-ai/process")
+async def unified_ai_process(request_data: dict):
+    """Process request through unified AI integration (AI Team + Fix it Fred + LineSmart)"""
+    try:
+        from app.services.unified_ai_integration import get_unified_integration
+        integration = await get_unified_integration()
+        result = await integration.process_unified_request(request_data)
+        return result
+    except Exception as e:
+        logger.error(f"Unified AI processing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/unified-ai")
+async def unified_ai_dashboard():
+    """Unified AI services dashboard"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>🤖 Unified AI Dashboard - ChatterFix CMMS</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            .service-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 15px;
+                padding: 20px;
+                margin: 10px 0;
+                text-decoration: none;
+                transition: transform 0.3s ease;
+            }
+            .service-card:hover {
+                transform: translateY(-5px);
+                text-decoration: none;
+                color: white;
+            }
+            .integration-flow {
+                background: #f8f9fa;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .flow-step {
+                background: white;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 10px 0;
+                border-left: 4px solid #007bff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container mt-4">
+            <h1>🤖 Unified AI Dashboard</h1>
+            <p class="lead">AI Team + Fix it Fred + LineSmart - Complete Intelligent Automation</p>
+            
+            <!-- Service Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>🔋 AI Services Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="services-status">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Individual Services -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <a href="/ai-team" class="service-card d-block text-center">
+                        <h4>🤖 AI Team</h4>
+                        <p>Multi-model collaboration with Claude, ChatGPT, Gemini, Grok</p>
+                        <small>Advanced problem analysis</small>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/fix-it-fred" class="service-card d-block text-center">
+                        <h4>🔧 Fix it Fred</h4>
+                        <p>AI-powered autonomous fixing and issue resolution</p>
+                        <small>Automated problem solving</small>
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/linesmart" class="service-card d-block text-center">
+                        <h4>📊 LineSmart</h4>
+                        <p>Training data integration and skill gap analysis</p>
+                        <small>Continuous learning system</small>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Unified Processing -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>⚡ Unified AI Processing</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="unified-request" class="form-label">Describe your maintenance issue or request:</label>
+                        <textarea class="form-control" id="unified-request" rows="3" 
+                                  placeholder="Example: Server performance is degrading with high CPU usage during peak hours..."></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="request-type" class="form-label">Request Type:</label>
+                            <select class="form-select" id="request-type">
+                                <option value="maintenance">Maintenance Issue</option>
+                                <option value="performance">Performance Problem</option>
+                                <option value="bug">Bug Report</option>
+                                <option value="enhancement">Enhancement Request</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="priority" class="form-label">Priority:</label>
+                            <select class="form-select" id="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg" onclick="processUnifiedRequest()">
+                        🚀 Process with Full AI Team
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Integration Flow -->
+            <div class="integration-flow">
+                <h5>🔄 AI Integration Flow</h5>
+                <div class="flow-step">
+                    <strong>1. AI Team Analysis</strong> - Multi-model collaborative problem analysis
+                </div>
+                <div class="flow-step">
+                    <strong>2. Fix it Fred Resolution</strong> - Automated fix recommendations and application
+                </div>
+                <div class="flow-step">
+                    <strong>3. LineSmart Learning</strong> - Training data integration for future improvements
+                </div>
+                <div class="flow-step">
+                    <strong>4. Unified Response</strong> - Combined intelligence for optimal solution
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎯 Unified AI Results</h5>
+                </div>
+                <div class="card-body">
+                    <div id="unified-results"></div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            async function loadServicesStatus() {
+                try {
+                    const response = await fetch('/unified-ai/health');
+                    const status = await response.json();
+                    
+                    const servicesHtml = Object.entries(status.services || {}).map(([service, info]) => `
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge ${info.connected ? 'bg-success' : 'bg-danger'} me-2">
+                                    ${service.toUpperCase()}
+                                </span>
+                                <span>${info.status}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('services-status').innerHTML = `
+                        <div class="row">
+                            ${servicesHtml}
+                        </div>
+                        <hr>
+                        <small class="text-muted">
+                            Total Integrations: ${status.integration_stats?.total_requests || 0} | 
+                            Success Rate: ${status.integration_stats?.successful_integrations || 0}/${status.integration_stats?.total_requests || 0}
+                        </small>
+                    `;
+                } catch (error) {
+                    document.getElementById('services-status').innerHTML = 
+                        '<span class="text-danger">Failed to load services status</span>';
+                }
+            }
+            
+            async function processUnifiedRequest() {
+                const request = document.getElementById('unified-request').value;
+                const type = document.getElementById('request-type').value;
+                const priority = document.getElementById('priority').value;
+                
+                if (!request.trim()) {
+                    alert('Please describe your request');
+                    return;
+                }
+                
+                const resultsDiv = document.getElementById('unified-results');
+                resultsDiv.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-2">Processing with unified AI team...</p>
+                        <small class="text-muted">AI Team analyzing → Fix it Fred solving → LineSmart learning</small>
+                    </div>
+                `;
+                
+                try {
+                    const response = await fetch('/unified-ai/process', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            description: request,
+                            type: type,
+                            priority: priority,
+                            timestamp: new Date().toISOString()
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    let resultHtml = `
+                        <div class="alert ${result.success ? 'alert-success' : 'alert-danger'}">
+                            <h6>🤖 Unified AI Processing ${result.success ? 'Complete' : 'Failed'}</h6>
+                            <strong>Request ID:</strong> ${result.request_id}<br>
+                            <strong>Overall Confidence:</strong> ${(result.unified_confidence * 100).toFixed(1)}%<br>
+                            <strong>Integration Summary:</strong> ${result.integration_summary}
+                        </div>
+                    `;
+                    
+                    if (result.success) {
+                        // AI Team Results
+                        resultHtml += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6>🤖 AI Team Analysis</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>${result.ai_team_analysis?.collaborative_insight || 'AI analysis completed'}</p>
+                                    <small class="text-muted">
+                                        Confidence: ${((result.ai_team_analysis?.confidence || 0) * 100).toFixed(1)}% | 
+                                        Models: ${result.ai_team_analysis?.model_responses?.length || 0}
+                                    </small>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Fix it Fred Results
+                        resultHtml += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6>🔧 Fix it Fred Solution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Fix Confidence:</strong> ${((result.fix_it_fred_solution?.fix_confidence || 0) * 100).toFixed(1)}%</p>
+                                    <p><strong>Estimated Time:</strong> ${result.fix_it_fred_solution?.estimated_resolution_time || 'N/A'}</p>
+                                    <p><strong>Risk Assessment:</strong> ${result.fix_it_fred_solution?.risk_assessment || 'N/A'}</p>
+                                    ${result.fix_it_fred_solution?.auto_apply_safe ? 
+                                        '<span class="badge bg-success">Safe for Auto-Apply</span>' : 
+                                        '<span class="badge bg-warning">Manual Review Recommended</span>'
+                                    }
+                                </div>
+                            </div>
+                        `;
+                        
+                        // LineSmart Results
+                        resultHtml += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h6>📊 LineSmart Learning</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Training Quality:</strong> ${((result.linesmart_learning?.data_quality_score || 0) * 100).toFixed(1)}%</p>
+                                    <p><strong>Performance Boost:</strong> ${result.linesmart_learning?.future_performance_boost || 'N/A'}</p>
+                                    <small class="text-muted">
+                                        Model enhancements applied for future improvements
+                                    </small>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    resultsDiv.innerHTML = resultHtml;
+                    
+                    // Refresh status
+                    loadServicesStatus();
+                    
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                }
+            }
+            
+            // Initialize dashboard
+            document.addEventListener('DOMContentLoaded', function() {
+                loadServicesStatus();
+            });
+        </script>
+    </body>
+    </html>
+    """
 
 
 @app.get("/debug/version")

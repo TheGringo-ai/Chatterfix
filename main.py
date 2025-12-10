@@ -236,11 +236,21 @@ if HEALTH_ROUTER_AVAILABLE:
 # ... (all other routers disabled)
 
 
-# Root endpoint - redirect to landing page
+# Root endpoint - show working status instead of redirect
 @app.get("/")
 async def root():
-    """Root endpoint - redirect to landing page"""
-    return RedirectResponse(url="/landing", status_code=302)
+    """Root endpoint - show service status"""
+    return {
+        "message": "🚀 ChatterFix CMMS is running!",
+        "status": "healthy",
+        "version": APP_VERSION,
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "endpoints": {
+            "health": "/health",
+            "test": "/test",
+            "debug": "/debug/version"
+        }
+    }
 
 
 # Simple test endpoint to verify deployment

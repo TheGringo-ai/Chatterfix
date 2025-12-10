@@ -262,7 +262,7 @@ async def test_endpoint():
     """Simple test endpoint to verify deployment works"""
     return {
         "status": "success",
-        "message": "ChatterFix is running!",
+        "message": "ChatterFix is running with CI/CD!",
         "version": APP_VERSION,
         "description": APP_DESCRIPTION,
         "timestamp": "2025-12-10",

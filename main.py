@@ -154,8 +154,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add middleware
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")  # Trust Cloud Run proxy
+# Add middleware - DISABLED ProxyHeadersMiddleware for debugging
+# app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")  # Trust Cloud Run proxy
 
 # Add error tracking middleware
 app.add_middleware(

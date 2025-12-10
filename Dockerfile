@@ -32,10 +32,9 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8080
 
-# Health check using curl
+# Health check using fixed port (Cloud Run always uses 8080 internally)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Run with uvicorn using Cloud Run's PORT environment variable
-CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1
-ENV FORCE_REBUILD=1765069302
+# Run with uvicorn - use shell form for variable expansion
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1

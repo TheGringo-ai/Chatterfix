@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 
-# Import all routers
+# Import all routers - only import existing routers
 from app.routers import (
     ai,
     analytics,
@@ -66,6 +66,7 @@ from app.routers import (
     public_demo,
     purchasing,
     push,
+    rbac_auth,
     settings,
     signup,
     team,
@@ -219,7 +220,6 @@ async def debug_routes():
 app.include_router(health.router)  # Health checks (no prefix)
 
 # Enterprise RBAC Authentication (New)
-from app.routers import rbac_auth
 app.include_router(rbac_auth.router)  # Enterprise authentication system
 
 app.include_router(dashboard.router)  # Dashboard is now the main landing page
@@ -268,6 +268,7 @@ async def test_endpoint():
         "timestamp": "2025-12-10",
         "environment": os.getenv("ENVIRONMENT", "unknown"),
         "port": os.getenv("PORT", "unknown"),
+        "host_middleware": "DISABLED for Cloud Run",
         "database": "Firebase/Firestore",
         "features": [
             "Enterprise Planner",

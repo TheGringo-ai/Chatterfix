@@ -32,6 +32,9 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8080
 
-# Simplified startup for Cloud Run - remove problematic health check
-# CMD gunicorn --bind :$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0 main:app
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Add health check endpoint
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:$PORT/health || exit 1
+
+# Use gunicorn with proper startup settings for Cloud Run
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0 --preload main:app

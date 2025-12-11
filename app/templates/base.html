@@ -192,8 +192,9 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <button id="theme-toggle" class="cmms-btn cmms-btn-sm" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Dark Mode">
+            <button id="theme-toggle" class="cmms-btn cmms-btn-sm d-flex align-items-center gap-2" style="border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Theme">
                 <i class="fas fa-moon"></i>
+                <span id="theme-label">Click here for Dark Mode</span>
             </button>
             {% if is_demo %}
             <div class="demo-signup-cta">
@@ -414,12 +415,15 @@
             // Initialization is handled in head script, but ensure icon matches
             
             function updateIcon() {
+                const label = document.getElementById('theme-label');
                 if (root.classList.contains('dark-mode')) {
                     icon.classList.remove('fa-moon');
                     icon.classList.add('fa-sun');
+                    label.textContent = 'Click here for Light Mode';
                 } else {
                     icon.classList.remove('fa-sun');
                     icon.classList.add('fa-moon');
+                    label.textContent = 'Click here for Dark Mode';
                 }
             }
 

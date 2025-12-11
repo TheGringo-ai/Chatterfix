@@ -31,8 +31,8 @@ class PurchasingService:
                 "quantity": 10,
                 "status": status or "pending",
                 "priority": "high",
-                "requested_date": datetime.now() - timedelta(days=2),
-                "expected_delivery": datetime.now() + timedelta(days=7),
+                "requested_date": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
+                "expected_delivery": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M"),
                 "requester": "Mike Johnson",
                 "work_order_title": "Conveyor Belt Maintenance",
             },
@@ -42,8 +42,8 @@ class PurchasingService:
                 "quantity": 5,
                 "status": status or "approved",
                 "priority": "medium",
-                "requested_date": datetime.now() - timedelta(days=1),
-                "expected_delivery": datetime.now() + timedelta(days=5),
+                "requested_date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"),
+                "expected_delivery": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d %H:%M"),
                 "requester": "Sarah Chen",
                 "work_order_title": "Press Hydraulic System Repair",
             },
@@ -68,7 +68,7 @@ class PurchasingService:
                 "part_name": "Motor Coupling",
                 "quantity": 2,
                 "priority": "urgent",
-                "requested_date": datetime.now() - timedelta(hours=6),
+                "requested_date": (datetime.now() - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M"),
                 "requester": "Alex Rodriguez",
                 "work_order_title": "Assembly Line Motor Failure",
                 "work_order_priority": "critical",
@@ -78,7 +78,7 @@ class PurchasingService:
                 "part_name": "Filter Cartridge Set",
                 "quantity": 12,
                 "priority": "medium",
-                "requested_date": datetime.now() - timedelta(days=1),
+                "requested_date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"),
                 "requester": "Mike Johnson",
                 "work_order_title": "HVAC System Maintenance",
                 "work_order_priority": "medium",
@@ -87,7 +87,7 @@ class PurchasingService:
 
         return {"pending_count": len(pending_requests), "requests": pending_requests}
 
-    def get_vendor_performance(self) -> List[Dict]:
+    async def get_vendor_performance(self) -> List[Dict]:
         """Get vendor performance metrics (simulated - would need vendor table)"""
         # This is a placeholder - in production, you'd have a vendors table
         # For now, we'll return simulated data
@@ -164,7 +164,7 @@ class PurchasingService:
             "categories": categories,
         }
 
-    def get_low_stock_alerts(self) -> List[Dict]:
+    async def get_low_stock_alerts(self) -> List[Dict]:
         """Get low stock items needing reorder"""
         conn = get_db_connection()
         cur = conn.cursor()
@@ -187,7 +187,7 @@ class PurchasingService:
 
         return [dict(item) for item in low_stock]
 
-    def get_price_trends(self) -> Dict:
+    async def get_price_trends(self) -> Dict:
         """Get price trends for common parts (simulated)"""
         # Simulated data - in production, would track historical pricing
         trends = [
@@ -216,7 +216,7 @@ class PurchasingService:
 
         return {"trends": trends}
 
-    def get_contract_renewals(self) -> List[Dict]:
+    async def get_contract_renewals(self) -> List[Dict]:
         """Get upcoming vendor contract renewals (simulated)"""
         # Simulated data - in production, would have contracts table
         renewals = [
@@ -240,7 +240,7 @@ class PurchasingService:
 
         return renewals
 
-    def get_spend_analytics(self, days: int = 30) -> Dict:
+    async def get_spend_analytics(self, days: int = 30) -> Dict:
         """Get spend analytics for specified period"""
         conn = get_db_connection()
         cur = conn.cursor()
@@ -290,7 +290,7 @@ class PurchasingService:
             "by_status": by_status,
         }
 
-    def approve_purchase_request(self, request_id: int, approver_id: int) -> bool:
+    async def approve_purchase_request(self, request_id: int, approver_id: int) -> bool:
         """Approve a purchase request"""
         conn = get_db_connection()
         cur = conn.cursor()
@@ -314,7 +314,7 @@ class PurchasingService:
 
         return success
 
-    def deny_purchase_request(self, request_id: int, reason: str = None) -> bool:
+    async def deny_purchase_request(self, request_id: int, reason: str = None) -> bool:
         """Deny a purchase request"""
         conn = get_db_connection()
         cur = conn.cursor()

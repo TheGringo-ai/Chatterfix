@@ -69,6 +69,7 @@ try:
         inventory,
         team,
         planner,
+        purchasing,
         ai_team_collaboration,
         fix_it_fred,
         linesmart_integration,
@@ -238,6 +239,7 @@ if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(inventory.router)   # Inventory
     app.include_router(team.router)        # Team management
     app.include_router(planner.router)     # Planner functionality
+    app.include_router(purchasing.router)  # Purchasing and POS system
     app.include_router(ai_team_collaboration.router)  # AI Team gRPC Collaboration
     app.include_router(fix_it_fred.router)  # Fix it Fred AI-powered autonomous fixing
     app.include_router(linesmart_integration.router)  # LineSmart training service integration

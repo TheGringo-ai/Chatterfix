@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import time
 from typing import List, Optional
 
 from fastapi import APIRouter, Cookie, Request, WebSocket, WebSocketDisconnect
@@ -325,22 +327,33 @@ async def dashboard_stream(websocket: WebSocket, user_id: int = 1):
 
     try:
         while True:
-            # Receive subscription requests
-            data = await websocket.receive_text()
-            message = json.loads(data)  # Parse JSON
+            try:
+                # Receive subscription requests with timeout to prevent infinite blocking
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+                message = json.loads(data)  # Parse JSON
 
-            if message.get("type") == "subscribe":
-                widget_types = message.get("widgets", [])
-                await real_time_feed.subscribe(user_id, widget_types)
+                if message.get("type") == "subscribe":
+                    widget_types = message.get("widgets", [])
+                    await real_time_feed.subscribe(user_id, widget_types)
 
-            elif message.get("type") == "unsubscribe":
-                widget_types = message.get("widgets", [])
-                await real_time_feed.unsubscribe(user_id, widget_types)
+                elif message.get("type") == "unsubscribe":
+                    widget_types = message.get("widgets", [])
+                    await real_time_feed.unsubscribe(user_id, widget_types)
 
-            elif message.get("type") == "refresh":
-                widget_type = message.get("widget")
-                if widget_type:
-                    await real_time_feed.send_widget_updates(user_id, [widget_type])
+                elif message.get("type") == "refresh":
+                    widget_type = message.get("widget")
+                    if widget_type:
+                        await real_time_feed.send_widget_updates(user_id, [widget_type])
+
+            except asyncio.TimeoutError:
+                # Send keepalive ping to maintain connection
+                await websocket.send_json({"type": "ping", "timestamp": time.time()})
+            except json.JSONDecodeError:
+                await websocket.send_json({"type": "error", "message": "Invalid JSON"})
+            except Exception as e:
+                logging.error(f"WebSocket error for user {user_id}: {e}")
+                await websocket.send_json({"type": "error", "message": "Internal error"})
+                break
 
     except WebSocketDisconnect:
         websocket_manager.disconnect(user_id)

@@ -63,6 +63,7 @@ except ImportError as e:
 try:
     from app.routers import (
         demo,
+        public_demo,
         work_orders,
         assets,
         inventory,
@@ -231,6 +232,7 @@ if CORE_ROUTERS_AVAILABLE:
 # Include extended functionality
 if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(demo.router)        # Demo routes
+    app.include_router(public_demo.router) # Public demo routes (no auth required)
     app.include_router(work_orders.router) # Work orders
     app.include_router(assets.router)      # Assets
     app.include_router(inventory.router)   # Inventory

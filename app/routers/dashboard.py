@@ -56,9 +56,9 @@ class DashboardLayoutUpdate(BaseModel):
     widgets: List[WidgetConfigUpdate]
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/app", response_class=HTMLResponse)
 async def root_dashboard(request: Request, session_token: Optional[str] = Cookie(None)):
-    """Root route - show landing page or dashboard based on authentication"""
+    """App route - show landing page or dashboard based on authentication"""
     # Validate user session
     user = get_current_user_from_session(session_token)
 

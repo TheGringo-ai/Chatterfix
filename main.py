@@ -249,20 +249,11 @@ if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(analytics.router)  # Analytics dashboard with KPIs and reporting
 
 
-# Root endpoint - redirect to landing page
+# Root endpoint - redirect to API documentation
 @app.get("/")
 async def root():
-    """Root endpoint - redirect to landing page"""
-    if CORE_ROUTERS_AVAILABLE:
-        return RedirectResponse(url="/landing", status_code=302)
-    else:
-        # Fallback if routers not available
-        return {
-            "message": "🚀 ChatterFix CMMS is running!",
-            "status": "healthy",
-            "version": APP_VERSION,
-            "note": "Some routers disabled due to import issues"
-        }
+    """Root endpoint - redirect to Swagger UI documentation"""
+    return RedirectResponse(url="/docs", status_code=302)
 
 
 # Simple test endpoint to verify deployment

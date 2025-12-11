@@ -26,14 +26,25 @@ class FirestoreDB:
         try:
             # For local development with service account
             service_account_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            if service_account_path and os.path.exists(service_account_path):
-                self.db = firestore.Client.from_service_account_json(
-                    service_account_path
-                )
+            if service_account_path:
+                # Convert relative path to absolute path
+                if not os.path.isabs(service_account_path):
+                    service_account_path = os.path.join(os.getcwd(), service_account_path)
+                
+                if os.path.exists(service_account_path):
+                    self.db = firestore.Client.from_service_account_json(
+                        service_account_path
+                    )
+                    logger.info(f"✅ Firestore client initialized with credentials: {service_account_path}")
+                else:
+                    logger.warning(f"⚠️ Credentials file not found: {service_account_path}")
+                    # Try default credentials for GCP deployment
+                    self.db = firestore.Client()
+                    logger.info("✅ Firestore client initialized with default credentials")
             else:
                 # For GCP deployment with default credentials
                 self.db = firestore.Client()
-            logger.info("✅ Firestore client initialized successfully")
+                logger.info("✅ Firestore client initialized with default credentials")
         except Exception as e:
             logger.error(f"❌ Failed to initialize Firestore: {e}")
             self.db = None

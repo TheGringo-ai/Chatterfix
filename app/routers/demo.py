@@ -508,14 +508,29 @@ async def debug_planner_template():
 
 @router.get("/demo/purchasing", response_class=HTMLResponse)
 async def demo_purchasing(request: Request):
-    """Demo purchasing page - full POS system identical to main app"""
-    from app.core.firestore_db import get_firestore_manager
-
-    db = get_firestore_manager()
-
-    # Get live vendors and parts data (same as main POS system)
-    vendors = await db.get_collection("vendors", order_by="name")
-    parts = await db.get_collection("parts", order_by="name", limit=50)
+    """Demo purchasing page - uses Firestore when available, demo data as fallback"""
+    try:
+        from app.core.firestore_db import get_firestore_manager
+        db = get_firestore_manager()
+        
+        # Try to get live vendors and parts data from Firestore
+        vendors = await db.get_collection("vendors", order_by="name")
+        parts = await db.get_collection("parts", order_by="name", limit=50)
+        
+    except Exception as e:
+        # Fallback to demo data if Firestore fails
+        vendors = [
+            {"id": "vendor_1", "name": "Grundfos Pumps", "contact": "sales@grundfos.com", "phone": "(555) 123-4567"},
+            {"id": "vendor_2", "name": "Schneider Electric", "contact": "orders@schneider.com", "phone": "(555) 234-5678"},
+            {"id": "vendor_3", "name": "ABB Motors", "contact": "support@abb.com", "phone": "(555) 345-6789"},
+        ]
+        
+        parts = [
+            {"id": "part_1", "name": "CR1 Centrifugal Pump", "sku": "GRU-CR1-001", "price": 1250.00, "stock": 15, "vendor": "Grundfos Pumps"},
+            {"id": "part_2", "name": "Variable Frequency Drive", "sku": "SCH-VFD-200", "price": 850.00, "stock": 8, "vendor": "Schneider Electric"},
+            {"id": "part_3", "name": "3-Phase Motor 15HP", "sku": "ABB-MOT-15HP", "price": 950.00, "stock": 12, "vendor": "ABB Motors"},
+            {"id": "part_4", "name": "PLC Control Module", "sku": "SIE-PLC-300", "price": 650.00, "stock": 20, "vendor": "Siemens Controls"},
+        ]
 
     return templates.TemplateResponse(
         "purchasing_pos.html",

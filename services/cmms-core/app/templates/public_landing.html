@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatterFix CMMS - AI-Powered Maintenance Management</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-gradient: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            --card-background: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --success-color: #38ef7d;
+            --warning-color: #fbbf24;
+            --demo-color: #ff6b6b;
+            --backdrop-blur: blur(15px);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            margin: 0;
+            padding: 0;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .hero-content {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            backdrop-filter: var(--backdrop-blur);
+            padding: 4rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color), var(--demo-color));
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Demo Buttons */
+        .demo-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 3rem;
+        }
+
+        .demo-btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .demo-btn-primary {
+            background: linear-gradient(135deg, var(--demo-color), #ff8a80);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+
+        .demo-btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+            color: white;
+        }
+
+        .demo-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .demo-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            color: white;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 5rem 0;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            backdrop-filter: var(--backdrop-blur);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-icon.ai { color: var(--demo-color); }
+        .feature-icon.dashboard { color: var(--primary-color); }
+        .feature-icon.mobile { color: var(--success-color); }
+        .feature-icon.automation { color: var(--warning-color); }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        /* Live Demo Preview */
+        .demo-preview {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            backdrop-filter: var(--backdrop-blur);
+            padding: 2rem;
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .demo-preview h3 {
+            color: var(--demo-color);
+            margin-bottom: 1rem;
+        }
+
+        .preview-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .preview-stat {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .preview-stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .preview-stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .demo-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-content {
+                padding: 2rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .fade-in-up-delay {
+            animation: fadeInUp 0.8s ease 0.3s forwards;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="hero-content fade-in-up">
+                        <h1 class="hero-title">
+                            <i class="fas fa-tools"></i> ChatterFix
+                        </h1>
+                        <h2 class="hero-subtitle">AI-Powered CMMS Platform</h2>
+                        <p class="hero-description">
+                            Experience the future of maintenance management with our intelligent CMMS platform. 
+                            Real-time asset tracking, predictive maintenance, AI-powered insights, and seamless team collaboration.
+                        </p>
+                        
+                        <div class="demo-buttons fade-in-up-delay">
+                            <a href="/demo/dashboard" class="demo-btn demo-btn-primary">
+                                <i class="fas fa-play"></i>
+                                Try Live Demo
+                            </a>
+                            <a href="/demo/features" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-eye"></i>
+                                Explore Features
+                            </a>
+                        </div>
+
+                        <!-- Live Demo Preview -->
+                        <div class="demo-preview fade-in-up-delay">
+                            <h3><i class="fas fa-chart-line"></i> Live Demo Statistics</h3>
+                            <p>Real-time data from our demo environment</p>
+                            <div class="preview-stats">
+                                <div class="preview-stat">
+                                    <div class="preview-stat-number" id="demo-assets">150+</div>
+                                    <div class="preview-stat-label">Assets Tracked</div>
+                                </div>
+                                <div class="preview-stat">
+                                    <div class="preview-stat-number" id="demo-workorders">95%</div>
+                                    <div class="preview-stat-label">Uptime</div>
+                                </div>
+                                <div class="preview-stat">
+                                    <div class="preview-stat-number" id="demo-users">50+</div>
+                                    <div class="preview-stat-label">Active Users</div>
+                                </div>
+                                <div class="preview-stat">
+                                    <div class="preview-stat-number" id="demo-ai">24/7</div>
+                                    <div class="preview-stat-label">AI Monitoring</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="display-4 mb-3">Powerful Features</h2>
+                    <p class="lead opacity-75">Everything you need to manage maintenance efficiently</p>
+                </div>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card fade-in-up">
+                    <i class="fas fa-robot feature-icon ai"></i>
+                    <h3 class="feature-title">AI-Powered Insights</h3>
+                    <p class="feature-description">
+                        Advanced machine learning algorithms predict equipment failures, optimize maintenance schedules, 
+                        and provide actionable insights to reduce downtime.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in-up">
+                    <i class="fas fa-tachometer-alt feature-icon dashboard"></i>
+                    <h3 class="feature-title">Real-Time Dashboard</h3>
+                    <p class="feature-description">
+                        Live monitoring of all your assets, work orders, and team performance with customizable 
+                        widgets and real-time notifications.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in-up">
+                    <i class="fas fa-mobile-alt feature-icon mobile"></i>
+                    <h3 class="feature-title">Mobile-First Design</h3>
+                    <p class="feature-description">
+                        PWA technology ensures your team can access ChatterFix from anywhere, with offline 
+                        capabilities and native app-like experience.
+                    </p>
+                </div>
+                
+                <div class="feature-card fade-in-up">
+                    <i class="fas fa-cogs feature-icon automation"></i>
+                    <h3 class="feature-title">Smart Automation</h3>
+                    <p class="feature-description">
+                        Automated work order generation, smart scheduling, preventive maintenance alerts, 
+                        and intelligent parts management.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Demo Access Section -->
+            <div class="row mt-5">
+                <div class="col-12 text-center">
+                    <div class="demo-preview">
+                        <h3><i class="fas fa-rocket"></i> Ready to Experience ChatterFix?</h3>
+                        <p>No signup required - jump straight into our fully functional demo</p>
+                        <div class="demo-buttons">
+                            <a href="/demo/dashboard" class="demo-btn demo-btn-primary">
+                                <i class="fas fa-play"></i>
+                                Launch Full Demo
+                            </a>
+                            <a href="/demo/mobile" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-mobile-alt"></i>
+                                Mobile Demo
+                            </a>
+                            <a href="/demo/ai" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-brain"></i>
+                                AI Features Demo
+                            </a>
+                        </div>
+                        <p class="mt-3 small opacity-75">
+                            <i class="fas fa-info-circle"></i>
+                            Demo includes real-time data, AI analysis, and full feature access
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Access Footer -->
+    <div class="container-fluid py-4" style="background: rgba(0,0,0,0.3);">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-bolt"></i> Quick Demo Access</h5>
+                    <p class="mb-0">Experience ChatterFix features instantly</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/auth/login" class="btn btn-outline-light btn-sm me-2">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="/landing" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Add some interactive demo stats
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate demo stats
+            const stats = [
+                { id: 'demo-assets', values: ['147', '148', '149', '150', '151'], suffix: '+' },
+                { id: 'demo-workorders', values: ['94.2%', '94.8%', '95.1%', '95.3%', '95.7%'], suffix: '' },
+                { id: 'demo-users', values: ['48', '49', '50', '51', '52'], suffix: '+' },
+                { id: 'demo-ai', values: ['24/7', '24/7', '24/7', '24/7', '24/7'], suffix: '' }
+            ];
+
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                let index = 0;
+                
+                setInterval(() => {
+                    element.textContent = stat.values[index] + stat.suffix;
+                    index = (index + 1) % stat.values.length;
+                }, 3000 + Math.random() * 2000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1164 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Scheduler - ChatterFix{% endblock %}
+
+{% block head %}
+<!-- FullCalendar CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+<!-- Chart.js for analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Gantt chart library -->
+<script src="https://cdn.jsdelivr.net/npm/dhtmlx-gantt@8.0.6/codebase/dhtmlxgantt.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dhtmlx-gantt@8.0.6/codebase/dhtmlxgantt.css">
+
+<style>
+    .advanced-scheduler {
+        padding: 1rem;
+        max-width: 100%;
+        margin: 0 auto;
+        font-family: "Outfit", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .advanced-scheduler *, 
+    .advanced-scheduler *::before, 
+    .advanced-scheduler *::after {
+        font-family: "Outfit", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+        color: var(--text-primary);
+    }
+
+    .scheduler-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .scheduler-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .scheduler-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+    }
+
+    .view-selector {
+        display: flex;
+        gap: 0.5rem;
+        background: var(--bg-secondary);
+        padding: 0.5rem;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+    }
+
+    .view-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .view-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .scheduler-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .sidebar {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+    }
+
+    .sidebar-section {
+        margin-bottom: 2rem;
+    }
+
+    .sidebar-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .main-content {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        min-height: 600px;
+    }
+
+    .calendar-container {
+        height: 600px;
+    }
+
+    .gantt-container {
+        height: 600px;
+        display: none;
+    }
+
+    .technician-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .technician-item:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateX(4px);
+    }
+
+    .technician-info {
+        flex: 1;
+    }
+
+    .technician-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .technician-meta {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+
+    .technician-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .status-available {
+        background: #4ade80;
+        color: #065f46;
+    }
+
+    .status-busy {
+        background: #f87171;
+        color: #7f1d1d;
+    }
+
+    .status-off-duty {
+        background: #9ca3af;
+        color: #374151;
+    }
+
+    .filter-section {
+        margin-bottom: 1rem;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        color: white;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .optimization-panel {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .optimization-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .date-input {
+        padding: 0.5rem;
+        border: 2px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .objective-selector {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .objective-tag {
+        padding: 0.5rem 1rem;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .objective-tag.selected {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border-color);
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .conflict-alert {
+        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .conflict-header {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .recommendations {
+        background: var(--bg-secondary);
+        border-left: 4px solid var(--primary-color);
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin-top: 1rem;
+    }
+
+    .recommendation-item {
+        margin-bottom: 0.5rem;
+        padding-left: 1rem;
+    }
+
+    .recommendation-item::before {
+        content: "•";
+        color: var(--primary-color);
+        font-weight: bold;
+        margin-right: 0.5rem;
+        margin-left: -1rem;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .scheduler-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .scheduler-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .optimization-controls {
+            flex-direction: column;
+        }
+        
+        .view-selector {
+            justify-content: center;
+        }
+    }
+
+    /* FullCalendar Customizations */
+    .fc {
+        background: #808080 !important; /* Gray background for calendar */
+        border-radius: 8px;
+        padding: 10px;
+        font-family: "Outfit", "Segoe UI", sans-serif !important; /* Ensure font inheritance */
+    }
+    
+    .fc-theme-standard .fc-scrollgrid {
+        border: 1px solid var(--border-color);
+        background: #808080 !important; /* Gray background for calendar grid */
+    }
+    
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: transparent;
+    }
+    
+    .fc-theme-standard .fc-popover {
+        background: var(--bg-glass);
+        border-color: var(--border-glass);
+        color: var(--text-primary);
+        font-family: "Outfit", sans-serif !important;
+    }
+    
+    .fc-daygrid-day {
+        background: transparent;
+        color: var(--text-primary);
+    }
+    
+    .fc-day-today {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .fc-col-header-cell {
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .fc-daygrid-day-number {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .fc-button {
+        background: var(--bg-glass) !important;
+        border-color: var(--border-glass) !important;
+        color: var(--text-primary) !important;
+        font-family: "Outfit", sans-serif !important;
+    }
+    
+    .fc-button:hover {
+        background: var(--bg-glass-hover) !important;
+    }
+    
+    .fc-toolbar-title {
+        color: var(--text-primary) !important;
+        font-family: "Outfit", sans-serif !important;
+        font-weight: 600;
+    }
+
+    .fc-event {
+        border-radius: 4px;
+        border: none;
+        font-size: 0.85rem;
+        font-family: "Outfit", sans-serif !important;
+    }
+
+    .fc-event-title {
+        font-weight: 600;
+        font-family: "Outfit", sans-serif !important;
+    }
+
+    .priority-emergency {
+        background: #dc2626 !important;
+    }
+
+    .priority-urgent {
+        background: #ea580c !important;
+    }
+
+    .priority-high {
+        background: #d97706 !important;
+    }
+
+    .priority-medium {
+        background: #059669 !important;
+    }
+
+    .priority-low {
+        background: #0284c7 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="advanced-scheduler">
+    <div class="scheduler-header">
+        <div>
+            <h1 class="scheduler-title">Advanced Scheduler</h1>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                AI-driven maintenance scheduling that surpasses MaintainX capabilities
+            </p>
+        </div>
+        
+        <div class="scheduler-controls">
+            <div class="view-selector">
+                <button class="view-btn active" onclick="switchView('calendar')">Calendar</button>
+                <button class="view-btn" onclick="switchView('gantt')">Gantt Chart</button>
+                <button class="view-btn" onclick="switchView('list')">List View</button>
+            </div>
+            <button class="btn-primary" onclick="openOptimizationPanel()">
+                Optimize Schedule
+            </button>
+            <button class="btn-secondary" onclick="exportSchedule()">
+                Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-value" id="totalTechnicians">-</div>
+            <div class="stat-label">Active Technicians</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="scheduledTasks">-</div>
+            <div class="stat-label">Scheduled Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="utilizationRate">-</div>
+            <div class="stat-label">Utilization Rate</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="conflictCount">-</div>
+            <div class="stat-label">Conflicts Detected</div>
+        </div>
+    </div>
+
+    <!-- Optimization Panel -->
+    <div class="optimization-panel" id="optimizationPanel" style="display: none;">
+        <h3 style="margin-bottom: 1rem;">Schedule Optimization</h3>
+        
+        <div class="optimization-controls">
+            <div>
+                <label>Start Date:</label>
+                <input type="date" id="startDate" class="date-input" value="">
+            </div>
+            <div>
+                <label>End Date:</label>
+                <input type="date" id="endDate" class="date-input" value="">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Optimization Objectives:</label>
+            <div class="objective-selector">
+                <div class="objective-tag selected" data-objective="minimize_cost">Minimize Cost</div>
+                <div class="objective-tag selected" data-objective="maximize_efficiency">Maximize Efficiency</div>
+                <div class="objective-tag" data-objective="balance_workload">Balance Workload</div>
+                <div class="objective-tag" data-objective="minimize_travel">Minimize Travel</div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn-primary" onclick="runOptimization()">Run Optimization</button>
+            <button class="btn-secondary" onclick="closeOptimizationPanel()">Cancel</button>
+        </div>
+        
+        <div class="loading-spinner" id="optimizationLoading">
+            <div class="spinner"></div>
+            <p>Optimizing schedule using advanced AI algorithms...</p>
+        </div>
+        
+        <div id="optimizationResults" style="display: none;">
+            <h4 style="margin: 1rem 0;">Optimization Results</h4>
+            <div id="optimizationContent"></div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="scheduler-grid">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Technician Filter -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    👥 Technicians
+                </div>
+                <div class="filter-section">
+                    <input type="text" class="filter-input" placeholder="Search technicians..." 
+                           id="technicianSearch" onkeyup="filterTechnicians()">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="showAvailableOnly" onchange="filterTechnicians()">
+                        <label for="showAvailableOnly">Available only</label>
+                    </div>
+                </div>
+                <div id="technicianList">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Location Filter -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    📍 Locations
+                </div>
+                <div id="locationFilters">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    ⚡ Priority Levels
+                </div>
+                <div id="priorityFilters">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="priority-emergency" checked onchange="filterByPriority()">
+                        <label for="priority-emergency">Emergency</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="priority-urgent" checked onchange="filterByPriority()">
+                        <label for="priority-urgent">Urgent</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="priority-high" checked onchange="filterByPriority()">
+                        <label for="priority-high">High</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="priority-medium" checked onchange="filterByPriority()">
+                        <label for="priority-medium">Medium</label>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="priority-low" checked onchange="filterByPriority()">
+                        <label for="priority-low">Low</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Calendar View -->
+            <div id="calendarView" class="calendar-container">
+                <div id="calendar"></div>
+            </div>
+
+            <!-- Gantt Chart View -->
+            <div id="ganttView" class="gantt-container">
+                <div id="gantt_here"></div>
+            </div>
+
+            <!-- List View -->
+            <div id="listView" style="display: none;">
+                <div id="scheduleList">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflicts and Recommendations -->
+    <div id="conflictsSection" style="display: none;">
+        <h3 style="margin-bottom: 1rem;">Scheduling Conflicts</h3>
+        <div id="conflictsList"></div>
+        
+        <div class="recommendations">
+            <h4 style="margin-bottom: 0.5rem;">AI Recommendations</h4>
+            <div id="recommendationsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let calendar;
+let ganttChart;
+let currentView = 'calendar';
+let schedulerData = {
+    technicians: {},
+    assets: {},
+    events: [],
+    conflicts: []
+};
+
+// Always use main planner API endpoints with Firestore data
+const apiPrefix = '/planner';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Advanced Scheduler initializing...');
+    
+    // Set default dates
+    const today = new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    
+    document.getElementById('startDate').valueAsDate = today;
+    document.getElementById('endDate').valueAsDate = nextMonth;
+
+    // Initialize the advanced scheduler
+    await initializeScheduler();
+    
+    // Load initial data
+    await loadSchedulerData();
+    
+    // Initialize calendar
+    initializeCalendar();
+    
+    // Initialize Gantt chart
+    initializeGantt();
+    
+    // Load stats
+    updateStats();
+});
+
+async function initializeScheduler() {
+    try {
+        const response = await fetch(`${apiPrefix}/advanced/initialize`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to initialize scheduler');
+        }
+        
+        const result = await response.json();
+        console.log('Scheduler initialized:', result);
+    } catch (error) {
+        console.error('Initialization error:', error);
+        // Continue with demo data if initialization fails
+        await loadMockData();
+    }
+}
+
+async function loadMockData() {
+    try {
+        const response = await fetch(`${apiPrefix}/advanced/mock-data`);
+        const data = await response.json();
+        
+        if (data.data) {
+            schedulerData.workOrders = data.data.work_orders || [];
+            schedulerData.assets = data.data.assets || [];
+            schedulerData.parts = data.data.parts || [];
+            schedulerData.pmSchedules = data.data.pm_schedules || [];
+            
+            // Update UI components
+            updateTechniciansList();
+            updateLocationFilters();
+            updateWorkOrdersDisplay();
+            updatePartsInventory();
+        }
+        
+    } catch (error) {
+        console.error('Error loading mock data:', error);
+    }
+}
+
+async function loadSchedulerData() {
+    try {
+        // Load technicians
+        const techResponse = await fetch(`${apiPrefix}/advanced/technicians`);
+        const techData = await techResponse.json();
+        schedulerData.technicians = techData.technicians || [];
+        
+        // Load calendar events
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        const calendarResponse = await fetch(
+            `${apiPrefix}/advanced/calendar?start_date=${startDate}&end_date=${endDate}`
+        );
+        const calendarData = await calendarResponse.json();
+        schedulerData.events = calendarData.events || [];
+        
+        // Update UI
+        updateTechniciansList();
+        updateLocationFilters();
+        updateCalendarEvents();
+        
+    } catch (error) {
+        console.error('Error loading scheduler data:', error);
+        await loadMockData(); // Fallback to mock data
+    }
+}
+
+function updateTechniciansList() {
+    const container = document.getElementById('technicianList');
+    container.innerHTML = '';
+    
+    Object.values(schedulerData.technicians).forEach(tech => {
+        const techDiv = document.createElement('div');
+        techDiv.className = 'technician-item';
+        techDiv.onclick = () => filterByTechnician(tech.id);
+        
+        techDiv.innerHTML = `
+            <div class="technician-info">
+                <div class="technician-name">${tech.name}</div>
+                <div class="technician-meta">${tech.location}</div>
+            </div>
+            <div class="technician-status status-${tech.status}">
+                ${tech.status}
+            </div>
+        `;
+        
+        container.appendChild(techDiv);
+    });
+}
+
+function updateLocationFilters() {
+    const locations = new Set();
+    Object.values(schedulerData.technicians).forEach(tech => {
+        locations.add(tech.location);
+    });
+    
+    const container = document.getElementById('locationFilters');
+    container.innerHTML = '';
+    
+    locations.forEach(location => {
+        const filterDiv = document.createElement('div');
+        filterDiv.className = 'filter-checkbox';
+        filterDiv.innerHTML = `
+            <input type="checkbox" id="location-${location.replace(/\s+/g, '-')}" 
+                   checked onchange="filterByLocation()">
+            <label for="location-${location.replace(/\s+/g, '-')}">${location}</label>
+        `;
+        container.appendChild(filterDiv);
+    });
+}
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: [],
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        weekends: true,
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        },
+        select: function(info) {
+            createNewEvent(info.start, info.end);
+        },
+        eventDrop: function(info) {
+            updateEventTime(info.event, info.delta);
+        },
+        eventResize: function(info) {
+            updateEventDuration(info.event, info.endDelta);
+        },
+        height: 'auto'
+    });
+    
+    calendar.render();
+}
+
+function initializeGantt() {
+    gantt.config.date_format = "%Y-%m-%d %H:%i";
+    gantt.config.scale_unit = "day";
+    gantt.config.date_scale = "%d %M";
+    gantt.config.scale_height = 50;
+    gantt.config.row_height = 30;
+    
+    gantt.init("gantt_here");
+}
+
+function updateCalendarEvents() {
+    if (calendar) {
+        calendar.removeAllEvents();
+        
+        schedulerData.events.forEach(event => {
+            calendar.addEvent({
+                id: event.id,
+                title: event.title,
+                start: event.start,
+                end: event.end,
+                backgroundColor: event.color,
+                extendedProps: {
+                    technicianId: event.technician_id,
+                    technicianName: event.technician_name,
+                    priority: event.priority,
+                    location: event.location,
+                    assetId: event.asset_id
+                }
+            });
+        });
+    }
+}
+
+function switchView(viewType) {
+    // Update buttons
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Hide all views
+    document.getElementById('calendarView').style.display = 'none';
+    document.getElementById('ganttView').style.display = 'none';
+    document.getElementById('listView').style.display = 'none';
+    
+    // Show selected view
+    currentView = viewType;
+    
+    switch (viewType) {
+        case 'calendar':
+            document.getElementById('calendarView').style.display = 'block';
+            if (calendar) calendar.render();
+            break;
+        case 'gantt':
+            document.getElementById('ganttView').style.display = 'block';
+            updateGanttData();
+            break;
+        case 'list':
+            document.getElementById('listView').style.display = 'block';
+            updateListView();
+            break;
+    }
+}
+
+function updateGanttData() {
+    const tasks = {
+        data: schedulerData.events.map(event => ({
+            id: event.id,
+            text: event.title,
+            start_date: event.start,
+            end_date: event.end,
+            progress: 0,
+            priority: event.priority,
+            technician: event.technician_name
+        }))
+    };
+    
+    if (gantt) {
+        gantt.parse(tasks);
+    }
+}
+
+function updateListView() {
+    const container = document.getElementById('scheduleList');
+    container.innerHTML = '';
+    
+    const sortedEvents = [...schedulerData.events].sort(
+        (a, b) => new Date(a.start) - new Date(b.start)
+    );
+    
+    sortedEvents.forEach(event => {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = `backlog-item ${event.priority.toLowerCase()}`;
+        eventDiv.innerHTML = `
+            <div class="backlog-header">
+                <div class="backlog-title">${event.title}</div>
+                <span class="priority-badge ${event.priority.toLowerCase()}">${event.priority}</span>
+            </div>
+            <div class="backlog-meta">
+                <span>👤 ${event.technician_name}</span>
+                <span>📍 ${event.location}</span>
+                <span>📅 ${new Date(event.start).toLocaleDateString()}</span>
+                <span>⏰ ${new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+        `;
+        container.appendChild(eventDiv);
+    });
+}
+
+async function updateStats() {
+    try {
+        const response = await fetch(`${apiPrefix}/advanced/analytics`);
+        const analytics = await response.json();
+        
+        document.getElementById('totalTechnicians').textContent = 
+            analytics.technician_analytics.total_count;
+        document.getElementById('scheduledTasks').textContent = 
+            schedulerData.events.length;
+        
+        // Calculate average utilization
+        const avgUtilization = Object.values(schedulerData.technicians)
+            .reduce((sum, tech) => sum + (tech.current_workload_hours || 0), 0) / 
+            Object.keys(schedulerData.technicians).length;
+        document.getElementById('utilizationRate').textContent = 
+            Math.round(avgUtilization * 12.5) + '%'; // Assume 8h = 100%
+            
+        document.getElementById('conflictCount').textContent = 
+            schedulerData.conflicts.length;
+            
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+function openOptimizationPanel() {
+    document.getElementById('optimizationPanel').style.display = 'block';
+}
+
+function closeOptimizationPanel() {
+    document.getElementById('optimizationPanel').style.display = 'none';
+    document.getElementById('optimizationResults').style.display = 'none';
+}
+
+async function runOptimization() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    const selectedObjectives = Array.from(
+        document.querySelectorAll('.objective-tag.selected')
+    ).map(tag => tag.dataset.objective);
+    
+    // Show loading spinner
+    document.getElementById('optimizationLoading').style.display = 'block';
+    document.getElementById('optimizationResults').style.display = 'none';
+    
+    try {
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        selectedObjectives.forEach(obj => params.append('objectives', obj));
+        
+        const response = await fetch(`${apiPrefix}/advanced/optimize?${params}`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Optimization failed');
+        }
+        
+        const result = await response.json();
+        displayOptimizationResults(result);
+        
+        // Reload calendar data
+        await loadSchedulerData();
+        
+    } catch (error) {
+        console.error('Optimization error:', error);
+        alert('Optimization failed. Please try again.');
+    } finally {
+        document.getElementById('optimizationLoading').style.display = 'none';
+    }
+}
+
+function displayOptimizationResults(result) {
+    const container = document.getElementById('optimizationContent');
+    
+    container.innerHTML = `
+        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 1rem;">
+            <div class="stat-card">
+                <div class="stat-value">$${result.optimization_result.total_cost.toFixed(0)}</div>
+                <div class="stat-label">Total Cost</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${result.optimization_result.completion_percentage.toFixed(1)}%</div>
+                <div class="stat-label">Completion Rate</div>
+            </div>
+        </div>
+        
+        ${result.conflicts.length > 0 ? `
+            <div style="margin-bottom: 1rem;">
+                <h5>Conflicts Detected:</h5>
+                ${result.conflicts.map(conflict => `
+                    <div class="conflict-alert">
+                        <div class="conflict-header">
+                            ${conflict.technician_id} - ${conflict.conflict_type}
+                        </div>
+                        <div>Severity: ${conflict.severity}/5</div>
+                    </div>
+                `).join('')}
+            </div>
+        ` : ''}
+        
+        <div class="recommendations">
+            <h5>Recommendations:</h5>
+            ${result.optimization_result.recommendations.map(rec => `
+                <div class="recommendation-item">${rec}</div>
+            `).join('')}
+        </div>
+    `;
+    
+    document.getElementById('optimizationResults').style.display = 'block';
+    
+    // Store conflicts for display
+    schedulerData.conflicts = result.conflicts;
+    updateStats();
+}
+
+// Event handlers for objective selection
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('objective-tag')) {
+        e.target.classList.toggle('selected');
+    }
+});
+
+function filterTechnicians() {
+    const searchTerm = document.getElementById('technicianSearch').value.toLowerCase();
+    const availableOnly = document.getElementById('showAvailableOnly').checked;
+    
+    const techItems = document.querySelectorAll('.technician-item');
+    
+    techItems.forEach(item => {
+        const name = item.querySelector('.technician-name').textContent.toLowerCase();
+        const status = item.querySelector('.technician-status').textContent.toLowerCase();
+        
+        const matchesSearch = name.includes(searchTerm);
+        const matchesAvailability = !availableOnly || status === 'available';
+        
+        item.style.display = matchesSearch && matchesAvailability ? 'flex' : 'none';
+    });
+}
+
+function filterByTechnician(techId) {
+    // Implement technician-specific filtering
+    console.log('Filter by technician:', techId);
+}
+
+function filterByLocation() {
+    // Implement location filtering
+    console.log('Filter by location');
+}
+
+function filterByPriority() {
+    // Implement priority filtering
+    console.log('Filter by priority');
+}
+
+function showEventDetails(event) {
+    const details = `
+        Title: ${event.title}
+        Technician: ${event.extendedProps.technicianName}
+        Location: ${event.extendedProps.location}
+        Priority: ${event.extendedProps.priority}
+        Start: ${event.start.toLocaleString()}
+        End: ${event.end.toLocaleString()}
+    `;
+    alert(details); // Replace with modal in production
+}
+
+function createNewEvent(start, end) {
+    // Implement new event creation
+    console.log('Create new event:', start, end);
+}
+
+function updateEventTime(event, delta) {
+    // Implement event time update
+    console.log('Update event time:', event, delta);
+}
+
+function updateEventDuration(event, endDelta) {
+    // Implement event duration update
+    console.log('Update event duration:', event, endDelta);
+}
+
+function exportSchedule() {
+    // Implement schedule export
+    const data = {
+        events: schedulerData.events,
+        technicians: schedulerData.technicians,
+        period: {
+            start: document.getElementById('startDate').value,
+            end: document.getElementById('endDate').value
+        }
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'maintenance_schedule.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

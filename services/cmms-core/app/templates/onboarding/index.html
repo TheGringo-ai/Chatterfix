@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Onboarding & Import - ChatterFix{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3">Onboarding & Data Import</h1>
+            <p class="text-muted">Bulk import your data to get started quickly.</p>
+        </div>
+    </div>
+
+    {% if request.query_params.message %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {{ request.query_params.message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Assets Import -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-cubes me-2"></i>Assets</h5>
+                </div>
+                <div class="card-body">
+                    <p>Import your equipment, machinery, and facilities.</p>
+                    <div class="mb-3">
+                        <a href="/onboarding/template/assets" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                    </div>
+                    <form action="/onboarding/import/assets" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="assetsFile" class="form-label">Upload CSV/Excel</label>
+                            <input class="form-control" type="file" id="assetsFile" name="file"
+                                accept=".csv, .xlsx, .xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Import Assets</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parts Import -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-tools me-2"></i>Parts & Inventory</h5>
+                </div>
+                <div class="card-body">
+                    <p>Import your spare parts inventory and stock levels.</p>
+                    <div class="mb-3">
+                        <a href="/onboarding/template/parts" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                    </div>
+                    <form action="/onboarding/import/parts" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="partsFile" class="form-label">Upload CSV/Excel</label>
+                            <input class="form-control" type="file" id="partsFile" name="file"
+                                accept=".csv, .xlsx, .xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Import Parts</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Orders Import -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0"><i class="fas fa-clipboard-list me-2"></i>Work Orders</h5>
+                </div>
+                <div class="card-body">
+                    <p>Import existing or historical work orders.</p>
+                    <div class="mb-3">
+                        <a href="/onboarding/template/work_orders" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="fas fa-download me-1"></i> Download Template
+                        </a>
+                    </div>
+                    <form action="/onboarding/import/work_orders" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="woFile" class="form-label">Upload CSV/Excel</label>
+                            <input class="form-control" type="file" id="woFile" name="file" accept=".csv, .xlsx, .xls"
+                                required>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">Import Work Orders</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

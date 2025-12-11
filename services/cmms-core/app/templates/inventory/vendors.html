@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Vendors - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="header-section">
+        <h1>Vendor Management</h1>
+        <div class="actions">
+            <button onclick="document.getElementById('addVendorModal').style.display='block'" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Vendor
+            </button>
+            <a href="/inventory" class="btn btn-secondary">Back to Inventory</a>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact Person</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vendor in vendors %}
+                <tr>
+                    <td>{{ vendor.name }}</td>
+                    <td>{{ vendor.contact_name }}</td>
+                    <td>{{ vendor.email }}</td>
+                    <td>{{ vendor.phone }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info">Edit</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Simple Modal for Adding Vendor -->
+<div id="addVendorModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 10% auto; width: 500px; padding: 30px;">
+        <h2>Add New Vendor</h2>
+        <form action="/vendors/add" method="POST">
+            <div class="form-group">
+                <label>Vendor Name *</label>
+                <input type="text" name="name" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Contact Person</label>
+                <input type="text" name="contact_name" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" name="phone" class="form-control">
+            </div>
+            <div class="form-actions" style="margin-top: 20px; text-align: right;">
+                <button type="button" onclick="document.getElementById('addVendorModal').style.display='none'"
+                    class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Vendor</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

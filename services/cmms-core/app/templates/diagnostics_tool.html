@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment Diagnostics - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<style>
+    .diagnostics-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .search-section {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
+
+    .symptom-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .symptom-btn {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+    }
+
+    .symptom-btn:hover {
+        background: rgba(52, 152, 219, 0.3);
+        border-color: #3498db;
+        transform: translateY(-2px);
+    }
+
+    .symptom-btn.selected {
+        background: rgba(52, 152, 219, 0.5);
+        border-color: #3498db;
+    }
+
+    .troubleshooting-steps {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-top: 2rem;
+    }
+
+    .step {
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-left: 4px solid #3498db;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background: #3498db;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        margin-right: 1rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="diagnostics-container">
+    <div class="page-header">
+        <h1>🔧 Equipment Diagnostics</h1>
+        <p>AI-powered troubleshooting assistant</p>
+    </div>
+
+    <div class="search-section">
+        <h2>Select Equipment</h2>
+        <select id="asset-select" class="cmms-input" style="width: 100%; margin-bottom: 1rem;">
+            <option value="">Choose an asset...</option>
+            {% for asset in assets %}
+            <option value="{{ asset.id }}">{{ asset.name }} - {{ asset.location }}</option>
+            {% endfor %}
+        </select>
+
+        <div id="symptom-section" style="display: none;">
+            <h3 style="margin-top: 2rem;">What symptoms are you experiencing?</h3>
+            <div class="symptom-grid">
+                <div class="symptom-btn" data-symptom="noise">
+                    🔊 Unusual Noise<br>
+                    <small style="opacity: 0.7;">Grinding, squealing, or rattling</small>
+                </div>
+                <div class="symptom-btn" data-symptom="vibration">
+                    📳 Excessive Vibration<br>
+                    <small style="opacity: 0.7;">Shaking or unstable operation</small>
+                </div>
+                <div class="symptom-btn" data-symptom="overheating">
+                    🔥 Overheating<br>
+                    <small style="opacity: 0.7;">High temperature readings</small>
+                </div>
+                <div class="symptom-btn" data-symptom="leak">
+                    💧 Fluid Leak<br>
+                    <small style="opacity: 0.7;">Oil, coolant, or hydraulic fluid</small>
+                </div>
+                <div class="symptom-btn" data-symptom="performance">
+                    ⚡ Poor Performance<br>
+                    <small style="opacity: 0.7;">Reduced output or efficiency</small>
+                </div>
+                <div class="symptom-btn" data-symptom="electrical">
+                    ⚡ Electrical Issues<br>
+                    <small style="opacity: 0.7;">Power fluctuations or failures</small>
+                </div>
+            </div>
+
+            <button class="cmms-btn" onclick="generateDiagnosis()" style="margin-top: 1rem;">
+                🤖 Generate AI Diagnosis
+            </button>
+        </div>
+    </div>
+
+    <div id="diagnosis-result" style="display: none;">
+        <div class="cmms-card">
+            <h2>🎯 Diagnosis Results</h2>
+            <div id="diagnosis-content"></div>
+        </div>
+
+        <div class="troubleshooting-steps">
+            <h2>📋 Recommended Troubleshooting Steps</h2>
+            <div id="steps-content"></div>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+            <button class="cmms-btn" onclick="createWorkOrder()">
+                📝 Create Work Order
+            </button>
+            <button class="cmms-btn" onclick="orderParts()">
+                🔩 Order Parts
+            </button>
+            <button class="cmms-btn" onclick="window.print()">
+                🖨️ Print Diagnosis
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedAsset = null;
+let selectedSymptoms = [];
+
+document.getElementById('asset-select').addEventListener('change', function() {
+    selectedAsset = this.value;
+    if (selectedAsset) {
+        document.getElementById('symptom-section').style.display = 'block';
+    } else {
+        document.getElementById('symptom-section').style.display = 'none';
+    }
+});
+
+document.querySelectorAll('.symptom-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.classList.toggle('selected');
+        const symptom = this.dataset.symptom;
+        if (selectedSymptoms.includes(symptom)) {
+            selectedSymptoms = selectedSymptoms.filter(s => s !== symptom);
+        } else {
+            selectedSymptoms.push(symptom);
+        }
+    });
+});
+
+function generateDiagnosis() {
+    if (selectedSymptoms.length === 0) {
+        alert('Please select at least one symptom');
+        return;
+    }
+
+    const assetName = document.getElementById('asset-select').selectedOptions[0].text;
+    
+    // Show diagnosis section
+    document.getElementById('diagnosis-result').style.display = 'block';
+    
+    // Generate diagnosis based on symptoms
+    let diagnosis = `<div class="step">
+        <strong>🤖 AI Analysis for ${assetName}</strong><br><br>
+        Based on the symptoms: ${selectedSymptoms.join(', ')}<br><br>
+        <strong>Likely Cause:</strong> `;
+    
+    if (selectedSymptoms.includes('noise') && selectedSymptoms.includes('vibration')) {
+        diagnosis += 'Bearing failure or misalignment';
+    } else if (selectedSymptoms.includes('overheating')) {
+        diagnosis += 'Cooling system malfunction or excessive friction';
+    } else if (selectedSymptoms.includes('leak')) {
+        diagnosis += 'Seal or gasket failure';
+    } else if (selectedSymptoms.includes('performance')) {
+        diagnosis += 'Wear and tear or calibration issues';
+    } else {
+        diagnosis += 'Multiple potential causes - detailed inspection recommended';
+    }
+    
+    diagnosis += `<br><br><strong>Confidence:</strong> 85%</div>`;
+    
+    document.getElementById('diagnosis-content').innerHTML = diagnosis;
+    
+    // Generate troubleshooting steps
+    const steps = `
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Safety First</strong><br>
+            Lock out/tag out the equipment and ensure all safety protocols are followed
+        </div>
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Visual Inspection</strong><br>
+            Check for obvious signs of damage, wear, or leaks
+        </div>
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Component Check</strong><br>
+            Inspect bearings, belts, seals, and other critical components
+        </div>
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Measurements</strong><br>
+            Take temperature, vibration, and performance readings
+        </div>
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>Corrective Action</strong><br>
+            Replace worn parts, adjust alignment, or schedule major repair
+        </div>
+    `;
+    
+    document.getElementById('steps-content').innerHTML = steps;
+    
+    // Scroll to results
+    document.getElementById('diagnosis-result').scrollIntoView({ behavior: 'smooth' });
+}
+
+function createWorkOrder() {
+    const assetName = document.getElementById('asset-select').selectedOptions[0].text;
+    alert(`✅ Work order created for ${assetName}\n\nSymptoms: ${selectedSymptoms.join(', ')}\nPriority: High\n\nRedirecting to work orders...`);
+    setTimeout(() => {
+        window.location.href = '/demo/work-orders';
+    }, 1500);
+}
+
+function orderParts() {
+    alert('📦 Redirecting to parts catalog...');
+    setTimeout(() => {
+        window.location.href = '/demo/inventory';
+    }, 1000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,964 @@
+{% extends "base.html" %}
+
+{% block title %}Camera Interface - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    .camera-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .camera-preview {
+        position: relative;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    #video {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        display: block;
+    }
+
+    #canvas {
+        display: none;
+    }
+
+    .camera-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+
+    .camera-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .camera-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn-capture {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        min-width: 120px;
+    }
+
+    .btn-record {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .btn-switch {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+    }
+
+    .btn-gallery {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+
+    .btn-voice {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
+    .recording {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .voice-interface {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .voice-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .voice-recording-btn {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: none;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .voice-recording-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+    }
+
+    .voice-recording-btn.recording {
+        background: linear-gradient(135deg, #10b981, #059669);
+        animation: pulse-voice 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-voice {
+        0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+        50% { 
+            transform: scale(1.1);
+            box-shadow: 0 8px 40px rgba(16, 185, 129, 0.6);
+        }
+    }
+
+    .voice-status {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        min-height: 1.5rem;
+    }
+
+    .voice-transcript {
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        min-height: 100px;
+        border-left: 4px solid #f59e0b;
+    }
+
+    .voice-transcript p {
+        margin: 0;
+        color: #6b7280;
+        font-style: italic;
+    }
+
+    .voice-transcript.has-content {
+        background: #ecfdf5;
+        border-left-color: #10b981;
+    }
+
+    .voice-transcript.has-content p {
+        color: #064e3b;
+        font-style: normal;
+        font-weight: 500;
+    }
+
+    .voice-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .capture-preview {
+        margin: 2rem 0;
+        display: none;
+    }
+
+    .captured-image, .recorded-video {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .media-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .status-message {
+        margin: 1rem 0;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .status-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .upload-form {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin: 2rem 0;
+        display: none;
+    }
+
+    .form-group {
+        margin: 1rem 0;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: #6366f1;
+    }
+
+    .permission-request {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        color: #92400e;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="camera-container">
+    <h1>📸 Camera Interface</h1>
+    <p>Take photos or record videos for work orders, parts documentation, and more.</p>
+
+    <!-- Permission Request -->
+    <div id="permission-request" class="permission-request" style="display: none;">
+        <p>🔒 Camera access required. Please allow camera permissions to continue.</p>
+        <button class="camera-btn btn-capture" onclick="requestCameraAccess()">Grant Camera Access</button>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Camera Controls -->
+    <div class="camera-controls">
+        <button id="capture-btn" class="camera-btn btn-capture" onclick="capturePhoto()">
+            📸 Capture Photo
+        </button>
+        <button id="record-btn" class="camera-btn btn-record" onclick="toggleRecording()">
+            🎥 Start Recording
+        </button>
+        <button id="voice-capture-btn" class="camera-btn btn-voice" onclick="toggleVoiceCapture()">
+            🎤 Voice Command
+        </button>
+        <button class="camera-btn btn-switch" onclick="switchCamera()">
+            🔄 Switch Camera
+        </button>
+        <button class="camera-btn btn-gallery" onclick="openGallery()">
+            🖼️ Gallery
+        </button>
+    </div>
+
+    <!-- Voice Capture Interface -->
+    <div id="voice-interface" class="voice-interface" style="display: none;">
+        <div class="voice-controls">
+            <button id="voice-btn" class="voice-recording-btn" onclick="toggleVoiceRecording()">
+                🎤 Start Voice Command
+            </button>
+            <div id="voice-status" class="voice-status"></div>
+        </div>
+        <div id="voice-transcript" class="voice-transcript">
+            <p>Say something like: "Create urgent work order for broken pump in warehouse A"</p>
+        </div>
+        <div id="voice-actions" class="voice-actions" style="display: none;">
+            <button class="camera-btn btn-capture" onclick="processVoiceCommand()">✅ Process Command</button>
+            <button class="camera-btn btn-record" onclick="clearVoiceCommand()">🔄 Clear</button>
+        </div>
+    </div>
+
+    <!-- Recording Timer -->
+    <div id="recording-timer" style="display: none; font-size: 1.2rem; color: #ef4444; font-weight: bold;">
+        Recording: <span id="timer">00:00</span>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message"></div>
+
+    <!-- Capture Preview -->
+    <div id="capture-preview" class="capture-preview">
+        <h3>Captured Media</h3>
+        <div id="media-content"></div>
+        
+        <!-- Upload Form -->
+        <div id="upload-form" class="upload-form">
+            <h4>Add to Work Order</h4>
+            <form onsubmit="uploadMedia(event)">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="category" class="form-select">
+                        <option value="work_orders">Work Orders</option>
+                        <option value="parts">Parts</option>
+                        <option value="assets">Assets</option>
+                        <option value="documents">Documents</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Work Order ID (if applicable)</label>
+                    <input type="text" id="work_order_id" class="form-input" placeholder="WO-12345">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="description" class="form-input" placeholder="Brief description of the media">
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma separated)</label>
+                    <input type="text" id="tags" class="form-input" placeholder="repair, before, equipment">
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="analyze_with_ai" style="margin-right: 0.5rem;">
+                        Analyze with AI (recognize parts or analyze condition)
+                    </label>
+                </div>
+                
+                <div id="ai-analysis-options" class="form-group" style="display: none;">
+                    <label>AI Analysis Type</label>
+                    <select id="analysis_type" class="form-select">
+                        <option value="recognize_part">Recognize Parts</option>
+                        <option value="analyze_condition">Analyze Condition</option>
+                        <option value="general_analysis">General Analysis</option>
+                    </select>
+                </div>
+                
+                <div class="media-actions">
+                    <button type="submit" class="camera-btn btn-capture">💾 Save Media</button>
+                    <button type="button" class="camera-btn btn-voice" onclick="analyzeCurrentMedia()">🤖 AI Analysis</button>
+                    <button type="button" class="camera-btn btn-record" onclick="retakeMedia()">📸 Retake</button>
+                    <button type="button" class="camera-btn btn-switch" onclick="discardMedia()">🗑️ Discard</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let video, canvas, ctx;
+let mediaRecorder;
+let recordedChunks = [];
+let stream;
+let isRecording = false;
+let currentFacingMode = 'environment'; // Start with back camera
+let recordingStartTime;
+let timerInterval;
+let currentMediaBlob;
+let currentMediaType;
+
+// Voice recognition variables
+let recognition;
+let isVoiceRecording = false;
+let voiceTranscript = '';
+
+// Initialize camera
+async function initCamera() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    ctx = canvas.getContext('2d');
+
+    try {
+        await requestCameraAccess();
+        initVoiceRecognition();
+    } catch (error) {
+        showPermissionRequest();
+    }
+}
+
+// Initialize voice recognition
+function initVoiceRecognition() {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = function() {
+            isVoiceRecording = true;
+            updateVoiceStatus('🎤 Listening... Speak your command');
+            document.getElementById('voice-btn').classList.add('recording');
+            document.getElementById('voice-btn').textContent = '🛑 Stop Listening';
+        };
+        
+        recognition.onresult = function(event) {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            const transcriptDisplay = document.getElementById('voice-transcript');
+            if (finalTranscript || interimTranscript) {
+                voiceTranscript = finalTranscript || interimTranscript;
+                transcriptDisplay.innerHTML = `<p>"${voiceTranscript}"</p>`;
+                transcriptDisplay.classList.add('has-content');
+                
+                if (finalTranscript) {
+                    document.getElementById('voice-actions').style.display = 'flex';
+                    updateVoiceStatus('✅ Command captured. Process or clear?');
+                }
+            }
+        };
+        
+        recognition.onerror = function(event) {
+            console.error('Voice recognition error:', event.error);
+            updateVoiceStatus(`❌ Error: ${event.error}`);
+            stopVoiceRecording();
+        };
+        
+        recognition.onend = function() {
+            if (isVoiceRecording && voiceTranscript) {
+                updateVoiceStatus('✅ Voice command ready to process');
+            } else if (isVoiceRecording) {
+                updateVoiceStatus('🎤 No speech detected. Try again.');
+            }
+            stopVoiceRecording();
+        };
+        
+        console.log('Voice recognition initialized');
+    } else {
+        console.warn('Speech recognition not supported');
+        updateVoiceStatus('❌ Voice recognition not supported in this browser');
+    }
+}
+
+// Request camera access
+async function requestCameraAccess() {
+    try {
+        const constraints = {
+            video: { 
+                facingMode: currentFacingMode,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: true
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        
+        hidePermissionRequest();
+        showStatus('Camera ready!', 'success');
+        
+        // Set up MediaRecorder for video recording
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = handleDataAvailable;
+        mediaRecorder.onstop = handleRecordingStop;
+        
+    } catch (error) {
+        console.error('Camera access error:', error);
+        showPermissionRequest();
+        showStatus('Camera access denied or not available', 'error');
+    }
+}
+
+// Show permission request
+function showPermissionRequest() {
+    document.getElementById('permission-request').style.display = 'block';
+}
+
+// Hide permission request
+function hidePermissionRequest() {
+    document.getElementById('permission-request').style.display = 'none';
+}
+
+// Capture photo
+function capturePhoto() {
+    if (!video.videoWidth) {
+        showStatus('Camera not ready', 'error');
+        return;
+    }
+
+    // Set canvas dimensions to video dimensions
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert canvas to blob
+    canvas.toBlob(blob => {
+        currentMediaBlob = blob;
+        currentMediaType = 'image';
+        
+        const imageUrl = URL.createObjectURL(blob);
+        showCapturedMedia('image', imageUrl);
+        
+        showStatus('Photo captured!', 'success');
+    }, 'image/jpeg', 0.8);
+}
+
+// Toggle video recording
+function toggleRecording() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}
+
+// Start recording
+function startRecording() {
+    if (!mediaRecorder || mediaRecorder.state === 'recording') return;
+    
+    recordedChunks = [];
+    mediaRecorder.start();
+    isRecording = true;
+    recordingStartTime = Date.now();
+    
+    // Update UI
+    const recordBtn = document.getElementById('record-btn');
+    recordBtn.textContent = '⏹️ Stop Recording';
+    recordBtn.classList.add('recording');
+    
+    // Show timer
+    document.getElementById('recording-timer').style.display = 'block';
+    timerInterval = setInterval(updateTimer, 1000);
+    
+    showStatus('Recording started...', 'success');
+}
+
+// Stop recording
+function stopRecording() {
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') return;
+    
+    mediaRecorder.stop();
+    isRecording = false;
+    
+    // Update UI
+    const recordBtn = document.getElementById('record-btn');
+    recordBtn.textContent = '🎥 Start Recording';
+    recordBtn.classList.remove('recording');
+    
+    // Hide timer
+    document.getElementById('recording-timer').style.display = 'none';
+    clearInterval(timerInterval);
+    
+    showStatus('Recording stopped', 'success');
+}
+
+// Handle recorded data
+function handleDataAvailable(event) {
+    if (event.data.size > 0) {
+        recordedChunks.push(event.data);
+    }
+}
+
+// Handle recording stop
+function handleRecordingStop() {
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    currentMediaBlob = blob;
+    currentMediaType = 'video';
+    
+    const videoUrl = URL.createObjectURL(blob);
+    showCapturedMedia('video', videoUrl);
+}
+
+// Update recording timer
+function updateTimer() {
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Show captured media
+function showCapturedMedia(type, url) {
+    const mediaContent = document.getElementById('media-content');
+    const capturePreview = document.getElementById('capture-preview');
+    const uploadForm = document.getElementById('upload-form');
+    
+    if (type === 'image') {
+        mediaContent.innerHTML = `<img src="${url}" alt="Captured photo" class="captured-image">`;
+    } else if (type === 'video') {
+        mediaContent.innerHTML = `<video src="${url}" controls class="recorded-video"></video>`;
+    }
+    
+    capturePreview.style.display = 'block';
+    uploadForm.style.display = 'block';
+}
+
+// Switch camera (front/back)
+async function switchCamera() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    
+    // Stop current stream
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Request new stream
+    await requestCameraAccess();
+    
+    showStatus(`Switched to ${currentFacingMode === 'user' ? 'front' : 'back'} camera`, 'success');
+}
+
+// Upload media
+async function uploadMedia(event) {
+    event.preventDefault();
+    
+    if (!currentMediaBlob) {
+        showStatus('No media to upload', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    
+    // Create filename based on type and timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `${currentMediaType}_${timestamp}.${currentMediaType === 'image' ? 'jpg' : 'webm'}`;
+    
+    formData.append('files', currentMediaBlob, filename);
+    formData.append('category', document.getElementById('category').value);
+    formData.append('work_order_id', document.getElementById('work_order_id').value);
+    formData.append('description', document.getElementById('description').value);
+    formData.append('tags', document.getElementById('tags').value);
+    
+    try {
+        showStatus('Uploading media...', 'success');
+        
+        const response = await fetch('/media/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showStatus('Media uploaded successfully!', 'success');
+            setTimeout(() => {
+                discardMedia();
+            }, 2000);
+        } else {
+            showStatus('Upload failed: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showStatus('Upload error: ' + error.message, 'error');
+    }
+}
+
+// Retake media
+function retakeMedia() {
+    discardMedia();
+}
+
+// Discard media
+function discardMedia() {
+    document.getElementById('capture-preview').style.display = 'none';
+    document.getElementById('upload-form').style.display = 'none';
+    currentMediaBlob = null;
+    currentMediaType = null;
+    
+    // Clear form
+    document.getElementById('work_order_id').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('tags').value = '';
+}
+
+// Voice interface functions
+function toggleVoiceCapture() {
+    const voiceInterface = document.getElementById('voice-interface');
+    if (voiceInterface.style.display === 'none' || voiceInterface.style.display === '') {
+        voiceInterface.style.display = 'block';
+        updateVoiceStatus('🎤 Voice interface ready. Click the microphone to start.');
+    } else {
+        voiceInterface.style.display = 'none';
+        clearVoiceCommand();
+    }
+}
+
+function toggleVoiceRecording() {
+    if (!recognition) {
+        updateVoiceStatus('❌ Voice recognition not available');
+        return;
+    }
+    
+    if (!isVoiceRecording) {
+        startVoiceRecording();
+    } else {
+        stopVoiceRecording();
+    }
+}
+
+function startVoiceRecording() {
+    try {
+        voiceTranscript = '';
+        document.getElementById('voice-actions').style.display = 'none';
+        const transcriptDisplay = document.getElementById('voice-transcript');
+        transcriptDisplay.classList.remove('has-content');
+        transcriptDisplay.innerHTML = '<p>🎤 Listening for your command...</p>';
+        
+        recognition.start();
+        updateVoiceStatus('🎤 Starting voice recognition...');
+    } catch (error) {
+        console.error('Voice recording start error:', error);
+        updateVoiceStatus('❌ Could not start voice recording');
+    }
+}
+
+function stopVoiceRecording() {
+    if (recognition && isVoiceRecording) {
+        recognition.stop();
+    }
+    isVoiceRecording = false;
+    document.getElementById('voice-btn').classList.remove('recording');
+    document.getElementById('voice-btn').textContent = '🎤 Start Voice Command';
+}
+
+function updateVoiceStatus(message) {
+    document.getElementById('voice-status').textContent = message;
+}
+
+async function processVoiceCommand() {
+    if (!voiceTranscript.trim()) {
+        updateVoiceStatus('❌ No voice command to process');
+        return;
+    }
+    
+    updateVoiceStatus('🤖 Processing voice command with AI...');
+    
+    try {
+        const formData = new FormData();
+        formData.append('voice_text', voiceTranscript);
+        formData.append('technician_id', '1'); // TODO: Get from session
+        
+        const response = await fetch('/ai/voice-command', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateVoiceStatus(`✅ Work order created! ID: ${result.work_order_id}`);
+            showStatus(`Voice command processed successfully! Work order ${result.work_order_id} created.`, 'success');
+            
+            // Optionally clear the command after success
+            setTimeout(() => {
+                clearVoiceCommand();
+            }, 3000);
+        } else {
+            updateVoiceStatus(`❌ Error: ${result.error || result.message}`);
+            showStatus(`Voice processing failed: ${result.error || result.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Voice processing error:', error);
+        updateVoiceStatus('❌ Failed to process voice command');
+        showStatus('Voice command processing failed: ' + error.message, 'error');
+    }
+}
+
+function clearVoiceCommand() {
+    voiceTranscript = '';
+    document.getElementById('voice-transcript').innerHTML = '<p>Say something like: "Create urgent work order for broken pump in warehouse A"</p>';
+    document.getElementById('voice-transcript').classList.remove('has-content');
+    document.getElementById('voice-actions').style.display = 'none';
+    updateVoiceStatus('🎤 Voice interface ready. Click the microphone to start.');
+    stopVoiceRecording();
+}
+
+// Open gallery (placeholder)
+function openGallery() {
+    alert('Gallery feature will open a list of all uploaded media');
+}
+
+// Show status message
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.textContent = message;
+    statusDiv.className = `status-message status-${type}`;
+    statusDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 3000);
+}
+
+// AI Analysis functionality
+document.getElementById('analyze_with_ai').addEventListener('change', function() {
+    const options = document.getElementById('ai-analysis-options');
+    options.style.display = this.checked ? 'block' : 'none';
+});
+
+async function analyzeCurrentMedia() {
+    if (!currentMediaBlob || currentMediaType !== 'image') {
+        showStatus('AI analysis only available for photos', 'error');
+        return;
+    }
+    
+    const analysisType = document.getElementById('analysis_type').value;
+    showStatus('🤖 Analyzing image with AI...', 'success');
+    
+    try {
+        const formData = new FormData();
+        const filename = `analysis_${Date.now()}.jpg`;
+        formData.append('image', currentMediaBlob, filename);
+        
+        if (analysisType === 'analyze_condition') {
+            const assetId = prompt('Enter Asset ID for condition analysis (optional):');
+            if (assetId) formData.append('asset_id', assetId);
+        }
+        
+        const endpoint = analysisType === 'analyze_condition' 
+            ? '/ai/analyze-condition' 
+            : '/ai/recognize-part';
+            
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displayAiAnalysisResult(result, analysisType);
+        } else {
+            showStatus('AI analysis failed: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('AI analysis error:', error);
+        showStatus('AI analysis error: ' + error.message, 'error');
+    }
+}
+
+function displayAiAnalysisResult(result, analysisType) {
+    let analysisHtml = '<div class="ai-analysis-result" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1rem 0;">';
+    analysisHtml += '<h4>🤖 AI Analysis Result</h4>';
+    
+    if (analysisType === 'analyze_condition' && result.analysis) {
+        const analysis = result.analysis;
+        analysisHtml += `<p><strong>Condition Score:</strong> ${analysis.condition_score}/10</p>`;
+        analysisHtml += `<p><strong>Urgency:</strong> ${analysis.urgency}</p>`;
+        
+        if (analysis.detected_issues && analysis.detected_issues.length > 0) {
+            analysisHtml += '<p><strong>Issues Detected:</strong></p><ul>';
+            analysis.detected_issues.forEach(issue => {
+                analysisHtml += `<li>${issue.type} (${issue.severity}) at ${issue.location}</li>`;
+            });
+            analysisHtml += '</ul>';
+        }
+        
+        if (analysis.recommendations && analysis.recommendations.length > 0) {
+            analysisHtml += '<p><strong>Recommendations:</strong></p><ul>';
+            analysis.recommendations.forEach(rec => {
+                analysisHtml += `<li>${rec}</li>`;
+            });
+            analysisHtml += '</ul>';
+        }
+    } else if (analysisType === 'recognize_part' && result.detected_parts) {
+        analysisHtml += '<p><strong>Parts Detected:</strong></p>';
+        result.detected_parts.forEach(part => {
+            analysisHtml += `<div style="margin: 0.5rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+            analysisHtml += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">`;
+            analysisHtml += `<strong style="color: #1f2937; font-size: 1.1rem;">${part.name}</strong>`;
+            analysisHtml += `<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${(part.confidence * 100).toFixed(1)}%</span>`;
+            analysisHtml += `</div>`;
+            analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Part #:</strong> ${part.part_number}</p>`;
+            analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Category:</strong> ${part.category}</p>`;
+            if (part.estimated_cost) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Est. Cost:</strong> $${part.estimated_cost.toLocaleString()}</p>`;
+            }
+            if (part.vendor) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #6b7280;"><strong>Vendor:</strong> ${part.vendor}</p>`;
+            }
+            if (part.maintenance_schedule) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #f59e0b;"><strong>Maintenance:</strong> ${part.maintenance_schedule}</p>`;
+            }
+            if (part.condition_notes) {
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #059669;"><strong>Condition:</strong> ${part.condition_notes}</p>`;
+            }
+            analysisHtml += `</div>`;
+        });
+        
+        if (result.inventory_matches && result.inventory_matches.length > 0) {
+            analysisHtml += '<p><strong>Inventory Matches:</strong></p>';
+            result.inventory_matches.forEach(match => {
+                analysisHtml += `<div style="margin: 0.5rem 0; padding: 0.5rem; background: #ecfdf5; border-radius: 4px;">`;
+                analysisHtml += `${match.part_number}: ${match.quantity_available} available at ${match.location}`;
+                analysisHtml += `</div>`;
+            });
+        }
+    }
+    
+    analysisHtml += '</div>';
+    
+    // Insert analysis result before form actions
+    const mediaContent = document.getElementById('media-content');
+    const existingAnalysis = mediaContent.querySelector('.ai-analysis-result');
+    if (existingAnalysis) {
+        existingAnalysis.remove();
+    }
+    mediaContent.insertAdjacentHTML('beforeend', analysisHtml);
+    
+    showStatus('✅ AI analysis completed!', 'success');
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', initCamera);
+
+// Clean up when leaving page
+window.addEventListener('beforeunload', () => {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %}

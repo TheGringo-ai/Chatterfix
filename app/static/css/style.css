@@ -71,9 +71,70 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark mode body styling */
+/* COMPREHENSIVE DARK MODE STYLING */
 :root.dark-mode body {
   background: var(--bg-body) !important;
+}
+
+:root.dark-mode .navbar {
+  background: rgba(23, 25, 35, 0.95) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .nav-link {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .nav-link:hover {
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .card {
+  background: var(--bg-card) !important;
+  border: var(--card-border) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .btn {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .form-control {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .table {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .table th,
+:root.dark-mode .table td {
+  border-color: var(--border-glass) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .container-fluid {
+  background: transparent !important;
+}
+
+:root.dark-mode h1, :root.dark-mode h2, :root.dark-mode h3, 
+:root.dark-mode h4, :root.dark-mode h5, :root.dark-mode h6 {
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode p, :root.dark-mode span, :root.dark-mode div {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .alert {
+  background: var(--bg-glass) !important;
+  border: var(--border-glass) !important;
+  color: var(--text-primary) !important;
 }
 
 .container {
@@ -906,6 +967,173 @@ body {
 .demo-banner p {
   margin-bottom: 1rem;
   opacity: 0.9;
+}
+
+/* ADDITIONAL DARK MODE OVERRIDES FOR PRODUCTION */
+:root.dark-mode .dropdown-menu {
+  background: var(--bg-glass) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .dropdown-item {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .dropdown-item:hover {
+  background: var(--bg-glass-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .modal-content {
+  background: var(--bg-card) !important;
+  border: var(--card-border) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .modal-header {
+  border-bottom: var(--card-border) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .modal-footer {
+  border-top: var(--card-border) !important;
+}
+
+:root.dark-mode .badge {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .list-group-item {
+  background: var(--bg-card) !important;
+  border: var(--border-glass) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .nav-tabs .nav-link {
+  color: var(--text-secondary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .nav-tabs .nav-link.active {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--bg-card) !important;
+}
+
+:root.dark-mode .breadcrumb {
+  background: var(--bg-glass) !important;
+}
+
+:root.dark-mode .breadcrumb-item a {
+  color: var(--accent-color) !important;
+}
+
+:root.dark-mode .pagination .page-link {
+  background: var(--bg-glass) !important;
+  border: var(--border-glass) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .pagination .page-link:hover {
+  background: var(--bg-glass-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .progress {
+  background: var(--bg-glass) !important;
+}
+
+:root.dark-mode .text-muted {
+  color: var(--text-muted) !important;
+}
+
+:root.dark-mode .btn-primary {
+  background: var(--accent-gradient) !important;
+  border: none !important;
+  color: white !important;
+}
+
+:root.dark-mode .btn-primary:hover {
+  background: var(--accent-gradient-hover) !important;
+}
+
+:root.dark-mode .btn-secondary {
+  background: var(--bg-glass) !important;
+  border: var(--border-glass) !important;
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .btn-outline-primary {
+  border: 1px solid var(--accent-color) !important;
+  color: var(--accent-color) !important;
+  background: transparent !important;
+}
+
+:root.dark-mode .btn-outline-primary:hover {
+  background: var(--accent-color) !important;
+  color: white !important;
+}
+
+:root.dark-mode select.form-control {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode textarea.form-control {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .form-check-input {
+  background: var(--bg-glass) !important;
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .form-check-label {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .navbar-brand {
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode .navbar-toggler {
+  border: var(--border-glass) !important;
+}
+
+:root.dark-mode .navbar-toggler-icon {
+  filter: brightness(0) invert(1);
+}
+
+:root.dark-mode .sidebar {
+  background: var(--bg-card) !important;
+  border: var(--card-border) !important;
+}
+
+:root.dark-mode .sidebar .nav-link {
+  color: var(--text-secondary) !important;
+}
+
+:root.dark-mode .sidebar .nav-link:hover {
+  background: var(--hover-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Force override any Bootstrap or other framework styles */
+:root.dark-mode * {
+  color: inherit !important;
+}
+
+:root.dark-mode a {
+  color: var(--accent-color) !important;
+}
+
+:root.dark-mode a:hover {
+  color: var(--accent-secondary) !important;
 }
 
 /* Mobile responsiveness for demo elements */

@@ -1,6 +1,8 @@
 """
-Autogen Framework for Multi-Model AI Team Collaboration
+Enhanced Autogen Framework for Multi-Model AI Team Collaboration
 Coordinates Claude, ChatGPT, Gemini, Grok, and other AI models
+WITH COMPREHENSIVE MEMORY SYSTEM INTEGRATION
+Never repeat mistakes - Always learn and improve
 """
 import asyncio
 import json
@@ -10,6 +12,16 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional, AsyncGenerator, Any
 from enum import Enum
+from datetime import timedelta
+
+# Import memory system components
+from .memory_system import (
+    get_memory_system, 
+    get_mistake_prevention, 
+    get_proactive_assistant,
+    MistakeType, 
+    OutcomeRating
+)
 
 logger = logging.getLogger(__name__)
 
@@ -227,11 +239,23 @@ class GrokAgent(AIAgent):
         return bool(os.getenv('XAI_API_KEY'))
 
 class AutogenOrchestrator:
-    """Orchestrates multi-agent collaboration using autogen principles"""
+    """
+    Enhanced Orchestrates multi-agent collaboration using autogen principles
+    WITH COMPREHENSIVE MEMORY SYSTEM INTEGRATION
+    """
     
     def __init__(self):
         self.agents: Dict[str, AIAgent] = {}
         self.active_tasks: Dict[str, Dict] = {}
+        
+        # Initialize memory and learning systems
+        self.memory_system = get_memory_system()
+        self.mistake_prevention = get_mistake_prevention()
+        self.proactive_assistant = get_proactive_assistant()
+        
+        # Performance tracking
+        self.agent_performance_history = {}
+        self.learning_enabled = True
         
     def register_agent(self, agent: AIAgent):
         """Register an AI agent with the orchestrator"""
@@ -267,12 +291,48 @@ class AutogenOrchestrator:
                                        prompt: str, 
                                        context: str = "",
                                        required_agents: Optional[List[str]] = None,
-                                       max_iterations: int = 3) -> CollaborationResult:
-        """Execute a task using multiple AI agents in collaboration"""
+                                       max_iterations: int = 3,
+                                       project_context: str = "ChatterFix") -> CollaborationResult:
+        """Execute a task using multiple AI agents in collaboration WITH MEMORY INTEGRATION"""
         
         start_time = time.time()
         collaboration_log = []
         agent_responses = []
+        
+        # STEP 1: PRE-EXECUTION ANALYSIS - Check for potential mistakes
+        if self.learning_enabled:
+            task_context = {
+                "task_id": task_id,
+                "prompt": prompt,
+                "context": context,
+                "project": project_context,
+                "timestamp": time.time()
+            }
+            
+            # Check for potential issues using proactive assistant
+            proactive_guidance = await self.proactive_assistant.anticipate_issues(task_context)
+            if proactive_guidance:
+                collaboration_log.append(f"🛡️ PROACTIVE GUIDANCE: {proactive_guidance.get('type', 'unknown')}")
+                
+                if proactive_guidance.get('urgency') == 'high':
+                    # Add prevention guidance to context
+                    prevention_context = json.dumps(proactive_guidance, indent=2)
+                    context = f"{context}\n\nIMPORTANT PREVENTION GUIDANCE:\n{prevention_context}"
+                    collaboration_log.append("⚠️ High-urgency guidance integrated into task context")
+            
+            # Check for similar successful patterns
+            historical_solutions = await self.memory_system.find_solution_patterns(prompt)
+            if historical_solutions:
+                collaboration_log.append(f"📚 Found {len(historical_solutions)} similar successful patterns")
+                
+                # Add best practices to context
+                best_practices = []
+                for solution in historical_solutions[:2]:  # Top 2 solutions
+                    best_practices.extend(solution.best_practices)
+                
+                if best_practices:
+                    practices_context = "\n".join(set(best_practices))
+                    context = f"{context}\n\nBEST PRACTICES FROM PAST SUCCESSES:\n{practices_context}"
         
         # Determine which agents to use
         if required_agents:
@@ -349,7 +409,8 @@ class AutogenOrchestrator:
         
         collaboration_log.append(f"Collaboration completed in {total_time:.2f}s")
         
-        return CollaborationResult(
+        # STEP 4: POST-EXECUTION LEARNING - Capture conversation and learn
+        result = CollaborationResult(
             task_id=task_id,
             success=len(agent_responses) > 0,
             final_answer=final_answer,
@@ -358,6 +419,65 @@ class AutogenOrchestrator:
             total_time=total_time,
             confidence_score=confidence_score
         )
+        
+        if self.learning_enabled:
+            try:
+                # Capture conversation for learning
+                conversation_id = await self.memory_system.capture_conversation(
+                    user_prompt=prompt,
+                    ai_responses=[{
+                        'model': resp.get('model_type', 'unknown'),
+                        'agent': resp.get('agent', 'unknown'),
+                        'response': resp.get('response', ''),
+                        'confidence': confidence_score
+                    } for resp in agent_responses],
+                    context_data={
+                        'task_id': task_id,
+                        'collaboration_log': collaboration_log,
+                        'total_time': total_time,
+                        'success': result.success
+                    },
+                    project_context=project_context
+                )
+                
+                collaboration_log.append(f"💾 Conversation captured: {conversation_id}")
+                
+                # If successful, capture as solution pattern
+                if result.success and confidence_score > 0.7:
+                    await self.memory_system.capture_solution(
+                        problem_pattern=prompt,
+                        solution_steps=[final_answer],
+                        success_rate=confidence_score,
+                        application=project_context,
+                        performance_metrics={
+                            'execution_time': total_time,
+                            'agent_count': len(agent_responses),
+                            'confidence': confidence_score
+                        }
+                    )
+                    collaboration_log.append("✅ Success pattern captured for future learning")
+                
+                # Update agent performance tracking
+                for resp in agent_responses:
+                    agent_name = resp.get('agent', 'unknown')
+                    if agent_name not in self.agent_performance_history:
+                        self.agent_performance_history[agent_name] = {
+                            'total_tasks': 0,
+                            'successful_tasks': 0,
+                            'average_confidence': 0.0
+                        }
+                    
+                    perf = self.agent_performance_history[agent_name]
+                    perf['total_tasks'] += 1
+                    if result.success:
+                        perf['successful_tasks'] += 1
+                    perf['average_confidence'] = (perf['average_confidence'] + confidence_score) / perf['total_tasks']
+                
+            except Exception as e:
+                logger.error(f"Failed to capture learning data: {e}")
+                collaboration_log.append(f"⚠️ Learning capture failed: {str(e)}")
+        
+        return result
     
     async def stream_collaboration(self, 
                                  task_id: str,
@@ -398,9 +518,10 @@ class AutogenOrchestrator:
         }
     
     def get_agent_status(self) -> Dict[str, Any]:
-        """Get status of all registered agents"""
+        """Get status of all registered agents WITH PERFORMANCE ANALYTICS"""
         return {
             "total_agents": len(self.agents),
+            "learning_enabled": self.learning_enabled,
             "agents": [
                 {
                     "name": agent.config.name,
@@ -408,11 +529,150 @@ class AutogenOrchestrator:
                     "model_name": agent.config.model_name,
                     "role": agent.config.role,
                     "enabled": agent.config.enabled,
-                    "capabilities": agent.config.capabilities
+                    "capabilities": agent.config.capabilities,
+                    "performance": self.agent_performance_history.get(agent.config.name, {
+                        "total_tasks": 0,
+                        "successful_tasks": 0,
+                        "average_confidence": 0.0,
+                        "success_rate": 0.0
+                    })
                 }
                 for agent in self.agents.values()
             ]
         }
+    
+    async def get_comprehensive_analytics(self, project_context: str = "ChatterFix") -> Dict[str, Any]:
+        """Get comprehensive analytics about AI team performance and learning"""
+        try:
+            # Get memory system analytics
+            development_patterns = await self.memory_system.analyze_development_patterns(project_context)
+            
+            # Get conversation history
+            recent_conversations = await self.memory_system.get_conversation_history(
+                project_context=project_context, 
+                days_back=7
+            )
+            
+            # Calculate agent performance metrics
+            agent_analytics = {}
+            for agent_name, perf in self.agent_performance_history.items():
+                if perf['total_tasks'] > 0:
+                    agent_analytics[agent_name] = {
+                        **perf,
+                        'success_rate': perf['successful_tasks'] / perf['total_tasks'],
+                        'efficiency_score': perf['average_confidence'] * (perf['successful_tasks'] / perf['total_tasks'])
+                    }
+            
+            # Learning progress metrics
+            learning_metrics = {
+                "total_conversations_captured": development_patterns.get("total_conversations", 0),
+                "total_mistakes_identified": development_patterns.get("total_mistakes", 0),
+                "total_solutions_captured": development_patterns.get("total_solutions", 0),
+                "mistake_prevention_rate": 0,
+                "learning_velocity": 0
+            }
+            
+            if learning_metrics["total_mistakes_identified"] > 0 and learning_metrics["total_solutions_captured"] > 0:
+                learning_metrics["mistake_prevention_rate"] = (
+                    learning_metrics["total_solutions_captured"] / 
+                    (learning_metrics["total_mistakes_identified"] + learning_metrics["total_solutions_captured"])
+                )
+            
+            # Recent activity analysis
+            recent_activity = {
+                "conversations_this_week": len(recent_conversations),
+                "average_confidence_this_week": 0,
+                "most_active_models": {},
+                "common_topics": []
+            }
+            
+            if recent_conversations:
+                total_confidence = 0
+                model_counts = {}
+                
+                for conv in recent_conversations:
+                    total_confidence += conv.outcome_rating.value
+                    for model in conv.ai_models_involved:
+                        model_counts[model] = model_counts.get(model, 0) + 1
+                
+                recent_activity["average_confidence_this_week"] = total_confidence / len(recent_conversations)
+                recent_activity["most_active_models"] = dict(sorted(model_counts.items(), key=lambda x: x[1], reverse=True))
+            
+            return {
+                "timestamp": time.time(),
+                "project_context": project_context,
+                "learning_enabled": self.learning_enabled,
+                "development_patterns": development_patterns,
+                "agent_analytics": agent_analytics,
+                "learning_metrics": learning_metrics,
+                "recent_activity": recent_activity,
+                "ai_team_recommendations": development_patterns.get("recommendations", []),
+                "overall_health_score": self._calculate_health_score(learning_metrics, agent_analytics)
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get comprehensive analytics: {e}")
+            return {"error": str(e), "timestamp": time.time()}
+    
+    def _calculate_health_score(self, learning_metrics: Dict, agent_analytics: Dict) -> float:
+        """Calculate overall AI team health score (0.0 to 1.0)"""
+        try:
+            # Base score components
+            mistake_prevention_score = learning_metrics.get("mistake_prevention_rate", 0) * 0.3
+            
+            # Agent performance score
+            if agent_analytics:
+                avg_success_rate = sum(perf.get('success_rate', 0) for perf in agent_analytics.values()) / len(agent_analytics)
+                agent_performance_score = avg_success_rate * 0.4
+            else:
+                agent_performance_score = 0
+            
+            # Learning activity score
+            total_learning_items = (
+                learning_metrics.get("total_conversations_captured", 0) +
+                learning_metrics.get("total_solutions_captured", 0)
+            )
+            learning_activity_score = min(total_learning_items / 100, 1.0) * 0.3  # Normalize to max 100 items
+            
+            overall_score = mistake_prevention_score + agent_performance_score + learning_activity_score
+            return min(overall_score, 1.0)
+            
+        except Exception:
+            return 0.5  # Neutral score if calculation fails
+    
+    async def capture_mistake_from_failure(self, 
+                                         task_id: str, 
+                                         error_details: Dict[str, Any],
+                                         context: Dict[str, Any]) -> str:
+        """Capture a mistake when a task fails"""
+        try:
+            mistake_type = MistakeType.CODE_ERROR  # Default, can be refined
+            
+            # Determine mistake type from error details
+            if "security" in str(error_details).lower():
+                mistake_type = MistakeType.SECURITY_VULNERABILITY
+            elif "performance" in str(error_details).lower():
+                mistake_type = MistakeType.PERFORMANCE_ISSUE
+            elif "deploy" in str(error_details).lower():
+                mistake_type = MistakeType.DEPLOYMENT_FAILURE
+            elif "architecture" in str(error_details).lower():
+                mistake_type = MistakeType.ARCHITECTURE_FLAW
+            
+            mistake_id = await self.memory_system.capture_mistake(
+                mistake_type=mistake_type,
+                description=f"Task {task_id} failed: {error_details.get('message', 'Unknown error')}",
+                context={**context, "task_id": task_id, "error_details": error_details},
+                how_detected="automatic_failure_detection",
+                resolution_steps=[],  # To be filled when resolution is found
+                impact_severity="medium"  # Default, can be refined
+            )
+            
+            logger.warning(f"🚨 Mistake captured from failure: {mistake_id}")
+            return mistake_id
+            
+        except Exception as e:
+            logger.error(f"Failed to capture mistake from failure: {e}")
+            return ""
 
 # Global orchestrator instance
 _orchestrator = None

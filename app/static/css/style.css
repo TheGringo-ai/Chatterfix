@@ -969,8 +969,37 @@ body {
   opacity: 0.9;
 }
 
+/* 🔧 AI TEAM: BULLETPROOF DARK MODE FOR DEMO ENVIRONMENT */
+html.dark-mode, 
+:root.dark-mode, 
+body.dark-mode, 
+[data-theme="dark"], 
+[data-bs-theme="dark"] {
+  /* Force dark mode variables */
+  --bg-body: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+  --bg-glass: rgba(26, 32, 44, 0.8) !important;
+  --bg-glass-heavy: rgba(23, 25, 35, 0.95) !important;
+  --bg-card: #1a202c !important;
+  --text-primary: #f7fafc !important;
+  --text-secondary: #e2e8f0 !important;
+  background: var(--bg-body) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Force dark mode on all elements */
+html.dark-mode *, 
+:root.dark-mode *, 
+body.dark-mode *, 
+[data-theme="dark"] *, 
+[data-bs-theme="dark"] * {
+  color: inherit !important;
+}
+
 /* ADDITIONAL DARK MODE OVERRIDES FOR PRODUCTION */
-:root.dark-mode .dropdown-menu {
+:root.dark-mode .dropdown-menu, 
+html.dark-mode .dropdown-menu, 
+body.dark-mode .dropdown-menu, 
+[data-theme="dark"] .dropdown-menu {
   background: var(--bg-glass) !important;
   border: var(--border-glass) !important;
 }

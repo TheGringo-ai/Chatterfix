@@ -405,77 +405,136 @@
     <script>
         // Enhanced Theme Toggle Logic with Debug
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 AI TEAM: Initializing bulletproof theme toggle for demo...');
+            
             const themeToggle = document.getElementById('theme-toggle');
             const root = document.documentElement;
-            const icon = themeToggle.querySelector('i');
             const body = document.body;
             
-            console.log('🌙 Dark mode toggle initialized');
+            // BULLETPROOF: Check if element exists
+            if (!themeToggle) {
+                console.error('❌ AI TEAM: Theme toggle button not found - creating fallback');
+                
+                // Create fallback theme toggle if missing
+                const fallbackToggle = document.createElement('button');
+                fallbackToggle.id = 'theme-toggle';
+                fallbackToggle.className = 'cmms-btn cmms-btn-sm d-flex align-items-center gap-2';
+                fallbackToggle.innerHTML = '<i class="fas fa-moon"></i><span id="theme-label">Dark Mode</span>';
+                fallbackToggle.style.cssText = 'border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);';
+                fallbackToggle.title = 'Toggle Theme';
+                
+                // Try to insert in navbar
+                const navbar = document.querySelector('.navbar .d-flex');
+                if (navbar) {
+                    navbar.appendChild(fallbackToggle);
+                    console.log('✅ AI TEAM: Created fallback theme toggle');
+                }
+            }
+            
+            const icon = document.querySelector('#theme-toggle i');
+            
+            console.log('🌙 AI TEAM: Dark mode toggle initialized');
             
             // Check saved theme preference
             const savedTheme = localStorage.getItem('theme');
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
-            console.log('Saved theme:', savedTheme, 'System dark:', systemDark);
+            console.log('📊 AI TEAM: Saved theme:', savedTheme, 'System dark:', systemDark);
             
-            // Apply initial theme
-            if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
-                root.classList.add('dark-mode');
-                body.classList.add('dark-mode');
-                console.log('Applied initial dark mode');
-            }
-            
-            function updateIcon() {
-                const label = document.getElementById('theme-label');
-                const isDark = root.classList.contains('dark-mode');
-                console.log('Updating icon, isDark:', isDark);
+            // BULLETPROOF: Apply initial theme with force
+            function applyTheme(isDark) {
+                console.log(`🎨 AI TEAM: Applying ${isDark ? 'DARK' : 'LIGHT'} theme`);
                 
                 if (isDark) {
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
-                    label.textContent = 'Light Mode';
+                    root.classList.add('dark-mode');
+                    body.classList.add('dark-mode');
+                    root.setAttribute('data-bs-theme', 'dark');
+                    body.setAttribute('data-theme', 'dark');
                 } else {
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
-                    label.textContent = 'Dark Mode';
+                    root.classList.remove('dark-mode');
+                    body.classList.remove('dark-mode');
+                    root.setAttribute('data-bs-theme', 'light');
+                    body.setAttribute('data-theme', 'light');
+                }
+                
+                // Force CSS refresh
+                const timestamp = Date.now();
+                const forceStyle = document.createElement('style');
+                forceStyle.textContent = `/* AI Team Force Refresh ${timestamp} */ body { --refresh: ${timestamp}; }`;
+                document.head.appendChild(forceStyle);
+                setTimeout(() => {
+                    if (forceStyle.parentNode) {
+                        forceStyle.parentNode.removeChild(forceStyle);
+                    }
+                }, 100);
+                
+                updateIcon(isDark);
+            }
+            
+            // Apply initial theme
+            const shouldBeDark = savedTheme === 'dark' || (!savedTheme && systemDark);
+            applyTheme(shouldBeDark);
+            console.log('Applied initial dark mode');
+            
+            function updateIcon(isDark = null) {
+                if (isDark === null) {
+                    isDark = root.classList.contains('dark-mode');
+                }
+                
+                const label = document.getElementById('theme-label');
+                console.log('🔄 AI TEAM: Updating icon, isDark:', isDark);
+                
+                if (icon) {
+                    if (isDark) {
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                        if (label) label.textContent = 'Light Mode';
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                        if (label) label.textContent = 'Dark Mode';
+                    }
                 }
             }
 
             updateIcon();
 
-            themeToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                console.log('🌙 Theme toggle clicked');
+            // BULLETPROOF: Add click handler
+            const finalToggle = document.getElementById('theme-toggle');
+            if (finalToggle) {
+                finalToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('🌙 AI TEAM: Theme toggle clicked');
+                    
+                    const wasDark = root.classList.contains('dark-mode');
+                    const newTheme = !wasDark;
+                    
+                    console.log(`🔄 AI TEAM: Switching from ${wasDark ? 'DARK' : 'LIGHT'} to ${newTheme ? 'DARK' : 'LIGHT'}`);
+                    
+                    // Apply new theme
+                    applyTheme(newTheme);
+                    
+                    // Save preference
+                    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+                    console.log('💾 AI TEAM: Saved theme preference:', newTheme ? 'dark' : 'light');
+                    
+                    // Force repaint with GPU acceleration
+                    body.style.transform = 'translate3d(0,0,0)';
+                    body.style.backfaceVisibility = 'hidden';
+                    
+                    setTimeout(() => {
+                        body.style.transform = '';
+                        body.style.backfaceVisibility = '';
+                        console.log('✅ AI TEAM: Theme toggle completed successfully');
+                    }, 50);
+                });
                 
-                const wasDark = root.classList.contains('dark-mode');
-                console.log('Was dark mode:', wasDark);
-                
-                // Toggle classes
-                root.classList.toggle('dark-mode');
-                body.classList.toggle('dark-mode');
-                
-                const isDark = root.classList.contains('dark-mode');
-                console.log('Now dark mode:', isDark);
-                
-                // Save preference
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                console.log('Saved theme preference:', isDark ? 'dark' : 'light');
-                
-                // Update UI
-                updateIcon();
-                
-                // Force style recalculation
-                root.style.transition = 'all 0.3s ease';
-                body.style.transition = 'all 0.3s ease';
-                
-                // Trigger immediate repaint
-                setTimeout(() => {
-                    root.style.display = 'none';
-                    root.offsetHeight; // trigger reflow
-                    root.style.display = '';
-                    console.log('🌙 Theme toggle complete');
-                }, 10);
-            });
+                console.log('🚀 AI TEAM: Theme toggle event handler attached');
+            } else {
+                console.error('❌ AI TEAM: Failed to attach theme toggle handler');
+            }
         });
     </script>
 </body>

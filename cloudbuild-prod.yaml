@@ -4,7 +4,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/fredfix/chatterfix-cmms:latest'
+      - 'gcr.io/fredfix/gringo-core:latest'
       - '--build-arg'
       - 'USE_FIRESTORE=true'
       - '.'
@@ -13,15 +13,15 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/fredfix/chatterfix-cmms:latest'
+      - 'gcr.io/fredfix/gringo-core:latest'
 
   # Deploy to Cloud Run - UPDATE EXISTING SERVICE ONLY
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
       - 'deploy'
-      - 'chatterfix-cmms'
-      - '--image=gcr.io/fredfix/chatterfix-cmms:latest'
+      - 'gringo-core'
+      - '--image=gcr.io/fredfix/gringo-core:latest'
       - '--region=us-central1'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -34,6 +34,6 @@ steps:
       - '--timeout=300s'
 
 images:
-  - 'gcr.io/fredfix/chatterfix-cmms:latest'
+  - 'gcr.io/fredfix/gringo-core:latest'
 
 timeout: '1200s'

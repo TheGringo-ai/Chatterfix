@@ -11,7 +11,7 @@ set -e
 # ============================================================================
 PROJECT_ID="fredfix"
 REGION="us-central1" 
-SERVICE_NAME="chatterfix-cmms"
+SERVICE_NAME="gringo-core"
 DOMAIN="chatterfix.com"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 DEPLOY_MODE="cloudbuild"

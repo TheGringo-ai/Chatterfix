@@ -60,7 +60,7 @@ class GeminiService:
         # In a high-concurrency async environment, this could be race-condition prone if different keys are used simultaneously.
         # However, for this implementation scope, it's acceptable. A more robust solution would use client instances if supported.
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-1.5-flash")
+        return genai.GenerativeModel("gemini-2.5-flash")
 
     def _get_vision_model(
         self, user_id: Optional[int] = None
@@ -70,7 +70,7 @@ class GeminiService:
         if not api_key:
             return None
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-1.5-flash")
+        return genai.GenerativeModel("gemini-2.5-flash")
 
     async def generate_response(
         self, prompt: str, context: str = "", user_id: Optional[int] = None

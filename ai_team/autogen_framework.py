@@ -27,6 +27,7 @@ class AgentConfig:
     model_type: ModelType
     role: str
     capabilities: List[str]
+    model_name: Optional[str] = None  # Specific model name (e.g., "grok-3", "grok-code-fast-1")
     max_tokens: int = 4000
     temperature: float = 0.7
     enabled: bool = True
@@ -63,92 +64,167 @@ class ClaudeAgent(AIAgent):
     
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
-            # Simulate Claude API call (replace with actual Anthropic API)
-            await asyncio.sleep(0.5)  # Simulate API latency
+            import os
+            import anthropic
             
-            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs Claude AI, provide a thoughtful response:"
+            api_key = os.getenv('ANTHROPIC_API_KEY')
+            if not api_key:
+                return f"[{self.config.name}] Error: ANTHROPIC_API_KEY not configured"
             
-            # This would be replaced with actual Anthropic API call
-            response = f"[Claude] Analyzing the task: {prompt[:100]}... Based on my understanding, I recommend a systematic approach to solve this problem."
+            client = anthropic.AsyncAnthropic(api_key=api_key)
             
-            self.conversation_history.append({"prompt": prompt, "response": response})
-            return response
+            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs Claude AI, provide a thoughtful and analytical response:"
+            
+            response = await client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=min(self.config.max_tokens, 4000),
+                temperature=self.config.temperature,
+                messages=[
+                    {"role": "user", "content": full_prompt}
+                ]
+            )
+            
+            content = response.content[0].text
+            ai_response = f"[{self.config.name}] {content}"
+            self.conversation_history.append({"prompt": prompt, "response": ai_response})
+            return ai_response
             
         except Exception as e:
             logger.error(f"Claude agent error: {e}")
-            return f"[Claude] Error: {str(e)}"
+            return f"[{self.config.name}] Error: {str(e)}"
     
     async def is_available(self) -> bool:
-        return True  # Would check actual API availability
+        import os
+        return bool(os.getenv('ANTHROPIC_API_KEY'))
 
 class ChatGPTAgent(AIAgent):
     """ChatGPT AI Agent using OpenAI API"""
     
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
-            # Simulate OpenAI API call
-            await asyncio.sleep(0.4)
+            import os
+            import openai
             
-            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs ChatGPT, provide a comprehensive response:"
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                return f"[{self.config.name}] Error: OPENAI_API_KEY not configured"
             
-            # This would be replaced with actual OpenAI API call
-            response = f"[ChatGPT] I'll break this down step by step: {prompt[:100]}... Here's my approach to solving this efficiently."
+            client = openai.AsyncOpenAI(api_key=api_key)
             
-            self.conversation_history.append({"prompt": prompt, "response": response})
-            return response
+            messages = [
+                {"role": "system", "content": "You are ChatGPT, a helpful AI assistant. Be comprehensive and practical."},
+                {"role": "user", "content": f"Context: {context}\n\nTask: {prompt}"}
+            ]
+            
+            response = await client.chat.completions.create(
+                model="gpt-4o",  # Use latest GPT model
+                messages=messages,
+                max_tokens=min(self.config.max_tokens, 4000),
+                temperature=self.config.temperature
+            )
+            
+            content = response.choices[0].message.content
+            ai_response = f"[{self.config.name}] {content}"
+            self.conversation_history.append({"prompt": prompt, "response": ai_response})
+            return ai_response
             
         except Exception as e:
             logger.error(f"ChatGPT agent error: {e}")
-            return f"[ChatGPT] Error: {str(e)}"
+            return f"[{self.config.name}] Error: {str(e)}"
     
     async def is_available(self) -> bool:
-        return True
+        import os
+        return bool(os.getenv('OPENAI_API_KEY'))
 
 class GeminiAgent(AIAgent):
     """Gemini AI Agent using Google AI API"""
     
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
-            # Simulate Google AI API call
-            await asyncio.sleep(0.6)
+            import os
+            import google.generativeai as genai
             
-            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs Gemini AI, provide an innovative response:"
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                return f"[{self.config.name}] Error: GEMINI_API_KEY not configured"
             
-            # This would be replaced with actual Google AI API call
-            response = f"[Gemini] Analyzing patterns and context: {prompt[:100]}... I can see multiple angles to approach this challenge."
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.5-flash")
             
-            self.conversation_history.append({"prompt": prompt, "response": response})
-            return response
+            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs Gemini AI, provide an innovative and creative response:"
+            
+            response = await model.generate_content_async(full_prompt)
+            content = response.text
+            ai_response = f"[{self.config.name}] {content}"
+            self.conversation_history.append({"prompt": prompt, "response": ai_response})
+            return ai_response
             
         except Exception as e:
             logger.error(f"Gemini agent error: {e}")
-            return f"[Gemini] Error: {str(e)}"
+            return f"[{self.config.name}] Error: {str(e)}"
     
     async def is_available(self) -> bool:
-        return True
+        import os
+        return bool(os.getenv('GEMINI_API_KEY'))
 
 class GrokAgent(AIAgent):
     """Grok AI Agent using xAI API"""
     
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
-            # Simulate xAI API call
-            await asyncio.sleep(0.7)
+            import os
+            import requests
             
-            full_prompt = f"Context: {context}\n\nTask: {prompt}\n\nAs Grok AI, provide a witty and insightful response:"
+            api_key = os.getenv('XAI_API_KEY')
+            if not api_key:
+                return f"[{self.config.name}] Error: XAI_API_KEY not configured"
             
-            # This would be replaced with actual xAI API call
-            response = f"[Grok] Well, well, well... {prompt[:100]}... This is actually quite interesting. Let me cut through the noise and give you the real deal."
+            # Use the specific model name from config, default to grok-3
+            model_name = self.config.model_name or "grok-3"
             
-            self.conversation_history.append({"prompt": prompt, "response": response})
-            return response
+            url = 'https://api.x.ai/v1/chat/completions'
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Customize system prompt based on the model
+            if "code" in model_name.lower():
+                system_prompt = "You are a coding specialist AI. Focus on clean, efficient code solutions."
+            else:
+                system_prompt = "You are a reasoning AI. Provide thoughtful analysis and insights."
+            
+            data = {
+                'messages': [
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': f"Context: {context}\n\nTask: {prompt}"}
+                ],
+                'model': model_name,
+                'stream': False,
+                'temperature': self.config.temperature,
+                'max_tokens': min(self.config.max_tokens, 4000)
+            }
+            
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                ai_response = f"[{self.config.name}] {content}"
+                self.conversation_history.append({"prompt": prompt, "response": ai_response})
+                return ai_response
+            else:
+                error_msg = f"API Error {response.status_code}: {response.text}"
+                logger.error(f"Grok agent error: {error_msg}")
+                return f"[{self.config.name}] Error: {error_msg}"
             
         except Exception as e:
             logger.error(f"Grok agent error: {e}")
-            return f"[Grok] Error: {str(e)}"
+            return f"[{self.config.name}] Error: {str(e)}"
     
     async def is_available(self) -> bool:
-        return True
+        import os
+        return bool(os.getenv('XAI_API_KEY'))
 
 class AutogenOrchestrator:
     """Orchestrates multi-agent collaboration using autogen principles"""
@@ -168,7 +244,8 @@ class AutogenOrchestrator:
             AgentConfig("claude-analyst", ModelType.CLAUDE, "Lead Analyst", ["analysis", "reasoning", "planning"]),
             AgentConfig("chatgpt-coder", ModelType.CHATGPT, "Senior Developer", ["coding", "debugging", "architecture"]),
             AgentConfig("gemini-creative", ModelType.GEMINI, "Creative Director", ["creativity", "design", "innovation"]),
-            AgentConfig("grok-critic", ModelType.GROK, "Critical Reviewer", ["review", "criticism", "validation"]),
+            AgentConfig("grok-coder", ModelType.GROK, "Speed Coder", ["fast-coding", "optimization", "debugging"], "grok-code-fast-1"),
+            AgentConfig("grok-reasoner", ModelType.GROK, "Strategic Thinker", ["reasoning", "analysis", "strategy"], "grok-3"),
         ]
         
         for config in agents_config:
@@ -328,6 +405,7 @@ class AutogenOrchestrator:
                 {
                     "name": agent.config.name,
                     "model_type": agent.config.model_type.value,
+                    "model_name": agent.config.model_name,
                     "role": agent.config.role,
                     "enabled": agent.config.enabled,
                     "capabilities": agent.config.capabilities

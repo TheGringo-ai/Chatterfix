@@ -191,6 +191,49 @@
     @media (max-width: 768px) {
         .dashboard-grid { grid-template-columns: 1fr; }
         .metrics-grid { grid-template-columns: 1fr; }
+        
+        /* Keep AI banner horizontal and scale proportionally */
+        .ai-brain {
+            padding: 1.5rem 1rem;
+            min-height: auto;
+        }
+        
+        .ai-brain h1 {
+            font-size: clamp(1.2rem, 4vw, 2rem);
+        }
+        
+        .ai-brain p {
+            font-size: clamp(0.9rem, 3vw, 1.2rem) !important;
+        }
+        
+        .ai-brain div {
+            flex-direction: row !important;
+            flex-wrap: wrap;
+            gap: 0.5rem !important;
+            justify-content: center;
+        }
+        
+        .ai-brain .cmms-btn {
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            padding: 0.5rem 0.8rem;
+            white-space: nowrap;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .ai-brain {
+            padding: 1rem 0.5rem;
+        }
+        
+        .ai-brain div {
+            gap: 0.3rem !important;
+        }
+        
+        .ai-brain .cmms-btn {
+            font-size: 0.65rem;
+            padding: 0.4rem 0.6rem;
+            min-width: auto;
+        }
     }
 </style>
 {% endblock %}

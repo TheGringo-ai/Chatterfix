@@ -73,6 +73,8 @@ try:
         ai_team_collaboration,
         fix_it_fred,
         linesmart_integration,
+        user_management,
+        analytics,
     )
     EXTENDED_ROUTERS_AVAILABLE = True
 except ImportError as e:
@@ -243,6 +245,8 @@ if EXTENDED_ROUTERS_AVAILABLE:
     app.include_router(ai_team_collaboration.router)  # AI Team gRPC Collaboration
     app.include_router(fix_it_fred.router)  # Fix it Fred AI-powered autonomous fixing
     app.include_router(linesmart_integration.router)  # LineSmart training service integration
+    app.include_router(user_management.router)  # User management dashboard with Firebase Auth
+    app.include_router(analytics.router)  # Analytics dashboard with KPIs and reporting
 
 
 # Root endpoint - redirect to landing page

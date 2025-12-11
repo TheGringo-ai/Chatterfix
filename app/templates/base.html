@@ -148,12 +148,13 @@
     
     {% block head %}{% endblock %}
     <script>
-        // Check for saved theme preference or use system preference
+        // Early theme application to prevent flash
         const savedTheme = localStorage.getItem('theme');
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
         if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
             document.documentElement.classList.add('dark-mode');
+            document.body.classList.add('dark-mode');
         }
     </script>
 </head>
@@ -194,7 +195,7 @@
         <div class="d-flex align-items-center gap-3">
             <button id="theme-toggle" class="cmms-btn cmms-btn-sm d-flex align-items-center gap-2" style="border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Theme">
                 <i class="fas fa-moon"></i>
-                <span id="theme-label">Click here for Dark Mode</span>
+                <span id="theme-label">Dark Mode</span>
             </button>
             {% if is_demo %}
             <div class="demo-signup-cta">
@@ -407,23 +408,28 @@
             const themeToggle = document.getElementById('theme-toggle');
             const root = document.documentElement;
             const icon = themeToggle.querySelector('i');
+            const body = document.body;
             
-            // Sync initial state if set on documentElement or localStorage
+            // Check saved theme preference
             const savedTheme = localStorage.getItem('theme');
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
-            // Initialization is handled in head script, but ensure icon matches
+            // Apply initial theme
+            if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+                root.classList.add('dark-mode');
+                body.classList.add('dark-mode');
+            }
             
             function updateIcon() {
                 const label = document.getElementById('theme-label');
                 if (root.classList.contains('dark-mode')) {
                     icon.classList.remove('fa-moon');
                     icon.classList.add('fa-sun');
-                    label.textContent = 'Click here for Light Mode';
+                    label.textContent = 'Light Mode';
                 } else {
                     icon.classList.remove('fa-sun');
                     icon.classList.add('fa-moon');
-                    label.textContent = 'Click here for Dark Mode';
+                    label.textContent = 'Dark Mode';
                 }
             }
 
@@ -431,9 +437,15 @@
 
             themeToggle.addEventListener('click', () => {
                 root.classList.toggle('dark-mode');
+                body.classList.toggle('dark-mode');
                 const isDark = root.classList.contains('dark-mode');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 updateIcon();
+                
+                // Force a repaint
+                document.body.style.display='none';
+                document.body.offsetHeight; // trigger reflow
+                document.body.style.display='';
             });
         });
     </script>

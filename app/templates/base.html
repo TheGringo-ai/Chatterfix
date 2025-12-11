@@ -403,26 +403,34 @@
         }
     </script>
     <script>
-        // Theme Toggle Logic
+        // Enhanced Theme Toggle Logic with Debug
         document.addEventListener('DOMContentLoaded', () => {
             const themeToggle = document.getElementById('theme-toggle');
             const root = document.documentElement;
             const icon = themeToggle.querySelector('i');
             const body = document.body;
             
+            console.log('🌙 Dark mode toggle initialized');
+            
             // Check saved theme preference
             const savedTheme = localStorage.getItem('theme');
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            console.log('Saved theme:', savedTheme, 'System dark:', systemDark);
             
             // Apply initial theme
             if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
                 root.classList.add('dark-mode');
                 body.classList.add('dark-mode');
+                console.log('Applied initial dark mode');
             }
             
             function updateIcon() {
                 const label = document.getElementById('theme-label');
-                if (root.classList.contains('dark-mode')) {
+                const isDark = root.classList.contains('dark-mode');
+                console.log('Updating icon, isDark:', isDark);
+                
+                if (isDark) {
                     icon.classList.remove('fa-moon');
                     icon.classList.add('fa-sun');
                     label.textContent = 'Light Mode';
@@ -435,17 +443,38 @@
 
             updateIcon();
 
-            themeToggle.addEventListener('click', () => {
+            themeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🌙 Theme toggle clicked');
+                
+                const wasDark = root.classList.contains('dark-mode');
+                console.log('Was dark mode:', wasDark);
+                
+                // Toggle classes
                 root.classList.toggle('dark-mode');
                 body.classList.toggle('dark-mode');
+                
                 const isDark = root.classList.contains('dark-mode');
+                console.log('Now dark mode:', isDark);
+                
+                // Save preference
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                console.log('Saved theme preference:', isDark ? 'dark' : 'light');
+                
+                // Update UI
                 updateIcon();
                 
-                // Force a repaint
-                document.body.style.display='none';
-                document.body.offsetHeight; // trigger reflow
-                document.body.style.display='';
+                // Force style recalculation
+                root.style.transition = 'all 0.3s ease';
+                body.style.transition = 'all 0.3s ease';
+                
+                // Trigger immediate repaint
+                setTimeout(() => {
+                    root.style.display = 'none';
+                    root.offsetHeight; // trigger reflow
+                    root.style.display = '';
+                    console.log('🌙 Theme toggle complete');
+                }, 10);
             });
         });
     </script>

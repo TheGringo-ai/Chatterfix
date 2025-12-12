@@ -431,6 +431,12 @@ async def unified_ai_health():
         return {"healthy": False, "error": str(e)}
 
 
+@app.get("/test-new-endpoint")
+async def test_new_endpoint():
+    """Simple test to verify new endpoints are deployed"""
+    return {"status": "working", "message": "New endpoints are being deployed correctly"}
+
+
 @app.get("/debug/ai-config")
 async def debug_ai_config():
     """Debug endpoint to check AI team configuration"""

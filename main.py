@@ -451,6 +451,105 @@ async def debug_ai_config():
     }
 
 
+# DIRECT AI TEAM INTEGRATION - BYPASS ROUTER ISSUES  
+@app.get("/ai-team/health")
+async def ai_team_health_direct():
+    """Direct AI team health check - bypasses router loading issues"""
+    try:
+        import httpx
+        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
+        if not ai_service_url:
+            return {"status": "error", "message": "AI team service URL not configured"}
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{ai_service_url}/health")
+            if response.status_code == 200:
+                service_data = response.json()
+                return {
+                    "status": "connected",
+                    "message": "AI team service is healthy via direct integration",
+                    "service_response": service_data,
+                    "integration": "working",
+                    "bypass": "router_loading_issue"
+                }
+            else:
+                return {
+                    "status": "error", 
+                    "message": f"AI team service returned {response.status_code}",
+                    "response": response.text[:200]
+                }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to connect to AI team service: {str(e)}",
+            "ai_service_url": ai_service_url
+        }
+
+
+@app.get("/ai-team/models")
+async def ai_team_models_direct():
+    """Direct AI team models endpoint - bypasses router loading issues"""
+    try:
+        import httpx
+        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
+        api_key = os.getenv("INTERNAL_API_KEY")
+        
+        if not ai_service_url or not api_key:
+            return {"status": "error", "message": "AI team service not configured"}
+        
+        headers = {"Authorization": f"Bearer {api_key}"}
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{ai_service_url}/api/v1/models", headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    "status": "error",
+                    "message": f"AI team service returned {response.status_code}",
+                    "response": response.text[:200]
+                }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to get AI models: {str(e)}"
+        }
+
+
+@app.post("/ai-team/execute")  
+async def ai_team_execute_direct(request_data: dict):
+    """Direct AI team execution endpoint - bypasses router loading issues"""
+    try:
+        import httpx
+        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
+        api_key = os.getenv("INTERNAL_API_KEY")
+        
+        if not ai_service_url or not api_key:
+            return {"status": "error", "message": "AI team service not configured"}
+        
+        headers = {"Authorization": f"Bearer {api_key}"}
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:  # Longer timeout for AI processing
+            response = await client.post(
+                f"{ai_service_url}/api/v1/execute",
+                json=request_data,
+                headers=headers
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    "status": "error",
+                    "message": f"AI team service returned {response.status_code}",
+                    "response": response.text[:200]
+                }
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"Failed to execute AI team task: {str(e)}"
+        }
+
+
 @app.post("/unified-ai/process")
 async def unified_ai_process(request_data: dict):
     """Process request through unified AI integration (AI Team + Fix it Fred + LineSmart)"""

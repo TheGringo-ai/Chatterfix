@@ -70,6 +70,18 @@ This is not just a memory system - this is a **COMPLETE AI-POWERED DEVELOPMENT R
 **Solution**: Always commit changes BEFORE deploying, test on production after deploy
 **Prevention**: Add git status check in deployment pipeline
 
+#### **LESSON #4: Domain Returns HTTP 405 - Missing Root Route**
+**Problem**: chatterfix.com returns HTTP 405 error, users can't access site
+**Root Cause**: Domain mapping correct but missing root route (/) in FastAPI app
+**Solution**: Add root route with redirect: `@app.get("/") -> RedirectResponse("/demo", 302)`
+**Prevention**: Always include root route in FastAPI apps for domain-mapped services
+**Code Pattern**: 
+```python
+@app.get("/", tags=["Core"])
+async def root():
+    return RedirectResponse(url="/demo", status_code=302)
+```
+
 ### 🔧 **MANDATORY DEVELOPMENT WORKFLOW:**
 
 #### **For Frontend Changes:**

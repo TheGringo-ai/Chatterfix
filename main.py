@@ -996,6 +996,12 @@ class MaintenanceConsultationRequest(BaseModel):
         example="High"
     )
 
+# Root redirect to demo
+@app.get("/", tags=["Core"])
+async def root():
+    """Redirect root to demo page"""
+    return RedirectResponse(url="/demo", status_code=302)
+
 @app.post("/chat/consult", tags=["Fix-it-Fred AI"])
 async def consult_fix_it_fred(request: MaintenanceConsultationRequest):
     """

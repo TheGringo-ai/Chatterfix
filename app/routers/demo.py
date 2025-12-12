@@ -716,6 +716,113 @@ async def demo_training(request: Request):
         )
 
 
+@router.get("/demo/training/modules/{module_id}", response_class=HTMLResponse)
+async def demo_training_module_detail(request: Request, module_id: str):
+    """Demo training module detail page - interactive technician experience"""
+    try:
+        # Demo training modules data
+        demo_modules = {
+            "1": {
+                "id": "1",
+                "title": "Pump Station Maintenance Manual",
+                "description": "Complete technician training based on Grundfos pump system manuals - maintenance procedures, troubleshooting guides, and safety protocols",
+                "difficulty_level": "Intermediate",
+                "estimated_duration_minutes": 180,
+                "ai_generated": True,
+                "content": {
+                    "sections": [
+                        {
+                            "title": "Safety Procedures",
+                            "content": "Essential safety protocols for pump maintenance operations.",
+                            "type": "text"
+                        },
+                        {
+                            "title": "Diagnostic Procedures",
+                            "content": "Step-by-step diagnostic procedures for common pump issues.",
+                            "type": "interactive"
+                        },
+                        {
+                            "title": "Maintenance Tasks",
+                            "content": "Regular maintenance procedures and schedules.",
+                            "type": "hands_on"
+                        }
+                    ]
+                }
+            },
+            "2": {
+                "id": "2", 
+                "title": "HVAC System Troubleshooting SOP",
+                "description": "Standard Operating Procedures for diagnosing and repairing HVAC systems - step-by-step guides with AI assistance",
+                "difficulty_level": "Intermediate",
+                "estimated_duration_minutes": 240,
+                "ai_generated": True,
+                "content": {
+                    "sections": [
+                        {
+                            "title": "System Overview",
+                            "content": "Understanding HVAC system components and operation principles.",
+                            "type": "text"
+                        },
+                        {
+                            "title": "Troubleshooting Guide",
+                            "content": "Systematic approach to diagnosing HVAC problems.",
+                            "type": "interactive"
+                        }
+                    ]
+                }
+            },
+            "3": {
+                "id": "3",
+                "title": "Electrical Safety & Lockout/Tagout Procedures", 
+                "description": "Essential safety training for electrical work - OSHA compliance, LOTO procedures, and emergency response",
+                "difficulty_level": "Beginner",
+                "estimated_duration_minutes": 120,
+                "ai_generated": False,
+                "content": {
+                    "sections": [
+                        {
+                            "title": "Electrical Safety Fundamentals",
+                            "content": "Basic electrical safety principles and OSHA requirements.",
+                            "type": "text"
+                        },
+                        {
+                            "title": "Lockout/Tagout Procedures",
+                            "content": "Step-by-step LOTO procedures for electrical systems.",
+                            "type": "hands_on"
+                        }
+                    ]
+                }
+            }
+        }
+
+        module = demo_modules.get(module_id)
+        if not module:
+            return HTMLResponse(
+                content=f"<h1>Training Module Not Found</h1><p>Module ID '{module_id}' not found in demo data.</p>",
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            "training_module_interactive.html",
+            {
+                "request": request,
+                "module": module,
+                "content": module["content"],
+                "role": "technician",
+                "role_config": {"title": "Technician Training"},
+                "is_demo": True,
+                "demo_banner": f"Demo: {module['title']} - Interactive training experience",
+            },
+        )
+        
+    except Exception:
+        import traceback
+        return HTMLResponse(
+            content=f"<h1>Error Loading Training Module</h1><pre>{traceback.format_exc()}</pre>",
+            status_code=500,
+        )
+
+
 @router.get("/demo/ar-mode", response_class=HTMLResponse)
 async def demo_ar_mode(request: Request):
     """Demo AR mode page"""

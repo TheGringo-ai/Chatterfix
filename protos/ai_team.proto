@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package ai_team;
+
+// AI Team Service for multi-model collaboration
+service AITeamService {
+  // Execute a collaborative task with the AI team
+  rpc ExecuteTask(TaskRequest) returns (TaskResponse);
+  
+  // Stream collaborative responses from multiple models
+  rpc StreamCollaboration(TaskRequest) returns (stream CollaborationResponse);
+  
+  // Get available AI models and their capabilities
+  rpc GetAvailableModels(ModelsRequest) returns (ModelsResponse);
+  
+  // Health check for AI team service
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+
+// Task request for AI team collaboration
+message TaskRequest {
+  string task_id = 1;
+  string prompt = 2;
+  string context = 3;
+  repeated string required_models = 4;
+  TaskType task_type = 5;
+  map<string, string> parameters = 6;
+  int32 max_iterations = 7;
+  bool enable_autogen = 8;
+}
+
+// Task types for different collaboration patterns
+enum TaskType {
+  SIMPLE_QUERY = 0;
+  COLLABORATIVE_ANALYSIS = 1;
+  CODING_TASK = 2;
+  CREATIVE_TASK = 3;
+  DEBUGGING = 4;
+  MULTI_STEP_PLANNING = 5;
+  CODE_REVIEW = 6;
+}
+
+// Response from AI team collaboration
+message TaskResponse {
+  string task_id = 1;
+  bool success = 2;
+  string final_result = 3;
+  repeated ModelResponse model_responses = 4;
+  string collaboration_summary = 5;
+  int32 iterations_completed = 6;
+  float confidence_score = 7;
+}
+
+// Streaming collaboration response
+message CollaborationResponse {
+  string task_id = 1;
+  string model_name = 2;
+  string partial_response = 3;
+  ResponseType response_type = 4;
+  float progress = 5;
+  bool is_final = 6;
+}
+
+enum ResponseType {
+  THINKING = 0;
+  PARTIAL_ANSWER = 1;
+  CODE_BLOCK = 2;
+  QUESTION = 3;
+  FINAL_ANSWER = 4;
+  ERROR = 5;
+}
+
+// Individual model response
+message ModelResponse {
+  string model_name = 1;
+  string response = 2;
+  float confidence = 3;
+  int64 response_time_ms = 4;
+  bool success = 5;
+  string error_message = 6;
+}
+
+// Available models request/response
+message ModelsRequest {}
+
+message ModelsResponse {
+  repeated AIModel models = 1;
+}
+
+message AIModel {
+  string name = 1;
+  string provider = 2;
+  repeated string capabilities = 3;
+  bool available = 4;
+  float performance_score = 5;
+  string version = 6;
+}
+
+// Health check messages
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
+  string status = 2;
+  repeated string active_models = 3;
+  int32 pending_tasks = 4;
+}

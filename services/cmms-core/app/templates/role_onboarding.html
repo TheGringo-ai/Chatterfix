@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}{{ config.title }} - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>🎓 {{ config.title }}</h1>
+            <p>{{ config.description }}</p>
+        </div>
+        <div style="text-align: right;">
+            <div class="progress-circle">
+                <div class="progress-text">{{ progress.overall_progress }}%</div>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9rem; color: #95a5a6;">
+                {{ progress.completed_modules }} / {{ progress.total_modules }} modules complete
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="cmms-card" style="background: linear-gradient(135deg, rgba(103, 126, 234, 0.1), rgba(67, 97, 238, 0.1)); border: 2px solid rgba(103, 126, 234, 0.3);">
+    <h2>📊 Your Learning Journey</h2>
+    <div class="progress-overview">
+        <div class="progress-stats">
+            <div class="stat-item">
+                <div class="stat-number">{{ "%.1f" | format(progress.estimated_time_remaining / 60) }}</div>
+                <div class="stat-label">Hours Remaining</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ config.duration_days }}</div>
+                <div class="stat-label">Days Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ progress.badges_earned | length }}</div>
+                <div class="stat-label">Badges Earned</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ config.modules | length }}</div>
+                <div class="stat-label">Total Modules</div>
+            </div>
+        </div>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ progress.overall_progress }}%"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <span style="color: #95a5a6;">Started</span>
+                <span style="color: #667eea; font-weight: bold;">{{ progress.overall_progress }}% Complete</span>
+                <span style="color: #95a5a6;">Certified</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Modules -->
+<div class="cmms-card">
+    <h2>📚 Training Modules</h2>
+    <p style="margin-bottom: 2rem; color: #bdc3c7;">
+        Complete each module to build your expertise. Required modules must be finished before optional ones become available.
+    </p>
+    
+    <div class="modules-grid">
+        {% for module in config.modules %}
+        <div class="module-card {% if loop.index0 <= progress.current_module %}available{% else %}locked{% endif %} {% if module.required %}required{% endif %}" 
+             data-module-id="{{ module.id }}" 
+             onclick="{% if loop.index0 <= progress.current_module %}openModule('{{ module.id }}'){% endif %}">
+            
+            <div class="module-header">
+                <div class="module-icon">
+                    {% if module.type == 'interactive' %}
+                        <i class="fas fa-laptop"></i>
+                    {% elif module.type == 'hands_on' %}
+                        <i class="fas fa-tools"></i>
+                    {% elif module.type == 'practical' %}
+                        <i class="fas fa-cog"></i>
+                    {% elif module.type == 'scenario' %}
+                        <i class="fas fa-sitemap"></i>
+                    {% elif module.type == 'case_study' %}
+                        <i class="fas fa-search"></i>
+                    {% elif module.type == 'dashboard' %}
+                        <i class="fas fa-chart-bar"></i>
+                    {% elif module.type == 'certification' %}
+                        <i class="fas fa-certificate"></i>
+                    {% else %}
+                        <i class="fas fa-graduation-cap"></i>
+                    {% endif %}
+                </div>
+                <div class="module-status">
+                    {% if loop.index0 < progress.current_module %}
+                        <i class="fas fa-check-circle" style="color: #27ae60;"></i>
+                    {% elif loop.index0 == progress.current_module %}
+                        <i class="fas fa-play-circle" style="color: #f39c12;"></i>
+                    {% else %}
+                        <i class="fas fa-lock" style="color: #95a5a6;"></i>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="module-content">
+                <h3>{{ module.title }}</h3>
+                <div class="module-meta">
+                    <div class="module-duration">
+                        <i class="fas fa-clock"></i>
+                        {{ module.duration_minutes }} min
+                    </div>
+                    <div class="module-type">
+                        <i class="fas fa-tag"></i>
+                        {{ module.type | title }}
+                    </div>
+                    {% if module.required %}
+                    <div class="module-required">
+                        <i class="fas fa-star"></i>
+                        Required
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if module.content and module.content.sections %}
+                <div class="module-preview">
+                    <strong>Topics covered:</strong>
+                    <ul>
+                        {% for section in module.content.sections[:3] %}
+                        <li>{{ section.title }}</li>
+                        {% endfor %}
+                        {% if module.content.sections | length > 3 %}
+                        <li style="font-style: italic;">... and {{ module.content.sections | length - 3 }} more</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="module-action">
+                    {% if loop.index0 < progress.current_module %}
+                        <button class="module-btn completed" disabled>
+                            <i class="fas fa-check"></i> Completed
+                        </button>
+                    {% elif loop.index0 == progress.current_module %}
+                        <button class="module-btn start">
+                            <i class="fas fa-play"></i> {% if progress.current_module == 0 %}Start{% else %}Continue{% endif %}
+                        </button>
+                    {% else %}
+                        <button class="module-btn locked" disabled>
+                            <i class="fas fa-lock"></i> Locked
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="cmms-card">
+    <h2>🚀 Quick Actions</h2>
+    <div class="quick-actions">
+        <button class="action-btn" onclick="downloadLearningPlan()">
+            <i class="fas fa-download"></i>
+            <span>Download Learning Plan</span>
+        </button>
+        <button class="action-btn" onclick="scheduleReminders()">
+            <i class="fas fa-bell"></i>
+            <span>Set Reminders</span>
+        </button>
+        <button class="action-btn" onclick="viewResources()">
+            <i class="fas fa-book"></i>
+            <span>Additional Resources</span>
+        </button>
+        <button class="action-btn" onclick="contactSupport()">
+            <i class="fas fa-life-ring"></i>
+            <span>Get Help</span>
+        </button>
+    </div>
+</div>
+
+<!-- Achievements & Badges -->
+{% if progress.badges_earned %}
+<div class="cmms-card">
+    <h2>🏆 Achievements</h2>
+    <div class="badges-container">
+        {% for badge in progress.badges_earned %}
+        <div class="badge">
+            <i class="fas fa-medal"></i>
+            <span>{{ badge }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+.progress-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(#667eea 0deg, #667eea {{ progress.overall_progress * 3.6 }}deg, rgba(255,255,255,0.1) {{ progress.overall_progress * 3.6 }}deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-circle::after {
+    content: '';
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    position: absolute;
+}
+
+.progress-text {
+    z-index: 1;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.progress-overview {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.progress-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+    min-width: 120px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    color: #95a5a6;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.progress-bar-container {
+    flex: 1;
+    min-width: 300px;
+}
+
+.progress-bar {
+    height: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.3s ease;
+}
+
+.modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.module-card {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.module-card.available {
+    border-color: rgba(103, 126, 234, 0.5);
+}
+
+.module-card.available:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(103, 126, 234, 0.3);
+    border-color: #667eea;
+}
+
+.module-card.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.module-card.required::before {
+    content: 'REQUIRED';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #e74c3c;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.module-card {
+    position: relative;
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.module-icon {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.module-content h3 {
+    color: #ecf0f1;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.module-meta {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.module-duration, .module-type, .module-required {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #95a5a6;
+    font-size: 0.9rem;
+}
+
+.module-required {
+    color: #e74c3c;
+}
+
+.module-preview {
+    background: rgba(255,255,255,0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border-left: 3px solid #667eea;
+}
+
+.module-preview ul {
+    margin: 10px 0 0 20px;
+    color: #bdc3c7;
+}
+
+.module-action {
+    margin-top: 1.5rem;
+}
+
+.module-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.module-btn.start {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.module-btn.start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(103, 126, 234, 0.4);
+}
+
+.module-btn.completed {
+    background: #27ae60;
+    color: white;
+}
+
+.module-btn.locked {
+    background: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: #ecf0f1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    border-color: #667eea;
+    transform: translateY(-3px);
+    color: #667eea;
+}
+
+.action-btn i {
+    font-size: 1.5rem;
+}
+
+.badges-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+</style>
+
+<script>
+function openModule(moduleId) {
+    const role = '{{ role }}';
+    window.location.href = `/onboarding/module/${moduleId}?role=${role}`;
+}
+
+function downloadLearningPlan() {
+    alert('Learning plan download feature coming soon!');
+}
+
+function scheduleReminders() {
+    alert('Reminder scheduling feature coming soon!');
+}
+
+function viewResources() {
+    window.location.href = '/training';
+}
+
+function contactSupport() {
+    alert('Support contact: help@chatterfix.com');
+}
+
+// Auto-update progress every 30 seconds
+setInterval(function() {
+    fetch(`/onboarding/progress/{{ user_id }}?role={{ role }}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.overall_progress !== {{ progress.overall_progress }}) {
+                location.reload();
+            }
+        })
+        .catch(error => console.log('Progress check failed:', error));
+}, 30000);
+</script>
+{% endblock %}

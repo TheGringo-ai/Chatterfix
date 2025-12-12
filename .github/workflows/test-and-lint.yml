@@ -1,0 +1,130 @@
+name: Test & Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      USE_FIRESTORE: "true"
+      ENVIRONMENT: "test"
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          
+      - name: Create Firestore credentials
+        run: |
+          mkdir -p /tmp
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
+          
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          
+      - name: Run Black formatter check
+        run: |
+          black --check app/ --diff
+          if [ $? -ne 0 ]; then
+            echo "❌ Code formatting issues found - run 'black app/' to fix"
+            exit 1
+          fi
+      
+      - name: Run isort import ordering check
+        run: |
+          isort app/ --check-only --profile=black
+          if [ $? -ne 0 ]; then
+            echo "❌ Import ordering issues found - run 'isort app/' to fix"
+            exit 1
+          fi
+        
+      - name: Run Flake8 linting
+        run: |
+          flake8 app/ --max-line-length=100 --ignore=E203,W503 --count
+          if [ $? -ne 0 ]; then
+            echo "❌ Linting issues found"
+            exit 1
+          fi
+      
+      - name: Run Pylint import checks
+        run: |
+          pylint app/ --disable=all --enable=import-error,cyclic-import,relative-beyond-top-level --exit-zero
+        continue-on-error: true
+        
+      - name: Run MyPy type checking
+        run: |
+          mypy app/ --ignore-missing-imports
+          if [ $? -ne 0 ]; then
+            echo "❌ Type checking issues found"
+            exit 1
+          fi
+        
+      - name: Run pytest
+        run: |
+          if [ -d "tests/" ]; then
+            pytest tests/ -v --tb=short
+          else
+            echo "No tests directory found - creating basic test structure"
+            mkdir -p tests
+            echo "# TODO: Add tests" > tests/__init__.py
+            echo "Tests directory created for future use"
+          fi
+      
+      - name: Run import validation tests
+        run: |
+          echo "🔍 Validating all module imports..."
+          pytest tests/test_imports.py -v --tb=short
+          if [ $? -ne 0 ]; then
+            echo "❌ Import validation failed - check for missing dependencies or import errors"
+            exit 1
+          fi
+          echo "✅ All imports validated successfully"
+          
+  docker-test:
+    runs-on: ubuntu-latest
+    env:
+      USE_FIRESTORE: "true"
+      ENVIRONMENT: "test"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        
+      - name: Create Firestore credentials for Docker
+        run: |
+          mkdir -p /tmp
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-key.json
+        
+      - name: Build Docker image
+        run: docker build --build-arg USE_FIRESTORE=true -t chatterfix-test .
+        
+      - name: Test Docker container with Firestore
+        run: |
+          docker run -d -p 8000:8080 --name test-container \
+            -e USE_FIRESTORE=true \
+            -e ENVIRONMENT=test \
+            -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json \
+            -v /tmp/gcp-key.json:/tmp/gcp-key.json:ro \
+            chatterfix-test
+          sleep 15
+          curl -f http://localhost:8000/health || (echo "Health check failed, trying root endpoint..." && curl -f http://localhost:8000/)
+          docker stop test-container
+          docker rm test-container

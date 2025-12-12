@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ChatterFix AR HUD</title>
+    <link rel="stylesheet" href="/static/css/ar.css">
+</head>
+
+<body>
+    <div class="hud-container">
+        <div class="main-view">
+            <div class="status-bar">SYS: ONLINE | BATT: 85%</div>
+            <h1>AR COMMAND CENTER</h1>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 50px;">
+                <div class="card" onclick="window.location.href='/ar/work-orders'">
+                    <h2>📋 WORK ORDERS</h2>
+                    <p>Say "Show Work Orders"</p>
+                </div>
+                <div class="card">
+                    <h2>🏭 ASSETS</h2>
+                    <p>Say "Show Assets"</p>
+                </div>
+                <div class="card">
+                    <h2>⚠️ ALERTS</h2>
+                    <p>No active alerts</p>
+                </div>
+                <div class="card">
+                    <h2>📞 ASSISTANCE</h2>
+                    <p>Say "Call Support"</p>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar">
+            <h3>SYSTEM LOG</h3>
+            <div id="log-entries" style="font-size: 0.8em; color: #0a0;">
+                > System Init... OK<br>
+                > AR Display... OK<br>
+                > Voice Module... OK
+            </div>
+
+            <div class="voice-indicator">
+                <div id="voice-status">INITIALIZING...</div>
+                <div style="font-size: 0.7em; margin-top: 5px;">LAST CMD: <span id="last-command">NONE</span></div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/ar.js"></script>
+</body>
+
+</html>

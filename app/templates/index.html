@@ -1,0 +1,1535 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix - Ultimate Multi-Device CMMS{% endblock %}
+
+{% block head %}
+<!-- Progressive Web App Meta Tags -->
+<meta name="theme-color" content="#2c3e50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ChatterFix">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/static/manifest.json">
+
+<!-- Responsive Design & Touch -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+<meta name="format-detection" content="telephone=no">
+
+<!-- Preload Critical Resources -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" as="style">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* 🚀 ULTIMATE MULTI-DEVICE RESPONSIVE FRAMEWORK */
+:root {
+    /* Color System */
+    --primary-blue: #3498db;
+    --primary-dark: #2c3e50;
+    --success-green: #2ecc71;
+    --warning-orange: #f39c12;
+    --danger-red: #e74c3c;
+    --info-purple: #9b59b6;
+    
+    /* Responsive Typography */
+    --text-xs: clamp(0.75rem, 2vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 2.5vw, 1rem);
+    --text-base: clamp(1rem, 3vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 3.5vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 4vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 5vw, 2rem);
+    --text-3xl: clamp(2rem, 6vw, 3rem);
+    
+    /* Spacing System */
+    --spacing-xs: clamp(0.25rem, 1vw, 0.5rem);
+    --spacing-sm: clamp(0.5rem, 2vw, 1rem);
+    --spacing-md: clamp(1rem, 3vw, 1.5rem);
+    --spacing-lg: clamp(1.5rem, 4vw, 2rem);
+    --spacing-xl: clamp(2rem, 5vw, 3rem);
+    
+    /* Glass Morphism */
+    --glass-light: rgba(255, 255, 255, 0.1);
+    --glass-medium: rgba(255, 255, 255, 0.15);
+    --glass-heavy: rgba(255, 255, 255, 0.25);
+    --backdrop-blur: blur(20px);
+}
+
+/* Reset & Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: linear-gradient(135deg, #0f1419 0%, #1a252f 50%, #2c3e50 100%);
+    min-height: 100vh;
+    color: #ffffff;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* 🌟 ADAPTIVE DASHBOARD LAYOUT */
+.dashboard-container {
+    display: grid;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+}
+
+/* Desktop Layout (lg+): 3-Column Layout */
+@media (min-width: 1024px) {
+    .dashboard-container {
+        grid-template-columns: 280px 1fr 320px;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas: 
+            "sidebar header fred-chat"
+            "sidebar main fred-chat"
+            "sidebar footer fred-chat";
+    }
+    
+    .mobile-bottom-nav {
+        display: none;
+    }
+}
+
+/* Tablet Layout (md): 2-Column Layout */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .dashboard-container {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr auto auto;
+        grid-template-areas: 
+            "header header"
+            "main sidebar"
+            "fred-chat fred-chat"
+            "footer footer";
+    }
+    
+    .mobile-bottom-nav {
+        display: none;
+    }
+    
+    .sidebar {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+}
+
+/* Mobile Layout (sm): Single Column + Bottom Nav */
+@media (max-width: 767px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto auto;
+        grid-template-areas: 
+            "header"
+            "main"
+            "fred-chat"
+            "mobile-nav";
+    }
+    
+    .sidebar {
+        display: none;
+    }
+    
+    .mobile-bottom-nav {
+        display: flex;
+        grid-area: mobile-nav;
+    }
+    
+    body {
+        padding-bottom: 80px; /* Account for bottom nav */
+    }
+}
+
+/* 📱 MOBILE-FIRST BOTTOM NAVIGATION */
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--glass-heavy);
+    backdrop-filter: var(--backdrop-blur);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-sm);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    height: 80px;
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-xs);
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    min-width: 60px;
+}
+
+.mobile-nav-item.active,
+.mobile-nav-item:hover {
+    color: var(--primary-blue);
+    background: rgba(52, 152, 219, 0.1);
+    transform: translateY(-2px);
+}
+
+.mobile-nav-icon {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+}
+
+.mobile-nav-label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+}
+
+/* 🎯 ADAPTIVE HEADER */
+.adaptive-header {
+    grid-area: header;
+    background: var(--glass-light);
+    backdrop-filter: var(--backdrop-blur);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.header-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    background: linear-gradient(45deg, #3498db, #2ecc71, #9b59b6);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 4s ease-in-out infinite;
+}
+
+.quick-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    background: var(--glass-medium);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.stat-value {
+    color: var(--primary-blue);
+}
+
+/* 🏭 MAIN DASHBOARD AREA */
+.main-dashboard {
+    grid-area: main;
+    padding: var(--spacing-md);
+    overflow-y: auto;
+}
+
+/* 📊 ADAPTIVE CARDS GRID */
+.adaptive-grid {
+    display: grid;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 1024px) {
+    .adaptive-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .adaptive-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 767px) {
+    .adaptive-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dashboard-card {
+    background: var(--glass-light);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: var(--spacing-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(52, 152, 219, 0.2);
+    border-color: var(--primary-blue);
+}
+
+.card-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.card-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.card-icon {
+    font-size: var(--text-xl);
+    color: var(--primary-blue);
+    filter: drop-shadow(0 4px 8px rgba(52, 152, 219, 0.3));
+}
+
+.card-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--primary-blue);
+    text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+    margin-bottom: var(--spacing-xs);
+}
+
+.card-description {
+    color: #bdc3c7;
+    font-size: var(--text-sm);
+    line-height: 1.4;
+}
+
+/* 👥 USER PERSONAS SECTION */
+.personas-section {
+    background: var(--glass-light);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.personas-title {
+    text-align: center;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: var(--spacing-lg);
+}
+
+.personas-grid {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+/* Responsive persona cards */
+@media (min-width: 768px) {
+    .personas-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .personas-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.persona-card {
+    background: var(--glass-medium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: var(--spacing-md);
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.persona-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-blue);
+    background: var(--glass-heavy);
+}
+
+.persona-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--primary-blue), var(--success-green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin: 0 auto var(--spacing-sm);
+    color: white;
+    box-shadow: 0 8px 32px rgba(52, 152, 219, 0.3);
+}
+
+.persona-name {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: #ffffff;
+}
+
+.persona-role {
+    color: #bdc3c7;
+    font-size: var(--text-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.persona-device {
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    border-radius: 15px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-xs);
+    color: var(--primary-blue);
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: var(--spacing-sm);
+}
+
+.persona-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.persona-feature {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 8px;
+    padding: var(--spacing-xs);
+    font-size: var(--text-xs);
+    color: var(--success-green);
+}
+
+/* 🔧 SIDEBAR (Desktop & Tablet) */
+.sidebar {
+    grid-area: sidebar;
+    background: var(--glass-light);
+    backdrop-filter: var(--backdrop-blur);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-md);
+    overflow-y: auto;
+}
+
+.sidebar-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.sidebar-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.work-order-item {
+    background: var(--glass-medium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.work-order-item:hover {
+    background: var(--glass-heavy);
+    border-color: var(--primary-blue);
+    transform: translateX(5px);
+}
+
+.work-order-id {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: var(--text-sm);
+}
+
+.work-order-title {
+    color: #bdc3c7;
+    font-size: var(--text-xs);
+    margin: var(--spacing-xs) 0;
+}
+
+.priority-badge {
+    font-size: var(--text-xs);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.priority-critical {
+    background: rgba(231, 76, 60, 0.2);
+    color: var(--danger-red);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.priority-high {
+    background: rgba(243, 156, 18, 0.2);
+    color: var(--warning-orange);
+    border: 1px solid rgba(243, 156, 18, 0.3);
+}
+
+.priority-medium {
+    background: rgba(52, 152, 219, 0.2);
+    color: var(--primary-blue);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+/* 🤖 FRED CHAT AREA */
+.fred-chat {
+    grid-area: fred-chat;
+    background: var(--glass-light);
+    backdrop-filter: var(--backdrop-blur);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+}
+
+@media (max-width: 1023px) {
+    .fred-chat {
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        max-height: 300px;
+    }
+}
+
+.fred-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fred-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #f39c12, #e67e22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-lg);
+    color: white;
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.3);
+}
+
+.fred-info h3 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.fred-status {
+    font-size: var(--text-xs);
+    color: var(--success-green);
+    font-weight: 600;
+}
+
+.fred-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: var(--spacing-sm);
+    max-height: calc(100% - 120px);
+}
+
+.fred-message {
+    background: var(--glass-medium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--text-sm);
+    color: #bdc3c7;
+    line-height: 1.4;
+}
+
+.fred-input-area {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.fred-input {
+    flex: 1;
+    background: var(--glass-medium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: #ffffff;
+    font-size: var(--text-sm);
+}
+
+.fred-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.fred-send-btn {
+    background: linear-gradient(45deg, var(--primary-blue), #2980b9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fred-send-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
+}
+
+/* 🎨 ANIMATIONS */
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* 🎯 TOUCH OPTIMIZATIONS */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-card,
+    .persona-card,
+    .work-order-item {
+        transform: none !important;
+    }
+    
+    .dashboard-card:active,
+    .persona-card:active,
+    .work-order-item:active {
+        transform: scale(0.98);
+    }
+}
+
+/* 🌐 PROGRESSIVE WEB APP STYLES */
+.install-prompt {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--glass-heavy);
+    backdrop-filter: var(--backdrop-blur);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    padding: var(--spacing-md);
+    display: none;
+    align-items: center;
+    gap: var(--spacing-sm);
+    z-index: 1001;
+    max-width: 350px;
+    width: 90%;
+}
+
+.install-btn {
+    background: linear-gradient(45deg, var(--primary-blue), var(--success-green));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.install-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
+}
+
+/* 🔄 LOADING STATES */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* 📱 DEVICE-SPECIFIC OPTIMIZATIONS */
+
+/* iPhone SE and small phones */
+@media (max-width: 375px) {
+    .adaptive-header {
+        padding: var(--spacing-sm);
+    }
+    
+    .header-title {
+        font-size: var(--text-xl);
+    }
+    
+    .quick-stats {
+        display: none;
+    }
+    
+    .dashboard-card {
+        padding: var(--spacing-sm);
+    }
+}
+
+/* Tablet landscape optimization */
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+    .personas-section {
+        margin: var(--spacing-md) 0;
+    }
+    
+    .personas-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Large desktop optimization */
+@media (min-width: 1440px) {
+    .dashboard-container {
+        grid-template-columns: 320px 1fr 380px;
+    }
+    
+    .adaptive-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --glass-light: rgba(255, 255, 255, 0.08);
+        --glass-medium: rgba(255, 255, 255, 0.12);
+        --glass-heavy: rgba(255, 255, 255, 0.18);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .dashboard-card,
+    .persona-card,
+    .work-order-item {
+        border-width: 2px;
+    }
+    
+    .card-value,
+    .header-title {
+        text-shadow: none;
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .gradient-shift {
+        animation: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 🚀 ULTIMATE ADAPTIVE DASHBOARD CONTAINER -->
+<div class="dashboard-container">
+    
+    <!-- 🎯 ADAPTIVE HEADER -->
+    <header class="adaptive-header">
+        <div>
+            <h1 class="header-title">ChatterFix Intelligence</h1>
+            <div class="quick-stats">
+                <div class="stat-badge">
+                    <span class="stat-value">98.7%</span>
+                    <span>Uptime</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-value">$125K</span>
+                    <span>Saved</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-value">47</span>
+                    <span>Active WOs</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Device indicator -->
+        <div id="device-indicator" style="font-size: var(--text-sm); color: rgba(255,255,255,0.6);">
+            <i class="fas fa-desktop" id="device-icon"></i>
+            <span id="device-type">Desktop</span>
+        </div>
+    </header>
+
+    <!-- 🏭 MAIN DASHBOARD AREA -->
+    <main class="main-dashboard">
+        
+        <!-- 📊 ADAPTIVE DASHBOARD CARDS -->
+        <div class="adaptive-grid fade-in-up">
+            <!-- Work Orders Card -->
+            <div class="dashboard-card" onclick="window.location.href='/demo/work-orders'">
+                <div class="card-header">
+                    <h3 class="card-title">Work Orders</h3>
+                    <i class="fas fa-tasks card-icon"></i>
+                </div>
+                <div class="card-value">47</div>
+                <div class="card-description">
+                    Smart AI prioritization with Jake Thompson's expertise integration
+                </div>
+            </div>
+            
+            <!-- Analytics Card -->
+            <div class="dashboard-card" onclick="window.location.href='/analytics/dashboard'">
+                <div class="card-header">
+                    <h3 class="card-title">Analytics</h3>
+                    <i class="fas fa-chart-line card-icon"></i>
+                </div>
+                <div class="card-value">943%</div>
+                <div class="card-description">
+                    ROI achievement through AI-powered workforce intelligence
+                </div>
+            </div>
+            
+            <!-- Assets Card -->
+            <div class="dashboard-card" onclick="window.location.href='/demo/assets'">
+                <div class="card-header">
+                    <h3 class="card-title">Asset Health</h3>
+                    <i class="fas fa-heartbeat card-icon"></i>
+                </div>
+                <div class="card-value">98.7%</div>
+                <div class="card-description">
+                    Predictive maintenance preventing $125K crisis scenarios
+                </div>
+            </div>
+            
+            <!-- Team Card (Desktop/Tablet only) -->
+            <div class="dashboard-card d-none d-md-block" onclick="window.location.href='/demo/team'">
+                <div class="card-header">
+                    <h3 class="card-title">Team Status</h3>
+                    <i class="fas fa-users card-icon"></i>
+                </div>
+                <div class="card-value">12</div>
+                <div class="card-description">
+                    Active technicians with AI-optimized scheduling
+                </div>
+            </div>
+            
+            <!-- Inventory Card (Desktop only) -->
+            <div class="dashboard-card d-none d-lg-block" onclick="window.location.href='/inventory'">
+                <div class="card-header">
+                    <h3 class="card-title">Inventory</h3>
+                    <i class="fas fa-boxes card-icon"></i>
+                </div>
+                <div class="card-value">89%</div>
+                <div class="card-description">
+                    Smart stock levels with automated reordering
+                </div>
+            </div>
+            
+            <!-- Training Card (Desktop only) -->
+            <div class="dashboard-card d-none d-lg-block" onclick="window.location.href='/demo/training'">
+                <div class="card-header">
+                    <h3 class="card-title">Training</h3>
+                    <i class="fas fa-graduation-cap card-icon"></i>
+                </div>
+                <div class="card-value">23</div>
+                <div class="card-description">
+                    LineSmart powered skill development programs
+                </div>
+            </div>
+        </div>
+
+        <!-- 👥 MULTI-DEVICE USER PERSONAS -->
+        <section class="personas-section fade-in-up">
+            <h2 class="personas-title">Multi-Device User Experience</h2>
+            
+            <div class="personas-grid">
+                <!-- Jake Thompson - Technician -->
+                <div class="persona-card" onclick="switchPersona('jake')">
+                    <div class="persona-avatar">JT</div>
+                    <div class="persona-name">Jake Thompson</div>
+                    <div class="persona-role">Senior Technician</div>
+                    <div class="persona-device">
+                        <i class="fas fa-mobile-alt"></i> Mobile Focus
+                    </div>
+                    <div class="persona-features">
+                        <div class="persona-feature">Voice Commands</div>
+                        <div class="persona-feature">QR Code Scanning</div>
+                        <div class="persona-feature">Offline Capability</div>
+                    </div>
+                </div>
+                
+                <!-- Anna Kowalski - Manager -->
+                <div class="persona-card" onclick="switchPersona('anna')">
+                    <div class="persona-avatar">AK</div>
+                    <div class="persona-name">Anna Kowalski</div>
+                    <div class="persona-role">Operations Manager</div>
+                    <div class="persona-device">
+                        <i class="fas fa-tablet-alt"></i> Tablet Optimized
+                    </div>
+                    <div class="persona-features">
+                        <div class="persona-feature">Touch Analytics</div>
+                        <div class="persona-feature">Swipe Navigation</div>
+                        <div class="persona-feature">Team Overview</div>
+                    </div>
+                </div>
+                
+                <!-- Sam Martinez - Analyst -->
+                <div class="persona-card" onclick="switchPersona('sam')">
+                    <div class="persona-avatar">SM</div>
+                    <div class="persona-name">Sam Martinez</div>
+                    <div class="persona-role">Data Analyst</div>
+                    <div class="persona-device">
+                        <i class="fas fa-desktop"></i> Desktop Power
+                    </div>
+                    <div class="persona-features">
+                        <div class="persona-feature">Complex Dashboards</div>
+                        <div class="persona-feature">Multi-Screen Support</div>
+                        <div class="persona-feature">Advanced Reports</div>
+                    </div>
+                </div>
+                
+                <!-- Maria Rodriguez - Parts Manager -->
+                <div class="persona-card" onclick="switchPersona('maria')">
+                    <div class="persona-avatar">MR</div>
+                    <div class="persona-name">Maria Rodriguez</div>
+                    <div class="persona-role">Parts Manager</div>
+                    <div class="persona-device">
+                        <i class="fas fa-laptop"></i> Hybrid Workflow
+                    </div>
+                    <div class="persona-features">
+                        <div class="persona-feature">Barcode Scanning</div>
+                        <div class="persona-feature">Inventory Alerts</div>
+                        <div class="persona-feature">Quick Stock Checks</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🚨 LIVE CRISIS SCENARIOS -->
+        <section class="crisis-alerts fade-in-up" style="background: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 20px; padding: var(--spacing-lg); margin: var(--spacing-lg) 0;">
+            <h3 style="color: var(--danger-red); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-sm);">
+                <i class="fas fa-exclamation-triangle" style="animation: pulse 2s infinite;"></i>
+                Live Crisis Prevention
+            </h3>
+            
+            <div class="crisis-grid" style="display: grid; gap: var(--spacing-sm);">
+                <div class="crisis-item" style="background: var(--glass-medium); border-radius: 12px; padding: var(--spacing-sm); display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <div style="width: 12px; height: 12px; background: var(--danger-red); border-radius: 50%; animation: pulse 2s infinite;"></div>
+                    <div>
+                        <strong>Emergency Generator Failure Risk</strong><br>
+                        <small style="color: #bdc3c7;">AI prevented $125,000 potential loss through predictive maintenance</small>
+                    </div>
+                </div>
+                
+                <div class="crisis-item" style="background: var(--glass-medium); border-radius: 12px; padding: var(--spacing-sm); display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <div style="width: 12px; height: 12px; background: var(--warning-orange); border-radius: 50%; animation: pulse 2s infinite;"></div>
+                    <div>
+                        <strong>Fire Suppression System Alert</strong><br>
+                        <small style="color: #bdc3c7;">Jake Thompson assigned for immediate inspection</small>
+                    </div>
+                </div>
+                
+                <div class="crisis-item" style="background: var(--glass-medium); border-radius: 12px; padding: var(--spacing-sm); display: flex; align-items: center; gap: var(--spacing-sm);">
+                    <div style="width: 12px; height: 12px; background: var(--success-green); border-radius: 50%; animation: pulse 2s infinite;"></div>
+                    <div>
+                        <strong>Production Optimization Success</strong><br>
+                        <small style="color: #bdc3c7;">943% ROI achieved through intelligent workforce allocation</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 🔧 SIDEBAR (Desktop & Tablet) -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <i class="fas fa-clipboard-list"></i>
+                Active Work Orders
+            </h3>
+            
+            <div class="work-order-item">
+                <div class="work-order-id">WO-001</div>
+                <div class="work-order-title">Emergency Generator Check</div>
+                <span class="priority-badge priority-critical">Critical</span>
+            </div>
+            
+            <div class="work-order-item">
+                <div class="work-order-id">WO-002</div>
+                <div class="work-order-title">Fire Suppression Maintenance</div>
+                <span class="priority-badge priority-high">High</span>
+            </div>
+            
+            <div class="work-order-item">
+                <div class="work-order-id">WO-003</div>
+                <div class="work-order-title">HVAC Filter Replacement</div>
+                <span class="priority-badge priority-medium">Medium</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <h3 class="sidebar-title">
+                <i class="fas fa-chart-pie"></i>
+                Quick Analytics
+            </h3>
+            
+            <div style="display: grid; gap: var(--spacing-sm);">
+                <div style="background: var(--glass-medium); border-radius: 12px; padding: var(--spacing-sm); text-align: center;">
+                    <div style="font-size: var(--text-lg); font-weight: 700; color: var(--primary-blue);">$3.2M</div>
+                    <div style="font-size: var(--text-xs); color: #bdc3c7;">Cost Savings YTD</div>
+                </div>
+                
+                <div style="background: var(--glass-medium); border-radius: 12px; padding: var(--spacing-sm); text-align: center;">
+                    <div style="font-size: var(--text-lg); font-weight: 700; color: var(--success-green);">98.7%</div>
+                    <div style="font-size: var(--text-xs); color: #bdc3c7;">Equipment Uptime</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 🤖 FRED CHAT AREA -->
+    <aside class="fred-chat">
+        <div class="fred-header">
+            <div class="fred-avatar">🔧</div>
+            <div class="fred-info">
+                <h3>Fix-it-Fred AI</h3>
+                <div class="fred-status">Online & Ready</div>
+            </div>
+        </div>
+        
+        <div class="fred-messages">
+            <div class="fred-message">
+                🤖 Hi! I'm monitoring your maintenance operations. The emergency generator needs attention - potential $125K risk detected.
+            </div>
+            <div class="fred-message">
+                🎯 Jake Thompson is the perfect technician for this job. I've already optimized his route and prepared the safety protocols.
+            </div>
+            <div class="fred-message">
+                📊 Anna, your team's performance is excellent today - 15% above target efficiency!
+            </div>
+        </div>
+        
+        <div class="fred-input-area">
+            <input type="text" class="fred-input" placeholder="Ask Fred anything..." id="fredInput">
+            <button class="fred-send-btn" onclick="sendFredMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- 📱 MOBILE BOTTOM NAVIGATION -->
+    <nav class="mobile-bottom-nav">
+        <a href="/dashboard" class="mobile-nav-item active">
+            <i class="fas fa-home mobile-nav-icon"></i>
+            <span class="mobile-nav-label">Dashboard</span>
+        </a>
+        <a href="/demo/work-orders" class="mobile-nav-item">
+            <i class="fas fa-tasks mobile-nav-icon"></i>
+            <span class="mobile-nav-label">Work Orders</span>
+        </a>
+        <a href="/fix-it-fred/interface" class="mobile-nav-item">
+            <i class="fas fa-robot mobile-nav-icon"></i>
+            <span class="mobile-nav-label">Fred AI</span>
+        </a>
+        <a href="/analytics/dashboard" class="mobile-nav-item">
+            <i class="fas fa-chart-bar mobile-nav-icon"></i>
+            <span class="mobile-nav-label">Analytics</span>
+        </a>
+        <a href="/demo/assets" class="mobile-nav-item">
+            <i class="fas fa-cogs mobile-nav-icon"></i>
+            <span class="mobile-nav-label">Assets</span>
+        </a>
+    </nav>
+</div>
+
+<!-- 🌐 PWA INSTALL PROMPT -->
+<div class="install-prompt" id="installPrompt">
+    <div>
+        <strong>Install ChatterFix</strong><br>
+        <small>Get the full app experience</small>
+    </div>
+    <button class="install-btn" id="installBtn">Install</button>
+    <button onclick="closeInstallPrompt()" style="background: none; border: none; color: #bdc3c7; cursor: pointer;">✕</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 🚀 ULTIMATE MULTI-DEVICE INTELLIGENCE SYSTEM
+
+// Device Detection & Adaptive UI
+class DeviceManager {
+    constructor() {
+        this.deviceType = this.detectDevice();
+        this.updateDeviceIndicator();
+        this.setupResponsiveHandlers();
+    }
+    
+    detectDevice() {
+        const width = window.innerWidth;
+        if (width >= 1024) return 'desktop';
+        if (width >= 768) return 'tablet';
+        return 'mobile';
+    }
+    
+    updateDeviceIndicator() {
+        const deviceIcon = document.getElementById('device-icon');
+        const deviceType = document.getElementById('device-type');
+        
+        if (deviceIcon && deviceType) {
+            const icons = {
+                'desktop': 'fas fa-desktop',
+                'tablet': 'fas fa-tablet-alt',
+                'mobile': 'fas fa-mobile-alt'
+            };
+            
+            deviceIcon.className = icons[this.deviceType];
+            deviceType.textContent = this.deviceType.charAt(0).toUpperCase() + this.deviceType.slice(1);
+        }
+    }
+    
+    setupResponsiveHandlers() {
+        window.addEventListener('resize', () => {
+            const newDevice = this.detectDevice();
+            if (newDevice !== this.deviceType) {
+                this.deviceType = newDevice;
+                this.updateDeviceIndicator();
+                this.optimizeForDevice();
+            }
+        });
+        
+        // Initial optimization
+        this.optimizeForDevice();
+    }
+    
+    optimizeForDevice() {
+        const dashboard = document.querySelector('.dashboard-container');
+        dashboard.classList.remove('desktop-mode', 'tablet-mode', 'mobile-mode');
+        dashboard.classList.add(`${this.deviceType}-mode`);
+        
+        console.log(`🎯 Optimized for ${this.deviceType} device`);
+    }
+}
+
+// User Persona Management
+class PersonaManager {
+    constructor() {
+        this.currentPersona = 'default';
+        this.personas = {
+            'jake': {
+                name: 'Jake Thompson',
+                role: 'Senior Technician',
+                device: 'mobile',
+                features: ['voice-commands', 'qr-scanning', 'offline-mode'],
+                primaryActions: ['/demo/work-orders', '/fix-it-fred/interface']
+            },
+            'anna': {
+                name: 'Anna Kowalski',
+                role: 'Operations Manager',
+                device: 'tablet',
+                features: ['touch-analytics', 'swipe-navigation', 'team-overview'],
+                primaryActions: ['/analytics/dashboard', '/demo/team']
+            },
+            'sam': {
+                name: 'Sam Martinez',
+                role: 'Data Analyst',
+                device: 'desktop',
+                features: ['complex-dashboards', 'multi-screen', 'advanced-reports'],
+                primaryActions: ['/analytics/dashboard', '/manager']
+            },
+            'maria': {
+                name: 'Maria Rodriguez',
+                role: 'Parts Manager',
+                device: 'hybrid',
+                features: ['barcode-scanning', 'inventory-alerts', 'stock-checks'],
+                primaryActions: ['/inventory', '/demo/purchasing']
+            }
+        };
+    }
+    
+    switchPersona(personaId) {
+        if (!this.personas[personaId]) return;
+        
+        this.currentPersona = personaId;
+        const persona = this.personas[personaId];
+        
+        // Update UI for persona
+        this.highlightPersonaFeatures(persona);
+        
+        // Show persona-specific notifications
+        this.showPersonaWelcome(persona);
+        
+        console.log(`👤 Switched to ${persona.name} persona`);
+    }
+    
+    highlightPersonaFeatures(persona) {
+        // Remove previous highlights
+        document.querySelectorAll('.persona-highlight').forEach(el => {
+            el.classList.remove('persona-highlight');
+        });
+        
+        // Add highlights for persona's primary actions
+        persona.primaryActions.forEach(action => {
+            const element = document.querySelector(`[onclick*="${action}"]`);
+            if (element) {
+                element.classList.add('persona-highlight');
+                element.style.borderColor = 'var(--primary-blue)';
+                element.style.boxShadow = '0 0 20px rgba(52, 152, 219, 0.3)';
+            }
+        });
+    }
+    
+    showPersonaWelcome(persona) {
+        const welcomeMsg = `Welcome ${persona.name}! Your ${persona.device} interface is optimized for ${persona.features.join(', ')}.`;
+        this.showNotification(welcomeMsg, 'info');
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-heavy);
+            backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--primary-blue);
+            border-radius: 15px;
+            padding: 1rem;
+            color: white;
+            z-index: 1000;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
+        `;
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas fa-info-circle" style="color: var(--primary-blue); margin-top: 2px;"></i>
+                <div style="flex: 1; font-size: 0.9rem;">
+                    ${message}
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #bdc3c7; cursor: pointer;">✕</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+}
+
+// Progressive Web App Manager
+class PWAManager {
+    constructor() {
+        this.deferredPrompt = null;
+        this.setupPWA();
+    }
+    
+    setupPWA() {
+        // Listen for beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallPrompt();
+        });
+        
+        // Setup install button
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                this.installPWA();
+            });
+        }
+        
+        // Check if already installed
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('🌐 PWA is installed and running in standalone mode');
+        }
+    }
+    
+    showInstallPrompt() {
+        const prompt = document.getElementById('installPrompt');
+        if (prompt) {
+            prompt.style.display = 'flex';
+            
+            // Hide after 10 seconds if not interacted with
+            setTimeout(() => {
+                if (prompt.style.display !== 'none') {
+                    prompt.style.display = 'none';
+                }
+            }, 10000);
+        }
+    }
+    
+    async installPWA() {
+        if (!this.deferredPrompt) return;
+        
+        this.deferredPrompt.prompt();
+        const result = await this.deferredPrompt.userChoice;
+        
+        if (result.outcome === 'accepted') {
+            console.log('🎉 PWA installation accepted');
+        } else {
+            console.log('❌ PWA installation declined');
+        }
+        
+        this.deferredPrompt = null;
+        this.closeInstallPrompt();
+    }
+    
+    closeInstallPrompt() {
+        const prompt = document.getElementById('installPrompt');
+        if (prompt) {
+            prompt.style.display = 'none';
+        }
+    }
+}
+
+// Fred AI Chat Manager
+class FredChatManager {
+    constructor() {
+        this.setupFredChat();
+    }
+    
+    setupFredChat() {
+        const fredInput = document.getElementById('fredInput');
+        if (fredInput) {
+            fredInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendMessage();
+                }
+            });
+        }
+    }
+    
+    async sendMessage() {
+        const input = document.getElementById('fredInput');
+        const messagesContainer = document.querySelector('.fred-messages');
+        
+        if (!input.value.trim()) return;
+        
+        const userMessage = input.value;
+        input.value = '';
+        
+        // Add user message
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.className = 'fred-message';
+        userMsgDiv.style.background = 'rgba(52, 152, 219, 0.2)';
+        userMsgDiv.innerHTML = `👤 ${userMessage}`;
+        messagesContainer.appendChild(userMsgDiv);
+        
+        // Scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Simulate AI response
+        setTimeout(() => {
+            const aiResponse = this.generateFredResponse(userMessage);
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = 'fred-message';
+            aiMsgDiv.innerHTML = `🤖 ${aiResponse}`;
+            messagesContainer.appendChild(aiMsgDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 1000);
+    }
+    
+    generateFredResponse(userMessage) {
+        const responses = [
+            "I've analyzed your request. Jake Thompson would be the best technician for this task.",
+            "Based on the data, I recommend immediate attention to prevent potential downtime.",
+            "Your maintenance efficiency is up 15% this week - great work!",
+            "I've optimized the work order priority based on risk assessment.",
+            "Emergency protocols activated. I'm coordinating with the response team.",
+            "Predictive analytics suggest this issue could save $50K if addressed now."
+        ];
+        
+        return responses[Math.floor(Math.random() * responses.length)];
+    }
+}
+
+// Real-time Data Manager
+class RealTimeDataManager {
+    constructor() {
+        this.setupRealTimeUpdates();
+    }
+    
+    setupRealTimeUpdates() {
+        // Simulate real-time metrics updates
+        setInterval(() => {
+            this.updateMetrics();
+        }, 30000); // Update every 30 seconds
+        
+        // Simulate new alerts
+        setInterval(() => {
+            this.simulateAlert();
+        }, 45000); // New alert every 45 seconds
+    }
+    
+    updateMetrics() {
+        // Update uptime
+        const uptimeElements = document.querySelectorAll('[class*="stat-value"]');
+        uptimeElements.forEach(element => {
+            if (element.textContent.includes('%') && !element.textContent.includes('$')) {
+                const currentValue = parseFloat(element.textContent);
+                const newValue = (currentValue + (Math.random() - 0.5) * 0.1).toFixed(1);
+                if (newValue >= 95 && newValue <= 99.9) {
+                    element.textContent = newValue + '%';
+                }
+            }
+        });
+        
+        console.log('📊 Real-time metrics updated');
+    }
+    
+    simulateAlert() {
+        const alerts = [
+            "🔧 Preventive maintenance completed on Pump #3",
+            "⚠️ Filter replacement needed in HVAC Unit #2", 
+            "✅ Fire suppression system test passed",
+            "🎯 Work order WO-045 assigned to Jake Thompson"
+        ];
+        
+        const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
+        
+        // Add to Fred's messages
+        const messagesContainer = document.querySelector('.fred-messages');
+        if (messagesContainer) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fred-message';
+            alertDiv.style.background = 'rgba(243, 156, 18, 0.2)';
+            alertDiv.innerHTML = randomAlert;
+            messagesContainer.appendChild(alertDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+}
+
+// Initialize all managers
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Ultimate ChatterFix Multi-Device Platform Initializing...');
+    
+    // Initialize managers
+    window.deviceManager = new DeviceManager();
+    window.personaManager = new PersonaManager();
+    window.pwaManager = new PWAManager();
+    window.fredChatManager = new FredChatManager();
+    window.realTimeDataManager = new RealTimeDataManager();
+    
+    // Setup global functions
+    window.switchPersona = (persona) => window.personaManager.switchPersona(persona);
+    window.sendFredMessage = () => window.fredChatManager.sendMessage();
+    window.closeInstallPrompt = () => window.pwaManager.closeInstallPrompt();
+    
+    // Add fade-in animations
+    const cards = document.querySelectorAll('.dashboard-card, .persona-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.classList.add('fade-in-up');
+        }, index * 100);
+    });
+    
+    // Touch enhancements for mobile
+    if ('ontouchstart' in window) {
+        document.body.classList.add('touch-device');
+        console.log('📱 Touch optimizations enabled');
+    }
+    
+    // Service Worker registration for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(registration => console.log('🌐 Service Worker registered'))
+            .catch(error => console.log('❌ Service Worker registration failed:', error));
+    }
+    
+    console.log('✅ Ultimate ChatterFix Platform Ready!');
+    console.log(`🎯 Device: ${window.deviceManager.deviceType}`);
+    console.log('👥 User personas available: Jake, Anna, Sam, Maria');
+    console.log('🤖 Fred AI assistant active');
+    console.log('📊 Real-time data streaming');
+});
+
+// CSS injection for dynamic styles
+const dynamicStyles = document.createElement('style');
+dynamicStyles.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.1); }
+    }
+    
+    .touch-device .dashboard-card:hover,
+    .touch-device .persona-card:hover {
+        transform: none;
+    }
+    
+    .touch-device .dashboard-card:active,
+    .touch-device .persona-card:active {
+        transform: scale(0.98);
+    }
+`;
+document.head.appendChild(dynamicStyles);
+</script>
+{% endblock %}

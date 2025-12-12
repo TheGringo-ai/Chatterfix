@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Schedule Management - ChatterFix CMMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <style>
+        .container-fluid {
+            background: transparent;
+            color: #fff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .pm-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .pm-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+        }
+        
+        .schedule-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-active { background: rgba(40, 167, 69, 0.8); color: white; }
+        .status-paused { background: rgba(255, 193, 7, 0.8); color: #212529; }
+        .status-inactive { background: rgba(108, 117, 125, 0.8); color: white; }
+        .status-overdue { background: rgba(220, 53, 69, 0.8); color: white; }
+        
+        .frequency-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .priority-high { border-left: 4px solid #dc3545; }
+        .priority-medium { border-left: 4px solid #ffc107; }
+        .priority-low { border-left: 4px solid #28a745; }
+        
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .fc {
+            background: transparent;
+        }
+        
+        .fc-event {
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .fc-event.pm-preventive {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        
+        .fc-event.pm-inspection {
+            background: linear-gradient(45deg, #007bff, #0dcaf0);
+        }
+        
+        .fc-event.pm-service {
+            background: linear-gradient(45deg, #fd7e14, #ffc107);
+        }
+        
+        .fc-event.pm-overdue {
+            background: linear-gradient(45deg, #dc3545, #e55353);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+        
+        .hvac-icon { background: linear-gradient(135deg, #007bff, #0dcaf0); }
+        .mechanical-icon { background: linear-gradient(135deg, #6f42c1, #d63384); }
+        .electrical-icon { background: linear-gradient(135deg, #fd7e14, #ffc107); }
+        .plumbing-icon { background: linear-gradient(135deg, #20c997, #0d6efd); }
+        
+        .modal-content {
+            background: rgba(20, 20, 20, 0.95);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+            display: block;
+        }
+        
+        .automation-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/manager/dashboard">
+                <i class="fas fa-tools me-2"></i>ChatterFix CMMS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/manager/dashboard">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="pm-card">
+                    <div class="card-header bg-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Preventive Maintenance Schedule Management
+                            </h2>
+                            <div class="btn-group">
+                                <button class="btn btn-success" onclick="createSchedule()">
+                                    <i class="fas fa-plus me-1"></i>New Schedule
+                                </button>
+                                <button class="btn btn-info" onclick="bulkImportSchedules()">
+                                    <i class="fas fa-upload me-1"></i>Bulk Import
+                                </button>
+                                <button class="btn btn-warning" onclick="generateMaintenanceReport()">
+                                    <i class="fas fa-chart-bar me-1"></i>Reports
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number" id="totalSchedules">47</span>
+                <div class="text-muted">Total Schedules</div>
+                <small class="text-success">+5 this month</small>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number text-success" id="activeSchedules">42</span>
+                <div class="text-muted">Active Schedules</div>
+                <small class="text-info">89% active</small>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number text-warning" id="upcomingTasks">18</span>
+                <div class="text-muted">Due This Week</div>
+                <small class="text-warning">3 overdue</small>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number text-info" id="automationRate">76%</span>
+                <div class="text-muted">Automated</div>
+                <small class="text-success">+12% vs manual</small>
+            </div>
+        </div>
+
+        <!-- Automation Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="pm-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Automation Controls</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="automation-toggle mb-3">
+                                    <label class="switch">
+                                        <input type="checkbox" id="autoCreateWorkOrders" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div>
+                                        <strong>Auto-create Work Orders</strong>
+                                        <div class="small text-muted">Automatically generate work orders when PM tasks are due</div>
+                                    </div>
+                                </div>
+                                <div class="automation-toggle mb-3">
+                                    <label class="switch">
+                                        <input type="checkbox" id="autoAssignTechnicians" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div>
+                                        <strong>Auto-assign Technicians</strong>
+                                        <div class="small text-muted">Automatically assign technicians based on availability and skills</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="automation-toggle mb-3">
+                                    <label class="switch">
+                                        <input type="checkbox" id="autoNotifications" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div>
+                                        <strong>Automated Notifications</strong>
+                                        <div class="small text-muted">Send automatic reminders and alerts</div>
+                                    </div>
+                                </div>
+                                <div class="automation-toggle mb-3">
+                                    <label class="switch">
+                                        <input type="checkbox" id="autoPartsOrdering">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <div>
+                                        <strong>Auto-order Parts</strong>
+                                        <div class="small text-muted">Automatically order required parts when stock is low</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Tabs -->
+        <div class="row">
+            <div class="col-12">
+                <div class="pm-card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="pmTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#schedulesList">
+                                    <i class="fas fa-list me-1"></i>Schedules List
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#calendarView">
+                                    <i class="fas fa-calendar me-1"></i>Calendar View
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#upcomingTasks">
+                                    <i class="fas fa-clock me-1"></i>Upcoming Tasks
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#analytics">
+                                    <i class="fas fa-chart-line me-1"></i>Analytics
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            
+                            <!-- Schedules List Tab -->
+                            <div class="tab-pane active" id="schedulesList">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="input-group" style="max-width: 300px;">
+                                        <input type="text" class="form-control" placeholder="Search schedules..." id="scheduleSearch">
+                                        <button class="btn btn-outline-secondary" onclick="searchSchedules()">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <div class="btn-group">
+                                        <select class="form-select" id="statusFilter" onchange="filterSchedules()">
+                                            <option value="all">All Statuses</option>
+                                            <option value="active">Active</option>
+                                            <option value="paused">Paused</option>
+                                            <option value="overdue">Overdue</option>
+                                        </select>
+                                        <select class="form-select" id="frequencyFilter" onchange="filterSchedules()">
+                                            <option value="all">All Frequencies</option>
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="quarterly">Quarterly</option>
+                                            <option value="annually">Annually</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                                <th>Asset</th>
+                                                <th>Task</th>
+                                                <th>Frequency</th>
+                                                <th>Next Due</th>
+                                                <th>Assigned To</th>
+                                                <th>Status</th>
+                                                <th>Priority</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="schedulesTableBody">
+                                            <tr class="priority-high">
+                                                <td><input type="checkbox" class="schedule-checkbox" value="pm1"></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="asset-icon hvac-icon">
+                                                            <i class="fas fa-wind"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">HVAC Unit #12</div>
+                                                            <small class="text-muted">Building A - Floor 3</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>Filter Replacement</div>
+                                                    <small class="text-muted">Replace air filters and check refrigerant levels</small>
+                                                </td>
+                                                <td><span class="frequency-badge">Monthly</span></td>
+                                                <td>
+                                                    <div class="text-danger">Dec 15, 2024</div>
+                                                    <small class="text-danger">Overdue by 2 days</small>
+                                                </td>
+                                                <td>Sarah Johnson</td>
+                                                <td><span class="schedule-status status-overdue">Overdue</span></td>
+                                                <td><span class="badge bg-danger">High</span></td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-light" onclick="editSchedule('pm1')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-success" onclick="runNow('pm1')">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning" onclick="pauseSchedule('pm1')">
+                                                            <i class="fas fa-pause"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr class="priority-medium">
+                                                <td><input type="checkbox" class="schedule-checkbox" value="pm2"></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="asset-icon electrical-icon">
+                                                            <i class="fas fa-bolt"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">Generator #3</div>
+                                                            <small class="text-muted">Basement Mechanical Room</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>Weekly Inspection</div>
+                                                    <small class="text-muted">Check oil levels, test operation, visual inspection</small>
+                                                </td>
+                                                <td><span class="frequency-badge">Weekly</span></td>
+                                                <td>
+                                                    <div>Dec 20, 2024</div>
+                                                    <small class="text-success">Due in 5 days</small>
+                                                </td>
+                                                <td>Mike Rodriguez</td>
+                                                <td><span class="schedule-status status-active">Active</span></td>
+                                                <td><span class="badge bg-warning">Medium</span></td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-light" onclick="editSchedule('pm2')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-success" onclick="runNow('pm2')">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning" onclick="pauseSchedule('pm2')">
+                                                            <i class="fas fa-pause"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr class="priority-low">
+                                                <td><input type="checkbox" class="schedule-checkbox" value="pm3"></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="asset-icon mechanical-icon">
+                                                            <i class="fas fa-cogs"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">Pump Station A</div>
+                                                            <small class="text-muted">Utility Building</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>Quarterly Service</div>
+                                                    <small class="text-muted">Lubricate bearings, check alignment, replace seals if needed</small>
+                                                </td>
+                                                <td><span class="frequency-badge">Quarterly</span></td>
+                                                <td>
+                                                    <div>Jan 15, 2025</div>
+                                                    <small class="text-info">Due in 3 weeks</small>
+                                                </td>
+                                                <td>Lisa Chen</td>
+                                                <td><span class="schedule-status status-active">Active</span></td>
+                                                <td><span class="badge bg-success">Low</span></td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-light" onclick="editSchedule('pm3')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-success" onclick="runNow('pm3')">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning" onclick="pauseSchedule('pm3')">
+                                                            <i class="fas fa-pause"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Bulk Actions -->
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <div>
+                                        <span id="selectedCount">0</span> schedules selected
+                                    </div>
+                                    <div class="btn-group" id="bulkActions" style="display: none;">
+                                        <button class="btn btn-success btn-sm" onclick="bulkActivate()">
+                                            <i class="fas fa-play me-1"></i>Activate
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="bulkPause()">
+                                            <i class="fas fa-pause me-1"></i>Pause
+                                        </button>
+                                        <button class="btn btn-info btn-sm" onclick="bulkReassign()">
+                                            <i class="fas fa-user-edit me-1"></i>Reassign
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="bulkDelete()">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Calendar View Tab -->
+                            <div class="tab-pane" id="calendarView">
+                                <div class="calendar-container">
+                                    <div id="pmCalendar"></div>
+                                </div>
+                            </div>
+
+                            <!-- Upcoming Tasks Tab -->
+                            <div class="tab-pane" id="upcomingTasks">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Overdue Tasks</h5>
+                                        <div class="list-group list-group-flush">
+                                            <div class="list-group-item bg-transparent text-light border-danger">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1 text-danger">HVAC Unit #12 - Filter Replacement</h6>
+                                                        <p class="mb-1">Overdue by 2 days</p>
+                                                        <small>Assigned to: Sarah Johnson</small>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-danger" onclick="createUrgentWorkOrder('pm1')">
+                                                        Create Work Order
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="text-warning"><i class="fas fa-clock me-2"></i>Due This Week</h5>
+                                        <div class="list-group list-group-flush">
+                                            <div class="list-group-item bg-transparent text-light border-warning">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1">Generator #3 - Weekly Inspection</h6>
+                                                        <p class="mb-1">Due Dec 20, 2024</p>
+                                                        <small>Assigned to: Mike Rodriguez</small>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-warning" onclick="scheduleWorkOrder('pm2')">
+                                                        Schedule
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="list-group-item bg-transparent text-light border-info">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <h6 class="mb-1">Elevator #1 - Safety Inspection</h6>
+                                                        <p class="mb-1">Due Dec 22, 2024</p>
+                                                        <small>Assigned to: Lisa Chen</small>
+                                                    </div>
+                                                    <button class="btn btn-sm btn-info" onclick="scheduleWorkOrder('pm4')">
+                                                        Schedule
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Analytics Tab -->
+                            <div class="tab-pane" id="analytics">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="pm-card">
+                                            <div class="card-header">
+                                                <h6>PM Completion Trends</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="pmTrendsChart" style="height: 300px;"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="pm-card">
+                                            <div class="card-header">
+                                                <h6>Performance Metrics</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="text-center mb-3">
+                                                    <div class="stat-number text-success">94.2%</div>
+                                                    <div class="text-muted">Completion Rate</div>
+                                                </div>
+                                                <div class="text-center mb-3">
+                                                    <div class="stat-number text-info">2.1</div>
+                                                    <div class="text-muted">Avg Days Early</div>
+                                                </div>
+                                                <div class="text-center mb-3">
+                                                    <div class="stat-number text-warning">$12,450</div>
+                                                    <div class="text-muted">Monthly Cost Savings</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Schedule Modal -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create PM Schedule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Asset</label>
+                                    <select class="form-select" required>
+                                        <option value="">Select asset...</option>
+                                        <option value="hvac12">HVAC Unit #12</option>
+                                        <option value="gen3">Generator #3</option>
+                                        <option value="pump1">Pump Station A</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Task Name</label>
+                                    <input type="text" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Frequency</label>
+                                    <select class="form-select" required>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly" selected>Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                        <option value="annually">Annually</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Assigned Technician</label>
+                                    <select class="form-select" required>
+                                        <option value="">Auto-assign</option>
+                                        <option value="sarah">Sarah Johnson</option>
+                                        <option value="mike">Mike Rodriguez</option>
+                                        <option value="lisa">Lisa Chen</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Estimated Duration (hours)</label>
+                                    <input type="number" class="form-control" min="0.5" step="0.5" value="2">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Required Parts</label>
+                                    <textarea class="form-control" rows="2" placeholder="List required parts..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Instructions</label>
+                            <textarea class="form-control" rows="3" placeholder="Detailed maintenance instructions..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSchedule()">Save Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let calendar;
+        let selectedSchedules = new Set();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCalendar();
+            initializeCharts();
+            updateSelectionCount();
+        });
+
+        function initializeCalendar() {
+            const calendarEl = document.getElementById('pmCalendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: [
+                    {
+                        title: 'HVAC Filter Replacement',
+                        start: '2024-12-15',
+                        className: 'pm-overdue',
+                        extendedProps: {
+                            asset: 'HVAC Unit #12',
+                            technician: 'Sarah Johnson'
+                        }
+                    },
+                    {
+                        title: 'Generator Inspection',
+                        start: '2024-12-20',
+                        className: 'pm-preventive',
+                        extendedProps: {
+                            asset: 'Generator #3',
+                            technician: 'Mike Rodriguez'
+                        }
+                    },
+                    {
+                        title: 'Pump Service',
+                        start: '2025-01-15',
+                        className: 'pm-service',
+                        extendedProps: {
+                            asset: 'Pump Station A',
+                            technician: 'Lisa Chen'
+                        }
+                    }
+                ],
+                eventClick: function(info) {
+                    alert(`Task: ${info.event.title}\nAsset: ${info.event.extendedProps.asset}\nTechnician: ${info.event.extendedProps.technician}`);
+                }
+            });
+            calendar.render();
+        }
+
+        function initializeCharts() {
+            const ctx = document.getElementById('pmTrendsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        {
+                            label: 'Completed',
+                            data: [12, 15, 18, 14],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Overdue',
+                            data: [2, 1, 3, 2],
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSchedule() {
+            document.getElementById('scheduleModal').querySelector('.modal-title').textContent = 'Create PM Schedule';
+            new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+        }
+
+        function editSchedule(scheduleId) {
+            document.getElementById('scheduleModal').querySelector('.modal-title').textContent = 'Edit PM Schedule';
+            // Load schedule data
+            new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+        }
+
+        function saveSchedule() {
+            // Save schedule logic
+            alert('Schedule saved successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+        }
+
+        function runNow(scheduleId) {
+            if (confirm('Create an immediate work order for this maintenance task?')) {
+                alert(`Work order created for schedule ${scheduleId}`);
+            }
+        }
+
+        function pauseSchedule(scheduleId) {
+            if (confirm('Pause this maintenance schedule?')) {
+                alert(`Schedule ${scheduleId} paused`);
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.schedule-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedSchedules.add(cb.value);
+                } else {
+                    selectedSchedules.delete(cb.value);
+                }
+            });
+            updateSelectionCount();
+        }
+
+        function updateSelectionCount() {
+            const count = selectedSchedules.size;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('bulkActions').style.display = count > 0 ? 'block' : 'none';
+        }
+
+        // Add event listeners to checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('schedule-checkbox')) {
+                if (e.target.checked) {
+                    selectedSchedules.add(e.target.value);
+                } else {
+                    selectedSchedules.delete(e.target.value);
+                }
+                updateSelectionCount();
+            }
+        });
+
+        function bulkActivate() {
+            if (selectedSchedules.size > 0) {
+                alert(`Activating ${selectedSchedules.size} schedules`);
+            }
+        }
+
+        function bulkPause() {
+            if (selectedSchedules.size > 0) {
+                alert(`Pausing ${selectedSchedules.size} schedules`);
+            }
+        }
+
+        function bulkReassign() {
+            if (selectedSchedules.size > 0) {
+                alert(`Reassigning ${selectedSchedules.size} schedules`);
+            }
+        }
+
+        function bulkDelete() {
+            if (selectedSchedules.size > 0 && confirm(`Delete ${selectedSchedules.size} schedules?`)) {
+                alert(`Deleted ${selectedSchedules.size} schedules`);
+            }
+        }
+
+        function searchSchedules() {
+            const searchTerm = document.getElementById('scheduleSearch').value;
+            console.log('Searching for:', searchTerm);
+        }
+
+        function filterSchedules() {
+            const status = document.getElementById('statusFilter').value;
+            const frequency = document.getElementById('frequencyFilter').value;
+            console.log('Filtering by status:', status, 'frequency:', frequency);
+        }
+
+        function createUrgentWorkOrder(scheduleId) {
+            alert(`Creating urgent work order for ${scheduleId}`);
+        }
+
+        function scheduleWorkOrder(scheduleId) {
+            alert(`Scheduling work order for ${scheduleId}`);
+        }
+
+        function bulkImportSchedules() {
+            window.location.href = '/manager/bulk-import';
+        }
+
+        function generateMaintenanceReport() {
+            const reportData = {
+                totalSchedules: 47,
+                activeSchedules: 42,
+                completionRate: 94.2,
+                avgDaysEarly: 2.1,
+                monthlyCostSavings: 12450,
+                timestamp: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], 
+                { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pm-maintenance-report-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Automation toggle handlers
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox' && e.target.closest('.automation-toggle')) {
+                const settingName = e.target.id;
+                const isEnabled = e.target.checked;
+                console.log(`Automation setting ${settingName} ${isEnabled ? 'enabled' : 'disabled'}`);
+                // In real implementation, would save to backend
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+# Mobile App Build Configuration for ChatterFix
+# Builds and deploys the FixItFred mobile app alongside the main backend
+
+steps:
+  # Setup Node.js environment for mobile build
+  - name: 'node:18-alpine'
+    id: 'setup-mobile-env'
+    dir: 'mobile'
+    entrypoint: 'npm'
+    args: ['install']
+    
+  # Run mobile app tests
+  - name: 'node:18-alpine'
+    id: 'test-mobile'
+    dir: 'mobile'
+    entrypoint: 'npm'
+    args: ['test', '--', '--coverage', '--watchAll=false']
+    waitFor: ['setup-mobile-env']
+    
+  # Lint mobile code
+  - name: 'node:18-alpine'
+    id: 'lint-mobile'
+    dir: 'mobile'
+    entrypoint: 'npm'
+    args: ['run', 'lint']
+    waitFor: ['setup-mobile-env']
+    
+  # Build mobile web version for testing
+  - name: 'node:18-alpine'
+    id: 'build-mobile-web'
+    dir: 'mobile'
+    entrypoint: 'npx'
+    args: ['expo', 'build:web']
+    env:
+      - 'NODE_ENV=production'
+      - 'EXPO_PUBLIC_API_BASE_URL=https://chatterfix-cmms-$PROJECT_ID.uc.r.appspot.com'
+    waitFor: ['test-mobile', 'lint-mobile']
+    
+  # Build Android APK for distribution (if EAS configured)
+  - name: 'node:18-alpine'
+    id: 'build-android'
+    dir: 'mobile'
+    entrypoint: 'sh'
+    args: 
+      - '-c'
+      - |
+        if [ -f "eas.json" ]; then
+          npx eas-cli build --platform android --non-interactive
+        else
+          echo "EAS not configured - skipping native build"
+        fi
+    waitFor: ['build-mobile-web']
+    
+  # Build iOS IPA for distribution (if EAS configured)
+  - name: 'node:18-alpine'
+    id: 'build-ios'
+    dir: 'mobile'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        if [ -f "eas.json" ]; then
+          npx eas-cli build --platform ios --non-interactive
+        else
+          echo "EAS not configured - skipping iOS build"
+        fi
+    waitFor: ['build-mobile-web']
+    
+  # Deploy mobile web version to Firebase Hosting
+  - name: 'node:18-alpine'
+    id: 'deploy-mobile-web'
+    dir: 'mobile'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        npm install -g firebase-tools
+        firebase deploy --only hosting:mobile --project $PROJECT_ID --token "$_FIREBASE_TOKEN"
+    env:
+      - 'FIREBASE_TOKEN=$_FIREBASE_TOKEN'
+    waitFor: ['build-mobile-web']
+
+# Trigger configuration for mobile-specific changes
+trigger:
+  branch: '^main$'
+  includedFiles:
+  - 'mobile/**'
+  - 'mobile-build.yaml'
+
+# Build options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_STANDARD_4'
+  
+timeout: '2400s'  # 40 minutes for mobile builds
+
+# Required substitutions
+substitutions:
+  _FIREBASE_TOKEN: '' # Set via Cloud Build triggers
+  _EAS_TOKEN: ''      # Set if using Expo EAS
+  _EXPO_PROJECT_ID: '' # Set if using Expo

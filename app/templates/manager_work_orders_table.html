@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}Work Orders Table - Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>📋 Work Orders Management</h1>
+            <p>Editable table view with bulk operations</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn-secondary" onclick="window.location.href='/manager/'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <button class="cmms-btn-secondary" onclick="toggleBulkMode()">
+                <i class="fas fa-check-square"></i> Bulk Edit
+            </button>
+            <button class="cmms-btn" onclick="window.location.href='/work-orders'">
+                <i class="fas fa-plus"></i> Create Work Order
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div id="bulkActionsBar" class="bulk-actions-bar" style="display: none; padding: 1rem; background: var(--bg-glass); border-radius: 8px; margin-bottom: 1rem; border: var(--card-border);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span id="selectedCount">0</span> items selected
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn-secondary" onclick="bulkUpdateStatus('In Progress')">
+                <i class="fas fa-play"></i> Set In Progress
+            </button>
+            <button class="cmms-btn-secondary" onclick="bulkUpdatePriority('High')">
+                <i class="fas fa-exclamation"></i> Set High Priority
+            </button>
+            <button class="cmms-btn-secondary" onclick="bulkAssign()">
+                <i class="fas fa-user"></i> Bulk Assign
+            </button>
+            <button class="cmms-btn-secondary" style="background: #dc3545;" onclick="bulkDelete()">
+                <i class="fas fa-trash"></i> Delete Selected
+            </button>
+            <button class="cmms-btn-secondary" onclick="toggleBulkMode()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Editable Table -->
+<div class="cmms-card">
+    <div style="overflow-x: auto;">
+        <table class="editable-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--bg-glass);">
+                    <th class="bulk-select" style="display: none; padding: 12px; border: var(--card-border);">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">ID</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Title</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Description</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Priority</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Status</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Assigned To</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Due Date</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Est. Hours</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Asset</th>
+                    <th style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-weight: 600; color: var(--text-primary);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wo in work_orders %}
+                <tr data-id="{{ wo.id }}" class="editable-row">
+                    <td class="bulk-select" style="display: none; padding: 12px; border: var(--card-border);">
+                        <input type="checkbox" class="row-select" value="{{ wo.id }}" onchange="updateSelectedCount()">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary); font-family: monospace;">{{ wo.id }}</td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">{{ wo.title }}</span>
+                        <input type="text" class="edit-value" value="{{ wo.title }}" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary); max-width: 200px;">
+                        <span class="display-value" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;">{{ wo.description }}</span>
+                        <textarea class="edit-value" style="display: none; width: 100%; padding: 4px; height: 60px;">{{ wo.description }}</textarea>
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">
+                            <span class="cmms-badge {% if wo.priority == 'Critical' %}badge-critical{% elif wo.priority == 'High' %}badge-down{% elif wo.priority == 'Medium' %}badge-maintenance{% else %}badge-operational{% endif %}">
+                                {{ wo.priority }}
+                            </span>
+                        </span>
+                        <select class="edit-value" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                            <option value="Low" {% if wo.priority == 'Low' %}selected{% endif %}>Low</option>
+                            <option value="Medium" {% if wo.priority == 'Medium' %}selected{% endif %}>Medium</option>
+                            <option value="High" {% if wo.priority == 'High' %}selected{% endif %}>High</option>
+                            <option value="Critical" {% if wo.priority == 'Critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">
+                            <span class="cmms-badge {% if wo.status == 'Open' %}badge-maintenance{% elif wo.status == 'Completed' %}badge-operational{% elif wo.status == 'In Progress' %}badge-down{% else %}badge-maintenance{% endif %}">
+                                {{ wo.status }}
+                            </span>
+                        </span>
+                        <select class="edit-value" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                            <option value="Open" {% if wo.status == 'Open' %}selected{% endif %}>Open</option>
+                            <option value="In Progress" {% if wo.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Scheduled" {% if wo.status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
+                            <option value="Completed" {% if wo.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">{{ wo.assigned_to or 'Unassigned' }}</span>
+                        <input type="text" class="edit-value" value="{{ wo.assigned_to or '' }}" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">{{ wo.due_date or 'No date' }}</span>
+                        <input type="date" class="edit-value" value="{{ wo.due_date or '' }}" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">{{ wo.estimated_hours or 0 }}h</span>
+                        <input type="number" class="edit-value" value="{{ wo.estimated_hours or 0 }}" min="0" step="0.5" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary);">
+                        <span class="display-value">{{ wo.asset_name or 'No Asset' }}</span>
+                        <input type="text" class="edit-value" value="{{ wo.asset_name or '' }}" style="display: none; width: 100%; padding: 4px; background: var(--input-bg); border: var(--input-border); color: var(--text-primary);">
+                    </td>
+                    <td style="padding: 12px; border: var(--card-border); color: var(--text-primary); white-space: nowrap;">
+                        <button class="edit-row-btn cmms-btn-sm" onclick="editRow('{{ wo.id }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="save-row-btn cmms-btn-sm" onclick="saveRow('{{ wo.id }}')" style="display: none;">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button class="cancel-row-btn cmms-btn-sm" onclick="cancelEdit('{{ wo.id }}')" style="display: none; background: #6c757d;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button class="cmms-btn-sm" onclick="window.location.href='/work-orders/{{ wo.id }}'" style="background: #17a2b8;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Bulk Assignment Modal -->
+<div id="bulkAssignModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 15% auto; width: 400px; padding: 30px;">
+        <h2><i class="fas fa-user"></i> Bulk Assign Work Orders</h2>
+        <form id="bulkAssignForm">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">Assign to Technician</label>
+                <select id="bulkAssignTechnician" style="width: 100%; padding: 0.8rem; border: var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
+                    <option value="">Select Technician...</option>
+                    <option value="Sarah Johnson">Sarah Johnson</option>
+                    <option value="Mike Rodriguez">Mike Rodriguez</option>
+                    <option value="Lisa Chen">Lisa Chen</option>
+                    <option value="David Kim">David Kim</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" onclick="document.getElementById('bulkAssignModal').style.display='none'" class="cmms-btn" style="background: #6c757d;">Cancel</button>
+                <button type="button" onclick="executeBulkAssign()" class="cmms-btn">Assign Selected</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let bulkModeActive = false;
+let selectedRows = new Set();
+
+function toggleBulkMode() {
+    bulkModeActive = !bulkModeActive;
+    const bulkColumns = document.querySelectorAll('.bulk-select');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    
+    bulkColumns.forEach(col => {
+        col.style.display = bulkModeActive ? 'table-cell' : 'none';
+    });
+    
+    bulkBar.style.display = bulkModeActive ? 'block' : 'none';
+    
+    if (!bulkModeActive) {
+        // Clear selections
+        selectedRows.clear();
+        document.querySelectorAll('.row-select').forEach(cb => cb.checked = false);
+        document.getElementById('selectAll').checked = false;
+        updateSelectedCount();
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll').checked;
+    const checkboxes = document.querySelectorAll('.row-select');
+    
+    selectedRows.clear();
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        if (selectAll) {
+            selectedRows.add(cb.value);
+        }
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.row-select:checked');
+    selectedRows.clear();
+    
+    checkboxes.forEach(cb => {
+        selectedRows.add(cb.value);
+    });
+    
+    document.getElementById('selectedCount').textContent = selectedRows.size;
+    
+    // Update select all checkbox
+    const allCheckboxes = document.querySelectorAll('.row-select');
+    const selectAll = document.getElementById('selectAll');
+    selectAll.checked = selectedRows.size === allCheckboxes.length;
+    selectAll.indeterminate = selectedRows.size > 0 && selectedRows.size < allCheckboxes.length;
+}
+
+function editRow(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const displayValues = row.querySelectorAll('.display-value');
+    const editValues = row.querySelectorAll('.edit-value');
+    const editBtn = row.querySelector('.edit-row-btn');
+    const saveBtn = row.querySelector('.save-row-btn');
+    const cancelBtn = row.querySelector('.cancel-row-btn');
+    
+    displayValues.forEach(el => el.style.display = 'none');
+    editValues.forEach(el => el.style.display = 'block');
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+}
+
+function cancelEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const displayValues = row.querySelectorAll('.display-value');
+    const editValues = row.querySelectorAll('.edit-value');
+    const editBtn = row.querySelector('.edit-row-btn');
+    const saveBtn = row.querySelector('.save-row-btn');
+    const cancelBtn = row.querySelector('.cancel-row-btn');
+    
+    displayValues.forEach(el => el.style.display = 'block');
+    editValues.forEach(el => el.style.display = 'none');
+    editBtn.style.display = 'inline-block';
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+
+async function saveRow(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const editInputs = row.querySelectorAll('.edit-value');
+    
+    const fields = {};
+    const fieldMapping = ['title', 'description', 'priority', 'status', 'assigned_to', 'due_date', 'estimated_hours', 'asset_name'];
+    
+    editInputs.forEach((input, index) => {
+        if (fieldMapping[index]) {
+            fields[fieldMapping[index]] = input.value;
+        }
+    });
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'work_orders');
+        formData.append('updates', JSON.stringify([{id: id, fields: fields}]));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update display values
+            const displayValues = row.querySelectorAll('.display-value');
+            displayValues.forEach((display, index) => {
+                const editValue = editInputs[index];
+                if (fieldMapping[index] === 'priority' || fieldMapping[index] === 'status') {
+                    // Update badge
+                    const badge = display.querySelector('.cmms-badge');
+                    if (badge) {
+                        badge.textContent = editValue.value;
+                        // Update badge class based on value
+                        badge.className = 'cmms-badge';
+                        if (fieldMapping[index] === 'priority') {
+                            if (editValue.value === 'Critical') badge.className += ' badge-critical';
+                            else if (editValue.value === 'High') badge.className += ' badge-down';
+                            else if (editValue.value === 'Medium') badge.className += ' badge-maintenance';
+                            else badge.className += ' badge-operational';
+                        } else {
+                            if (editValue.value === 'Completed') badge.className += ' badge-operational';
+                            else if (editValue.value === 'In Progress') badge.className += ' badge-down';
+                            else badge.className += ' badge-maintenance';
+                        }
+                    }
+                } else {
+                    if (fieldMapping[index] === 'estimated_hours') {
+                        display.textContent = editValue.value + 'h';
+                    } else if (fieldMapping[index] === 'assigned_to' && !editValue.value) {
+                        display.textContent = 'Unassigned';
+                    } else if (fieldMapping[index] === 'due_date' && !editValue.value) {
+                        display.textContent = 'No date';
+                    } else if (fieldMapping[index] === 'asset_name' && !editValue.value) {
+                        display.textContent = 'No Asset';
+                    } else {
+                        display.textContent = editValue.value;
+                    }
+                }
+            });
+            
+            cancelEdit(id);
+            
+            // Show success message
+            showToast('Work order updated successfully', 'success');
+        } else {
+            throw new Error(result.error || 'Update failed');
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+        showToast('Failed to update work order: ' + error.message, 'error');
+    }
+}
+
+async function bulkUpdateStatus(status) {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { status: status }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'work_orders');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update UI
+            selectedRows.forEach(id => {
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                const statusBadge = row.querySelector('td:nth-child(6) .cmms-badge');
+                if (statusBadge) {
+                    statusBadge.textContent = status;
+                    statusBadge.className = 'cmms-badge';
+                    if (status === 'Completed') statusBadge.className += ' badge-operational';
+                    else if (status === 'In Progress') statusBadge.className += ' badge-down';
+                    else statusBadge.className += ' badge-maintenance';
+                }
+            });
+            
+            showToast(`Updated ${result.success_count} work orders`, 'success');
+            toggleBulkMode();
+        } else {
+            throw new Error(result.error || 'Bulk update failed');
+        }
+    } catch (error) {
+        console.error('Bulk update error:', error);
+        showToast('Failed to update work orders: ' + error.message, 'error');
+    }
+}
+
+async function bulkUpdatePriority(priority) {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { priority: priority }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'work_orders');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Updated ${result.success_count} work orders`, 'success');
+            location.reload(); // Refresh to show changes
+        } else {
+            throw new Error(result.error || 'Bulk update failed');
+        }
+    } catch (error) {
+        console.error('Bulk update error:', error);
+        showToast('Failed to update priorities: ' + error.message, 'error');
+    }
+}
+
+function bulkAssign() {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    document.getElementById('bulkAssignModal').style.display = 'block';
+}
+
+async function executeBulkAssign() {
+    const technician = document.getElementById('bulkAssignTechnician').value;
+    
+    if (!technician) {
+        showToast('Please select a technician', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { assigned_to: technician }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'work_orders');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Assigned ${result.success_count} work orders to ${technician}`, 'success');
+            document.getElementById('bulkAssignModal').style.display = 'none';
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk assignment failed');
+        }
+    } catch (error) {
+        console.error('Bulk assign error:', error);
+        showToast('Failed to assign work orders: ' + error.message, 'error');
+    }
+}
+
+async function bulkDelete() {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedRows.size} work orders? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'work_orders');
+        formData.append('ids', JSON.stringify(Array.from(selectedRows)));
+        
+        const response = await fetch('/manager/api/bulk-delete', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Deleted ${result.success_count} work orders`, 'success');
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk delete failed');
+        }
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        showToast('Failed to delete work orders: ' + error.message, 'error');
+    }
+}
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    if (type === 'success') {
+        toast.style.background = '#28a745';
+    } else if (type === 'error') {
+        toast.style.background = '#dc3545';
+    } else if (type === 'warning') {
+        toast.style.background = '#ffc107';
+        toast.style.color = '#212529';
+    }
+    
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

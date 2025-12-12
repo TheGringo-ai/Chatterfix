@@ -1,0 +1,786 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if demo_mode %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> <strong>{{ demo_banner }}</strong>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h2 mb-4">
+                <i class="fas fa-industry text-primary"></i> Asset Management
+            </h1>
+        </div>
+    </div>
+
+    <!-- Asset Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Total Assets</h5>
+                            <h3>{{ assets|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cogs fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Operational</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Operational")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Warning</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Warning")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5>Critical</h5>
+                            <h3>{{ assets|selectattr("status", "equalto", "Critical")|list|length }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Asset Inventory
+                    </h5>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="openAddAssetModal()" data-bs-toggle="modal" data-bs-target="#assetModal">
+                            <i class="fas fa-plus"></i> Quick Add Asset
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showAssetFilters()">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="assetsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Asset Name</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Condition</th>
+                                    <th>Last Maintenance</th>
+                                    <th>Next Maintenance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in assets %}
+                                <tr>
+                                    <td>{{ asset.id }}</td>
+                                    <td>
+                                        <strong>{{ asset.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ asset.type }}</span>
+                                    </td>
+                                    <td>{{ asset.location }}</td>
+                                    <td>
+                                        {% if asset.status == 'Operational' %}
+                                        <span class="badge bg-success">{{ asset.status }}</span>
+                                        {% elif asset.status == 'Warning' %}
+                                        <span class="badge bg-warning">{{ asset.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ asset.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ asset.condition_rating }}/10</span>
+                                            <div class="progress" style="width: 60px;">
+                                                <div class="progress-bar 
+                                                    {% if asset.condition_rating >= 8 %}bg-success
+                                                    {% elif asset.condition_rating >= 6 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    style="width: {{ asset.condition_rating * 10 }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ asset.last_maintenance }}</td>
+                                    <td>{{ asset.next_maintenance }}</td>
+                                    {% if not demo_mode %}
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewAsset('{{ asset.id }}')" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="editAsset('{{ asset.id }}')" title="Edit Asset">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="scheduleMaintenance('{{ asset.id }}')" title="Schedule Maintenance">
+                                                <i class="fas fa-calendar"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {% else %}
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewAssetDemo('{{ asset.id }}')" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="editAssetDemo('{{ asset.id }}')" title="Edit Asset">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Health Overview -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Asset Health Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="assetHealthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools"></i> Upcoming Maintenance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for asset in assets %}
+                        {% if loop.index <= 3 %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ asset.name }}</strong>
+                                <small class="text-muted d-block">{{ asset.location }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ asset.next_maintenance }}</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if demo_mode %}
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <h3>Explore More Features</h3>
+            <a href="/demo/dashboard" class="btn btn-primary me-2">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/demo/work-orders" class="btn btn-outline-primary me-2">
+                <i class="fas fa-clipboard-list"></i> Work Orders
+            </a>
+            <a href="/demo/training" class="btn btn-outline-primary">
+                <i class="fas fa-graduation-cap"></i> Training
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Add/Edit Asset Modal -->
+<div class="modal fade" id="assetModal" tabindex="-1" aria-labelledby="assetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assetModalLabel">
+                    <i class="fas fa-plus-circle"></i> <span id="modalTitle">Quick Add Asset</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assetForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assetName" class="form-label">Asset Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="assetName" name="assetName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assetId" class="form-label">Asset ID <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="assetId" name="assetId" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assetType" class="form-label">Asset Type</label>
+                                <select class="form-select" id="assetType" name="assetType">
+                                    <option value="">Select Type</option>
+                                    <option value="Conveyor">Conveyor</option>
+                                    <option value="Pump">Pump</option>
+                                    <option value="Motor">Motor</option>
+                                    <option value="HVAC">HVAC</option>
+                                    <option value="Generator">Generator</option>
+                                    <option value="Compressor">Compressor</option>
+                                    <option value="Boiler">Boiler</option>
+                                    <option value="Transformer">Transformer</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assetStatus" class="form-label">Status</label>
+                                <select class="form-select" id="assetStatus" name="assetStatus">
+                                    <option value="Operational">Operational</option>
+                                    <option value="Warning">Warning</option>
+                                    <option value="Critical">Critical</option>
+                                    <option value="Down">Down</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assetLocation" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="assetLocation" name="assetLocation" placeholder="e.g., Building A - Floor 2">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="conditionRating" class="form-label">Condition Rating (1-10)</label>
+                                <input type="number" class="form-control" id="conditionRating" name="conditionRating" min="1" max="10" value="8">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="lastMaintenance" class="form-label">Last Maintenance</label>
+                                <input type="date" class="form-control" id="lastMaintenance" name="lastMaintenance">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="nextMaintenance" class="form-label">Next Maintenance</label>
+                                <input type="date" class="form-control" id="nextMaintenance" name="nextMaintenance">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assetDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="assetDescription" name="assetDescription" rows="3" placeholder="Asset description, specifications, notes..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assetTags" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="assetTags" name="assetTags" placeholder="e.g., critical, production, scheduled">
+                        <div class="form-text">Separate tags with commas</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAsset()">
+                    <i class="fas fa-save"></i> <span id="saveButtonText">Save Asset</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Details Modal -->
+<div class="modal fade" id="assetDetailsModal" tabindex="-1" aria-labelledby="assetDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assetDetailsLabel">
+                    <i class="fas fa-info-circle"></i> Asset Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="assetDetailsContent">
+                    <!-- Asset details will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editCurrentAsset()">
+                    <i class="fas fa-edit"></i> Edit Asset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#assetsTable').DataTable({
+        "pageLength": 10,
+        "order": [[ 4, "desc" ]], // Sort by status
+        "responsive": true
+    });
+    
+    // Asset Health Chart
+    const ctx = document.getElementById('assetHealthChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Excellent (9-10)', 'Good (7-8)', 'Fair (5-6)', 'Poor (<5)'],
+            datasets: [{
+                data: [
+                    {{ assets|selectattr("condition_rating", ">=", 9)|list|length }},
+                    {{ assets|selectattr("condition_rating", ">=", 7)|selectattr("condition_rating", "<", 9)|list|length }},
+                    {{ assets|selectattr("condition_rating", ">=", 5)|selectattr("condition_rating", "<", 7)|list|length }},
+                    {{ assets|selectattr("condition_rating", "<", 5)|list|length }}
+                ],
+                backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+
+// Asset Management Variables
+let currentAssetId = null;
+let isEditMode = false;
+let assetsData = {{ assets|tojson|safe }};
+
+// Quick Add Asset Modal Functions
+function openAddAssetModal() {
+    isEditMode = false;
+    currentAssetId = null;
+    document.getElementById('modalTitle').textContent = 'Quick Add Asset';
+    document.getElementById('saveButtonText').textContent = 'Save Asset';
+    document.getElementById('assetForm').reset();
+    
+    // Set default values
+    document.getElementById('conditionRating').value = '8';
+    document.getElementById('assetStatus').value = 'Operational';
+    
+    // Generate new asset ID
+    generateAssetId();
+}
+
+function editAsset(assetId) {
+    isEditMode = true;
+    currentAssetId = assetId;
+    document.getElementById('modalTitle').textContent = 'Edit Asset';
+    document.getElementById('saveButtonText').textContent = 'Update Asset';
+    
+    // Find asset data (in demo mode, use demo data)
+    const asset = assetsData.find(a => a.id === assetId) || {
+        id: assetId,
+        name: 'Sample Asset',
+        type: 'Pump',
+        status: 'Operational',
+        location: 'Building A',
+        condition_rating: 8,
+        last_maintenance: '2024-11-15',
+        next_maintenance: '2024-12-15'
+    };
+    
+    // Populate form
+    document.getElementById('assetId').value = asset.id;
+    document.getElementById('assetName').value = asset.name;
+    document.getElementById('assetType').value = asset.type;
+    document.getElementById('assetStatus').value = asset.status;
+    document.getElementById('assetLocation').value = asset.location;
+    document.getElementById('conditionRating').value = asset.condition_rating;
+    document.getElementById('lastMaintenance').value = asset.last_maintenance;
+    document.getElementById('nextMaintenance').value = asset.next_maintenance;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('assetModal'));
+    modal.show();
+}
+
+function editAssetDemo(assetId) {
+    editAsset(assetId);
+}
+
+function generateAssetId() {
+    const prefix = document.getElementById('assetType').value || 'AST';
+    const number = String(Date.now()).slice(-4);
+    document.getElementById('assetId').value = `${prefix}-${number}`;
+}
+
+function saveAsset() {
+    const form = document.getElementById('assetForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const assetData = Object.fromEntries(formData);
+    
+    {% if demo_mode %}
+    // Demo mode - show success message and update UI
+    const modal = bootstrap.Modal.getInstance(document.getElementById('assetModal'));
+    modal.hide();
+    
+    showSuccessMessage(isEditMode ? 'Asset updated successfully!' : 'Asset added successfully!');
+    
+    // In demo mode, simulate adding to the table
+    if (!isEditMode) {
+        addAssetToTable(assetData);
+    } else {
+        updateAssetInTable(assetData);
+    }
+    {% else %}
+    // Production mode - submit to API
+    const url = isEditMode ? `/api/assets/${currentAssetId}` : '/api/assets';
+    const method = isEditMode ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assetData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('assetModal'));
+        modal.hide();
+        
+        if (data.success) {
+            showSuccessMessage(data.message);
+            setTimeout(() => {
+                location.reload(); // Refresh to show updated data
+            }, 1500);
+        } else {
+            showErrorMessage(data.message || 'Failed to save asset');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('An error occurred while saving the asset');
+    });
+    {% endif %}
+}
+
+function addAssetToTable(assetData) {
+    const table = $('#assetsTable').DataTable();
+    const statusBadge = getStatusBadge(assetData.assetStatus);
+    const conditionBar = getConditionBar(assetData.conditionRating);
+    
+    const actionButtons = `
+        <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-outline-primary" onclick="viewAssetDemo('${assetData.assetId}')" title="View Details">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="editAssetDemo('${assetData.assetId}')" title="Edit Asset">
+                <i class="fas fa-edit"></i>
+            </button>
+        </div>
+    `;
+    
+    table.row.add([
+        assetData.assetId,
+        `<strong>${assetData.assetName}</strong>`,
+        `<span class="badge bg-secondary">${assetData.assetType}</span>`,
+        assetData.assetLocation,
+        statusBadge,
+        conditionBar,
+        assetData.lastMaintenance || 'Not set',
+        assetData.nextMaintenance || 'Not scheduled',
+        actionButtons
+    ]).draw();
+    
+    // Add to assetsData
+    assetsData.push({
+        id: assetData.assetId,
+        name: assetData.assetName,
+        type: assetData.assetType,
+        status: assetData.assetStatus,
+        location: assetData.assetLocation,
+        condition_rating: parseInt(assetData.conditionRating),
+        last_maintenance: assetData.lastMaintenance,
+        next_maintenance: assetData.nextMaintenance
+    });
+}
+
+function updateAssetInTable(assetData) {
+    // Update the assets data array
+    const assetIndex = assetsData.findIndex(a => a.id === currentAssetId);
+    if (assetIndex > -1) {
+        assetsData[assetIndex] = {
+            id: assetData.assetId,
+            name: assetData.assetName,
+            type: assetData.assetType,
+            status: assetData.assetStatus,
+            location: assetData.assetLocation,
+            condition_rating: parseInt(assetData.conditionRating),
+            last_maintenance: assetData.lastMaintenance,
+            next_maintenance: assetData.nextMaintenance
+        };
+    }
+    
+    // Reload the table data
+    location.reload();
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'Operational': '<span class="badge bg-success">Operational</span>',
+        'Warning': '<span class="badge bg-warning">Warning</span>',
+        'Critical': '<span class="badge bg-danger">Critical</span>',
+        'Down': '<span class="badge bg-dark">Down</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getConditionBar(rating) {
+    const percentage = rating * 10;
+    const color = rating >= 8 ? 'success' : rating >= 6 ? 'warning' : 'danger';
+    return `
+        <div class="d-flex align-items-center">
+            <span class="me-2">${rating}/10</span>
+            <div class="progress" style="width: 60px;">
+                <div class="progress-bar bg-${color}" style="width: ${percentage}%"></div>
+            </div>
+        </div>
+    `;
+}
+
+function viewAsset(assetId) {
+    {% if not demo_mode %}
+    window.location.href = `/assets/${assetId}`;
+    {% else %}
+    viewAssetDemo(assetId);
+    {% endif %}
+}
+
+function viewAssetDemo(assetId) {
+    const asset = assetsData.find(a => a.id === assetId) || {
+        id: assetId,
+        name: 'Sample Asset',
+        type: 'Pump',
+        status: 'Operational',
+        location: 'Building A',
+        condition_rating: 8,
+        last_maintenance: '2024-11-15',
+        next_maintenance: '2024-12-15'
+    };
+    
+    const statusBadge = getStatusBadge(asset.status);
+    const conditionBar = getConditionBar(asset.condition_rating);
+    
+    const detailsHtml = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-primary">Basic Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Asset ID:</strong></td><td>${asset.id}</td></tr>
+                    <tr><td><strong>Name:</strong></td><td>${asset.name}</td></tr>
+                    <tr><td><strong>Type:</strong></td><td>${asset.type}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
+                    <tr><td><strong>Location:</strong></td><td>${asset.location}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary">Condition & Maintenance</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Condition:</strong></td><td>${conditionBar}</td></tr>
+                    <tr><td><strong>Last Maintenance:</strong></td><td>${asset.last_maintenance || 'Not recorded'}</td></tr>
+                    <tr><td><strong>Next Maintenance:</strong></td><td>${asset.next_maintenance || 'Not scheduled'}</td></tr>
+                    <tr><td><strong>Uptime:</strong></td><td>98.5%</td></tr>
+                    <tr><td><strong>Criticality:</strong></td><td><span class="badge bg-warning">Medium</span></td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6 class="text-primary">Recent Activity</h6>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="fas fa-wrench text-success"></i> Routine maintenance completed - 2 days ago
+                    </div>
+                    <div class="list-group-item">
+                        <i class="fas fa-chart-line text-info"></i> Performance monitoring active
+                    </div>
+                    <div class="list-group-item">
+                        <i class="fas fa-calendar text-warning"></i> Next service due in 15 days
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('assetDetailsContent').innerHTML = detailsHtml;
+    document.getElementById('assetDetailsLabel').innerHTML = `<i class="fas fa-info-circle"></i> ${asset.name} Details`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('assetDetailsModal'));
+    modal.show();
+    
+    // Store current asset for edit functionality
+    currentAssetId = assetId;
+}
+
+function editCurrentAsset() {
+    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('assetDetailsModal'));
+    detailsModal.hide();
+    
+    setTimeout(() => {
+        editAsset(currentAssetId);
+    }, 300);
+}
+
+function scheduleMaintenance(assetId) {
+    {% if demo_mode %}
+    showSuccessMessage(`Maintenance scheduled for asset ${assetId}! A technician will be assigned shortly.`);
+    {% else %}
+    // Implementation for scheduling maintenance
+    window.location.href = `/maintenance/schedule?asset=${assetId}`;
+    {% endif %}
+}
+
+function showAssetFilters() {
+    // Simple filter implementation
+    const filterOptions = ['All', 'Operational', 'Warning', 'Critical', 'Down'];
+    const filterSelect = document.createElement('select');
+    filterSelect.className = 'form-select';
+    filterSelect.innerHTML = filterOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+    
+    filterSelect.onchange = function() {
+        const table = $('#assetsTable').DataTable();
+        if (this.value === 'All') {
+            table.search('').draw();
+        } else {
+            table.search(this.value).draw();
+        }
+    };
+    
+    // Replace the filter button temporarily
+    const filterBtn = event.target;
+    const parent = filterBtn.parentNode;
+    parent.replaceChild(filterSelect, filterBtn);
+    
+    setTimeout(() => {
+        parent.replaceChild(filterBtn, filterSelect);
+    }, 5000);
+}
+
+function showSuccessMessage(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+
+function showErrorMessage(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+
+// Auto-generate asset ID when type changes
+document.addEventListener('DOMContentLoaded', function() {
+    const assetTypeSelect = document.getElementById('assetType');
+    if (assetTypeSelect) {
+        assetTypeSelect.addEventListener('change', function() {
+            if (!isEditMode) {
+                generateAssetId();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

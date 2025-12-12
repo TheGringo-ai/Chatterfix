@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block title %}AI Command Center - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<style>
+    /* Dashboard specific styles that didn't make it to global css or need overrides */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-rows: auto auto 1fr;
+        gap: 1.5rem;
+        padding: 2rem 0;
+    }
+
+    .ai-brain {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        color: white; /* Ensure text is always white on this dark gradient */
+        box-shadow: var(--shadow-glass);
+    }
+    
+    /* ... (animation CSS skipped for brevity if unchanged, but I must provide full block if valid) ... */
+    /* Wait, replace_file_content requires exact context. Using variable replacement is better. */
+
+    .ai-brain::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(52, 152, 219, 0.3), transparent);
+        animation: rotate 10s linear infinite;
+    }
+
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .ai-brain-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ... pulsing dot ... */
+    .ai-pulse {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background: #27ae60;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        margin-left: 10px;
+        box-shadow: 0 0 10px #27ae60;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .predictions { grid-column: 1 / 2; }
+    .realtime-monitor { grid-column: 2 / 3; }
+    .ai-assistant { grid-column: 3 / 4; }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    .metric {
+        text-align: center;
+        padding: 1rem;
+        background: var(--bg-glass); /* Use variable instead of rgba(0,0,0,0.3) */
+        border-radius: 12px;
+        border: var(--card-border);
+        transition: transform 0.2s;
+    }
+    
+    .metric:hover {
+        transform: translateY(-2px);
+        background: var(--bg-glass-hover);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--accent-color);
+        text-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-top: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .chat-messages {
+        background: var(--bg-body); /* Better contrast area for chat */
+        border-radius: 12px;
+        padding: 1rem;
+        height: 200px;
+        overflow-y: auto;
+        margin: 1rem 0;
+        border: var(--card-border);
+    }
+
+    .message {
+        margin: 0.5rem 0;
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .message-ai {
+        background: var(--bg-glass);
+        border-left: 3px solid var(--accent-color);
+        color: var(--text-primary);
+    }
+
+    .message-user {
+        background: rgba(39, 174, 96, 0.15);
+        border-left: 3px solid #27ae60;
+        color: var(--text-primary);
+        text-align: right;
+    }
+
+    .ai-capabilities {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .capability-card {
+        background: var(--bg-glass);
+        border: var(--card-border);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+    }
+
+    .capability-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-glass);
+        background: var(--bg-glass-hover);
+        border-color: var(--accent-color);
+    }
+
+    .capability-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        display: block;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    }
+
+    .capability-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.8rem;
+        color: var(--text-primary);
+    }
+
+    .capability-description {
+        opacity: 0.8;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 1200px) {
+        .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        .ai-brain, .realtime-monitor { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid { grid-template-columns: 1fr; }
+        .metrics-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- AI Brain Center -->
+    <div class="ai-brain">
+        <div class="ai-brain-content">
+            <h1>🧠 AI Neural Network <span class="ai-pulse"></span></h1>
+            <p style="font-size: 1.2rem; opacity: 0.9;">Orchestrating intelligent maintenance operations across your
+                entire facility</p>
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <button class="cmms-btn" onclick="runFleetAnalysis()">🔍 Fleet Analysis</button>
+                <button class="cmms-btn" onclick="window.location.href='/demo/analytics'">📊 Predictive Insights</button>
+                <button class="cmms-btn" onclick="optimizeOperations()">⚡ Optimize Operations</button>
+                <button class="cmms-btn" onclick="generateAIReport()">📑 AI Executive Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictive Analytics -->
+    <div class="cmms-card predictions">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-size: 1.3rem; font-weight: 600;">🔮 Predictive Analytics</div>
+            <div style="font-size: 2rem;">📈</div>
+        </div>
+        <div id="predictions-content">
+            <div class="item-card critical">
+                <strong>⚠️ Conveyor Belt A</strong><br>
+                <small>87% chance of failure in 3 days<br>Recommend immediate bearing inspection</small>
+            </div>
+            <div class="item-card high">
+                <strong>🔧 HVAC Unit #2</strong><br>
+                <small>Filter replacement needed in 5 days<br>Efficiency dropping 12%</small>
+            </div>
+            <div class="item-card low">
+                <strong>💡 Hydraulic System</strong><br>
+                <small>Optimal performance detected<br>Next service in 2 weeks</small>
+            </div>
+        </div>
+        <button class="cmms-btn" style="width: 100%; margin-top: 1rem;" onclick="generatePredictions()">🎯 Generate New
+            Predictions</button>
+    </div>
+
+    <!-- Real-time Operations Monitor -->
+    <div class="cmms-card realtime-monitor">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-size: 1.3rem; font-weight: 600;">⚡ Live Operations</div>
+            <div style="font-size: 2rem;">📊</div>
+        </div>
+        <div class="metrics-grid">
+            <div class="metric">
+                <div class="metric-value" id="fleet-health">94.7%</div>
+                <div class="metric-label">Fleet Health</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="active-work-orders">12</div>
+                <div class="metric-label">Active Work Orders</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="ai-suggestions">47</div>
+                <div class="metric-label">AI Suggestions Today</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="efficiency-score">89%</div>
+                <div class="metric-label">Efficiency Score</div>
+            </div>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 1rem; margin-top: 1rem;">
+            <strong>🎯 Today's AI Achievements:</strong><br>
+            <small>• Prevented 2 equipment failures<br>
+                • Optimized 8 maintenance schedules<br>
+                • Saved $3,247 in emergency repairs<br>
+                • Improved efficiency by 7.3%</small>
+        </div>
+    </div>
+
+    <!-- AI Assistant -->
+    <div class="cmms-card ai-assistant">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-size: 1.3rem; font-weight: 600;">🤖 AI Assistant</div>
+            <div style="font-size: 2rem;">💬</div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message message-ai">
+                <strong>AI:</strong> Good morning! I've analyzed overnight operations and identified 3 optimization
+                opportunities. Would you like me to brief you?
+            </div>
+            <div class="message message-user">
+                <strong>You:</strong> Yes, show me the priority items
+            </div>
+            <div class="message message-ai">
+                <strong>AI:</strong> 1) Conveyor Belt A needs bearing attention (87% failure probability)<br>2) HVAC
+                efficiency down 12% - filter replacement needed<br>3) Parts inventory low on hydraulic seals
+            </div>
+        </div>
+        <input type="text"
+            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 10px; color: #212529; margin-bottom: 0.5rem;"
+            id="chat-input" placeholder="Ask me anything..." onkeypress="handleChatInput(event)">
+        <button class="cmms-btn" style="width: 100%;" onclick="sendChatMessage()">Send Message</button>
+    </div>
+
+    <!-- AI Capabilities Grid -->
+    <div class="ai-capabilities">
+        <div class="capability-card" onclick="window.location.href='/work-orders'">
+            <span class="capability-icon">🎯</span>
+            <div class="capability-title">Smart Work Orders</div>
+            <div class="capability-description">AI-powered work order creation with natural language processing and
+                intelligent task prioritization</div>
+        </div>
+
+        <div class="capability-card" onclick="window.location.href='/demo/diagnostics'">
+            <span class="capability-icon">🔧</span>
+            <div class="capability-title">Equipment Diagnostics</div>
+            <div class="capability-description">Advanced troubleshooting assistant that guides technicians through
+                complex repairs</div>
+        </div>
+
+        <div class="capability-card" onclick="window.location.href='/demo/inventory'">
+            <span class="capability-icon">🔩</span>
+            <div class="capability-title">Intelligent Parts</div>
+            <div class="capability-description">AI-powered parts suggestions and inventory optimization based on
+                maintenance patterns</div>
+        </div>
+
+        <div class="capability-card" onclick="window.location.href='/demo/planner'">
+            <span class="capability-icon">📅</span>
+            <div class="capability-title">Predictive Scheduling</div>
+            <div class="capability-description">Optimize maintenance schedules using machine learning and historical
+                data analysis</div>
+        </div>
+
+        <div class="capability-card" onclick="voiceWorkflow()">
+            <span class="capability-icon">🎤</span>
+            <div class="capability-title">Voice Workflows</div>
+            <div class="capability-description">Hands-free operation with voice commands for creating work orders and
+                updates</div>
+        </div>
+
+        <div class="capability-card" onclick="window.location.href='/demo/reports'">
+            <span class="capability-icon">📊</span>
+            <div class="capability-title">Intelligent Reports</div>
+            <div class="capability-description">AI-generated insights and reports that reveal hidden patterns in your
+                maintenance data</div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Report Modal -->
+<div id="aiReportModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel"
+        style="margin: 5% auto; width: 80%; max-width: 800px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2><i class="fas fa-robot"></i> AI Executive Summary</h2>
+            <button onclick="document.getElementById('aiReportModal').style.display='none'"
+                class="btn btn-sm btn-secondary">Close</button>
+        </div>
+        <div id="aiReportContent" style="line-height: 1.6;">
+            <div class="loading-spinner">Generating insights...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function generateAIReport() {
+        document.getElementById('aiReportModal').style.display = 'block';
+        document.getElementById('aiReportContent').innerHTML = '<div class="loading-spinner">Generating insights...</div>';
+
+        try {
+            const response = await fetch('/ai/kpi-report', { method: 'POST' });
+            const data = await response.json();
+            document.getElementById('aiReportContent').innerHTML = data.response;
+        } catch (error) {
+            document.getElementById('aiReportContent').innerHTML = 'Error generating report.';
+        }
+    }
+    // Real-time metrics updates
+    function updateMetrics() {
+        // Fetch real data from API
+        fetch('/quick-stats')
+            .then(response => response.json())
+            .then(data => {
+                // Update work orders count
+                const workOrders = document.getElementById('active-work-orders');
+                if (data.workload && data.workload.active) {
+                    workOrders.textContent = data.workload.active;
+                }
+
+                // Update efficiency from performance data
+                const efficiency = document.getElementById('efficiency-score');
+                if (data.performance && data.performance.completion_rate) {
+                    efficiency.textContent = Math.round(data.performance.completion_rate) + '%';
+                }
+            })
+            .catch(error => console.error('Error fetching metrics:', error));
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            fetch('/quick-stats')
+                .then(response => response.json())
+                .then(data => {
+                    const workOrders = document.getElementById('active-work-orders');
+                    if (data.workload && data.workload.active) {
+                        workOrders.textContent = data.workload.active;
+                    }
+
+                    const efficiency = document.getElementById('efficiency-score');
+                    if (data.performance && data.performance.completion_rate) {
+                        efficiency.textContent = Math.round(data.performance.completion_rate) + '%';
+                    }
+                });
+        }, 30000);
+    }
+
+    // AI Chat functionality
+    function handleChatInput(event) {
+        if (event.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const messages = document.getElementById('chat-messages');
+
+        if (input.value.trim()) {
+            const userMessage = input.value.trim();
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message message-user';
+            userMsg.innerHTML = `<strong>You:</strong> ${userMessage}`;
+            messages.appendChild(userMsg);
+
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
+
+            // Call actual AI endpoint
+            fetch('/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: userMessage,
+                    context: ''
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const aiMsg = document.createElement('div');
+                    aiMsg.className = 'message message-ai';
+                    aiMsg.innerHTML = `<strong>AI:</strong> ${data.response || data.message || 'I understand your request.'}`;
+                    messages.appendChild(aiMsg);
+                    messages.scrollTop = messages.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const aiMsg = document.createElement('div');
+                    aiMsg.className = 'message message-ai';
+                    aiMsg.innerHTML = `<strong>AI:</strong> I'm having trouble connecting right now. Please try again.`;
+                    messages.appendChild(aiMsg);
+                    messages.scrollTop = messages.scrollHeight;
+                });
+        }
+    }
+
+    // AI Action Functions
+    function runFleetAnalysis() {
+        alert('🔍 Running comprehensive fleet analysis...\n\n✅ Analyzing 156 assets\n⚡ Processing 2.3M data points\n🎯 Generating optimization recommendations\n\nResults will be available in your dashboard shortly.');
+    }
+
+    function predictiveInsights() {
+        alert('📊 Generating predictive insights...\n\n🔮 Forecasting next 30 days\n⚠️ Identifying potential failures\n💡 Optimizing maintenance windows\n📈 Calculating cost savings\n\nInsights generated! Check the predictions panel.');
+    }
+
+    function optimizeOperations() {
+        alert('⚡ Optimizing operations...\n\n🎯 Analyzing workflow efficiency\n⏱️ Optimizing technician schedules\n📦 Rebalancing inventory levels\n💰 Identifying cost reduction opportunities\n\nOptimization complete! Efficiency improved by 7.3%');
+    }
+
+    function generatePredictions() {
+        const content = document.getElementById('predictions-content');
+        content.innerHTML = '<div style="text-align: center; padding: 2rem;">🤖 AI is analyzing equipment data...<br><small>Processing sensor data, maintenance history, and usage patterns</small></div>';
+
+        setTimeout(() => {
+            content.innerHTML = `
+                <div class="item-card high">
+                    <strong>🔧 Pump Station B</strong><br>
+                    <small>73% chance of seal failure in 7 days<br>Recommend gasket inspection</small>
+                </div>
+                <div class="item-card low">
+                    <strong>💡 Generator #3</strong><br>
+                    <small>Performance optimal<br>Next service in 3 weeks</small>
+                </div>
+                <div class="item-card critical">
+                    <strong>⚠️ Compressor Unit</strong><br>
+                    <small>91% chance of overheating in 2 days<br>Immediate cooling system check needed</small>
+                </div>
+            `;
+        }, 2000);
+    }
+
+    function predictiveScheduling() {
+        alert('📅 Predictive Scheduling\n\n🤖 AI is analyzing optimal maintenance windows based on:\n• Equipment usage patterns\n• Historical failure data\n• Production schedules\n• Weather forecasts\n\nScheduling optimization complete! 23% reduction in downtime projected.');
+    }
+
+    function voiceWorkflow() {
+        alert('🎤 Voice Workflow Demo\n\n"Hey ChatterFix, create a work order for the noisy motor in Building A"\n\n🤖 AI Response: "Work order created! I\'ve identified Motor-A-102, assigned to John Smith, and suggested checking the bearings. Priority set to medium. Anything else?"');
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        updateMetrics();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard - ChatterFix CMMS{% endblock %}
+
+{% endblock %}
+
+{% block content %}
+<!-- Manager Dashboard Header -->
+<div class="manager-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">
+                <i class="fas fa-tachometer-alt me-3"></i>
+                Manager Command Center
+            </h1>
+            <p class="mb-0 opacity-75">
+                Complete control and oversight of ChatterFix CMMS operations
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button class="btn btn-light" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-light" onclick="exportReport()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="btn btn-success" onclick="openQuickActions()">
+                    <i class="fas fa-plus"></i> Quick Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ overview_stats.total_technicians }}</div>
+            <div class="stat-label">Active Technicians</div>
+            <div class="text-success small mt-2">
+                <i class="fas fa-arrow-up"></i> 3 new this month
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ overview_stats.active_work_orders }}</div>
+            <div class="stat-label">Active Work Orders</div>
+            <div class="text-warning small mt-2">
+                <i class="fas fa-clock"></i> {{ overview_stats.overdue_maintenance }} overdue
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-number">${{ "{:,.0f}".format(overview_stats.monthly_costs) }}</div>
+            <div class="stat-label">Monthly Costs</div>
+            <div class="text-danger small mt-2">
+                <i class="fas fa-arrow-up"></i> 12% over budget
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ overview_stats.efficiency_score }}%</div>
+            <div class="stat-label">System Efficiency</div>
+            <div class="text-success small mt-2">
+                <i class="fas fa-arrow-up"></i> +2.3% this quarter
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Cards -->
+<div class="row mb-4">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/technicians" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h5>Technicians</h5>
+            <p class="small text-muted">Manage & onboard staff</p>
+        </a>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/performance" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h5>Performance</h5>
+            <p class="small text-muted">Analytics & reviews</p>
+        </a>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/assets" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <h5>Assets</h5>
+            <p class="small text-muted">Monitor & maintain</p>
+        </a>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/inventory" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <h5>Inventory</h5>
+            <p class="small text-muted">Parts & cost control</p>
+        </a>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/reports" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h5>Reports</h5>
+            <p class="small text-muted">Insights & KPIs</p>
+        </a>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <a href="/manager/admin" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h5>Admin</h5>
+            <p class="small text-muted">System settings</p>
+        </a>
+    </div>
+</div>
+
+<!-- Table Management Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-center mb-4">
+            <i class="fas fa-table me-2"></i>
+            Table Management & Bulk Operations
+        </h3>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <a href="/manager/table/work-orders" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-edit"></i>
+            </div>
+            <h5>Edit Work Orders</h5>
+            <p class="small text-muted">Bulk edit work orders table</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <a href="/manager/table/assets" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <h5>Edit Assets</h5>
+            <p class="small text-muted">Bulk manage assets table</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <a href="/manager/table/parts" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <h5>Edit Parts</h5>
+            <p class="small text-muted">Bulk manage inventory</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <a href="/manager/bulk-import" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-upload"></i>
+            </div>
+            <h5>Bulk Import</h5>
+            <p class="small text-muted">Upload CSV files</p>
+        </a>
+    </div>
+</div>
+
+<!-- Advanced Analytics Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-center mb-4">
+            <i class="fas fa-chart-bar me-2"></i>
+            Advanced Analytics & Insights
+        </h3>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-3">
+        <a href="/manager/analytics/technicians" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-user-chart"></i>
+            </div>
+            <h5>Technician Analytics</h5>
+            <p class="small text-muted">Performance tracking & insights</p>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-3">
+        <a href="/manager/analytics/assets" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h5>Asset Analytics</h5>
+            <p class="small text-muted">Asset performance & trends</p>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-3">
+        <a href="/manager/analytics/predictive" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h5>Predictive Maintenance</h5>
+            <p class="small text-muted">AI-powered predictions</p>
+        </a>
+    </div>
+</div>
+
+<!-- PM Schedule Management Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="text-center mb-4">
+            <i class="fas fa-calendar-check me-2"></i>
+            Preventive Maintenance Management
+        </h3>
+    </div>
+    <div class="col-lg-6 col-md-12 mb-3">
+        <a href="/manager/pm-schedules" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <h5>PM Schedule Management</h5>
+            <p class="small text-muted">Create, manage & automate preventive maintenance schedules</p>
+        </a>
+    </div>
+    <div class="col-lg-6 col-md-12 mb-3">
+        <a href="/manager/reports" class="nav-card d-block">
+            <div class="nav-card-icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <h5>Maintenance Reports</h5>
+            <p class="small text-muted">Comprehensive maintenance reporting & KPIs</p>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content Sections -->
+<div class="row">
+    <!-- Recent Activity Feed -->
+    <div class="col-lg-6 mb-4">
+        <div class="card cmms-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bell text-primary"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                {% for activity in recent_activities %}
+                <div class="activity-item">
+                    <div class="activity-icon {{ activity.priority }}">
+                        {% if activity.type == 'technician_added' %}
+                            <i class="fas fa-user-plus"></i>
+                        {% elif activity.type == 'asset_alert' %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                        {% elif activity.type == 'performance_review' %}
+                            <i class="fas fa-star"></i>
+                        {% elif activity.type == 'cost_alert' %}
+                            <i class="fas fa-dollar-sign"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">{{ activity.message }}</div>
+                        <div class="text-muted small">
+                            {{ activity.timestamp.strftime('%m/%d/%Y at %I:%M %p') }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="/manager/activity-log" class="btn btn-sm btn-outline-primary">
+                    View All Activity
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performing Technicians -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy text-warning"></i>
+                    Top Performers This Month
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for tech in top_technicians %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="badge badge-primary rounded-pill me-3" style="width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">
+                        {{ loop.index }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">{{ tech.name }}</div>
+                        <div class="small text-muted">
+                            {{ tech.completion_rate }}% completion • {{ tech.avg_time }}h avg
+                        </div>
+                        <div class="progress-bar mt-1">
+                            <div class="progress-fill" style="width: {{ tech.completion_rate }}%"></div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-warning">
+                            {% for i in range(tech.rating|int) %}
+                            <i class="fas fa-star"></i>
+                            {% endfor %}
+                        </div>
+                        <div class="small text-muted">{{ tech.rating }}/5</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="/manager/performance" class="btn btn-sm btn-outline-primary">
+                    View All Performance Data
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Critical Assets Alert -->
+<div class="row">
+    <div class="col-12">
+        <div class="card cmms-card border-warning">
+            <div class="card-header bg-transparent border-bottom border-warning">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Critical Assets Requiring Attention
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for asset in critical_assets %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 {% if asset.status == 'Overdue' %}border-danger{% else %}border-warning{% endif %}">
+                            <div class="card-body">
+                                <h6 class="card-title">{{ asset.name }}</h6>
+                                <p class="card-text">
+                                    <span class="badge {% if asset.status == 'Overdue' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ asset.status }}
+                                    </span>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Last service: {{ asset.last_service }}<br>
+                                        Criticality: {{ asset.criticality }}
+                                    </small>
+                                </p>
+                                <a href="/manager/assets/{{ asset.name }}" class="btn btn-sm btn-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Modal -->
+<div class="modal fade" id="quickActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <button class="btn btn-outline-primary w-100" onclick="location.href='/manager/technicians/onboard'">
+                            <i class="fas fa-user-plus mb-2 d-block"></i>
+                            Onboard Technician
+                        </button>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <button class="btn btn-outline-success w-100" onclick="location.href='/assets/create'">
+                            <i class="fas fa-plus mb-2 d-block"></i>
+                            Add Asset
+                        </button>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <button class="btn btn-outline-warning w-100" onclick="location.href='/work-orders/create'">
+                            <i class="fas fa-wrench mb-2 d-block"></i>
+                            Create Work Order
+                        </button>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <button class="btn btn-outline-info w-100" onclick="location.href='/manager/reports/generate'">
+                            <i class="fas fa-chart-line mb-2 d-block"></i>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshDashboard() {
+    // Show loading indicator
+    const button = document.querySelector('button[onclick="refreshDashboard()"]');
+    const icon = button.querySelector('i');
+    icon.className = 'fas fa-spinner fa-spin';
+    button.disabled = true;
+    
+    // Fetch updated stats
+    fetch('/manager/api/dashboard-stats')
+        .then(response => response.json())
+        .then(data => {
+            updateDashboardStats(data);
+            // Reset button
+            icon.className = 'fas fa-sync-alt';
+            button.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error refreshing dashboard:', error);
+            icon.className = 'fas fa-sync-alt';
+            button.disabled = false;
+        });
+}
+
+function updateDashboardStats(data) {
+    // Update stats in real-time
+    Object.keys(data).forEach(key => {
+        const element = document.querySelector(`[data-stat="${key}"]`);
+        if (element) {
+            element.textContent = data[key];
+        }
+    });
+}
+
+function openQuickActions() {
+    new bootstrap.Modal(document.getElementById('quickActionsModal')).show();
+}
+
+function exportReport() {
+    // Create export functionality
+    const exportData = {
+        overview_stats: {{ overview_stats | tojson }},
+        timestamp: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], 
+        { type: 'application/json' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `manager-dashboard-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Auto-refresh dashboard every 5 minutes
+setInterval(refreshDashboard, 300000);
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block title %}Purchasing Dashboard - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    .purchasing-dashboard {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .purchasing-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .purchasing-header h1::before {
+        content: "💰";
+        font-size: 2.5rem;
+    }
+
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stat-card.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .purchasing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .purchasing-widget {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .widget-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .widget-content {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .approval-item {
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+
+    .approval-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .approval-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-approve {
+        background: #4facfe;
+        color: white;
+    }
+
+    .btn-deny {
+        background: #f5576c;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .budget-bar {
+        margin: 1rem 0;
+    }
+
+    .budget-progress {
+        height: 30px;
+        background: var(--border-color);
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .budget-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+
+    .budget-fill.high {
+        background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .vendor-card {
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+    }
+
+    .vendor-header {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .vendor-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .metric {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="purchasing-dashboard">
+    <div class="purchasing-header">
+        <h1>Purchasing Dashboard</h1>
+        <p style="color: var(--text-secondary);">Manage procurement, vendors, and budgets</p>
+    </div>
+
+    <div class="quick-stats">
+        <div class="stat-card warning">
+            <div class="stat-value" id="pendingApprovals">-</div>
+            <div class="stat-label">Pending Approvals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="budgetUtil">-</div>
+            <div class="stat-label">Budget Utilization %</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-value" id="lowStockCount">-</div>
+            <div class="stat-label">Low Stock Items</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-value" id="monthlySpend">-</div>
+            <div class="stat-label">Monthly Spend</div>
+        </div>
+    </div>
+
+    <div class="purchasing-grid">
+        <div class="purchasing-widget">
+            <div class="widget-header">
+                <div class="widget-title">✅ Pending Approvals</div>
+                <button class="btn btn-approve" onclick="loadApprovals()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="approvalsContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading approvals...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="purchasing-widget">
+            <div class="widget-header">
+                <div class="widget-title">📊 Budget Tracking</div>
+                <button class="btn btn-approve" onclick="loadBudget()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="budgetContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading budget...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="purchasing-widget">
+            <div class="widget-header">
+                <div class="widget-title">🏢 Vendor Performance</div>
+                <button class="btn btn-approve" onclick="loadVendors()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="vendorsContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading vendors...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="purchasing-widget">
+            <div class="widget-header">
+                <div class="widget-title">⚠️ Low Stock Alerts</div>
+                <button class="btn btn-approve" onclick="loadLowStock()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="lowStockContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading stock alerts...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSummary();
+        loadApprovals();
+        loadBudget();
+        loadVendors();
+        loadLowStock();
+    });
+
+    async function loadSummary() {
+        try {
+            const response = await fetch('/purchasing/summary');
+            const data = await response.json();
+
+            document.getElementById('pendingApprovals').textContent = data.pending_approvals;
+            document.getElementById('budgetUtil').textContent = data.budget_utilization + '%';
+            document.getElementById('lowStockCount').textContent = data.low_stock_count;
+            document.getElementById('monthlySpend').textContent = '$' + Math.round(data.monthly_spend).toLocaleString();
+        } catch (error) {
+            console.error('Error loading summary:', error);
+        }
+    }
+
+    async function loadApprovals() {
+        try {
+            const response = await fetch('/purchasing/pending-approvals');
+            const data = await response.json();
+
+            const content = document.getElementById('approvalsContent');
+
+            if (data.requests.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No pending approvals</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.requests.forEach(req => {
+                html += `
+                <div class="approval-item">
+                    <div class="approval-header">
+                        <strong>${req.part_name}</strong>
+                        <span style="color: var(--text-secondary);">Qty: ${req.quantity}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Requested by: ${req.requester} | Priority: ${req.priority}
+                    </div>
+                    ${req.work_order_title ? `<div style="font-size: 0.85rem;">For: ${req.work_order_title}</div>` : ''}
+                    <div class="approval-actions">
+                        <button class="btn btn-approve" onclick="approveRequest(${req.id})">✓ Approve</button>
+                        <button class="btn btn-deny" onclick="denyRequest(${req.id})">✗ Deny</button>
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading approvals:', error);
+        }
+    }
+
+    async function loadBudget() {
+        try {
+            const response = await fetch('/purchasing/budget-tracking');
+            const data = await response.json();
+
+            const content = document.getElementById('budgetContent');
+            const utilClass = data.utilization_percentage > 80 ? 'high' : '';
+
+            let html = `
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Monthly Budget</span>
+                    <strong>$${data.monthly_budget.toLocaleString()}</strong>
+                </div>
+                <div class="budget-progress">
+                    <div class="budget-fill ${utilClass}" style="width: ${data.utilization_percentage}%">
+                        ${data.utilization_percentage}%
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.9rem;">
+                    <span>Spent: $${Math.round(data.total_spent).toLocaleString()}</span>
+                    <span>Remaining: $${Math.round(data.remaining).toLocaleString()}</span>
+                </div>
+            </div>
+            <div><strong>By Category:</strong></div>
+        `;
+
+            data.categories.forEach(cat => {
+                const catUtil = (cat.spent / cat.budget) * 100;
+                html += `
+                <div class="budget-bar">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <span>${cat.category}</span>
+                        <span>$${Math.round(cat.spent).toLocaleString()} / $${cat.budget.toLocaleString()}</span>
+                    </div>
+                    <div class="budget-progress" style="height: 20px;">
+                        <div class="budget-fill" style="width: ${catUtil}%; font-size: 0.75rem;">
+                            ${Math.round(catUtil)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading budget:', error);
+        }
+    }
+
+    async function loadVendors() {
+        try {
+            const response = await fetch('/purchasing/vendor-performance');
+            const data = await response.json();
+
+            const content = document.getElementById('vendorsContent');
+
+            let html = '';
+            data.vendors.forEach(vendor => {
+                html += `
+                <div class="vendor-card">
+                    <div class="vendor-header">${vendor.name}</div>
+                    <div class="vendor-metrics">
+                        <div class="metric">
+                            <span>Orders:</span>
+                            <strong>${vendor.total_orders}</strong>
+                        </div>
+                        <div class="metric">
+                            <span>On-Time:</span>
+                            <strong>${vendor.on_time_delivery}%</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Quality:</span>
+                            <strong>⭐ ${vendor.quality_score}</strong>
+                        </div>
+                        <div class="metric">
+                            <span>Avg Delivery:</span>
+                            <strong>${vendor.avg_delivery_days}d</strong>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                        Total Spend: $${vendor.total_spend.toLocaleString()}
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading vendors:', error);
+        }
+    }
+
+    async function loadLowStock() {
+        try {
+            const response = await fetch('/purchasing/low-stock');
+            const data = await response.json();
+
+            const content = document.getElementById('lowStockContent');
+
+            if (data.low_stock_items.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>All stock levels good</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.low_stock_items.forEach(item => {
+                html += `
+                <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong>${item.part_name}</strong>
+                        <span style="color: #f5576c; font-weight: bold;">Reorder: ${item.reorder_quantity}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        Stock: ${item.quantity} | Min: ${item.min_quantity} | ${item.location || 'No location'}
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading low stock:', error);
+        }
+    }
+
+    async function approveRequest(requestId) {
+        try {
+            const response = await fetch('/purchasing/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    request_id: requestId,
+                    approver_id: 1,
+                    action: 'approve'
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('✅ Request approved!');
+                loadApprovals();
+                loadSummary();
+            }
+        } catch (error) {
+            console.error('Error approving request:', error);
+        }
+    }
+
+    async function denyRequest(requestId) {
+        const reason = prompt('Reason for denial (optional):');
+        try {
+            const response = await fetch('/purchasing/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    request_id: requestId,
+                    approver_id: 1,
+                    action: 'deny',
+                    reason: reason
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('❌ Request denied');
+                loadApprovals();
+                loadSummary();
+            }
+        } catch (error) {
+            console.error('Error denying request:', error);
+        }
+    }
+</script>
+{% endblock %}

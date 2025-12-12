@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 AI Team Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <i class="fas fa-robot me-2"></i>
+                <span class="brand-text">AI Team Dashboard</span>
+                <span class="badge bg-success ms-2" id="status-badge">ONLINE</span>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-light btn-sm" id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn btn-primary btn-sm ms-2" id="refresh-data">
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 sidebar">
+                <div class="sidebar-content">
+                    <div class="nav-section">
+                        <h6 class="nav-header">Monitoring</h6>
+                        <a href="#overview" class="nav-link active" data-section="overview">
+                            <i class="fas fa-tachometer-alt"></i> Overview
+                        </a>
+                        <a href="#memory" class="nav-link" data-section="memory">
+                            <i class="fas fa-brain"></i> Memory System
+                        </a>
+                        <a href="#interactions" class="nav-link" data-section="interactions">
+                            <i class="fas fa-comments"></i> Interactions
+                        </a>
+                        <a href="#analytics" class="nav-link" data-section="analytics">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    </div>
+                    <div class="nav-section">
+                        <h6 class="nav-header">Control</h6>
+                        <a href="#collaborate" class="nav-link" data-section="collaborate">
+                            <i class="fas fa-users"></i> Team Collaborate
+                        </a>
+                        <a href="#search" class="nav-link" data-section="search">
+                            <i class="fas fa-search"></i> Memory Search
+                        </a>
+                        <a href="#settings" class="nav-link" data-section="settings">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 col-lg-10 main-content">
+                <!-- Overview Section -->
+                <section id="overview-section" class="content-section active">
+                    <div class="page-header">
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>AI Team Overview</h2>
+                        <p class="text-muted">Real-time monitoring of your AI team performance</p>
+                    </div>
+
+                    <!-- Status Cards -->
+                    <div class="row mb-4">
+                        <div class="col-xl-3 col-md-6">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <i class="fas fa-brain status-icon memory"></i>
+                                    <span class="status-title">Memory System</span>
+                                </div>
+                                <div class="status-value" id="memory-conversations">0</div>
+                                <div class="status-label">Total Conversations</div>
+                                <div class="status-change">
+                                    <span class="change-indicator positive">+15%</span>
+                                    <span class="change-text">vs last hour</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <i class="fas fa-lightbulb status-icon learning"></i>
+                                    <span class="status-title">Patterns Learned</span>
+                                </div>
+                                <div class="status-value" id="patterns-learned">0</div>
+                                <div class="status-label">Active Patterns</div>
+                                <div class="status-change">
+                                    <span class="change-indicator positive">+8</span>
+                                    <span class="change-text">new patterns</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <i class="fas fa-shield-alt status-icon prevention"></i>
+                                    <span class="status-title">Mistakes Prevented</span>
+                                </div>
+                                <div class="status-value" id="mistakes-prevented">0</div>
+                                <div class="status-label">This Session</div>
+                                <div class="status-change">
+                                    <span class="change-indicator neutral">100%</span>
+                                    <span class="change-text">prevention rate</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <i class="fas fa-rocket status-icon platform"></i>
+                                    <span class="status-title">Platform Health</span>
+                                </div>
+                                <div class="status-value" id="platform-effectiveness">0%</div>
+                                <div class="status-label">Effectiveness Score</div>
+                                <div class="status-change">
+                                    <span class="change-indicator positive">Optimal</span>
+                                    <span class="change-text">performance</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="row mb-4">
+                        <div class="col-lg-8">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-server me-2"></i>System Status</h5>
+                                    <span class="uptime-badge">Uptime: <span id="system-uptime">00:00:00</span></span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="status-item">
+                                                <span class="status-dot online"></span>
+                                                <span class="status-name">Memory System</span>
+                                                <span class="status-value">Online</span>
+                                            </div>
+                                            <div class="status-item">
+                                                <span class="status-dot online"></span>
+                                                <span class="status-name">Universal Platform</span>
+                                                <span class="status-value">Active</span>
+                                            </div>
+                                            <div class="status-item">
+                                                <span class="status-dot online"></span>
+                                                <span class="status-name">Autogen Framework</span>
+                                                <span class="status-value">Ready</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="applications-status">
+                                                <h6>Applications</h6>
+                                                <div class="app-status" data-app="chatterfix">
+                                                    <i class="fas fa-tools"></i> ChatterFix CMMS
+                                                    <span class="app-status-badge online">Online</span>
+                                                </div>
+                                                <div class="app-status" data-app="fixitfred">
+                                                    <i class="fas fa-wrench"></i> Fix it Fred
+                                                    <span class="app-status-badge online">Online</span>
+                                                </div>
+                                                <div class="app-status" data-app="linesmart">
+                                                    <i class="fas fa-comments"></i> LineSmart
+                                                    <span class="app-status-badge online">Online</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button class="btn btn-primary w-100 mb-2" id="run-collaboration">
+                                        <i class="fas fa-users"></i> Start Team Collaboration
+                                    </button>
+                                    <button class="btn btn-info w-100 mb-2" id="search-memory">
+                                        <i class="fas fa-search"></i> Search Memory
+                                    </button>
+                                    <button class="btn btn-success w-100 mb-2" id="analyze-patterns">
+                                        <i class="fas fa-chart-line"></i> Analyze Patterns
+                                    </button>
+                                    <button class="btn btn-warning w-100" id="export-data">
+                                        <i class="fas fa-download"></i> Export Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-clock me-2"></i>Recent AI Team Activity</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="activity-timeline" id="recent-activity">
+                                        <div class="activity-item">
+                                            <div class="activity-icon learning">
+                                                <i class="fas fa-brain"></i>
+                                            </div>
+                                            <div class="activity-content">
+                                                <div class="activity-title">Dark mode pattern learned</div>
+                                                <div class="activity-description">AI team identified and fixed dark mode toggle issue in demo environment</div>
+                                                <div class="activity-time">2 minutes ago</div>
+                                            </div>
+                                        </div>
+                                        <!-- More activities will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Memory System Section -->
+                <section id="memory-section" class="content-section">
+                    <div class="page-header">
+                        <h2><i class="fas fa-brain me-2"></i>Memory System</h2>
+                        <p class="text-muted">Browse and analyze the AI team's learned knowledge</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-body">
+                            <p>Memory system details will be loaded here...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Other sections would be similar -->
+
+            </main>
+        </div>
+    </div>
+
+    <!-- WebSocket Status -->
+    <div class="connection-status" id="connection-status">
+        <i class="fas fa-wifi"></i> Connected
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

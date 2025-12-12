@@ -1,0 +1,183 @@
+import os
+import shutil
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+from app.core.firestore_db import get_db_connection
+
+# # from app.core.database import get_db_connection
+from app.routers.auth import get_current_user
+from app.services.ai_assistant import chatterfix_ai
+from app.services.computer_vision import analyze_asset_condition, recognize_part
+from app.services.voice_commands import (
+    get_voice_command_suggestions,
+    process_voice_command,
+)
+
+router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+class ChatRequest(BaseModel):
+    message: str
+    context: str = ""
+    user_id: int = 1
+
+
+@router.post("/chat")
+async def chat(request: ChatRequest):
+    """General AI Chat"""
+    try:
+        response = await chatterfix_ai.process_message(
+            request.message, request.context, user_id=request.user_id
+        )
+        return JSONResponse({"response": response})
+    except Exception as e:
+        return JSONResponse(
+            {"response": f"I encountered an error: {str(e)}"}, status_code=500
+        )
+
+
+@router.post("/analyze-image")
+async def analyze_image(
+    image: UploadFile = File(...),
+    prompt: str = Form("Describe this image for maintenance purposes."),
+    current_user: dict = Depends(get_current_user),
+):
+    """Analyze an uploaded image"""
+    if not chatterfix_ai.gemini:
+        return JSONResponse({"response": "AI features unavailable."})
+
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        response = await chatterfix_ai.gemini.analyze_image(
+            temp_path, prompt, user_id=current_user["id"]
+        )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse({"response": response})
+
+
+@router.post("/kpi-report")
+async def kpi_report(current_user: dict = Depends(get_current_user)):
+    """Generate KPI Report"""
+    if not chatterfix_ai.gemini:
+        return JSONResponse({"response": "AI features unavailable."})
+
+    # Gather data
+    conn = get_db_connection()
+    work_orders = conn.execute("SELECT * FROM work_orders").fetchall()
+    parts = conn.execute("SELECT * FROM parts").fetchall()
+    conn.close()
+
+    data = {
+        "total_work_orders": len(work_orders),
+        "open_work_orders": len([wo for wo in work_orders if wo["status"] == "Open"]),
+        "completed_work_orders": len(
+            [wo for wo in work_orders if wo["status"] == "Completed"]
+        ),
+        "total_parts": len(parts),
+        "low_stock_parts": len(
+            [p for p in parts if p["current_stock"] <= p["minimum_stock"]]
+        ),
+    }
+
+    report = await chatterfix_ai.gemini.generate_kpi_report(
+        data, user_id=current_user["id"]
+    )
+    return JSONResponse({"response": report})
+
+
+@router.post("/troubleshoot")
+async def troubleshoot(
+    asset: str = Form(...),
+    issue: str = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get troubleshooting advice"""
+    if not chatterfix_ai.gemini:
+        return JSONResponse({"response": "AI features unavailable."})
+
+    advice = await chatterfix_ai.gemini.get_troubleshooting_advice(
+        asset, issue, user_id=current_user["id"]
+    )
+    return JSONResponse({"response": advice})
+
+
+@router.post("/assist")
+async def assist(request: ChatRequest):
+    """Global AI Assistant Endpoint"""
+    if not chatterfix_ai.gemini:
+        return JSONResponse({"response": "AI features unavailable."})
+
+    try:
+        # Use user_id from request or default to demo user
+        user_id = request.user_id if request.user_id else "demo_user_1"
+        # Call the advanced assistant agent
+        result = await chatterfix_ai.gemini.run_assistant_agent(
+            request.message, request.context, user_id=user_id
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"response": f"I encountered an error: {str(e)}"})
+
+
+@router.post("/voice-command")
+async def voice_command(voice_text: str = Form(...), technician_id: int = Form(None)):
+    """Process voice commands with AI"""
+    result = await process_voice_command(voice_text, technician_id)
+    return JSONResponse(result)
+
+
+@router.post("/recognize-part")
+async def recognize_part_endpoint(image: UploadFile = File(...)):
+    """AI-powered part recognition from image"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await recognize_part(image_data=image_data)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse(result)
+
+
+@router.post("/analyze-condition")
+async def analyze_condition_endpoint(
+    image: UploadFile = File(...), asset_id: int = Form(None)
+):
+    """Analyze asset condition from visual inspection"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await analyze_asset_condition(image_data=image_data, asset_id=asset_id)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse(result)
+
+
+@router.get("/voice-suggestions")
+async def voice_suggestions():
+    """Get intelligent voice command suggestions"""
+    suggestions = await get_voice_command_suggestions()
+    return JSONResponse(suggestions)

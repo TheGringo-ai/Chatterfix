@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+{% block title %}ChatterFix Sales ROI Dashboard - Ultimate Enterprise CMMS{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+    :root {
+        --primary-dark: #0f172a;
+        --secondary-dark: #1e293b;
+        --tertiary-dark: #334155;
+        --accent-cyan: #06b6d4;
+        --accent-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-orange: #f59e0b;
+        --danger-red: #ef4444;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --glass-bg: rgba(30, 41, 59, 0.8);
+    }
+    
+    .roi-dashboard {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, #1a202c 50%, #2d3748 100%);
+        min-height: 100vh;
+        color: var(--text-primary);
+        padding: 20px;
+    }
+    
+    .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        animation: shine 3s infinite;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(6, 182, 212, 0.2);
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: linear-gradient(45deg, var(--accent-cyan), var(--accent-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+    }
+    
+    .stat-change {
+        font-size: 0.9rem;
+        color: var(--success-green);
+        font-weight: 600;
+    }
+    
+    .pulse-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: var(--success-green);
+        border-radius: 50%;
+        margin-left: 8px;
+        animation: pulse 2s infinite;
+    }
+    
+    .chart-container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+        text-align: center;
+    }
+    
+    .crisis-scenarios {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+    }
+    
+    .crisis-card {
+        background: linear-gradient(145deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+    }
+    
+    .crisis-card::after {
+        content: '⚠️';
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 1.5rem;
+    }
+    
+    .crisis-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--warning-orange);
+        margin-bottom: 10px;
+    }
+    
+    .crisis-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--success-green);
+        margin-bottom: 8px;
+    }
+    
+    .competitive-comparison {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin: 30px 0;
+    }
+    
+    .comparison-column {
+        background: var(--glass-bg);
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    
+    .comparison-header {
+        text-align: center;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--accent-cyan);
+    }
+    
+    .feature-comparison {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(203, 213, 225, 0.1);
+    }
+    
+    .feature-name {
+        color: var(--text-primary);
+    }
+    
+    .feature-status {
+        font-weight: 600;
+    }
+    
+    .feature-yes {
+        color: var(--success-green);
+    }
+    
+    .feature-no {
+        color: var(--danger-red);
+    }
+    
+    .ai-status-panel {
+        background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+        border: 1px solid var(--success-green);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .ai-status {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--success-green);
+        margin-bottom: 10px;
+    }
+    
+    .live-predictions {
+        background: var(--secondary-dark);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .prediction-item {
+        background: rgba(6, 182, 212, 0.1);
+        border-left: 4px solid var(--accent-cyan);
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    .prediction-asset {
+        font-weight: 600;
+        color: var(--accent-cyan);
+    }
+    
+    .prediction-text {
+        margin: 8px 0;
+        color: var(--text-secondary);
+    }
+    
+    .prediction-savings {
+        color: var(--success-green);
+        font-weight: 600;
+    }
+    
+    .refresh-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success-green);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .refresh-indicator.show {
+        opacity: 1;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    @keyframes shine {
+        0% { left: -100%; }
+        100% { left: 100%; }
+    }
+    
+    @keyframes slideInUp {
+        from { transform: translateY(30px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .animate-in {
+        animation: slideInUp 0.6s ease-out;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .competitive-comparison {
+            grid-template-columns: 1fr;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="roi-dashboard">
+    <!-- Header Section -->
+    <div class="text-center mb-5 animate-in">
+        <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(45deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ChatterFix Sales ROI Dashboard
+        </h1>
+        <p class="fs-5 text-secondary">Real-Time Enterprise CMMS Intelligence & Predictive Maintenance ROI</p>
+    </div>
+    
+    <!-- AI System Status -->
+    <div class="ai-status-panel animate-in">
+        <div class="ai-status" id="aiStatus">
+            🤖 ChatterFix AI Core: <span id="systemStatus">LOADING...</span>
+            <span class="pulse-indicator"></span>
+        </div>
+        <div class="text-secondary" id="systemDetails">Initializing predictive maintenance engine...</div>
+    </div>
+    
+    <!-- Hero Statistics -->
+    <div class="hero-stats animate-in">
+        <div class="stat-card">
+            <div class="stat-number" id="totalSavings">$0</div>
+            <div class="stat-label">Total Customer Savings</div>
+            <div class="stat-change" id="savingsGrowth">Loading...</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number" id="roiPercentage">0%</div>
+            <div class="stat-label">Average ROI</div>
+            <div class="stat-change">vs Traditional CMMS</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number" id="activeTenants">0</div>
+            <div class="stat-label">Active Enterprise Clients</div>
+            <div class="stat-change" id="tenantGrowth">Loading...</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number" id="crisisPrevention">$0</div>
+            <div class="stat-label">Crisis Prevention Value</div>
+            <div class="stat-change">Annual Emergency Scenarios</div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">ROI Comparison: ChatterFix vs Traditional CMMS</h3>
+                <canvas id="roiComparisonChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h3 class="chart-title">Monthly Savings Growth</h3>
+                <canvas id="savingsGrowthChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Crisis Management Scenarios -->
+    <div class="chart-container">
+        <h3 class="chart-title">🚨 Crisis Management Scenarios - Prevented by AI</h3>
+        <div class="crisis-scenarios" id="crisisScenarios">
+            <!-- Dynamic crisis scenarios loaded here -->
+        </div>
+    </div>
+    
+    <!-- Live AI Predictions -->
+    <div class="chart-container">
+        <h3 class="chart-title">🔮 Live AI Predictions</h3>
+        <div class="live-predictions" id="livePredictions">
+            <!-- Dynamic predictions loaded here -->
+        </div>
+    </div>
+    
+    <!-- Competitive Advantage -->
+    <div class="chart-container">
+        <h3 class="chart-title">🏆 Competitive Advantage Analysis</h3>
+        <div class="competitive-comparison">
+            <div class="comparison-column">
+                <div class="comparison-header" style="color: #06b6d4;">ChatterFix AI-Powered CMMS</div>
+                <div id="chatterFixFeatures">
+                    <!-- Dynamic features loaded here -->
+                </div>
+            </div>
+            <div class="comparison-column">
+                <div class="comparison-header" style="color: #6b7280;">Traditional CMMS</div>
+                <div id="traditionalFeatures">
+                    <!-- Dynamic features loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Customer Success Stories -->
+    <div class="chart-container">
+        <h3 class="chart-title">💼 Customer Success Stories</h3>
+        <div id="customerSuccess">
+            <!-- Dynamic customer stories loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Refresh Indicator -->
+<div class="refresh-indicator" id="refreshIndicator">
+    📡 Live data updated
+</div>
+
+<script>
+// Global variables for charts
+let roiChart, savingsChart;
+let lastUpdateTime = 0;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    setupRealTimeUpdates();
+});
+
+// Initialize all dashboard components
+async function initializeDashboard() {
+    try {
+        showLoadingStates();
+        
+        // Load all data in parallel
+        const [roiData, crisisData, predictionsData, competitiveData, customerData] = await Promise.all([
+            fetchROIData(),
+            fetchCrisisData(),
+            fetchPredictionsData(),
+            fetchCompetitiveData(),
+            fetchCustomerData()
+        ]);
+        
+        // Update all components
+        updateHeroStats(roiData);
+        updateSystemStatus(roiData.system_health_score);
+        updateCrisisScenarios(crisisData);
+        updateLivePredictions(predictionsData);
+        updateCompetitiveAnalysis(competitiveData);
+        updateCustomerSuccess(customerData);
+        
+        // Initialize charts
+        initializeCharts(roiData, customerData);
+        
+        // Add animation delays
+        addAnimationDelays();
+        
+    } catch (error) {
+        console.error('Dashboard initialization failed:', error);
+        showErrorState();
+    }
+}
+
+// Fetch ROI data
+async function fetchROIData() {
+    const response = await fetch('/analytics/roi');
+    if (!response.ok) throw new Error('Failed to fetch ROI data');
+    return response.json();
+}
+
+// Fetch crisis management data
+async function fetchCrisisData() {
+    const response = await fetch('/analytics/api/v1/analytics/crisis-management');
+    if (!response.ok) throw new Error('Failed to fetch crisis data');
+    return response.json();
+}
+
+// Fetch live predictions data
+async function fetchPredictionsData() {
+    const response = await fetch('/analytics/api/v1/analytics/predictive-alerts');
+    if (!response.ok) throw new Error('Failed to fetch predictions');
+    return response.json();
+}
+
+// Fetch competitive analysis
+async function fetchCompetitiveData() {
+    const response = await fetch('/analytics/api/v1/analytics/competitive-advantage');
+    if (!response.ok) throw new Error('Failed to fetch competitive data');
+    return response.json();
+}
+
+// Fetch customer savings data
+async function fetchCustomerData() {
+    const response = await fetch('/analytics/api/v1/analytics/customer-savings');
+    if (!response.ok) throw new Error('Failed to fetch customer data');
+    return response.json();
+}
+
+// Update hero statistics
+function updateHeroStats(data) {
+    document.getElementById('totalSavings').textContent = `$${data.downtime_saved_usd.toLocaleString()}+`;
+    document.getElementById('roiPercentage').textContent = `${data.metrics.roi_percentage}%`;
+    document.getElementById('activeTenants').textContent = data.active_tenants;
+    document.getElementById('crisisPrevention').textContent = `$${data.metrics.total_savings.toLocaleString()}`;
+    
+    // Animate numbers
+    animateNumbers();
+}
+
+// Update system status
+function updateSystemStatus(systemHealth) {
+    const statusElement = document.getElementById('systemStatus');
+    const detailsElement = document.getElementById('systemDetails');
+    
+    const status = systemHealth.status;
+    statusElement.textContent = status;
+    
+    if (status === 'ONLINE') {
+        statusElement.style.color = '#10b981';
+        detailsElement.textContent = `AI Core responding in ${systemHealth.response_time_ms}ms - All systems operational`;
+    } else {
+        statusElement.style.color = '#f59e0b';
+        detailsElement.textContent = systemHealth.message;
+    }
+}
+
+// Update crisis scenarios
+function updateCrisisScenarios(data) {
+    const container = document.getElementById('crisisScenarios');
+    container.innerHTML = '';
+    
+    Object.entries(data.crisis_scenarios).forEach(([key, scenario]) => {
+        const card = document.createElement('div');
+        card.className = 'crisis-card';
+        card.innerHTML = `
+            <div class="crisis-title">${scenario.scenario}</div>
+            <div class="crisis-value">$${scenario.total_annual_savings.toLocaleString()}</div>
+            <div class="text-secondary">
+                ${scenario.frequency_prevented_yearly}x yearly prevented
+                <br>Average cost: $${scenario.average_cost.toLocaleString()}
+                <br>Early warning: ${scenario.chatterfix_early_warning_days} days
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Update live predictions
+function updateLivePredictions(data) {
+    const container = document.getElementById('livePredictions');
+    container.innerHTML = '';
+    
+    data.live_predictions.forEach(prediction => {
+        const item = document.createElement('div');
+        item.className = 'prediction-item';
+        item.innerHTML = `
+            <div class="prediction-asset">${prediction.asset_id}</div>
+            <div class="prediction-text">${prediction.prediction}</div>
+            <div class="prediction-savings">Potential Savings: $${prediction.potential_cost_savings.toLocaleString()}</div>
+            <div class="text-secondary">Confidence: ${prediction.confidence}%</div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// Update competitive analysis
+function updateCompetitiveAnalysis(data) {
+    const chatterFixContainer = document.getElementById('chatterFixFeatures');
+    const traditionalContainer = document.getElementById('traditionalFeatures');
+    
+    chatterFixContainer.innerHTML = '';
+    traditionalContainer.innerHTML = '';
+    
+    Object.entries(data.competitive_analysis.feature_matrix).forEach(([feature, values]) => {
+        // ChatterFix features
+        const cfFeature = document.createElement('div');
+        cfFeature.className = 'feature-comparison';
+        cfFeature.innerHTML = `
+            <span class="feature-name">${feature.replace(/_/g, ' ').toUpperCase()}</span>
+            <span class="feature-status feature-yes">✓ ${values.chatterfix === true ? 'YES' : values.chatterfix}</span>
+        `;
+        chatterFixContainer.appendChild(cfFeature);
+        
+        // Traditional CMMS features
+        const tradFeature = document.createElement('div');
+        tradFeature.className = 'feature-comparison';
+        tradFeature.innerHTML = `
+            <span class="feature-name">${feature.replace(/_/g, ' ').toUpperCase()}</span>
+            <span class="feature-status ${values.traditional === true ? 'feature-yes' : values.traditional === false ? 'feature-no' : 'text-warning'}">
+                ${values.traditional === true ? '✓ YES' : values.traditional === false ? '✗ NO' : '⚠ ' + values.traditional}
+            </span>
+        `;
+        traditionalContainer.appendChild(tradFeature);
+    });
+}
+
+// Update customer success stories
+function updateCustomerSuccess(data) {
+    const container = document.getElementById('customerSuccess');
+    container.innerHTML = '';
+    
+    data.customer_savings_details.slice(0, 3).forEach(customer => {
+        const card = document.createElement('div');
+        card.className = 'crisis-card mb-3';
+        card.style.background = 'linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1))';
+        card.innerHTML = `
+            <div class="crisis-title">${customer.company_name}</div>
+            <div class="crisis-value">$${customer.annual_savings.toLocaleString()}</div>
+            <div class="text-secondary">
+                ROI: ${customer.roi_percentage}% • Users: ${customer.active_users}
+                <br>${customer.success_metrics.uptime_improvement} uptime improvement
+                <br>"${customer.testimonial}"
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Initialize charts
+function initializeCharts(roiData, customerData) {
+    // ROI Comparison Chart
+    const roiCtx = document.getElementById('roiComparisonChart').getContext('2d');
+    roiChart = new Chart(roiCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Year 1', 'Year 2', 'Year 3'],
+            datasets: [{
+                label: 'ChatterFix ROI',
+                data: [250000, 450000, 650000],
+                backgroundColor: 'rgba(6, 182, 212, 0.8)',
+                borderColor: '#06b6d4',
+                borderWidth: 2
+            }, {
+                label: 'Traditional CMMS ROI',
+                data: [50000, 75000, 100000],
+                backgroundColor: 'rgba(107, 114, 128, 0.6)',
+                borderColor: '#6b7280',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#f8fafc' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                    ticks: { 
+                        color: '#cbd5e1',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                    ticks: { color: '#cbd5e1' }
+                }
+            }
+        }
+    });
+    
+    // Savings Growth Chart
+    const savingsCtx = document.getElementById('savingsGrowthChart').getContext('2d');
+    savingsChart = new Chart(savingsCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Monthly Savings',
+                data: [25000, 45000, 65000, 85000, 125000, 175000],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: { color: '#f8fafc' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                    ticks: { 
+                        color: '#cbd5e1',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                    ticks: { color: '#cbd5e1' }
+                }
+            }
+        }
+    });
+}
+
+// Setup real-time updates
+function setupRealTimeUpdates() {
+    // Update every 30 seconds
+    setInterval(async function() {
+        try {
+            const roiData = await fetchROIData();
+            updateHeroStats(roiData);
+            showRefreshIndicator();
+        } catch (error) {
+            console.error('Real-time update failed:', error);
+        }
+    }, 30000);
+}
+
+// Show refresh indicator
+function showRefreshIndicator() {
+    const indicator = document.getElementById('refreshIndicator');
+    indicator.classList.add('show');
+    setTimeout(() => {
+        indicator.classList.remove('show');
+    }, 2000);
+}
+
+// Animate numbers
+function animateNumbers() {
+    const numbers = document.querySelectorAll('.stat-number');
+    numbers.forEach(num => {
+        num.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+            num.style.transform = 'scale(1)';
+        }, 300);
+    });
+}
+
+// Add animation delays
+function addAnimationDelays() {
+    const cards = document.querySelectorAll('.stat-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+}
+
+// Show loading states
+function showLoadingStates() {
+    document.getElementById('totalSavings').textContent = 'Loading...';
+    document.getElementById('roiPercentage').textContent = 'Loading...';
+    document.getElementById('activeTenants').textContent = 'Loading...';
+    document.getElementById('crisisPrevention').textContent = 'Loading...';
+}
+
+// Show error state
+function showErrorState() {
+    document.getElementById('systemStatus').textContent = 'ERROR';
+    document.getElementById('systemStatus').style.color = '#ef4444';
+    document.getElementById('systemDetails').textContent = 'Unable to connect to AI systems';
+}
+
+// Export functionality for sales presentations
+function exportDashboard() {
+    window.print();
+}
+
+// Demo mode for sales presentations
+function enableDemoMode() {
+    // Simulate high-activity scenarios for impressive demos
+    document.getElementById('totalSavings').textContent = '$1,250,000+';
+    document.getElementById('roiPercentage').textContent = '1,247%';
+    document.getElementById('activeTenants').textContent = '47';
+    document.getElementById('crisisPrevention').textContent = '$2,500,000';
+    
+    // Add demo indicators
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.style.boxShadow = '0 0 30px rgba(6, 182, 212, 0.4)';
+    });
+}
+</script>
+{% endblock %}

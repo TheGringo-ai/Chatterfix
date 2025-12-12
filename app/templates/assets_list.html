@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>🏭 Asset Management</h1>
+            <p>Comprehensive asset tracking and analytics</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn" onclick="document.getElementById('createAssetModal').style.display='block'">
+                <i class="fas fa-plus"></i> New Asset
+            </button>
+            <button class="cmms-btn-secondary" onclick="document.getElementById('barcodeScanModal').style.display='block'">
+                <i class="fas fa-qrcode"></i> Scan Asset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Dashboard -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: bold; color: #3498db;">{{ stats.total }}</div>
+        <div style="opacity: 0.8;">Total Assets</div>
+    </div>
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: bold; color: #27ae60;">{{ stats.active }}</div>
+        <div style="opacity: 0.8;">Active</div>
+    </div>
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: bold; color: #e74c3c;">{{ stats.critical }}</div>
+        <div style="opacity: 0.8;">Critical Priority</div>
+    </div>
+    <div class="cmms-card" style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: bold; color: #f39c12;">{{ stats.maintenance_due }}</div>
+        <div style="opacity: 0.8;">Maintenance Due</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar" id="asset-filters">
+    <div style="flex: 1;">
+        <label>Search</label>
+        <input type="text" id="asset-search" placeholder="Search assets..." style="width: 100%;">
+    </div>
+    <div>
+        <label>Status</label>
+        <select id="asset-status-filter">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Retired">Retired</option>
+        </select>
+    </div>
+    <div>
+        <label>Criticality</label>
+        <select id="asset-criticality-filter">
+            <option value="">All Levels</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+    </div>
+    <div>
+        <label>View</label>
+        <select id="view-toggle" onchange="toggleView(this.value)">
+            <option value="grid">Grid View</option>
+            <option value="list">List View</option>
+        </select>
+    </div>
+</div>
+
+<!-- Assets Grid -->
+<div id="assets-grid" class="assets-grid">
+    {% for asset in assets %}
+    <div class="asset-card {{ asset.criticality|lower }}" data-status="{{ asset.status }}"
+        data-criticality="{{ asset.criticality }}" onclick="window.location.href='/assets/{{ asset.id }}'">
+        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #000; position: relative;">
+            <img src="{{ asset.image_url or 'https://placehold.co/600x400?text=Asset' }}" alt="{{ asset.name }}"
+                style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; top: 10px; right: 10px;">
+                <span
+                    class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Maintenance' %}badge-maintenance{% else %}badge-down{% endif %}">
+                    {{ asset.status }}
+                </span>
+            </div>
+        </div>
+        <div class="asset-card-header">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h3 style="margin: 0;">{{ asset.name }}</h3>
+                    <small style="opacity: 0.7;">{{ asset.asset_tag or 'No Tag' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="asset-card-body">
+            <div style="margin: 1rem 0;">
+                <div style="font-size: 0.9rem; opacity: 0.8;">
+                    <div>📍 {{ asset.location or 'No Location' }}</div>
+                    <div>🏷️ {{ asset.model or 'No Model' }}</div>
+                    {% if asset.parent_name %}
+                    <div>🔗 Parent: {{ asset.parent_name }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Health Indicator -->
+            <div style="margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
+                    <span>Condition</span>
+                    <span>{{ asset.condition_rating or 5 }}/10</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div
+                        style="background: {% if asset.condition_rating >= 7 %}#27ae60{% elif asset.condition_rating >= 4 %}#f39c12{% else %}#e74c3c{% endif %}; height: 100%; width: {{ (asset.condition_rating or 5) * 10 }}%;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem;">
+                <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; text-align: center;">
+                    <div style="font-weight: bold;">${{ asset.total_maintenance_cost or 0 }}</div>
+                    <div style="opacity: 0.7; font-size: 0.75rem;">Total Cost</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; text-align: center;">
+                    <div style="font-weight: bold;">{{ asset.total_downtime_hours or 0 }}h</div>
+                    <div style="opacity: 0.7; font-size: 0.75rem;">Downtime</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="asset-card-footer">
+            <span
+                style="font-size: 0.8rem; color: {% if asset.criticality == 'Critical' %}#e74c3c{% elif asset.criticality == 'High' %}#f39c12{% else %}#3498db{% endif %};">
+                <i class="fas fa-exclamation-triangle"></i> {{ asset.criticality }} Priority
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Create Asset Modal -->
+<div id="createAssetModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px;">
+        <h2><i class="fas fa-plus"></i> Create New Asset</h2>
+
+        <form action="/assets" method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <!-- Basic Info -->
+                <div>
+                    <label>Asset Name *</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div>
+                    <label>Asset Tag</label>
+                    <input type="text" name="asset_tag" class="form-control">
+                </div>
+                <div>
+                    <label>Serial Number</label>
+                    <input type="text" name="serial_number" class="form-control">
+                </div>
+                <div>
+                    <label>Model</label>
+                    <input type="text" name="model" class="form-control">
+                </div>
+                <div>
+                    <label>Manufacturer</label>
+                    <input type="text" name="manufacturer" class="form-control">
+                </div>
+                <div>
+                    <label>Location</label>
+                    <input type="text" name="location" class="form-control">
+                </div>
+                <div>
+                    <label>Department</label>
+                    <input type="text" name="department" class="form-control">
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Retired">Retired</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Criticality</label>
+                    <select name="criticality" class="form-control">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Purchase Date</label>
+                    <input type="date" name="purchase_date" class="form-control">
+                </div>
+                <div>
+                    <label>Warranty Expiry</label>
+                    <input type="date" name="warranty_expiry" class="form-control">
+                </div>
+                <div>
+                    <label>Purchase Cost</label>
+                    <input type="number" step="0.01" name="purchase_cost" class="form-control">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Attachments (Images, PDFs, Docs)</label>
+                    <input type="file" name="files" class="form-control" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+                    <small class="text-muted">You can select multiple files.</small>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 20px;">
+                <button type="submit" class="cmms-btn">Create Asset</button>
+                <button type="button" class="cmms-btn" style="background: #555;"
+                    onclick="document.getElementById('createAssetModal').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div id="barcodeScanModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2><i class="fas fa-qrcode"></i> Scan Asset Barcode</h2>
+        <p>Scan a barcode or QR code to quickly find asset information and view work orders.</p>
+
+        <!-- Camera Interface -->
+        <div id="cameraSection" style="text-align: center; margin: 20px 0;">
+            <video id="barcodeVideo" width="400" height="300" style="border: 2px solid #667eea; border-radius: 8px; display: none;"></video>
+            <div id="cameraPlaceholder" style="width: 400px; height: 300px; border: 2px dashed #667eea; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                <div style="text-align: center; color: #999;">
+                    <i class="fas fa-camera" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                    <div>Click "Start Camera" to begin scanning</div>
+                </div>
+            </div>
+            <div style="margin: 10px 0;">
+                <button id="startCameraBtn" class="cmms-btn" onclick="startBarcodeCamera()">
+                    <i class="fas fa-camera"></i> Start Camera
+                </button>
+                <button id="stopCameraBtn" class="cmms-btn" style="display: none; background: #e74c3c;" onclick="stopBarcodeCamera()">
+                    <i class="fas fa-stop"></i> Stop Camera
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Upload Barcode Image</h4>
+            <form id="barcodeUploadForm" enctype="multipart/form-data">
+                <input type="file" id="barcodeFile" name="file" accept="image/*" class="form-control" onchange="uploadBarcode()">
+            </form>
+        </div>
+
+        <!-- Manual Entry Option -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+            <h4>Or Enter Asset Tag Manually</h4>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="manualAssetTag" class="form-control" placeholder="Enter asset tag or barcode...">
+                <button class="cmms-btn" onclick="lookupByTag()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="scanResults" style="margin-top: 20px; display: none;"></div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 20px; justify-content: center;">
+            <button type="button" class="cmms-btn" style="background: #555;" onclick="closeBarcodeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .assets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .asset-card {
+        background: linear-gradient(135deg, rgba(30, 60, 114, 0.8) 0%, rgba(42, 82, 152, 0.8) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .asset-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .asset-card.critical {
+        border-left: 4px solid #e74c3c;
+    }
+
+    .asset-card.high {
+        border-left: 4px solid #f39c12;
+    }
+
+    .asset-card-header {
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .asset-card-body {
+        padding: 1rem;
+    }
+
+    .asset-card-footer {
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .assets-list .asset-card {
+        grid-column: 1 / -1;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        setupUnifiedFiltering('assets-grid', {
+            itemSelector: '.asset-card',
+            searchId: 'asset-search',
+            filters: {
+                status: 'asset-status-filter',
+                criticality: 'asset-criticality-filter'
+            }
+        });
+    });
+
+    function toggleView(view) {
+        const grid = document.getElementById('assets-grid');
+        if (view === 'list') {
+            grid.classList.add('assets-list');
+            grid.style.gridTemplateColumns = '1fr';
+        } else {
+            grid.classList.remove('assets-list');
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+        }
+    }
+
+    // Barcode Scanner Functions
+    let barcodeStream = null;
+    let isScanning = false;
+
+    function startBarcodeCamera() {
+        if (!navigator.mediaDevices) {
+            alert('Camera access not supported in this browser');
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                barcodeStream = stream;
+                const video = document.getElementById('barcodeVideo');
+                const placeholder = document.getElementById('cameraPlaceholder');
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                document.getElementById('startCameraBtn').style.display = 'none';
+                document.getElementById('stopCameraBtn').style.display = 'inline-block';
+                
+                video.play();
+                isScanning = true;
+                
+                // Start continuous scanning (would need a barcode detection library like QuaggaJS)
+                console.log('Camera started - ready for barcode scanning');
+            })
+            .catch(err => {
+                console.error('Error accessing camera:', err);
+                alert('Could not access camera. Please check permissions.');
+            });
+    }
+
+    function stopBarcodeCamera() {
+        if (barcodeStream) {
+            barcodeStream.getTracks().forEach(track => track.stop());
+            barcodeStream = null;
+        }
+        
+        const video = document.getElementById('barcodeVideo');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        
+        video.style.display = 'none';
+        placeholder.style.display = 'flex';
+        
+        document.getElementById('startCameraBtn').style.display = 'inline-block';
+        document.getElementById('stopCameraBtn').style.display = 'none';
+        
+        isScanning = false;
+    }
+
+    function uploadBarcode() {
+        const fileInput = document.getElementById('barcodeFile');
+        const file = fileInput.files[0];
+        
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        fetch('/assets/scan-barcode', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error scanning barcode:', error);
+            alert('Error scanning barcode: ' + error.message);
+        });
+    }
+
+    function lookupByTag() {
+        const assetTag = document.getElementById('manualAssetTag').value.trim();
+        
+        if (!assetTag) {
+            alert('Please enter an asset tag');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('asset_tag', assetTag);
+        
+        fetch('/assets/lookup-by-tag', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayScanResults(data);
+        })
+        .catch(error => {
+            console.error('Error looking up asset:', error);
+            alert('Error looking up asset: ' + error.message);
+        });
+    }
+
+    function displayScanResults(data) {
+        const resultsDiv = document.getElementById('scanResults');
+        
+        if (data.success && data.asset) {
+            const asset = data.asset;
+            const workOrders = data.work_orders || [];
+            const parts = data.parts || [];
+            
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.2)); border: 1px solid rgba(39, 174, 96, 0.5); border-radius: 8px; padding: 20px;">
+                    <h3 style="color: #27ae60; margin-bottom: 15px;">
+                        <i class="fas fa-check-circle"></i> Asset Found
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div><strong>Name:</strong> ${asset.name || 'N/A'}</div>
+                        <div><strong>Tag:</strong> ${asset.asset_tag || 'N/A'}</div>
+                        <div><strong>Status:</strong> ${asset.status || 'N/A'}</div>
+                        <div><strong>Location:</strong> ${asset.location || 'N/A'}</div>
+                        <div><strong>Serial:</strong> ${asset.serial_number || 'N/A'}</div>
+                        <div><strong>Model:</strong> ${asset.model || 'N/A'}</div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Work Orders:</strong> ${workOrders.length} active
+                        ${workOrders.length > 0 ? `
+                            <ul style="margin: 5px 0 0 20px;">
+                                ${workOrders.slice(0, 3).map(wo => `
+                                    <li>${wo.title} - ${wo.status} (${wo.priority})</li>
+                                `).join('')}
+                                ${workOrders.length > 3 ? '<li>... and more</li>' : ''}
+                            </ul>
+                        ` : '<div style="margin-left: 20px; font-style: italic;">No active work orders</div>'}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Parts Required:</strong> ${parts.length} items
+                        ${parts.length > 0 ? `
+                            <ul style="margin: 5px 0 0 20px;">
+                                ${parts.slice(0, 3).map(part => `
+                                    <li>${part.name} - ${part.quantity_used || 'N/A'} units</li>
+                                `).join('')}
+                                ${parts.length > 3 ? '<li>... and more</li>' : ''}
+                            </ul>
+                        ` : '<div style="margin-left: 20px; font-style: italic;">No parts information</div>'}
+                    </div>
+                    <div style="text-align: center;">
+                        <a href="/assets/${asset.id}" class="cmms-btn" style="display: inline-block; margin-right: 10px;">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <button class="cmms-btn-secondary" onclick="generateQRCode('${asset.id}')">
+                            <i class="fas fa-qrcode"></i> Generate QR Code
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="scan-result-card" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2)); border: 1px solid rgba(231, 76, 60, 0.5); border-radius: 8px; padding: 20px; text-align: center;">
+                    <h3 style="color: #e74c3c; margin-bottom: 15px;">
+                        <i class="fas fa-times-circle"></i> No Asset Found
+                    </h3>
+                    <p>${data.message || data.error || 'No asset found with this identifier'}</p>
+                    ${data.barcode_data ? `<p><strong>Scanned Data:</strong> ${data.barcode_data}</p>` : ''}
+                </div>
+            `;
+        }
+        
+        resultsDiv.style.display = 'block';
+    }
+
+    function generateQRCode(assetId) {
+        fetch(`/assets/${assetId}/generate-qr`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display QR code in a popup or modal
+                    const qrWindow = window.open('', '_blank', 'width=400,height=500');
+                    qrWindow.document.write(`
+                        <html>
+                            <head><title>Asset QR Code</title></head>
+                            <body style="text-align: center; font-family: Arial; padding: 20px;">
+                                <h2>QR Code for Asset</h2>
+                                <p><strong>${data.asset.name}</strong></p>
+                                <p>Tag: ${data.qr_data}</p>
+                                <img src="${data.qr_code.url}" style="border: 1px solid #ccc;">
+                                <br><br>
+                                <button onclick="window.print()">Print QR Code</button>
+                                <button onclick="window.close()">Close</button>
+                            </body>
+                        </html>
+                    `);
+                } else {
+                    alert('Error generating QR code: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error generating QR code:', error);
+                alert('Error generating QR code');
+            });
+    }
+
+    function closeBarcodeModal() {
+        stopBarcodeCamera();
+        document.getElementById('barcodeScanModal').style.display = 'none';
+        document.getElementById('scanResults').style.display = 'none';
+        document.getElementById('manualAssetTag').value = '';
+        document.getElementById('barcodeFile').value = '';
+    }
+</script>
+{% endblock %}

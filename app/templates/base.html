@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ChatterFix CMMS{% endblock %}</title>
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=3">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}">
+
+    <style>
+        /* Interactive Demo Bar Styles */
+        .demo-bar {
+            background: linear-gradient(90deg, #2c3e50, #3498db);
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            position: relative;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        .demo-bar-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .demo-pulse {
+            width: 10px;
+            height: 10px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        @keyframes pulse-dot {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        .demo-spotlight {
+            display: none;
+            position: absolute;
+            border: 3px solid #007bff;
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            z-index: 10001;
+            pointer-events: none;
+            transition: all 0.4s ease;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: #007bff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 10px rgba(0, 123, 255, 0.5); }
+            50% { border-color: #0056b3; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 123, 255, 0.8); }
+            100% { border-color: #007bff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 10px rgba(0, 123, 255, 0.5); }
+        }
+
+        .demo-tooltip {
+            display: none;
+            position: absolute;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 10002;
+            width: 320px;
+            max-width: 90vw;
+            animation: fadeIn 0.3s ease-out;
+            border-left: 5px solid #007bff;
+        }
+        
+        .demo-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            border-width: 0 10px 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent white transparent;
+        }
+
+        .demo-signup-cta {
+            background: rgba(255, 255, 255, 0.1); /* Glassmorphism */
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-badge {
+            background: #e74c3c;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Improvements */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-links {
+                margin-top: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .demo-bar-content {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+    
+    {% block head %}{% endblock %}
+    <script>
+        // Early theme application to prevent flash
+        const savedTheme = localStorage.getItem('theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+            document.documentElement.classList.add('dark-mode');
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+</head>
+
+<body>
+    
+    <div class="navbar">
+        <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
+        <div class="nav-links d-flex align-items-center">
+            <a href="/demo" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">Dashboard</a>
+            <a href="/demo/work-orders"
+                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">Work
+                Orders</a>
+            <a href="/demo/assets"
+                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
+            <a href="/analytics/dashboard"
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}">Analytics</a>
+            <a href="/demo/planner"
+                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
+            
+            <!-- More Modules Dropdown -->
+            <div class="dropdown d-inline-block">
+                <a href="#" class="nav-link dropdown-toggle {% if request.url and request.url.path and (request.url.path.startswith('/demo/purchasing') or request.url.path.startswith('/demo/team') or request.url.path.startswith('/manager') or request.url.path.startswith('/user-management') or request.url.path.startswith('/demo/training') or request.url.path == '/demo/ar-mode') %}active{% endif %}" 
+                   id="modulesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Modules
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="modulesDropdown" style="background: var(--bg-glass-heavy); backdrop-filter: blur(15px); border: var(--card-border);">
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/purchasing') %}active{% endif %}" href="/demo/purchasing"><i class="fas fa-shopping-cart me-2"></i> Purchasing</a></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/team') or request.url and request.url.path.startswith('/team') %}active{% endif %}" href="/demo/team"><i class="fas fa-users me-2"></i> Team</a></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/manager') %}active{% endif %}" href="/manager"><i class="fas fa-chart-line me-2"></i> Manager</a></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/user-management') %}active{% endif %}" href="/user-management/"><i class="fas fa-user-plus me-2"></i> User Management</a></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/training') %}active{% endif %}" href="/demo/training"><i class="fas fa-graduation-cap me-2"></i> Training</a></li>
+                    <li><hr class="dropdown-divider" style="border-color: var(--border-glass);"></li>
+                    <li><a class="dropdown-item {% if request.url and request.url.path == '/demo/ar-mode' %}active{% endif %}" href="/demo/ar-mode"><i class="fas fa-vr-cardboard me-2"></i> AR Mode</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <button id="theme-toggle" class="cmms-btn cmms-btn-sm d-flex align-items-center gap-2" style="border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Theme">
+                <i class="fas fa-moon"></i>
+                <span id="theme-label">Dark Mode</span>
+            </button>
+            {% if is_demo %}
+            <div class="demo-signup-cta">
+                <span class="demo-badge">Demo Mode</span>
+                <button class="cmms-btn cmms-btn-sm" onclick="window.location.href='/signup'">
+                    <i class="fas fa-user-plus"></i> Get Full Access
+                </button>
+            </div>
+            {% endif %}
+
+            {% if current_user %}
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                    id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="{{ current_user.avatar_url or 'https://placehold.co/200x200?text=User' }}"
+                        alt="{{ current_user.username }}" width="32" height="32"
+                        class="rounded-circle me-2 border border-2 border-light">
+                    <span class="d-none d-md-inline">{{ current_user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark text-small shadow"
+                    aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                    <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i> Profile</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i> Sign
+                            out</a></li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="auth-buttons">
+                <a href="/login" class="btn btn-outline-light btn-sm me-2">Login</a>
+                <a href="/landing" class="btn btn-primary btn-sm">Sign Up</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Interactive Demo Bar -->
+    <div id="demoBar" class="demo-bar" style="display: none;">
+        <div class="demo-bar-content">
+            <div class="demo-pulse"></div>
+            <strong>Interactive Demo Mode</strong>
+            <span>Explore the features of ChatterFix at your own pace.</span>
+            <button onclick="window.demoSystem.startFullDemo()" class="btn btn-sm btn-light text-primary fw-bold"
+                style="margin-left: 10px;">Start Interactive Tour</button>
+            <button onclick="window.demoSystem.dismissDemoBar()" class="btn btn-sm btn-outline-light ms-2">Dismiss</button>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        {% if get_flashed_messages is defined %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- AI Assistant Floating Widget -->
+    <button class="ai-fab" onclick="toggleAIChat()" title="Chat with AI Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="ai-chat-window" id="aiChatWindow" style="display: none;">
+        <div class="ai-chat-header">
+            <div>
+                <i class="fas fa-robot me-2"></i> ChatterFix Assistant
+                <span class="badge bg-success ms-2" style="font-size: 0.6rem;">ONLINE</span>
+            </div>
+            <button onclick="toggleAIChat()" class="btn btn-sm text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-chat-messages" id="floatingChatMessages">
+            <div class="message message-ai">
+                <strong>AI:</strong> Hello! I'm monitoring your maintenance operations. How can I assist you today?
+            </div>
+        </div>
+        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none;">
+            AI is thinking...
+        </div>
+        <div class="ai-chat-input-area">
+            <div class="input-group">
+                <input type="text" id="floatingChatInput" class="form-control" placeholder="Ask anything..."
+                    onkeypress="handleFloatingChatInput(event)">
+                <button class="btn btn-primary" onclick="sendFloatingChatMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', path='js/main.js') }}?v=3"></script>
+    
+    <!-- Enhanced Demo System -->
+    <script src="{{ url_for('static', path='js/demo-system.js') }}?v=3"></script>
+
+    <script>
+        // Check if we should show the demo bar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is in demo mode (URL path check or session)
+            if (window.location.pathname.startsWith('/demo')) {
+                // If demo is not active, show the bar
+                const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
+                if (!demoState.active) {
+                    const demoBar = document.getElementById('demoBar');
+                    if(demoBar) demoBar.style.display = 'block';
+                }
+            }
+        });
+        
+        // Expose dismiss function globally for the clear button
+        window.demoSystem.dismissDemoBar = function() {
+             document.getElementById('demoBar').style.display = 'none';
+        }
+    </script>
+
+    <script>
+        // Toggle AI Chat Window
+        function toggleAIChat() {
+            const chatWindow = document.getElementById('aiChatWindow');
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'flex';
+                document.getElementById('floatingChatInput').focus();
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+
+        function handleFloatingChatInput(event) {
+            if (event.key === 'Enter') {
+                sendFloatingChatMessage();
+            }
+        }
+
+        // Mobile keyboard detection and chat window adjustment
+        function setupMobileKeyboardHandling() {
+            const chatWindow = document.getElementById('aiChatWindow');
+            const chatInput = document.getElementById('floatingChatInput');
+            
+            // Detect mobile devices
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isSmallScreen = window.innerWidth <= 768;
+            
+            if (isMobile && isSmallScreen) {
+                let initialViewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                
+                // Handle visual viewport changes (keyboard showing/hiding)
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', () => {
+                        const currentHeight = window.visualViewport.height;
+                        const heightDiff = initialViewportHeight - currentHeight;
+                        
+                        if (heightDiff > 150) { // Keyboard is likely open
+                            chatWindow.classList.add('keyboard-active');
+                        } else { // Keyboard is likely closed
+                            chatWindow.classList.remove('keyboard-active');
+                        }
+                    });
+                }
+                
+                // Fallback for older browsers
+                chatInput.addEventListener('focus', () => {
+                    setTimeout(() => {
+                        chatWindow.classList.add('keyboard-active');
+                    }, 300);
+                });
+                
+                chatInput.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        chatWindow.classList.remove('keyboard-active');
+                    }, 300);
+                });
+            }
+        }
+        
+        // Initialize mobile handling when DOM is ready
+        document.addEventListener('DOMContentLoaded', setupMobileKeyboardHandling);
+
+        async function sendFloatingChatMessage() {
+            const input = document.getElementById('floatingChatInput');
+            const messages = document.getElementById('floatingChatMessages');
+            const userMessage = input.value.trim();
+
+            if (!userMessage) return;
+
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message message-user';
+            userDiv.innerHTML = `<strong>You:</strong> ${userMessage}`;
+            messages.appendChild(userDiv);
+            
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
+
+            // Show typing indicator
+            const typing = document.getElementById('aiTypingIndicator');
+            typing.style.display = 'block';
+
+            try {
+                const response = await fetch('/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage, context: '' })
+                });
+                
+                // Check if response is ok (status 200-299)
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Validate response structure
+                if (!data || !data.response) {
+                    throw new Error('Invalid response format from server');
+                }
+                
+                typing.style.display = 'none';
+                
+                // Add AI response
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'message message-ai';
+                aiDiv.innerHTML = `<strong>AI:</strong> ${data.response}`;
+                messages.appendChild(aiDiv);
+                messages.scrollTop = messages.scrollHeight;
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                typing.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message message-ai';
+                errorDiv.innerHTML = `<strong>AI:</strong> I'm having trouble right now. Please try again in a moment.`;
+                messages.appendChild(errorDiv);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    </script>
+    <script>
+        // Enhanced Theme Toggle Logic with Debug
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 AI TEAM: Initializing bulletproof theme toggle for demo...');
+            
+            const themeToggle = document.getElementById('theme-toggle');
+            const root = document.documentElement;
+            const body = document.body;
+            
+            // BULLETPROOF: Check if element exists
+            if (!themeToggle) {
+                console.error('❌ AI TEAM: Theme toggle button not found - creating fallback');
+                
+                // Create fallback theme toggle if missing
+                const fallbackToggle = document.createElement('button');
+                fallbackToggle.id = 'theme-toggle';
+                fallbackToggle.className = 'cmms-btn cmms-btn-sm d-flex align-items-center gap-2';
+                fallbackToggle.innerHTML = '<i class="fas fa-moon"></i><span id="theme-label">Dark Mode</span>';
+                fallbackToggle.style.cssText = 'border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);';
+                fallbackToggle.title = 'Toggle Theme';
+                
+                // Try to insert in navbar
+                const navbar = document.querySelector('.navbar .d-flex');
+                if (navbar) {
+                    navbar.appendChild(fallbackToggle);
+                    console.log('✅ AI TEAM: Created fallback theme toggle');
+                }
+            }
+            
+            const icon = document.querySelector('#theme-toggle i');
+            
+            console.log('🌙 AI TEAM: Dark mode toggle initialized');
+            
+            // Check saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            console.log('📊 AI TEAM: Saved theme:', savedTheme, 'System dark:', systemDark);
+            
+            // BULLETPROOF: Apply initial theme with force
+            function applyTheme(isDark) {
+                console.log(`🎨 AI TEAM: Applying ${isDark ? 'DARK' : 'LIGHT'} theme`);
+                
+                if (isDark) {
+                    root.classList.add('dark-mode');
+                    body.classList.add('dark-mode');
+                    root.setAttribute('data-bs-theme', 'dark');
+                    body.setAttribute('data-theme', 'dark');
+                } else {
+                    root.classList.remove('dark-mode');
+                    body.classList.remove('dark-mode');
+                    root.setAttribute('data-bs-theme', 'light');
+                    body.setAttribute('data-theme', 'light');
+                }
+                
+                // Force CSS refresh
+                const timestamp = Date.now();
+                const forceStyle = document.createElement('style');
+                forceStyle.textContent = `/* AI Team Force Refresh ${timestamp} */ body { --refresh: ${timestamp}; }`;
+                document.head.appendChild(forceStyle);
+                setTimeout(() => {
+                    if (forceStyle.parentNode) {
+                        forceStyle.parentNode.removeChild(forceStyle);
+                    }
+                }, 100);
+                
+                updateIcon(isDark);
+            }
+            
+            // Apply initial theme
+            const shouldBeDark = savedTheme === 'dark' || (!savedTheme && systemDark);
+            applyTheme(shouldBeDark);
+            console.log('Applied initial dark mode');
+            
+            function updateIcon(isDark = null) {
+                if (isDark === null) {
+                    isDark = root.classList.contains('dark-mode');
+                }
+                
+                const label = document.getElementById('theme-label');
+                console.log('🔄 AI TEAM: Updating icon, isDark:', isDark);
+                
+                if (icon) {
+                    if (isDark) {
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                        if (label) label.textContent = 'Light Mode';
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                        if (label) label.textContent = 'Dark Mode';
+                    }
+                }
+            }
+
+            updateIcon();
+
+            // BULLETPROOF: Add click handler
+            const finalToggle = document.getElementById('theme-toggle');
+            if (finalToggle) {
+                finalToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('🌙 AI TEAM: Theme toggle clicked');
+                    
+                    const wasDark = root.classList.contains('dark-mode');
+                    const newTheme = !wasDark;
+                    
+                    console.log(`🔄 AI TEAM: Switching from ${wasDark ? 'DARK' : 'LIGHT'} to ${newTheme ? 'DARK' : 'LIGHT'}`);
+                    
+                    // Apply new theme
+                    applyTheme(newTheme);
+                    
+                    // Save preference
+                    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+                    console.log('💾 AI TEAM: Saved theme preference:', newTheme ? 'dark' : 'light');
+                    
+                    // Force repaint with GPU acceleration
+                    body.style.transform = 'translate3d(0,0,0)';
+                    body.style.backfaceVisibility = 'hidden';
+                    
+                    setTimeout(() => {
+                        body.style.transform = '';
+                        body.style.backfaceVisibility = '';
+                        console.log('✅ AI TEAM: Theme toggle completed successfully');
+                    }, 50);
+                });
+                
+                console.log('🚀 AI TEAM: Theme toggle event handler attached');
+            } else {
+                console.error('❌ AI TEAM: Failed to attach theme toggle handler');
+            }
+        });
+    </script>
+</body>
+
+</html>

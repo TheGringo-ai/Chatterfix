@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.title }} - Training Module{% endblock %}
+
+{% block head %}
+<style>
+    .training-module {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .module-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 2rem;
+    }
+
+    .module-title {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+
+    .module-meta {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .progress-bar {
+        background: var(--bg-secondary);
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .progress-fill {
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .module-content {
+        background: var(--card-bg);
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .section {
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color);
+    }
+
+    .content-block {
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .quiz-section {
+        background: var(--bg-secondary);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+    }
+
+    .question {
+        margin-bottom: 2rem;
+    }
+
+    .question-title {
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .answer-option {
+        display: block;
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+        background: var(--card-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .answer-option:hover {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .answer-option.selected {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .navigation-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        border-color: var(--primary-color);
+    }
+
+    .completion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #4ade80;
+        color: #065f46;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .warning-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #fbbf24;
+        color: #92400e;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .training-module {
+            padding: 1rem;
+        }
+        
+        .module-meta {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .navigation-controls {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="training-module">
+    <!-- Module Header -->
+    <div class="module-header">
+        <div class="module-title">{{ module.title }}</div>
+        <div class="module-meta">
+            <div class="meta-item">
+                <span>⏱️</span>
+                <span>{{ module.duration or 'Variable' }}</span>
+            </div>
+            <div class="meta-item">
+                <span>📊</span>
+                <span>{{ module.difficulty or 'Intermediate' }}</span>
+            </div>
+            <div class="meta-item">
+                <span>👤</span>
+                <span>{{ module.category or 'Technical' }}</span>
+            </div>
+            {% if user_progress and user_progress.status == 'completed' %}
+            <div class="completion-badge">
+                ✅ Completed
+            </div>
+            {% elif user_progress and user_progress.status == 'in_progress' %}
+            <div class="warning-badge">
+                ⏳ In Progress
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if user_progress %}
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ user_progress.progress or 0 }}%"></div>
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">
+            Progress: {{ user_progress.progress or 0 }}%
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Module Content -->
+    <div class="module-content">
+        {% if module.description %}
+        <div class="section">
+            <div class="content-block">
+                {{ module.description | safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if module.content %}
+        <!-- Learning Content Sections -->
+        {% for section in module.content.sections %}
+        <div class="section">
+            <div class="section-title">{{ section.title }}</div>
+            {% for block in section.content %}
+            <div class="content-block">
+                {% if block.type == 'text' %}
+                    {{ block.content | safe }}
+                {% elif block.type == 'list' %}
+                    <ul>
+                    {% for item in block.items %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                    </ul>
+                {% elif block.type == 'code' %}
+                    <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; overflow-x: auto;"><code>{{ block.content }}</code></pre>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if module.quiz %}
+        <!-- Quiz Section -->
+        <div class="quiz-section">
+            <h3 style="margin-bottom: 1.5rem;">📝 Knowledge Check</h3>
+            
+            {% for question in module.quiz %}
+            <div class="question">
+                <div class="question-title">
+                    {{ loop.index }}. {{ question.question }}
+                </div>
+                {% for option in question.options %}
+                <label class="answer-option">
+                    <input type="radio" name="q{{ loop.index0 }}" value="{{ loop.index0 }}" style="margin-right: 0.5rem;">
+                    {{ option }}
+                </label>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            
+            <button class="btn btn-primary" onclick="submitQuiz()" style="margin-top: 1rem;">
+                Submit Quiz
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation-controls">
+        <a href="/training" class="btn btn-secondary">
+            ← Back to Training Center
+        </a>
+        
+        <div style="display: flex; gap: 1rem;">
+            {% if not user_progress or user_progress.status != 'completed' %}
+            <button class="btn btn-primary" onclick="markCompleted()">
+                Mark as Completed ✅
+            </button>
+            {% endif %}
+            
+            {% if next_module %}
+            <a href="/training/module/{{ next_module.id }}" class="btn btn-primary">
+                Next Module →
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function submitQuiz() {
+    const questions = document.querySelectorAll('.question');
+    const answers = {};
+    let allAnswered = true;
+    
+    questions.forEach((question, index) => {
+        const selected = question.querySelector('input[type="radio"]:checked');
+        if (selected) {
+            answers[`q${index}`] = parseInt(selected.value);
+        } else {
+            allAnswered = false;
+        }
+    });
+    
+    if (!allAnswered) {
+        alert('Please answer all questions before submitting.');
+        return;
+    }
+    
+    // Submit quiz answers
+    fetch(`/training/module/{{ module.id }}/quiz`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ answers: answers })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.score !== undefined) {
+            alert(`Quiz completed! Your score: ${result.score}/${result.total} (${Math.round(result.score/result.total*100)}%)`);
+            
+            if (result.score >= result.total * 0.8) {
+                // Auto-mark as completed if score is good
+                markCompleted();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Quiz submission error:', error);
+        alert('Error submitting quiz. Please try again.');
+    });
+}
+
+function markCompleted() {
+    fetch(`/training/module/{{ module.id }}/complete`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('🎉 Module marked as completed!');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Completion error:', error);
+        alert('Error marking module as completed. Please try again.');
+    });
+}
+</script>
+{% endblock %}

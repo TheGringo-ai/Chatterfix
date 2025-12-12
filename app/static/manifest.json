@@ -1,0 +1,112 @@
+{
+    "name": "ChatterFix CMMS - Ultimate Multi-Device Platform",
+    "short_name": "ChatterFix",
+    "description": "AI-powered maintenance management with 943% ROI through intelligent workforce optimization. Features Jake Thompson, Anna Kowalski, Sam Martinez, and Maria Rodriguez personas.",
+    "version": "2.1.0-ultimate",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f1419",
+    "theme_color": "#2c3e50",
+    "orientation": "any",
+    "scope": "/",
+    "lang": "en-US",
+    "dir": "ltr",
+    "icons": [
+        {
+            "src": "/static/img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/img/screenshot-mobile.png",
+            "sizes": "540x720",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/static/img/screenshot-desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "business"
+    ],
+    "shortcuts": [
+        {
+            "name": "Jake Thompson Mode",
+            "short_name": "Jake - Mobile",
+            "description": "Technician interface with voice commands and QR scanning",
+            "url": "/?persona=jake",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Anna Kowalski Mode",
+            "short_name": "Anna - Manager",
+            "description": "Operations manager tablet interface with analytics",
+            "url": "/?persona=anna",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Fix-it-Fred AI",
+            "short_name": "Fred AI",
+            "description": "Chat with veteran AI maintenance assistant",
+            "url": "/fix-it-fred/interface",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Crisis Prevention",
+            "short_name": "Crisis Alert",
+            "description": "$125K emergency prevention system",
+            "url": "/analytics/dashboard",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "protocol_handlers": [
+        {
+            "protocol": "web+chatterfix",
+            "url": "/?action=%s"
+        }
+    ],
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://chatterfix.app"
+        }
+    ],
+    "prefer_related_applications": false
+}

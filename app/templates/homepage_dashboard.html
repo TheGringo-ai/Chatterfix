@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix - Workforce Intelligence Platform{% endblock %}
+
+{% block head %}
+<style>
+    /* ChatterFix Homepage Dashboard Styles */
+    body {
+        background: linear-gradient(135deg, #0f1419 0%, #1a252f 50%, #2c3e50 100%);
+        min-height: 100vh;
+        color: #ffffff;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, rgba(15, 20, 25, 0.95), rgba(44, 62, 80, 0.85)),
+                    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="%23ffffff10" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+        padding: 4rem 0;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 50px 50px;
+        margin-bottom: 3rem;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(52, 152, 219, 0.1), transparent);
+        animation: rotate 20s linear infinite;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(45deg, #3498db, #2ecc71, #9b59b6);
+        background-size: 300% 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 4s ease-in-out infinite;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        color: #bdc3c7;
+        margin-bottom: 2rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .metrics-banner {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 2rem;
+    }
+
+    .metric-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(52, 152, 219, 0.2);
+        border-color: #3498db;
+    }
+
+    .metric-value {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #3498db;
+        display: block;
+        text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
+    }
+
+    .metric-label {
+        color: #bdc3c7;
+        font-size: 1.1rem;
+        margin-top: 0.5rem;
+    }
+
+    .metric-description {
+        color: #95a5a6;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .action-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 25px;
+        padding: 2.5rem;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+
+    .action-card:hover::before {
+        left: 100%;
+    }
+
+    .action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        border-color: #3498db;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .action-icon {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        color: #3498db;
+        display: block;
+        filter: drop-shadow(0 4px 8px rgba(52, 152, 219, 0.3));
+    }
+
+    .action-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #ffffff;
+    }
+
+    .action-description {
+        color: #bdc3c7;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    .action-btn {
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        background: linear-gradient(45deg, #2980b9, #3498db);
+    }
+
+    .genesis-section {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 30px;
+        padding: 3rem;
+        margin: 3rem auto;
+        max-width: 1200px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .genesis-title {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+        color: #3498db;
+    }
+
+    .technician-profile {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .profile-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+    }
+
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #3498db, #2ecc71);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
+        color: white;
+    }
+
+    .live-alerts {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .alert-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: pulse-dot 2s infinite;
+    }
+
+    .status-critical { background: #e74c3c; }
+    .status-warning { background: #f39c12; }
+    .status-good { background: #2ecc71; }
+
+    @keyframes gradient-shift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2.5rem; }
+        .hero-subtitle { font-size: 1.2rem; }
+        .metrics-banner { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .quick-actions { grid-template-columns: 1fr; gap: 1.5rem; }
+        .hero-section { padding: 2rem 0; }
+        .genesis-section { margin: 2rem 1rem; padding: 2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">ChatterFix Workforce Intelligence</h1>
+        <p class="hero-subtitle">
+            AI-powered maintenance management that saved $125,000 in crisis scenarios 
+            with 943% ROI through intelligent workforce optimization
+        </p>
+    </div>
+</div>
+
+<!-- Live Metrics Banner -->
+<div class="metrics-banner">
+    <div class="metric-card">
+        <span class="metric-value">$125,000</span>
+        <div class="metric-label">Crisis Management Savings</div>
+        <div class="metric-description">Emergency generator failure prevention</div>
+    </div>
+    <div class="metric-card">
+        <span class="metric-value">943%</span>
+        <div class="metric-label">ROI Achievement</div>
+        <div class="metric-description">Proven workforce intelligence results</div>
+    </div>
+    <div class="metric-card">
+        <span class="metric-value">4</span>
+        <div class="metric-label">User Personas</div>
+        <div class="metric-description">Jake, Anna, Sam, Maria workflows</div>
+    </div>
+    <div class="metric-card">
+        <span class="metric-value">24/7</span>
+        <div class="metric-label">AI Monitoring</div>
+        <div class="metric-description">Continuous intelligent operations</div>
+    </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="quick-actions">
+    <div class="action-card" onclick="window.location.href='/work-orders'">
+        <span class="action-icon">🎯</span>
+        <div class="action-title">Smart Work Orders</div>
+        <div class="action-description">
+            Manage maintenance requests with AI-powered prioritization and 
+            intelligent task assignment based on technician expertise
+        </div>
+        <button class="action-btn">Access Work Orders</button>
+    </div>
+
+    <div class="action-card" onclick="window.location.href='/fix-it-fred/interface'">
+        <span class="action-icon">🔧</span>
+        <div class="action-title">Fix-it-Fred AI</div>
+        <div class="action-description">
+            Consult our veteran AI maintenance expert for instant troubleshooting,
+            safety protocols, and step-by-step repair guidance
+        </div>
+        <button class="action-btn">Chat with Fred</button>
+    </div>
+
+    <div class="action-card" onclick="window.location.href='/analytics/dashboard'">
+        <span class="action-icon">📊</span>
+        <div class="action-title">Analytics Dashboard</div>
+        <div class="action-description">
+            Real-time performance metrics, ROI calculations, and predictive
+            insights powered by advanced AI analytics
+        </div>
+        <button class="action-btn">View Analytics</button>
+    </div>
+
+    <div class="action-card" onclick="window.location.href='/linesmart'">
+        <span class="action-icon">📚</span>
+        <div class="action-title">LineSmart Training</div>
+        <div class="action-description">
+            Intelligent workforce development with personalized training paths
+            and skill gap analysis for continuous improvement
+        </div>
+        <button class="action-btn">Access Training</button>
+    </div>
+</div>
+
+<!-- Genesis Project Data Section -->
+<div class="genesis-section">
+    <h2 class="genesis-title">🏭 Genesis Manufacturing Intelligence</h2>
+    
+    <!-- Live Alerts -->
+    <div class="live-alerts">
+        <h3 style="color: #e74c3c; margin-bottom: 1rem;">🚨 Live Factory Alerts</h3>
+        
+        <div class="alert-item">
+            <div class="status-indicator status-critical"></div>
+            <div>
+                <strong>Emergency Generator Failure Risk</strong><br>
+                <small>$125,000 potential loss - AI prevented with predictive maintenance</small>
+            </div>
+        </div>
+        
+        <div class="alert-item">
+            <div class="status-indicator status-warning"></div>
+            <div>
+                <strong>Fire Suppression System Check</strong><br>
+                <small>Scheduled maintenance optimized by AI for minimal downtime</small>
+            </div>
+        </div>
+        
+        <div class="alert-item">
+            <div class="status-indicator status-good"></div>
+            <div>
+                <strong>Production Line Optimization</strong><br>
+                <small>943% ROI achieved through intelligent workforce allocation</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technician Profiles -->
+    <div class="technician-profile">
+        <div class="profile-card">
+            <div class="profile-avatar">JT</div>
+            <h4>Jake Thompson</h4>
+            <p style="color: #bdc3c7;">Senior Technician</p>
+            <div style="margin: 1rem 0;">
+                <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <strong style="color: #2ecc71;">Excellence:</strong> Generator maintenance expert
+                </div>
+                <div style="background: rgba(52, 152, 219, 0.2); padding: 0.5rem; border-radius: 8px;">
+                    <strong style="color: #3498db;">AI Assisted:</strong> 15 successful interventions
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-card">
+            <div class="profile-avatar">AK</div>
+            <h4>Anna Kowalski</h4>
+            <p style="color: #bdc3c7;">Fire Safety Specialist</p>
+            <div style="margin: 1rem 0;">
+                <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <strong style="color: #2ecc71;">Expertise:</strong> Fire suppression systems
+                </div>
+                <div style="background: rgba(52, 152, 219, 0.2); padding: 0.5rem; border-radius: 8px;">
+                    <strong style="color: #3498db;">AI Enhanced:</strong> Zero safety incidents
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-card">
+            <div class="profile-avatar">SM</div>
+            <h4>Sam Martinez</h4>
+            <p style="color: #bdc3c7;">Operations Manager</p>
+            <div style="margin: 1rem 0;">
+                <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
+                    <strong style="color: #2ecc71;">Achievement:</strong> 943% ROI leadership
+                </div>
+                <div style="background: rgba(52, 152, 219, 0.2); padding: 0.5rem; border-radius: 8px;">
+                    <strong style="color: #3498db;">AI Strategy:</strong> Workforce optimization
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Factory Status -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+        <div style="background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; color: #2ecc71; font-weight: bold;">98.7%</div>
+            <div style="color: #bdc3c7;">Equipment Uptime</div>
+            <small style="color: #95a5a6;">AI-optimized maintenance</small>
+        </div>
+        
+        <div style="background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; color: #3498db; font-weight: bold;">47</div>
+            <div style="color: #bdc3c7;">Active Work Orders</div>
+            <small style="color: #95a5a6;">Intelligently prioritized</small>
+        </div>
+        
+        <div style="background: rgba(155, 89, 182, 0.1); border: 1px solid rgba(155, 89, 182, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; color: #9b59b6; font-weight: bold;">23</div>
+            <div style="color: #bdc3c7;">Training Sessions</div>
+            <small style="color: #95a5a6;">LineSmart powered</small>
+        </div>
+        
+        <div style="background: rgba(241, 196, 15, 0.1); border: 1px solid rgba(241, 196, 15, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
+            <div style="font-size: 2rem; color: #f1c40f; font-weight: bold;">$3.2M</div>
+            <div style="color: #bdc3c7;">Cost Savings YTD</div>
+            <small style="color: #95a5a6;">AI-driven efficiency</small>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Features -->
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+    <h2 style="text-align: center; font-size: 2.5rem; color: #3498db; margin: 3rem 0 2rem;">Complete Platform Features</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <div class="action-card" onclick="window.location.href='/assets'">
+            <span class="action-icon">🏭</span>
+            <div class="action-title">Asset Management</div>
+            <div class="action-description">Complete equipment lifecycle tracking with predictive maintenance scheduling</div>
+        </div>
+        
+        <div class="action-card" onclick="window.location.href='/inventory'">
+            <span class="action-icon">📦</span>
+            <div class="action-title">Smart Inventory</div>
+            <div class="action-description">AI-powered parts management with automatic reordering and optimization</div>
+        </div>
+        
+        <div class="action-card" onclick="window.location.href='/team'">
+            <span class="action-icon">👥</span>
+            <div class="action-title">Team Management</div>
+            <div class="action-description">Intelligent technician scheduling and skill-based task assignment</div>
+        </div>
+        
+        <div class="action-card" onclick="window.location.href='/demo/purchasing'">
+            <span class="action-icon">🛒</span>
+            <div class="action-title">Purchasing System</div>
+            <div class="action-description">Automated procurement with cost optimization and vendor management</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize real-time updates
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 ChatterFix Homepage loaded successfully');
+        
+        // Animate metrics on load
+        const metricValues = document.querySelectorAll('.metric-value');
+        metricValues.forEach((metric, index) => {
+            setTimeout(() => {
+                metric.style.opacity = '0';
+                metric.style.transform = 'translateY(20px)';
+                metric.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    metric.style.opacity = '1';
+                    metric.style.transform = 'translateY(0)';
+                }, 100);
+            }, index * 200);
+        });
+        
+        // Add hover effects to action cards
+        const actionCards = document.querySelectorAll('.action-card');
+        actionCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+        
+        // Live metrics simulation
+        setInterval(() => {
+            const uptimeElement = document.querySelector('[style*="Equipment Uptime"]').previousElementSibling;
+            if (uptimeElement) {
+                const currentUptime = parseFloat(uptimeElement.textContent);
+                const newUptime = (currentUptime + (Math.random() - 0.5) * 0.1).toFixed(1);
+                if (newUptime >= 95 && newUptime <= 99.9) {
+                    uptimeElement.textContent = newUptime + '%';
+                }
+            }
+        }, 30000); // Update every 30 seconds
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Import - ChatterFix CMMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            background: #f8f9fa;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+        }
+        .upload-area.dragover {
+            background: #e3f2fd;
+            border-color: #0056b3;
+            transform: scale(1.02);
+        }
+        .template-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+        .template-card:hover {
+            transform: translateY(-5px);
+        }
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .result-table {
+            display: none;
+            margin-top: 20px;
+        }
+        .error-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/manager/dashboard">
+                <i class="fas fa-tools me-2"></i>ChatterFix CMMS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/manager/dashboard">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i>Bulk Import Data
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Template Downloads Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="template-card">
+                                    <h5><i class="fas fa-wrench me-2"></i>Work Orders</h5>
+                                    <p class="mb-3">Import work orders with assets, priorities, and assignments</p>
+                                    <button class="btn btn-light btn-sm" onclick="downloadTemplate('work_orders')">
+                                        <i class="fas fa-download me-1"></i>Download Template
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="template-card">
+                                    <h5><i class="fas fa-cogs me-2"></i>Parts Inventory</h5>
+                                    <p class="mb-3">Import parts with stock levels, suppliers, and categories</p>
+                                    <button class="btn btn-light btn-sm" onclick="downloadTemplate('parts')">
+                                        <i class="fas fa-download me-1"></i>Download Template
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="template-card">
+                                    <h5><i class="fas fa-calendar-alt me-2"></i>PM Schedules</h5>
+                                    <p class="mb-3">Import preventive maintenance schedules and frequencies</p>
+                                    <button class="btn btn-light btn-sm" onclick="downloadTemplate('pm_schedules')">
+                                        <i class="fas fa-download me-1"></i>Download Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Section -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                    <h5>Drag & Drop CSV File Here</h5>
+                                    <p class="text-muted">Or click to browse and select a file</p>
+                                    <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                                </div>
+                                
+                                <!-- File Info -->
+                                <div id="fileInfo" class="mt-3" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-file-csv me-2"></i>
+                                        <span id="fileName"></span>
+                                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="clearFile()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Import Type Selection -->
+                                <div id="importTypeSection" class="mt-3" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Import Type</label>
+                                            <select class="form-select" id="importType" required>
+                                                <option value="">Select import type...</option>
+                                                <option value="work_orders">Work Orders</option>
+                                                <option value="parts">Parts Inventory</option>
+                                                <option value="pm_schedules">PM Schedules</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 d-flex align-items-end">
+                                            <button class="btn btn-success" onclick="startImport()">
+                                                <i class="fas fa-upload me-2"></i>Start Import
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Section -->
+                                <div class="progress-container" id="progressContainer">
+                                    <h5>Import Progress</h5>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             id="progressBar" style="width: 0%"></div>
+                                    </div>
+                                    <div id="progressText">Preparing import...</div>
+                                </div>
+
+                                <!-- Results Section -->
+                                <div class="result-table" id="resultsSection">
+                                    <h5>Import Results</h5>
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <div class="card text-center bg-success text-white">
+                                                <div class="card-body">
+                                                    <h4 id="successCount">0</h4>
+                                                    <small>Successfully Imported</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center bg-warning text-white">
+                                                <div class="card-body">
+                                                    <h4 id="warningCount">0</h4>
+                                                    <small>Warnings</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center bg-danger text-white">
+                                                <div class="card-body">
+                                                    <h4 id="errorCount">0</h4>
+                                                    <small>Errors</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center bg-info text-white">
+                                                <div class="card-body">
+                                                    <h4 id="totalCount">0</h4>
+                                                    <small>Total Records</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Error Details -->
+                                    <div id="errorDetails" style="display: none;">
+                                        <h6>Import Errors:</h6>
+                                        <div class="error-list" id="errorList"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedFile = null;
+
+        // Drag and drop handlers
+        document.getElementById('uploadArea').addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        });
+
+        document.getElementById('uploadArea').addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        });
+
+        document.getElementById('uploadArea').addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('fileName').textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('importTypeSection').style.display = 'block';
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('importTypeSection').style.display = 'none';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('importType').value = '';
+        }
+
+        function downloadTemplate(type) {
+            const templates = {
+                work_orders: `title,description,priority,asset_id,assigned_to,due_date,work_order_type,estimated_hours,work_instructions
+Example Work Order,Replace air filter,High,ASSET001,tech1@company.com,2024-12-15,Preventive,2.0,Check and replace air filter according to manufacturer specs
+Repair Conveyor,Fix conveyor belt issue,Critical,ASSET002,tech2@company.com,2024-12-10,Corrective,4.0,Inspect belt for damage and replace if necessary`,
+
+                parts: `part_number,name,description,category,unit_of_measure,unit_cost,current_stock,min_stock_level,max_stock_level,supplier,location
+FILTER001,Air Filter,HEPA air filter for ventilation system,Filters,Each,25.99,50,10,100,ABC Supply Co,Warehouse A
+BELT002,Conveyor Belt,Rubber conveyor belt 36 inch,Belts,Each,150.00,5,2,20,XYZ Industrial,Warehouse B`,
+
+                pm_schedules: `asset_id,task_name,description,frequency_type,frequency_value,assigned_to,estimated_hours,parts_required,instructions
+ASSET001,Monthly Filter Check,Check and replace air filters,Monthly,1,tech1@company.com,1.0,FILTER001,Inspect filter condition and replace if dirty
+ASSET002,Quarterly Belt Inspection,Inspect conveyor belt for wear,Quarterly,3,tech2@company.com,2.0,BELT002,Check belt tension and alignment`
+            };
+
+            const content = templates[type];
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${type}_template.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function startImport() {
+            const importType = document.getElementById('importType').value;
+            if (!selectedFile || !importType) {
+                alert('Please select a file and import type.');
+                return;
+            }
+
+            // Show progress
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            // Map import types to correct endpoints
+            const endpointMap = {
+                'work_orders': '/manager/api/upload/work-orders',
+                'parts': '/manager/api/upload/parts', 
+                'pm_schedules': '/manager/api/upload/pm-schedules'
+            };
+
+            try {
+                // Update progress
+                updateProgress(20, 'Uploading file...');
+
+                const response = await fetch(endpointMap[importType], {
+                    method: 'POST',
+                    body: formData
+                });
+
+                updateProgress(60, 'Processing data...');
+
+                const result = await response.json();
+
+                updateProgress(100, 'Import completed!');
+
+                // Show results
+                setTimeout(() => {
+                    showResults(result);
+                }, 1000);
+
+            } catch (error) {
+                console.error('Import error:', error);
+                updateProgress(100, 'Import failed!');
+                alert('Import failed: ' + error.message);
+            }
+        }
+
+        function updateProgress(percent, text) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        function showResults(result) {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Update counters
+            document.getElementById('successCount').textContent = result.successful || 0;
+            document.getElementById('warningCount').textContent = result.warnings?.length || 0;
+            document.getElementById('errorCount').textContent = result.errors?.length || 0;
+            document.getElementById('totalCount').textContent = result.total || 0;
+
+            // Show errors if any
+            if (result.errors && result.errors.length > 0) {
+                const errorList = document.getElementById('errorList');
+                errorList.innerHTML = result.errors.map(error => 
+                    `<div class="text-danger mb-1">Row ${error.row}: ${error.message}</div>`
+                ).join('');
+                document.getElementById('errorDetails').style.display = 'block';
+            } else {
+                document.getElementById('errorDetails').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

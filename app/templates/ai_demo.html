@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}ChatterFix AI Features Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if demo_mode %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> <strong>AI Demo:</strong> Experiencing intelligent maintenance management
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h2 mb-4">
+                <i class="fas fa-brain text-primary"></i> AI-Powered Maintenance Intelligence
+            </h1>
+            <p class="lead text-muted">Experience how artificial intelligence transforms maintenance management</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Predictive Maintenance -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Predictive Maintenance
+                        {% if ai_features.predictive_maintenance %}
+                        <span class="badge bg-success float-end">ACTIVE</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>AI algorithms analyze sensor data to predict equipment failures before they occur.</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>AI Alert:</strong> Pump Station A shows early wear indicators
+                        <small class="d-block mt-1">Confidence: 87% | Predicted failure: 5-7 days</small>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-primary">94%</h4>
+                            <small>Accuracy Rate</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">35%</h4>
+                            <small>Downtime Reduction</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-info">$127k</h4>
+                            <small>Annual Savings</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Computer Vision -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye"></i> Computer Vision Analysis
+                        {% if ai_features.computer_vision %}
+                        <span class="badge bg-success float-end">ACTIVE</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Visual inspection powered by AI to detect anomalies and defects automatically.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-camera"></i>
+                        <strong>Vision Analysis:</strong> Conveyor Belt inspection completed
+                        <small class="d-block mt-1">Belt tension: Normal | Surface wear: Minimal | Alignment: Good</small>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h4 class="text-primary">1,247</h4>
+                            <small>Images Analyzed</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-warning">23</h4>
+                            <small>Issues Detected</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="text-success">98%</h4>
+                            <small>Detection Rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Scheduling -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt"></i> Smart Scheduling
+                        {% if ai_features.automated_scheduling %}
+                        <span class="badge bg-success float-end">ACTIVE</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>AI optimizes maintenance schedules based on equipment condition, workload, and resource availability.</p>
+                    
+                    <div class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Pump Maintenance</strong>
+                                <small class="text-muted d-block">Auto-scheduled based on vibration analysis</small>
+                            </div>
+                            <span class="badge bg-primary">Tomorrow</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>HVAC Filter Change</strong>
+                                <small class="text-muted d-block">Scheduled based on air quality data</small>
+                            </div>
+                            <span class="badge bg-info">Next Week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Alerts -->
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell"></i> Intelligent Alerts
+                        {% if ai_features.smart_alerts %}
+                        <span class="badge bg-light text-dark float-end">ACTIVE</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Context-aware notifications that prioritize critical issues and reduce alert fatigue.</p>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <span class="timeline-point bg-danger"></span>
+                            <div class="timeline-content">
+                                <strong>Critical Alert</strong> - Hydraulic pressure drop detected
+                                <small class="text-muted d-block">5 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="timeline-point bg-warning"></span>
+                            <div class="timeline-content">
+                                <strong>Warning</strong> - Temperature rising in Motor Unit C
+                                <small class="text-muted d-block">15 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <span class="timeline-point bg-info"></span>
+                            <div class="timeline-content">
+                                <strong>Info</strong> - Maintenance window scheduled for tonight
+                                <small class="text-muted d-block">1 hour ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Insights Dashboard -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Real-Time AI Insights
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-primary">24</h3>
+                                    <p class="mb-0">Active Predictions</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-success">156</h3>
+                                    <p class="mb-0">Issues Prevented</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-info">89%</h3>
+                                    <p class="mb-0">Efficiency Gain</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h3 class="text-warning">$2.3M</h3>
+                                    <p class="mb-0">Cost Savings</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <h3>Experience the Full Platform</h3>
+            <a href="/demo/dashboard" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-tachometer-alt"></i> Full Dashboard
+            </a>
+            <a href="/demo/features" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-star"></i> More Features
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-point {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -31px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+</style>
+{% endblock %}

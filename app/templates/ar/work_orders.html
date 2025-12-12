@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AR Work Orders</title>
+    <link rel="stylesheet" href="/static/css/ar.css">
+</head>
+
+<body>
+    <div class="hud-container">
+        <div class="main-view">
+            <div class="status-bar">MODE: WORK ORDERS</div>
+            <h2>ACTIVE ASSIGNMENTS</h2>
+            <div style="overflow-y: auto; height: 80vh;">
+                {% for wo in work_orders %}
+                <div class="card" onclick="window.location.href='/ar/work-order/{{ wo.id }}'">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>#{{ wo.id }} {{ wo.title }}</strong>
+                        <span>{{ wo.status }}</span>
+                    </div>
+                    <div style="font-size: 0.8em; margin-top: 5px;">{{ wo.priority }} Priority</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="sidebar">
+            <h3>COMMANDS</h3>
+            <div style="font-size: 0.8em;">
+                > "Select [Number]"<br>
+                > "Read Details"<br>
+                > "Home"
+            </div>
+            <div class="voice-indicator">
+                <div id="voice-status">LISTENING...</div>
+                <div style="font-size: 0.7em;">LAST: <span id="last-command">NONE</span></div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/ar.js"></script>
+</body>
+
+</html>

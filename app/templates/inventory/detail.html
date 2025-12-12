@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}{{ part.name }} - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="header-section">
+        <h1>{{ part.name }}</h1>
+        <div class="actions">
+            <a href="/inventory" class="btn btn-secondary">Back</a>
+            <button class="btn btn-primary">Edit</button>
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <div class="glass-panel">
+            <div class="detail-header">
+                {% if part.image_url %}
+                <img src="{{ part.image_url }}" alt="{{ part.name }}" class="detail-image">
+                {% else %}
+                <div class="no-image">No Image</div>
+                {% endif %}
+                <div class="detail-info">
+                    <h2>{{ part.part_number }}</h2>
+                    <span class="badge">{{ part.category }}</span>
+                    <p class="description">{{ part.description }}</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Stock Level</h3>
+                    <div class="value">{{ part.current_stock }}</div>
+                    <div class="sub">Min: {{ part.minimum_stock }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Location</h3>
+                    <div class="value">{{ part.location }}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Unit Cost</h3>
+                    <div class="value">${{ "%.2f"|format(part.unit_cost) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <h3>Vendor Information</h3>
+            {% if part.vendor_name %}
+            <div class="info-list">
+                <div class="info-item">
+                    <label>Name:</label>
+                    <span>{{ part.vendor_name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Contact:</label>
+                    <span>{{ part.vendor_email }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Phone:</label>
+                    <span>{{ part.vendor_phone }}</span>
+                </div>
+            </div>
+            {% else %}
+            <p>No vendor assigned.</p>
+            {% endif %}
+
+            <div class="ai-actions"
+                style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <h4><i class="fas fa-robot"></i> AI Assistant</h4>
+                <button class="btn btn-sm btn-outline-primary">Find Alternate Vendors</button>
+                <button class="btn btn-sm btn-outline-primary">Price History Analysis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Media Gallery Section -->
+<div class="glass-panel" style="margin-top: 20px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Media & Attachments</h3>
+        <button class="btn btn-sm btn-primary" onclick="document.getElementById('uploadModal').style.display='block'">
+            <i class="fas fa-upload me-1"></i> Upload
+        </button>
+    </div>
+
+    {% if media %}
+    <div class="media-grid">
+        {% for item in media %}
+        <div class="media-card">
+            {% if item.file_type == 'image' %}
+            <img src="{{ item.file_path }}" alt="{{ item.title }}" class="media-img">
+            {% else %}
+            <div class="media-icon">
+                <i class="fas fa-file fa-3x"></i>
+            </div>
+            {% endif %}
+            <div class="media-info">
+                <div class="media-title">{{ item.title or 'Untitled' }}</div>
+                <div class="media-date">{{ item.uploaded_date }}</div>
+                <a href="{{ item.file_path }}" target="_blank" class="btn btn-xs btn-link">View</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted text-center">No media attached yet.</p>
+    {% endif %}
+</div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Upload Media</h3>
+            <span class="close" onclick="document.getElementById('uploadModal').style.display='none'">&times;</span>
+        </div>
+        <form action="/inventory/{{ part.id }}/media" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>File</label>
+                <input type="file" name="file" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <select name="file_type" class="form-control">
+                    <option value="image">Image</option>
+                    <option value="document">Document</option>
+                    <option value="manual">Manual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" name="title" placeholder="e.g., Datasheet" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('uploadModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* ... existing styles ... */
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .media-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .media-img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .media-icon {
+        height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        color: #aaa;
+    }
+
+    .media-info {
+        padding: 10px;
+    }
+
+    .media-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .media-date {
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+
+    /* Simple Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        padding: 20px;
+        width: 50%;
+        max-width: 500px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #444;
+        background: rgba(0, 0, 0, 0.2);
+        color: white;
+    }
+</style>
+{% endblock %}

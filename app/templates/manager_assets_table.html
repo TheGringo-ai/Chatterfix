@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block title %}Assets Table - Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="cmms-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>🏭 Assets Management</h1>
+            <p>Editable table view with bulk operations</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn-secondary" onclick="window.location.href='/manager/'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <button class="cmms-btn-secondary" onclick="toggleBulkMode()">
+                <i class="fas fa-check-square"></i> Bulk Edit
+            </button>
+            <button class="cmms-btn" onclick="window.location.href='/assets'">
+                <i class="fas fa-plus"></i> Add Asset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div id="bulkActionsBar" class="bulk-actions-bar" style="display: none; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #dee2e6;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span id="selectedCount">0</span> assets selected
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="cmms-btn-secondary" onclick="bulkUpdateStatus('Active')">
+                <i class="fas fa-play"></i> Set Active
+            </button>
+            <button class="cmms-btn-secondary" onclick="bulkUpdateCriticality('Critical')">
+                <i class="fas fa-exclamation"></i> Set Critical
+            </button>
+            <button class="cmms-btn-secondary" onclick="bulkUpdateLocation()">
+                <i class="fas fa-map-marker"></i> Update Location
+            </button>
+            <button class="cmms-btn-secondary" style="background: #dc3545;" onclick="bulkDelete()">
+                <i class="fas fa-trash"></i> Delete Selected
+            </button>
+            <button class="cmms-btn-secondary" onclick="toggleBulkMode()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Editable Table -->
+<div class="cmms-card">
+    <div style="overflow-x: auto;">
+        <table class="editable-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa;">
+                    <th class="bulk-select" style="display: none; padding: 12px; border: 1px solid #dee2e6;">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">ID</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Name</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Asset Tag</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Location</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Status</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Criticality</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Manufacturer</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Model</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Last Service</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Next Service</th>
+                    <th style="padding: 12px; border: 1px solid #dee2e6; font-weight: 600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets %}
+                <tr data-id="{{ asset.id }}" class="editable-row">
+                    <td class="bulk-select" style="display: none; padding: 12px; border: 1px solid #dee2e6;">
+                        <input type="checkbox" class="row-select" value="{{ asset.id }}" onchange="updateSelectedCount()">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6; font-family: monospace;">{{ asset.id }}</td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.name }}</span>
+                        <input type="text" class="edit-value" value="{{ asset.name }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.asset_tag or 'No Tag' }}</span>
+                        <input type="text" class="edit-value" value="{{ asset.asset_tag or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.location or 'No Location' }}</span>
+                        <input type="text" class="edit-value" value="{{ asset.location or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">
+                            <span class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Needs Attention' %}badge-maintenance{% else %}badge-down{% endif %}">
+                                {{ asset.status }}
+                            </span>
+                        </span>
+                        <select class="edit-value" style="display: none; width: 100%; padding: 4px;">
+                            <option value="Active" {% if asset.status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Needs Attention" {% if asset.status == 'Needs Attention' %}selected{% endif %}>Needs Attention</option>
+                            <option value="Down" {% if asset.status == 'Down' %}selected{% endif %}>Down</option>
+                            <option value="Retired" {% if asset.status == 'Retired' %}selected{% endif %}>Retired</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">
+                            <span class="cmms-badge {% if asset.criticality == 'Critical' %}badge-critical{% elif asset.criticality == 'High' %}badge-down{% elif asset.criticality == 'Medium' %}badge-maintenance{% else %}badge-operational{% endif %}">
+                                {{ asset.criticality }}
+                            </span>
+                        </span>
+                        <select class="edit-value" style="display: none; width: 100%; padding: 4px;">
+                            <option value="Low" {% if asset.criticality == 'Low' %}selected{% endif %}>Low</option>
+                            <option value="Medium" {% if asset.criticality == 'Medium' %}selected{% endif %}>Medium</option>
+                            <option value="High" {% if asset.criticality == 'High' %}selected{% endif %}>High</option>
+                            <option value="Critical" {% if asset.criticality == 'Critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.manufacturer or 'Unknown' }}</span>
+                        <input type="text" class="edit-value" value="{{ asset.manufacturer or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.model or 'Unknown' }}</span>
+                        <input type="text" class="edit-value" value="{{ asset.model or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.last_service_date or 'Never' }}</span>
+                        <input type="date" class="edit-value" value="{{ asset.last_service_date or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6;">
+                        <span class="display-value">{{ asset.next_service_date or 'Not Scheduled' }}</span>
+                        <input type="date" class="edit-value" value="{{ asset.next_service_date or '' }}" style="display: none; width: 100%; padding: 4px;">
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #dee2e6; white-space: nowrap;">
+                        <button class="edit-row-btn cmms-btn-sm" onclick="editRow('{{ asset.id }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="save-row-btn cmms-btn-sm" onclick="saveRow('{{ asset.id }}')" style="display: none;">
+                            <i class="fas fa-save"></i>
+                        </button>
+                        <button class="cancel-row-btn cmms-btn-sm" onclick="cancelEdit('{{ asset.id }}')" style="display: none; background: #6c757d;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button class="cmms-btn-sm" onclick="window.location.href='/assets/{{ asset.id }}'" style="background: #17a2b8;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Bulk Location Update Modal -->
+<div id="bulkLocationModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
+    <div class="modal-content glass-panel" style="margin: 15% auto; width: 400px; padding: 30px;">
+        <h2><i class="fas fa-map-marker"></i> Bulk Update Location</h2>
+        <form id="bulkLocationForm">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem;">New Location</label>
+                <input type="text" id="bulkLocationInput" placeholder="Building A - Floor 3" style="width: 100%; padding: 0.8rem; border: 1px solid #dee2e6; border-radius: 8px;">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" onclick="document.getElementById('bulkLocationModal').style.display='none'" class="cmms-btn" style="background: #6c757d;">Cancel</button>
+                <button type="button" onclick="executeBulkLocationUpdate()" class="cmms-btn">Update Location</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let bulkModeActive = false;
+let selectedRows = new Set();
+
+function toggleBulkMode() {
+    bulkModeActive = !bulkModeActive;
+    const bulkColumns = document.querySelectorAll('.bulk-select');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    
+    bulkColumns.forEach(col => {
+        col.style.display = bulkModeActive ? 'table-cell' : 'none';
+    });
+    
+    bulkBar.style.display = bulkModeActive ? 'block' : 'none';
+    
+    if (!bulkModeActive) {
+        selectedRows.clear();
+        document.querySelectorAll('.row-select').forEach(cb => cb.checked = false);
+        document.getElementById('selectAll').checked = false;
+        updateSelectedCount();
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll').checked;
+    const checkboxes = document.querySelectorAll('.row-select');
+    
+    selectedRows.clear();
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        if (selectAll) {
+            selectedRows.add(cb.value);
+        }
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.row-select:checked');
+    selectedRows.clear();
+    
+    checkboxes.forEach(cb => {
+        selectedRows.add(cb.value);
+    });
+    
+    document.getElementById('selectedCount').textContent = selectedRows.size;
+    
+    const allCheckboxes = document.querySelectorAll('.row-select');
+    const selectAll = document.getElementById('selectAll');
+    selectAll.checked = selectedRows.size === allCheckboxes.length;
+    selectAll.indeterminate = selectedRows.size > 0 && selectedRows.size < allCheckboxes.length;
+}
+
+function editRow(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const displayValues = row.querySelectorAll('.display-value');
+    const editValues = row.querySelectorAll('.edit-value');
+    const editBtn = row.querySelector('.edit-row-btn');
+    const saveBtn = row.querySelector('.save-row-btn');
+    const cancelBtn = row.querySelector('.cancel-row-btn');
+    
+    displayValues.forEach(el => el.style.display = 'none');
+    editValues.forEach(el => el.style.display = 'block');
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+}
+
+function cancelEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const displayValues = row.querySelectorAll('.display-value');
+    const editValues = row.querySelectorAll('.edit-value');
+    const editBtn = row.querySelector('.edit-row-btn');
+    const saveBtn = row.querySelector('.save-row-btn');
+    const cancelBtn = row.querySelector('.cancel-row-btn');
+    
+    displayValues.forEach(el => el.style.display = 'block');
+    editValues.forEach(el => el.style.display = 'none');
+    editBtn.style.display = 'inline-block';
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+
+async function saveRow(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const editInputs = row.querySelectorAll('.edit-value');
+    
+    const fields = {};
+    const fieldMapping = ['name', 'asset_tag', 'location', 'status', 'criticality', 'manufacturer', 'model', 'last_service_date', 'next_service_date'];
+    
+    editInputs.forEach((input, index) => {
+        if (fieldMapping[index]) {
+            fields[fieldMapping[index]] = input.value;
+        }
+    });
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'assets');
+        formData.append('updates', JSON.stringify([{id: id, fields: fields}]));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const displayValues = row.querySelectorAll('.display-value');
+            displayValues.forEach((display, index) => {
+                const editValue = editInputs[index];
+                if (fieldMapping[index] === 'status' || fieldMapping[index] === 'criticality') {
+                    const badge = display.querySelector('.cmms-badge');
+                    if (badge) {
+                        badge.textContent = editValue.value;
+                        badge.className = 'cmms-badge';
+                        if (fieldMapping[index] === 'status') {
+                            if (editValue.value === 'Active') badge.className += ' badge-operational';
+                            else if (editValue.value === 'Needs Attention') badge.className += ' badge-maintenance';
+                            else badge.className += ' badge-down';
+                        } else {
+                            if (editValue.value === 'Critical') badge.className += ' badge-critical';
+                            else if (editValue.value === 'High') badge.className += ' badge-down';
+                            else if (editValue.value === 'Medium') badge.className += ' badge-maintenance';
+                            else badge.className += ' badge-operational';
+                        }
+                    }
+                } else {
+                    if (fieldMapping[index] === 'asset_tag' && !editValue.value) {
+                        display.textContent = 'No Tag';
+                    } else if (fieldMapping[index] === 'location' && !editValue.value) {
+                        display.textContent = 'No Location';
+                    } else if ((fieldMapping[index] === 'manufacturer' || fieldMapping[index] === 'model') && !editValue.value) {
+                        display.textContent = 'Unknown';
+                    } else if (fieldMapping[index] === 'last_service_date' && !editValue.value) {
+                        display.textContent = 'Never';
+                    } else if (fieldMapping[index] === 'next_service_date' && !editValue.value) {
+                        display.textContent = 'Not Scheduled';
+                    } else {
+                        display.textContent = editValue.value;
+                    }
+                }
+            });
+            
+            cancelEdit(id);
+            showToast('Asset updated successfully', 'success');
+        } else {
+            throw new Error(result.error || 'Update failed');
+        }
+    } catch (error) {
+        console.error('Save error:', error);
+        showToast('Failed to update asset: ' + error.message, 'error');
+    }
+}
+
+async function bulkUpdateStatus(status) {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { status: status }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'assets');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Updated ${result.success_count} assets`, 'success');
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk update failed');
+        }
+    } catch (error) {
+        console.error('Bulk update error:', error);
+        showToast('Failed to update assets: ' + error.message, 'error');
+    }
+}
+
+async function bulkUpdateCriticality(criticality) {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { criticality: criticality }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'assets');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Updated ${result.success_count} assets`, 'success');
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk update failed');
+        }
+    } catch (error) {
+        console.error('Bulk update error:', error);
+        showToast('Failed to update criticality: ' + error.message, 'error');
+    }
+}
+
+function bulkUpdateLocation() {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    document.getElementById('bulkLocationModal').style.display = 'block';
+}
+
+async function executeBulkLocationUpdate() {
+    const location = document.getElementById('bulkLocationInput').value.trim();
+    
+    if (!location) {
+        showToast('Please enter a location', 'warning');
+        return;
+    }
+    
+    const updates = Array.from(selectedRows).map(id => ({
+        id: id,
+        fields: { location: location }
+    }));
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'assets');
+        formData.append('updates', JSON.stringify(updates));
+        
+        const response = await fetch('/manager/api/bulk-update', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Updated location for ${result.success_count} assets`, 'success');
+            document.getElementById('bulkLocationModal').style.display = 'none';
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk location update failed');
+        }
+    } catch (error) {
+        console.error('Bulk location update error:', error);
+        showToast('Failed to update locations: ' + error.message, 'error');
+    }
+}
+
+async function bulkDelete() {
+    if (selectedRows.size === 0) {
+        showToast('No rows selected', 'warning');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedRows.size} assets? This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData();
+        formData.append('entity_type', 'assets');
+        formData.append('ids', JSON.stringify(Array.from(selectedRows)));
+        
+        const response = await fetch('/manager/api/bulk-delete', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Deleted ${result.success_count} assets`, 'success');
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Bulk delete failed');
+        }
+    } catch (error) {
+        console.error('Bulk delete error:', error);
+        showToast('Failed to delete assets: ' + error.message, 'error');
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    if (type === 'success') {
+        toast.style.background = '#28a745';
+    } else if (type === 'error') {
+        toast.style.background = '#dc3545';
+    } else if (type === 'warning') {
+        toast.style.background = '#ffc107';
+        toast.style.color = '#212529';
+    }
+    
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

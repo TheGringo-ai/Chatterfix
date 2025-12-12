@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="header-section">
+        <h1>Inventory Management</h1>
+        <div class="actions">
+            <a href="/inventory/add" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Part
+            </a>
+            <a href="/vendors" class="btn btn-secondary">
+                <i class="fas fa-building"></i> Vendors
+            </a>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Part #</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Stock</th>
+                        <th>Location</th>
+                        <th>Vendor</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for part in parts %}
+                    <tr>
+                        <td>{{ part.part_number }}</td>
+                        <td>
+                            <div class="part-info">
+                                {% if part.image_url %}
+                                <img src="{{ part.image_url }}" alt="{{ part.name }}" class="part-thumb">
+                                {% endif %}
+                                <a href="/inventory/{{ part.id }}">{{ part.name }}</a>
+                            </div>
+                        </td>
+                        <td><span class="badge">{{ part.category }}</span></td>
+                        <td>
+                            <span
+                                class="stock-level {% if part.current_stock <= part.minimum_stock %}low-stock{% endif %}">
+                                {{ part.current_stock }}
+                            </span>
+                        </td>
+                        <td>{{ part.location }}</td>
+                        <td>{{ part.vendor_name or '-' }}</td>
+                        <td>
+                            <a href="/inventory/{{ part.id }}" class="btn btn-sm btn-info">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .part-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .part-thumb {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .stock-level {
+        font-weight: bold;
+    }
+
+    .stock-level.low-stock {
+        color: #ff4444;
+    }
+</style>
+{% endblock %}

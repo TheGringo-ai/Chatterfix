@@ -1,0 +1,785 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.title }} - Technician Training & SOPs{% endblock %}
+
+{% block content %}
+<!-- Module Header -->
+<div class="module-header-section">
+    <div class="module-breadcrumb">
+        <a href="/onboarding/role/{{ role }}">{{ role_config.title }}</a>
+        <span><i class="fas fa-chevron-right"></i></span>
+        <span>{{ module.title }}</span>
+    </div>
+    
+    <div class="module-title-section">
+        <h1>{{ module.title }}</h1>
+        <div class="module-meta-info">
+            <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <span>{{ module.duration_minutes }} minutes</span>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-tag"></i>
+                <span>{{ module.type | title }}</span>
+            </div>
+            {% if module.required %}
+            <div class="meta-item required">
+                <i class="fas fa-star"></i>
+                <span>Required</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="module-progress-tracker">
+        <div class="progress-circle-small">
+            <div class="progress-text-small" id="moduleProgress">0%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Module Navigation -->
+<div class="module-nav">
+    <button id="prevBtn" class="nav-btn" onclick="previousSection()" disabled>
+        <i class="fas fa-chevron-left"></i> Previous
+    </button>
+    <div class="section-indicators" id="sectionIndicators">
+        <!-- Populated by JavaScript -->
+    </div>
+    <button id="nextBtn" class="nav-btn" onclick="nextSection()">
+        Next <i class="fas fa-chevron-right"></i>
+    </button>
+</div>
+
+<!-- Main Content Area -->
+<div id="moduleContent" class="module-content-area">
+    <!-- Content sections will be loaded here -->
+</div>
+
+<!-- Module Sidebar -->
+<div class="module-sidebar">
+    <div class="sidebar-section">
+        <h3>📋 Learning Objectives</h3>
+        <div id="learningObjectives">
+            <ul>
+                <li>Understand the fundamentals of {{ module.title }}</li>
+                <li>Apply best practices in real-world scenarios</li>
+                <li>Complete hands-on exercises successfully</li>
+                <li>Pass the knowledge assessment</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="sidebar-section">
+        <h3>📚 Quick Resources</h3>
+        <div class="quick-resources">
+            <a href="/training" class="resource-link">
+                <i class="fas fa-book"></i> Training Library
+            </a>
+            <a href="/demo" class="resource-link">
+                <i class="fas fa-play"></i> Live Demo
+            </a>
+            <a href="javascript:void(0)" onclick="showHelp()" class="resource-link">
+                <i class="fas fa-question-circle"></i> Get Help
+            </a>
+        </div>
+    </div>
+    
+    <div class="sidebar-section">
+        <h3>⏱️ Time Tracker</h3>
+        <div class="time-tracker">
+            <div>Elapsed: <span id="timeElapsed">00:00</span></div>
+            <div>Remaining: <span id="timeRemaining">{{ module.duration_minutes }}:00</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Completion Modal -->
+<div id="completionModal" class="modal" style="display: none;">
+    <div class="modal-content completion-modal">
+        <div class="completion-header">
+            <div class="completion-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h2>Module Complete!</h2>
+            <p>Congratulations on completing {{ module.title }}</p>
+        </div>
+        
+        <div class="completion-stats" id="completionStats">
+            <!-- Populated by JavaScript -->
+        </div>
+        
+        <div class="completion-assessment">
+            <h3>Quick Assessment</h3>
+            <p>Rate your confidence level with this module's content:</p>
+            <div class="confidence-rating">
+                <label><input type="radio" name="confidence" value="1"> 1 - Need more practice</label>
+                <label><input type="radio" name="confidence" value="2"> 2 - Somewhat confident</label>
+                <label><input type="radio" name="confidence" value="3"> 3 - Confident</label>
+                <label><input type="radio" name="confidence" value="4"> 4 - Very confident</label>
+                <label><input type="radio" name="confidence" value="5"> 5 - Expert level</label>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label for="moduleFeedback">Additional feedback (optional):</label>
+                <textarea id="moduleFeedback" placeholder="Share your thoughts about this module..."></textarea>
+            </div>
+        </div>
+        
+        <div class="completion-actions">
+            <button class="cmms-btn-secondary" onclick="repeatModule()">
+                <i class="fas fa-redo"></i> Review Again
+            </button>
+            <button class="cmms-btn" onclick="completeModule()">
+                <i class="fas fa-check"></i> Mark Complete
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.module-header-section {
+    background: linear-gradient(135deg, rgba(103, 126, 234, 0.1), rgba(67, 97, 238, 0.1));
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.module-breadcrumb {
+    color: #95a5a6;
+    margin-bottom: 10px;
+}
+
+.module-breadcrumb a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.module-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.module-title-section h1 {
+    color: #ecf0f1;
+    margin: 0;
+    font-size: 2rem;
+}
+
+.module-meta-info {
+    display: flex;
+    gap: 2rem;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #bdc3c7;
+}
+
+.meta-item.required {
+    color: #e74c3c;
+}
+
+.progress-circle-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: conic-gradient(#667eea 0deg, #667eea 0deg, rgba(255,255,255,0.1) 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progress-circle-small::after {
+    content: '';
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    position: absolute;
+}
+
+.progress-text-small {
+    z-index: 1;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.module-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: #5a67d8;
+    transform: translateY(-2px);
+}
+
+.nav-btn:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.section-indicators {
+    display: flex;
+    gap: 10px;
+}
+
+.section-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.section-indicator.active {
+    background: #667eea;
+    transform: scale(1.2);
+}
+
+.section-indicator.completed {
+    background: #27ae60;
+}
+
+.module-content-area {
+    min-height: 500px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.content-section {
+    display: none;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.content-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.module-sidebar {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.sidebar-section {
+    margin-bottom: 2rem;
+}
+
+.sidebar-section h3 {
+    color: #667eea;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.quick-resources {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.resource-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #bdc3c7;
+    text-decoration: none;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.resource-link:hover {
+    background: rgba(103, 126, 234, 0.2);
+    color: #667eea;
+}
+
+.time-tracker div {
+    color: #bdc3c7;
+    margin-bottom: 5px;
+}
+
+.completion-modal {
+    max-width: 600px;
+    text-align: center;
+}
+
+.completion-header {
+    margin-bottom: 2rem;
+}
+
+.completion-icon {
+    font-size: 4rem;
+    color: #f39c12;
+    margin-bottom: 1rem;
+}
+
+.completion-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+
+.completion-stat {
+    text-align: center;
+}
+
+.completion-stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.completion-stat-label {
+    color: #95a5a6;
+    font-size: 0.9rem;
+}
+
+.confidence-rating {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+    text-align: left;
+}
+
+.confidence-rating label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #bdc3c7;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.confidence-rating label:hover {
+    background: rgba(103, 126, 234, 0.1);
+}
+
+.completion-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .module-sidebar {
+        position: static;
+        width: 100%;
+        transform: none;
+        margin-top: 2rem;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .module-header-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .module-nav {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .completion-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Module data
+const moduleData = {{ module | tojson }};
+const roleData = {{ role_config | tojson }};
+
+// Module state
+let currentSection = 0;
+let startTime = Date.now();
+let completedSections = new Set();
+let moduleScore = 0;
+
+// Content sections (in real implementation, these would come from the backend)
+const contentSections = [
+    {
+        title: "Introduction",
+        type: "overview",
+        content: `
+            <h2>Welcome to ${moduleData.title}</h2>
+            <p>In this module, you'll learn essential skills and best practices for your role as a ${moduleData.title.toLowerCase()}.</p>
+            <div class="learning-objectives">
+                <h3>By the end of this module, you will be able to:</h3>
+                <ul>
+                    <li>Apply key concepts in real-world scenarios</li>
+                    <li>Use ChatterFix CMMS effectively for your daily tasks</li>
+                    <li>Follow best practices and safety protocols</li>
+                    <li>Troubleshoot common issues independently</li>
+                </ul>
+            </div>
+            <div class="intro-video">
+                <div style="background: rgba(103, 126, 234, 0.1); padding: 2rem; border-radius: 10px; text-align: center;">
+                    <i class="fas fa-play-circle" style="font-size: 3rem; color: #667eea; margin-bottom: 1rem;"></i>
+                    <p>Interactive content and simulations will appear here</p>
+                </div>
+            </div>
+        `
+    },
+    {
+        title: "Interactive Learning",
+        type: "interactive",
+        content: `
+            <h2>Hands-On Learning</h2>
+            <p>Let's dive into practical exercises and interactive scenarios.</p>
+            <div class="interactive-content">
+                <div class="simulation-container">
+                    <h3>🎮 Interactive Simulation</h3>
+                    <div class="simulation-area" style="background: rgba(0,0,0,0.3); padding: 2rem; border-radius: 10px; text-align: center; margin: 2rem 0;">
+                        <p>Interactive simulation would run here</p>
+                        <button class="cmms-btn" onclick="startSimulation()">
+                            <i class="fas fa-play"></i> Start Simulation
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="practice-exercises">
+                    <h3>📝 Practice Exercises</h3>
+                    <div class="exercise-list">
+                        <div class="exercise-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Complete a sample work order</span>
+                            <button class="exercise-btn" onclick="completeExercise(1)">Try It</button>
+                        </div>
+                        <div class="exercise-item">
+                            <i class="fas fa-circle"></i>
+                            <span>Scan asset barcode and retrieve information</span>
+                            <button class="exercise-btn" onclick="completeExercise(2)">Try It</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    },
+    {
+        title: "Knowledge Check",
+        type: "assessment",
+        content: `
+            <h2>Knowledge Assessment</h2>
+            <p>Test your understanding with these questions.</p>
+            <div class="quiz-container" id="quizContainer">
+                <!-- Quiz questions will be populated here -->
+            </div>
+        `
+    }
+];
+
+// Initialize module
+document.addEventListener('DOMContentLoaded', function() {
+    initializeModule();
+    updateTimer();
+    setInterval(updateTimer, 1000);
+});
+
+function initializeModule() {
+    createSectionIndicators();
+    loadSection(0);
+    updateProgress();
+}
+
+function createSectionIndicators() {
+    const container = document.getElementById('sectionIndicators');
+    contentSections.forEach((section, index) => {
+        const indicator = document.createElement('div');
+        indicator.className = 'section-indicator';
+        indicator.title = section.title;
+        indicator.onclick = () => goToSection(index);
+        container.appendChild(indicator);
+    });
+    updateIndicators();
+}
+
+function loadSection(index) {
+    const container = document.getElementById('moduleContent');
+    container.innerHTML = contentSections[index].content;
+    
+    // Add special handling for assessment sections
+    if (contentSections[index].type === 'assessment') {
+        loadQuiz();
+    }
+    
+    currentSection = index;
+    updateIndicators();
+    updateNavigation();
+    
+    // Mark section as started
+    completedSections.add(index);
+    updateProgress();
+}
+
+function loadQuiz() {
+    const quizContainer = document.getElementById('quizContainer');
+    const questions = [
+        {
+            question: "What is the primary benefit of using a CMMS system?",
+            options: ["Cost reduction", "Improved organization", "Better reporting", "All of the above"],
+            correct: 3
+        },
+        {
+            question: "When should you create a work order?",
+            options: ["Only for emergencies", "For all maintenance tasks", "Only for scheduled maintenance", "When equipment fails"],
+            correct: 1
+        }
+    ];
+    
+    let quizHTML = '<div class="quiz-questions">';
+    questions.forEach((q, index) => {
+        quizHTML += `
+            <div class="quiz-question">
+                <h4>Question ${index + 1}: ${q.question}</h4>
+                <div class="quiz-options">
+                    ${q.options.map((option, i) => `
+                        <label class="quiz-option">
+                            <input type="radio" name="q${index}" value="${i}">
+                            <span>${option}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    quizHTML += '</div>';
+    quizHTML += '<button class="cmms-btn" onclick="submitQuiz()" style="margin-top: 20px;">Submit Quiz</button>';
+    
+    quizContainer.innerHTML = quizHTML;
+}
+
+function submitQuiz() {
+    // Calculate score (simplified)
+    moduleScore = 85; // Simulated score
+    alert(`Quiz completed! Score: ${moduleScore}%`);
+    completeSection();
+}
+
+function updateIndicators() {
+    const indicators = document.querySelectorAll('.section-indicator');
+    indicators.forEach((indicator, index) => {
+        indicator.classList.remove('active', 'completed');
+        if (index === currentSection) {
+            indicator.classList.add('active');
+        } else if (completedSections.has(index)) {
+            indicator.classList.add('completed');
+        }
+    });
+}
+
+function updateNavigation() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    prevBtn.disabled = currentSection === 0;
+    
+    if (currentSection === contentSections.length - 1) {
+        nextBtn.textContent = 'Complete Module';
+        nextBtn.onclick = showCompletionModal;
+    } else {
+        nextBtn.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
+        nextBtn.onclick = nextSection;
+    }
+}
+
+function updateProgress() {
+    const progress = Math.round((completedSections.size / contentSections.length) * 100);
+    const progressElement = document.getElementById('moduleProgress');
+    const progressCircle = document.querySelector('.progress-circle-small');
+    
+    progressElement.textContent = progress + '%';
+    progressCircle.style.background = `conic-gradient(#667eea 0deg, #667eea ${progress * 3.6}deg, rgba(255,255,255,0.1) ${progress * 3.6}deg)`;
+}
+
+function previousSection() {
+    if (currentSection > 0) {
+        loadSection(currentSection - 1);
+    }
+}
+
+function nextSection() {
+    completeSection();
+    if (currentSection < contentSections.length - 1) {
+        loadSection(currentSection + 1);
+    }
+}
+
+function goToSection(index) {
+    loadSection(index);
+}
+
+function completeSection() {
+    completedSections.add(currentSection);
+    updateProgress();
+}
+
+function updateTimer() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    
+    document.getElementById('timeElapsed').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    const remaining = Math.max(0, (moduleData.duration_minutes * 60) - elapsed);
+    const remMinutes = Math.floor(remaining / 60);
+    const remSeconds = remaining % 60;
+    
+    document.getElementById('timeRemaining').textContent = 
+        `${remMinutes.toString().padStart(2, '0')}:${remSeconds.toString().padStart(2, '0')}`;
+}
+
+function startSimulation() {
+    alert('Interactive simulation would start here!');
+    completeExercise(0);
+}
+
+function completeExercise(exerciseId) {
+    alert(`Exercise ${exerciseId} completed!`);
+    // Update exercise UI
+    const exercises = document.querySelectorAll('.exercise-item');
+    if (exercises[exerciseId - 1]) {
+        const icon = exercises[exerciseId - 1].querySelector('i');
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = '#27ae60';
+    }
+}
+
+function showCompletionModal() {
+    const timeSpent = Math.floor((Date.now() - startTime) / 60000); // minutes
+    
+    const statsHTML = `
+        <div class="completion-stat">
+            <div class="completion-stat-number">${timeSpent}</div>
+            <div class="completion-stat-label">Minutes Spent</div>
+        </div>
+        <div class="completion-stat">
+            <div class="completion-stat-number">${moduleScore}%</div>
+            <div class="completion-stat-label">Quiz Score</div>
+        </div>
+        <div class="completion-stat">
+            <div class="completion-stat-number">${completedSections.size}</div>
+            <div class="completion-stat-label">Sections Completed</div>
+        </div>
+    `;
+    
+    document.getElementById('completionStats').innerHTML = statsHTML;
+    document.getElementById('completionModal').style.display = 'block';
+}
+
+function repeatModule() {
+    document.getElementById('completionModal').style.display = 'none';
+    loadSection(0);
+    completedSections.clear();
+    updateProgress();
+}
+
+function completeModule() {
+    const confidence = document.querySelector('input[name="confidence"]:checked');
+    const feedback = document.getElementById('moduleFeedback').value;
+    const timeSpent = Math.floor((Date.now() - startTime) / 60000);
+    
+    const formData = new FormData();
+    formData.append('role', '{{ role }}');
+    formData.append('user_id', '{{ user_id }}');
+    formData.append('score', moduleScore);
+    formData.append('time_spent', timeSpent);
+    formData.append('feedback', feedback);
+    
+    fetch(`/onboarding/module/{{ module.id }}/complete`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.completion_message);
+            if (data.next_module) {
+                window.location.href = `/onboarding/module/${data.next_module}?role={{ role }}`;
+            } else {
+                window.location.href = `/onboarding/role/{{ role }}`;
+            }
+        } else {
+            alert('Error completing module: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error completing module');
+    });
+}
+
+function showHelp() {
+    alert('Help resources:\n- Contact support: help@chatterfix.com\n- Training documentation: /training\n- Live demo: /demo');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft' && !e.ctrlKey) {
+        previousSection();
+    } else if (e.key === 'ArrowRight' && !e.ctrlKey) {
+        nextSection();
+    }
+});
+</script>
+{% endblock %}

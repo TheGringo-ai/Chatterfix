@@ -1,0 +1,722 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Purchasing Dashboard - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    .purchasing-dashboard {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .tabs {
+        display: flex;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 2rem;
+    }
+
+    .tab {
+        padding: 12px 24px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .tab.active {
+        border-bottom-color: #667eea;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .tab:hover {
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .po-form, .parts-form {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .form-input {
+        padding: 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .upload-zone {
+        border: 3px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+    }
+
+    .upload-zone:hover {
+        border-color: #667eea;
+        background: #f3f4f6;
+    }
+
+    .upload-zone.dragover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .barcode-scanner {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 1rem 0;
+    }
+
+    .scan-result {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f0f9ff;
+        border-left: 4px solid #0ea5e9;
+        display: none;
+    }
+
+    .parts-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .part-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .part-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .part-info {
+        flex: 1;
+    }
+
+    .part-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .preview-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .preview-item img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+    }
+
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    .invoice-scanner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin: 2rem 0;
+    }
+
+    .extraction-result {
+        margin-top: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="purchasing-dashboard">
+    <div class="dashboard-header">
+        <h1>💰 Enhanced Purchasing Dashboard</h1>
+        <div class="action-buttons">
+            <button class="btn-primary" onclick="openCamera()">
+                📸 Take Photo
+            </button>
+            <button class="btn-success" onclick="openBarcodeScanner()">
+                📱 Scan Barcode
+            </button>
+            <button class="btn-warning" onclick="generateBarcode()">
+                🏷️ Generate Barcode
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('po-creation')">Purchase Orders</div>
+        <div class="tab" onclick="switchTab('parts-management')">Parts Management</div>
+        <div class="tab" onclick="switchTab('document-scanner')">Document Scanner</div>
+        <div class="tab" onclick="switchTab('barcode-tools')">Barcode Tools</div>
+    </div>
+
+    <!-- Purchase Order Creation -->
+    <div id="po-creation" class="tab-content active">
+        <div class="po-form">
+            <h3>Create Purchase Order</h3>
+            <form id="po-form" onsubmit="createPO(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>PO Number</label>
+                        <input type="text" name="po_number" class="form-input" placeholder="Auto-generated" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Vendor</label>
+                        <select name="vendor" class="form-input" required>
+                            <option value="">Select Vendor</option>
+                            <option value="acme-parts">ACME Parts Co.</option>
+                            <option value="industrial-supply">Industrial Supply Inc.</option>
+                            <option value="machinery-warehouse">Machinery Warehouse</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select name="priority" class="form-input">
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Delivery</label>
+                        <input type="date" name="delivery_date" class="form-input">
+                    </div>
+                </div>
+
+                <!-- Parts Selection -->
+                <div class="form-group">
+                    <label>Parts</label>
+                    <div id="selected-parts" class="parts-list">
+                        <!-- Selected parts will appear here -->
+                    </div>
+                    <button type="button" class="btn-primary" onclick="addPartToPO()">
+                        ➕ Add Part
+                    </button>
+                </div>
+
+                <!-- File Uploads -->
+                <div class="form-group">
+                    <label>Attachments</label>
+                    <div class="upload-zone" onclick="document.getElementById('po-files').click()">
+                        <div>📁 Drop files here or click to upload</div>
+                        <small>Support: Images, PDFs, Documents</small>
+                        <input type="file" id="po-files" multiple style="display: none" onchange="handleFileUpload(this, 'po')">
+                    </div>
+                    <div id="po-preview" class="preview-grid"></div>
+                </div>
+
+                <button type="submit" class="btn-success">Create Purchase Order</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Parts Management -->
+    <div id="parts-management" class="tab-content">
+        <div class="parts-form">
+            <h3>Add New Part</h3>
+            <form id="parts-form" onsubmit="addPart(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Part Number</label>
+                        <input type="text" name="part_number" class="form-input" required>
+                        <button type="button" class="btn-primary" onclick="scanPartBarcode()">📱 Scan Barcode</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Part Name</label>
+                        <input type="text" name="part_name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" class="form-input">
+                            <option value="mechanical">Mechanical</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="hydraulic">Hydraulic</option>
+                            <option value="pneumatic">Pneumatic</option>
+                            <option value="consumable">Consumable</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Cost</label>
+                        <input type="number" step="0.01" name="unit_cost" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Stock</label>
+                        <input type="number" name="min_stock" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Stock</label>
+                        <input type="number" name="current_stock" class="form-input">
+                    </div>
+                </div>
+
+                <!-- Part Photos -->
+                <div class="form-group">
+                    <label>Part Photos</label>
+                    <div class="upload-zone" onclick="document.getElementById('part-photos').click()">
+                        <div>📸 Add photos of the part</div>
+                        <input type="file" id="part-photos" accept="image/*,video/*" multiple style="display: none" onchange="handleFileUpload(this, 'parts')">
+                    </div>
+                    <div id="part-preview" class="preview-grid"></div>
+                </div>
+
+                <!-- Documentation -->
+                <div class="form-group">
+                    <label>Documentation & Manuals</label>
+                    <div class="upload-zone" onclick="document.getElementById('part-docs').click()">
+                        <div>📄 Upload manuals, spec sheets, directions</div>
+                        <input type="file" id="part-docs" accept=".pdf,.doc,.docx" multiple style="display: none" onchange="handleFileUpload(this, 'parts')">
+                    </div>
+                    <div id="docs-preview" class="preview-grid"></div>
+                </div>
+
+                <!-- Generate Barcode -->
+                <div class="form-group">
+                    <button type="button" class="btn-warning" onclick="generatePartBarcode()">
+                        🏷️ Generate Part Barcode
+                    </button>
+                    <div id="generated-barcode"></div>
+                </div>
+
+                <button type="submit" class="btn-success">Add Part</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Document Scanner -->
+    <div id="document-scanner" class="tab-content">
+        <div class="invoice-scanner">
+            <h3>📋 Document Scanner</h3>
+            <p>Scan invoices, packaging slips, and documentation to extract information automatically.</p>
+            
+            <div class="upload-zone" onclick="document.getElementById('document-scan').click()">
+                <div>📄 Upload invoice or document to scan</div>
+                <input type="file" id="document-scan" accept="image/*" style="display: none" onchange="scanDocument(this)">
+            </div>
+            
+            <div id="scan-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Scanning document...</p>
+            </div>
+            
+            <div id="extraction-results" class="extraction-result" style="display: none;">
+                <h4>Extracted Information:</h4>
+                <div id="extracted-data"></div>
+                <button class="btn-success" onclick="createFromScan()">Create PO from Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode Tools -->
+    <div id="barcode-tools" class="tab-content">
+        <div class="barcode-scanner">
+            <h3>📱 Barcode Tools</h3>
+            
+            <!-- Barcode Scanner -->
+            <div style="margin-bottom: 2rem;">
+                <h4>Scan Barcode</h4>
+                <div class="upload-zone" onclick="document.getElementById('barcode-scan').click()">
+                    <div>📷 Take photo of barcode to scan</div>
+                    <input type="file" id="barcode-scan" accept="image/*" style="display: none" onchange="scanBarcode(this)">
+                </div>
+                <div id="barcode-results" class="scan-result"></div>
+            </div>
+            
+            <!-- Barcode Generator -->
+            <div>
+                <h4>Generate Barcode</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Data to Encode</label>
+                        <input type="text" id="barcode-data" class="form-input" placeholder="Enter part number, asset ID, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label>Barcode Type</label>
+                        <select id="barcode-type" class="form-input">
+                            <option value="qr">QR Code</option>
+                            <option value="code128">Code 128</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="generateCustomBarcode()">Generate Barcode</button>
+                <div id="barcode-generated" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab switching
+function switchTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
+// File upload handling
+function handleFileUpload(input, category) {
+    const files = Array.from(input.files);
+    const previewContainer = document.getElementById(
+        category === 'po' ? 'po-preview' :
+        category === 'parts' ? 'part-preview' : 'docs-preview'
+    );
+    
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'preview-item';
+            
+            if (file.type.startsWith('image/')) {
+                preview.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                `;
+            } else {
+                preview.innerHTML = `
+                    <div style="padding: 1rem; background: #f3f4f6; text-align: center;">
+                        <div>📄</div>
+                        <small>${file.name}</small>
+                    </div>
+                    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                `;
+            }
+            
+            previewContainer.appendChild(preview);
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Upload files
+    uploadFiles(files, category);
+}
+
+// Upload files to server
+async function uploadFiles(files, category) {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    formData.append('category', category);
+    
+    try {
+        const response = await fetch('/media/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            console.log('Files uploaded:', result.files);
+        }
+    } catch (error) {
+        alert('Upload failed: ' + error.message);
+    }
+}
+
+// Barcode scanning
+async function scanBarcode(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/media/scan-barcode', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        const resultsDiv = document.getElementById('barcode-results');
+        
+        if (result.success && result.barcodes.length > 0) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <h4>Scanned Barcodes:</h4>
+                ${result.barcodes.map(barcode => `
+                    <div style="margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 4px;">
+                        <strong>Type:</strong> ${barcode.type}<br>
+                        <strong>Data:</strong> ${barcode.data}
+                        <button onclick="useBarcode('${barcode.data}')" style="margin-left: 1rem;">Use This</button>
+                    </div>
+                `).join('')}
+            `;
+        } else {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>No barcodes found in image</p>';
+        }
+    } catch (error) {
+        alert('Barcode scan failed: ' + error.message);
+    }
+}
+
+// Use scanned barcode data
+function useBarcode(data) {
+    // Try to determine if it's a part number, asset ID, etc.
+    const partNumberInput = document.querySelector('input[name="part_number"]');
+    if (partNumberInput) {
+        partNumberInput.value = data;
+    }
+}
+
+// Generate barcode
+async function generateCustomBarcode() {
+    const data = document.getElementById('barcode-data').value;
+    const type = document.getElementById('barcode-type').value;
+    
+    if (!data) {
+        alert('Please enter data to encode');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('data', data);
+    formData.append('barcode_type', type);
+    
+    try {
+        const response = await fetch('/media/generate-barcode', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('barcode-generated').innerHTML = `
+                <img src="${result.barcode.url}" alt="Generated barcode" style="max-width: 200px;">
+                <p>Barcode generated for: ${data}</p>
+            `;
+        }
+    } catch (error) {
+        alert('Barcode generation failed: ' + error.message);
+    }
+}
+
+// Document scanning
+async function scanDocument(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    document.getElementById('scan-loading').style.display = 'block';
+    document.getElementById('extraction-results').style.display = 'none';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('document_type', 'invoice');
+    
+    try {
+        const response = await fetch('/media/scan-document', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        document.getElementById('scan-loading').style.display = 'none';
+        
+        if (result.success) {
+            const extractedData = document.getElementById('extracted-data');
+            extractedData.innerHTML = `
+                <div><strong>Barcodes found:</strong> ${result.extraction_result.barcodes.length}</div>
+                <div><strong>Text extraction:</strong> ${result.extraction_result.text_extraction.note}</div>
+                <div style="margin-top: 1rem;">
+                    <strong>Detected barcodes:</strong>
+                    ${result.extraction_result.barcodes.map(b => `<div>• ${b.data} (${b.type})</div>`).join('')}
+                </div>
+            `;
+            document.getElementById('extraction-results').style.display = 'block';
+        }
+    } catch (error) {
+        document.getElementById('scan-loading').style.display = 'none';
+        alert('Document scan failed: ' + error.message);
+    }
+}
+
+// Create PO
+function createPO(event) {
+    event.preventDefault();
+    alert('Purchase Order creation functionality will be implemented with backend integration');
+}
+
+// Add part
+function addPart(event) {
+    event.preventDefault();
+    alert('Part addition functionality will be implemented with backend integration');
+}
+
+// Helper functions
+function openCamera() {
+    window.location.href = '/media/camera';
+}
+
+function openBarcodeScanner() {
+    document.getElementById('barcode-scan').click();
+}
+
+function generateBarcode() {
+    switchTab('barcode-tools');
+    document.getElementById('barcode-data').focus();
+}
+
+function scanPartBarcode() {
+    document.getElementById('barcode-scan').click();
+}
+
+function generatePartBarcode() {
+    const partNumber = document.querySelector('input[name="part_number"]').value;
+    if (partNumber) {
+        document.getElementById('barcode-data').value = partNumber;
+        generateCustomBarcode();
+    } else {
+        alert('Please enter a part number first');
+    }
+}
+
+// Auto-generate PO number
+document.addEventListener('DOMContentLoaded', function() {
+    const poNumber = 'PO-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6);
+    document.querySelector('input[name="po_number"]').value = poNumber;
+});
+</script>
+{% endblock %}

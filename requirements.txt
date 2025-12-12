@@ -36,6 +36,7 @@ grpcio>=1.60.0
 grpcio-tools>=1.60.0
 grpcio-status>=1.60.0
 protobuf>=4.25.0
+pyautogen>=0.2.0
 
 # Security & Auth
 bcrypt>=4.1.0

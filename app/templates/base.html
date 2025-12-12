@@ -126,6 +126,16 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
 
         /* Responsive Improvements */
         @media (max-width: 768px) {
@@ -264,33 +274,102 @@
         {% block content %}{% endblock %}
     </div>
 
-    <!-- AI Assistant Floating Widget -->
-    <button class="ai-fab" onclick="toggleAIChat()" title="Chat with AI Assistant">
-        <i class="fas fa-robot"></i>
-    </button>
+    <!-- 🚀 ENHANCED AI ASSISTANT WIDGET -->
+    <div class="ai-widget-container">
+        <!-- Enhanced AI FAB with Quick Actions -->
+        <button class="ai-fab" onclick="toggleAIWidget()" title="ChatterFix AI Assistant">
+            <i class="fas fa-robot"></i>
+        </button>
+        
+        <!-- AI Quick Actions Panel -->
+        <div class="ai-widget-expanded" id="aiQuickActions" style="display: none;">
+            <div class="ai-quick-actions">
+                <a href="/fix-it-fred/interface" class="ai-quick-action">
+                    <i class="fas fa-tools"></i>
+                    <span>Fix-it-Fred Assistant</span>
+                </a>
+                <a href="/demo/training" class="ai-quick-action">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>AI Training Center</span>
+                </a>
+                <div class="ai-quick-action" onclick="showAIInsights()">
+                    <i class="fas fa-chart-line"></i>
+                    <span>AI Insights Dashboard</span>
+                </div>
+                <div class="ai-quick-action" onclick="openVoiceAssistant()">
+                    <i class="fas fa-microphone"></i>
+                    <span>Voice Commands</span>
+                </div>
+            </div>
+            <button class="ai-chat-toggle" onclick="toggleAIChat()">
+                <i class="fas fa-comments me-2"></i>Open Full Chat
+            </button>
+        </div>
+    </div>
 
+    <!-- Enhanced AI Chat Window -->
     <div class="ai-chat-window" id="aiChatWindow" style="display: none;">
         <div class="ai-chat-header">
-            <div>
-                <i class="fas fa-robot me-2"></i> ChatterFix Assistant
-                <span class="badge bg-success ms-2" style="font-size: 0.6rem;">ONLINE</span>
+            <div class="ai-chat-title">
+                <i class="fas fa-robot me-2"></i>
+                <div>
+                    <div>ChatterFix AI Assistant</div>
+                    <small style="opacity: 0.9; font-size: 0.8rem;">Powered by AI Team</small>
+                </div>
             </div>
-            <button onclick="toggleAIChat()" class="btn btn-sm text-white"><i class="fas fa-times"></i></button>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success" style="font-size: 0.6rem; padding: 4px 8px; border-radius: 12px;">
+                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i> ONLINE
+                </span>
+                <button onclick="toggleAIChat()" class="btn btn-sm text-white" style="border: none; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
         <div class="ai-chat-messages" id="floatingChatMessages">
             <div class="message message-ai">
-                <strong>AI:</strong> Hello! I'm monitoring your maintenance operations. How can I assist you today?
+                <div>
+                    <strong>🚀 Welcome to ChatterFix AI!</strong><br>
+                    I'm your intelligent maintenance assistant, powered by our AI Team. I can help you with:
+                    <ul style="margin-top: 10px; margin-bottom: 0;">
+                        <li>Work order analysis and optimization</li>
+                        <li>Predictive maintenance insights</li>
+                        <li>Equipment troubleshooting</li>
+                        <li>Training and documentation</li>
+                    </ul>
+                    <br>What would you like to explore today?
+                </div>
             </div>
         </div>
-        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none;">
-            AI is thinking...
+        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none; padding: 20px; text-align: center; color: var(--text-muted); font-style: italic;">
+            <i class="fas fa-circle" style="animation: pulse 1s infinite;"></i>
+            <i class="fas fa-circle" style="animation: pulse 1s infinite 0.2s;"></i>
+            <i class="fas fa-circle" style="animation: pulse 1s infinite 0.4s;"></i>
+            <span class="ms-2">AI is thinking...</span>
         </div>
         <div class="ai-chat-input-area">
             <div class="input-group">
-                <input type="text" id="floatingChatInput" class="form-control" placeholder="Ask anything..."
-                    onkeypress="handleFloatingChatInput(event)">
-                <button class="btn btn-primary" onclick="sendFloatingChatMessage()">
+                <input type="text" id="floatingChatInput" class="form-control" 
+                    placeholder="Ask me anything about maintenance, assets, or workflows..."
+                    onkeypress="handleFloatingChatInput(event)" 
+                    style="border-radius: 15px 0 0 15px; border: 1px solid var(--border-glass); background: var(--bg-glass);">
+                <button class="btn" onclick="sendFloatingChatMessage()" 
+                    style="background: var(--accent-gradient); color: white; border-radius: 0 15px 15px 0; border: none; padding: 12px 20px;">
                     <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="mt-2 d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm" onclick="sendQuickMessage('Show me critical work orders')" 
+                    style="background: var(--bg-glass); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 20px; font-size: 0.8rem;">
+                    Critical Work Orders
+                </button>
+                <button class="btn btn-sm" onclick="sendQuickMessage('Asset status overview')" 
+                    style="background: var(--bg-glass); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 20px; font-size: 0.8rem;">
+                    Asset Status
+                </button>
+                <button class="btn btn-sm" onclick="sendQuickMessage('Maintenance schedule today')" 
+                    style="background: var(--bg-glass); border: 1px solid var(--border-glass); color: var(--text-primary); border-radius: 20px; font-size: 0.8rem;">
+                    Today's Schedule
                 </button>
             </div>
         </div>
@@ -306,7 +385,7 @@
     <script src="{{ url_for('static', path='js/demo-system.js') }}?v=3"></script>
 
     <script>
-        // Check if we should show the demo bar
+        // 🚀 Enhanced Demo and AI Widget Initialization
         document.addEventListener('DOMContentLoaded', function() {
             // Check if user is in demo mode (URL path check or session)
             if (window.location.pathname.startsWith('/demo')) {
@@ -317,7 +396,66 @@
                     if(demoBar) demoBar.style.display = 'block';
                 }
             }
+            
+            // Initialize AI Widget tour for new users
+            setTimeout(() => {
+                const hasSeenAITour = localStorage.getItem('chatterfix_ai_tour_seen');
+                if (!hasSeenAITour) {
+                    showAIWidgetIntro();
+                    localStorage.setItem('chatterfix_ai_tour_seen', 'true');
+                }
+            }, 3000); // Show after 3 seconds
         });
+        
+        function showAIWidgetIntro() {
+            // Create a subtle tooltip pointing to the AI widget
+            const aiFab = document.querySelector('.ai-fab');
+            if (aiFab && window.innerWidth > 768) { // Only on desktop
+                const tooltip = document.createElement('div');
+                tooltip.style.cssText = `
+                    position: fixed;
+                    bottom: 140px;
+                    right: 20px;
+                    background: var(--bg-glass-heavy);
+                    color: var(--text-primary);
+                    padding: 15px 20px;
+                    border-radius: 15px;
+                    box-shadow: var(--shadow-glass);
+                    backdrop-filter: blur(20px);
+                    z-index: 10000;
+                    max-width: 280px;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    border: 1px solid var(--border-glass);
+                    animation: fadeIn 0.5s ease;
+                `;
+                tooltip.innerHTML = `
+                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--accent-color);">
+                        🚀 New! AI-Powered Assistant
+                    </div>
+                    <div>Click the AI button to access intelligent maintenance insights, troubleshooting, and more!</div>
+                    <button onclick="this.parentElement.remove()" style="
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: none;
+                        border: none;
+                        color: var(--text-muted);
+                        cursor: pointer;
+                        font-size: 1.1rem;
+                    ">&times;</button>
+                `;
+                document.body.appendChild(tooltip);
+                
+                // Auto-remove after 8 seconds
+                setTimeout(() => {
+                    if (tooltip.parentElement) {
+                        tooltip.style.animation = 'fadeOut 0.3s ease forwards';
+                        setTimeout(() => tooltip.remove(), 300);
+                    }
+                }, 8000);
+            }
+        }
         
         // Expose dismiss function globally for the clear button
         window.demoSystem.dismissDemoBar = function() {
@@ -326,15 +464,69 @@
     </script>
 
     <script>
-        // Toggle AI Chat Window
-        function toggleAIChat() {
+        // 🚀 Enhanced AI Widget Management
+        let aiWidgetState = 'closed'; // 'closed', 'quick-actions', 'chat'
+        
+        function toggleAIWidget() {
+            const quickActions = document.getElementById('aiQuickActions');
             const chatWindow = document.getElementById('aiChatWindow');
-            if (chatWindow.style.display === 'none') {
-                chatWindow.style.display = 'flex';
-                document.getElementById('floatingChatInput').focus();
-            } else {
+            
+            if (aiWidgetState === 'closed') {
+                // Show quick actions
+                quickActions.style.display = 'block';
                 chatWindow.style.display = 'none';
+                aiWidgetState = 'quick-actions';
+            } else if (aiWidgetState === 'quick-actions') {
+                // Close quick actions
+                quickActions.style.display = 'none';
+                chatWindow.style.display = 'none';
+                aiWidgetState = 'closed';
+            } else if (aiWidgetState === 'chat') {
+                // Close chat and show quick actions
+                chatWindow.style.display = 'none';
+                quickActions.style.display = 'block';
+                aiWidgetState = 'quick-actions';
             }
+        }
+        
+        function toggleAIChat() {
+            const quickActions = document.getElementById('aiQuickActions');
+            const chatWindow = document.getElementById('aiChatWindow');
+            
+            if (aiWidgetState === 'chat') {
+                // Close chat
+                chatWindow.style.display = 'none';
+                quickActions.style.display = 'none';
+                aiWidgetState = 'closed';
+            } else {
+                // Open chat
+                quickActions.style.display = 'none';
+                chatWindow.style.display = 'flex';
+                aiWidgetState = 'chat';
+                document.getElementById('floatingChatInput').focus();
+            }
+        }
+        
+        function showAIInsights() {
+            // Navigate to analytics with AI focus
+            window.location.href = '/analytics/dashboard?focus=ai';
+        }
+        
+        function openVoiceAssistant() {
+            // Check if speech recognition is available
+            if ('speechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                alert('🎤 Voice Assistant ready! Click the microphone button in the chat to start speaking.');
+                toggleAIChat();
+            } else {
+                alert('🚫 Voice recognition not supported in your browser. Please type your message instead.');
+                toggleAIChat();
+            }
+        }
+        
+        function sendQuickMessage(message) {
+            const input = document.getElementById('floatingChatInput');
+            input.value = message;
+            sendFloatingChatMessage();
         }
 
         function handleFloatingChatInput(event) {
@@ -394,10 +586,10 @@
 
             if (!userMessage) return;
 
-            // Add user message
+            // Add user message with enhanced styling
             const userDiv = document.createElement('div');
             userDiv.className = 'message message-user';
-            userDiv.innerHTML = `<strong>You:</strong> ${userMessage}`;
+            userDiv.innerHTML = `<div>${userMessage}</div>`;
             messages.appendChild(userDiv);
             
             input.value = '';
@@ -428,19 +620,43 @@
                 
                 typing.style.display = 'none';
                 
-                // Add AI response
+                // Add AI response with enhanced styling
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'message message-ai';
-                aiDiv.innerHTML = `<strong>AI:</strong> ${data.response}`;
+                aiDiv.innerHTML = `<div>${data.response}</div>`;
                 messages.appendChild(aiDiv);
                 messages.scrollTop = messages.scrollHeight;
+                
+                // Add subtle notification sound (optional)
+                if (window.AudioContext || window.webkitAudioContext) {
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+                        
+                        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.05);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.2);
+                    } catch (e) {
+                        // Ignore audio errors
+                    }
+                }
                 
             } catch (error) {
                 console.error('Chat error:', error);
                 typing.style.display = 'none';
                 const errorDiv = document.createElement('div');
                 errorDiv.className = 'message message-ai';
-                errorDiv.innerHTML = `<strong>AI:</strong> I'm having trouble right now. Please try again in a moment.`;
+                errorDiv.innerHTML = `<div><strong>😕 Oops! Something went wrong.</strong><br>I'm having trouble connecting to our AI Team right now. Please try again in a moment, or check your connection.</div>`;
                 messages.appendChild(errorDiv);
                 messages.scrollTop = messages.scrollHeight;
             }

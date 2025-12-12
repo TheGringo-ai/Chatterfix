@@ -16,7 +16,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -437,6 +437,114 @@ async def unified_ai_health():
 async def test_new_endpoint():
     """Simple test to verify new endpoints are deployed"""
     return {"status": "working", "message": "New endpoints are being deployed correctly"}
+
+
+# TEMPORARY DIRECT TRAINING MODULE ENDPOINTS - BYPASS ROUTER LOADING ISSUE
+@app.get("/training/modules/{module_id}", response_class=HTMLResponse)
+async def training_module_direct(request: Request, module_id: str):
+    """Direct training module endpoint - bypasses router loading issues"""
+    try:
+        from app.core.firestore_db import get_firestore_manager
+        from fastapi.templating import Jinja2Templates
+        import json
+        
+        templates = Jinja2Templates(directory="app/templates")
+        firestore_manager = get_firestore_manager()
+        
+        # Get the training module from database
+        module = await firestore_manager.get_document("training_modules", module_id)
+        
+        if not module:
+            return templates.TemplateResponse(
+                "training_module_interactive.html",
+                {
+                    "request": request,
+                    "error": f"Training module {module_id} not found",
+                    "module": None,
+                    "content": None,
+                    "role": "technician",
+                    "role_config": {"title": "Training Module Not Found"}
+                },
+                status_code=404
+            )
+        
+        # Parse content if available
+        content = None
+        if module.get("content_path"):
+            try:
+                content = json.loads(module["content_path"])
+            except Exception as e:
+                logger.warning(f"Could not parse content for module {module_id}: {e}")
+                pass
+        
+        # Convert datetime objects to strings to avoid serialization issues
+        if module:
+            for key, value in module.items():
+                if hasattr(value, 'strftime'):  # DateTime object
+                    module[key] = value.strftime("%Y-%m-%d %H:%M:%S")
+                elif hasattr(value, '__dict__') and hasattr(value, 'timestamp'):  # Firestore timestamp
+                    module[key] = str(value)
+        
+        return templates.TemplateResponse(
+            "training_module_interactive.html",
+            {
+                "request": request,
+                "module": module,
+                "content": content,
+                "role": "technician", 
+                "role_config": {"title": "Technician Training"}
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in direct training module endpoint: {e}")
+        return HTMLResponse(
+            content=f"<html><body><h1>Error</h1><p>Training module {module_id} failed to load: {str(e)}</p></body></html>",
+            status_code=500
+        )
+
+
+@app.get("/training", response_class=HTMLResponse) 
+async def training_center_direct(request: Request):
+    """Direct training center endpoint - bypasses router loading issues"""
+    try:
+        from app.core.firestore_db import get_firestore_manager
+        from fastapi.templating import Jinja2Templates
+        
+        templates = Jinja2Templates(directory="app/templates")
+        firestore_manager = get_firestore_manager()
+        
+        # Get all training modules
+        modules = await firestore_manager.get_collection("training_modules", order_by="-created_at")
+        
+        return templates.TemplateResponse(
+            "training_center.html",
+            {
+                "request": request,
+                "my_training": [],
+                "available_modules": modules,
+                "stats": {
+                    "total_assigned": 0,
+                    "completed": 0, 
+                    "in_progress": 0,
+                    "avg_score": 0
+                },
+                "user_id": "demo_user"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in direct training center endpoint: {e}")
+        return HTMLResponse(
+            content=f"<html><body><h1>Training Center</h1><p>Failed to load: {str(e)}</p></body></html>",
+            status_code=500
+        )
+
+
+@app.get("/training/", response_class=HTMLResponse)
+async def training_center_direct_slash(request: Request):
+    """Direct training center endpoint with slash"""
+    return await training_center_direct(request)
 
 
 @app.get("/debug/ai-config")

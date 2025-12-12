@@ -21,9 +21,30 @@ import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-import autogen
-from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
-from autogen.coding import LocalCommandLineCodeExecutor
+try:
+    from autogen_agentchat import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+    from autogen_agentchat.code_execution import LocalCommandLineCodeExecutor
+    AUTOGEN_AVAILABLE = True
+except ImportError:
+    # Fallback for older autogen versions
+    try:
+        import autogen
+        from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+        from autogen.coding import LocalCommandLineCodeExecutor
+        AUTOGEN_AVAILABLE = True
+    except ImportError:
+        AUTOGEN_AVAILABLE = False
+        # Create dummy classes for graceful fallback
+        class AssistantAgent:
+            def __init__(self, *args, **kwargs): pass
+        class UserProxyAgent:
+            def __init__(self, *args, **kwargs): pass
+        class GroupChat:
+            def __init__(self, *args, **kwargs): pass
+        class GroupChatManager:
+            def __init__(self, *args, **kwargs): pass
+        class LocalCommandLineCodeExecutor:
+            def __init__(self, *args, **kwargs): pass
 
 from app.ai_team.memory_system import ComprehensiveMemorySystem
 from app.core.firestore_db import get_firestore_manager
@@ -193,6 +214,7 @@ class AutonomousChatterFixBuilder:
     
     def __init__(self):
         self.memory_system = ComprehensiveMemorySystem()
+        self.autogen_available = AUTOGEN_AVAILABLE
         
         # Initialize agents
         self.requirement_analyzer = CustomerRequirementAnalyzer()

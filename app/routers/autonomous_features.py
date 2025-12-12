@@ -22,8 +22,8 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-team-service'))
 
 try:
-    from app.autonomous_agents.autonomous_chatterfix_builder import AutonomousAPI
-    AUTONOMOUS_AVAILABLE = True
+    from app.autonomous_agents.autonomous_chatterfix_builder import AutonomousAPI, AUTOGEN_AVAILABLE
+    AUTONOMOUS_AVAILABLE = AUTOGEN_AVAILABLE
 except ImportError:
     AUTONOMOUS_AVAILABLE = False
     logging.warning("Autonomous agents not available - install autogen")

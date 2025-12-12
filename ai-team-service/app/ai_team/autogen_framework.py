@@ -264,18 +264,21 @@ class AutogenOrchestrator:
         logger.info(f"Registered agent: {agent.config.name} ({agent.config.model_type.value})")
     
     def setup_default_agents(self):
-        """Setup default AI team with multiple models"""
+        """Setup default AI team with multiple models - OPTIMIZED FOR AVAILABLE KEYS"""
         agents_config = [
-            AgentConfig("claude-analyst", ModelType.CLAUDE, "Lead Analyst", ["analysis", "reasoning", "planning"]),
-            AgentConfig("chatgpt-coder", ModelType.CHATGPT, "Senior Developer", ["coding", "debugging", "architecture"]),
-            AgentConfig("gemini-creative", ModelType.GEMINI, "Creative Director", ["creativity", "design", "innovation"]),
+            # Replace Claude with GPT-4o as Lead Analyst
+            AgentConfig("gpt4-analyst", ModelType.CHATGPT, "Lead Analyst", ["analysis", "reasoning", "planning"], "gpt-4o"),
+            AgentConfig("chatgpt-coder", ModelType.CHATGPT, "Senior Developer", ["coding", "debugging", "architecture"], "gpt-4"),
+            AgentConfig("gemini-creative", ModelType.GEMINI, "Creative Director", ["creativity", "design", "innovation"], "gemini-1.5-flash"),
+            AgentConfig("gemini-analyst", ModelType.GEMINI, "AI Specialist", ["analysis", "reasoning", "technical-docs"], "gemini-1.5-pro"),
             AgentConfig("grok-coder", ModelType.GROK, "Speed Coder", ["fast-coding", "optimization", "debugging"], "grok-code-fast-1"),
             AgentConfig("grok-reasoner", ModelType.GROK, "Strategic Thinker", ["reasoning", "analysis", "strategy"], "grok-3"),
         ]
         
         for config in agents_config:
+            # Skip Claude agent since no API key
             if config.model_type == ModelType.CLAUDE:
-                agent = ClaudeAgent(config)
+                continue
             elif config.model_type == ModelType.CHATGPT:
                 agent = ChatGPTAgent(config)
             elif config.model_type == ModelType.GEMINI:

@@ -137,22 +137,295 @@
             50% { opacity: 1; }
         }
 
+        /* Enhanced CMMS Navigation Styles */
+        .cmms-navigation {
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--navbar-bg, #1a1a2e), var(--navbar-secondary, #16213e));
+            backdrop-filter: blur(20px);
+            border-bottom: var(--card-border, 1px solid rgba(255,255,255,0.1));
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .nav-quickbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(90deg, var(--accent-color, #667eea), var(--accent-secondary, #764ba2));
+            color: white;
+        }
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-brand:hover {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+        }
+
+        .nav-quick-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .emergency-btn {
+            background: rgba(245, 87, 108, 0.3) !important;
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(245, 87, 108, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(245, 87, 108, 0.8); }
+        }
+
+        .nav-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-search input {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px 0 0 20px;
+            width: 250px;
+            color: var(--text-primary, #333);
+            font-size: 0.875rem;
+        }
+
+        .search-filter-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0 20px 20px 0;
+            color: var(--text-primary, #333);
+            cursor: pointer;
+        }
+
+        .nav-main {
+            display: flex;
+            padding: 0 1.5rem;
+            gap: 2rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .nav-main::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-group {
+            display: flex;
+            flex-direction: column;
+            min-width: fit-content;
+        }
+
+        .nav-group-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted, rgba(255,255,255,0.6));
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .nav-link {
+            color: var(--text-secondary, rgba(255,255,255,0.8));
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--hover-bg, rgba(255,255,255,0.1));
+            color: var(--accent-color, #667eea);
+            text-decoration: none;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-color, #667eea);
+            border-radius: 1px 1px 0 0;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: var(--error-color, #f5576c);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 10px;
+            min-width: 1.25rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-glass-heavy, rgba(30, 30, 47, 0.95));
+            backdrop-filter: blur(20px);
+            padding: 0.5rem;
+            border-top: var(--card-border, 1px solid rgba(255,255,255,0.1));
+            z-index: 1000;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            color: var(--text-secondary, rgba(255,255,255,0.8));
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            min-width: 60px;
+        }
+
+        .mobile-nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-nav-item span {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--accent-color, #667eea);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .quick-create {
+            background: linear-gradient(135deg, var(--accent-color, #667eea), var(--accent-secondary, #764ba2)) !important;
+            color: white !important;
+            border-radius: 50% !important;
+            width: 56px;
+            height: 56px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .mobile-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--error-color, #f5576c);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 10px;
+            min-width: 1.25rem;
+            text-align: center;
+        }
+
         /* Responsive Improvements */
         @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                align-items: flex-start;
+            .cmms-navigation {
+                display: none;
             }
             
-            .nav-links {
-                margin-top: 10px;
+            .mobile-nav {
+                display: flex;
+            }
+            
+            .nav-quickbar {
+                padding: 0.5rem 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav-quick-actions {
+                width: 100%;
+                justify-content: center;
                 flex-wrap: wrap;
+            }
+            
+            .nav-search input {
+                width: 200px;
             }
             
             .demo-bar-content {
                 flex-direction: column;
                 gap: 5px;
             }
+            
+            body {
+                padding-bottom: 80px; /* Space for mobile nav */
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-nav {
+                display: none;
+            }
+        }
+
+        /* Dark mode adjustments */
+        .dark-mode .nav-search input,
+        .dark-mode .search-filter-btn {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
         }
     </style>
     
@@ -171,37 +444,111 @@
 
 <body>
     
-    <div class="navbar">
-        <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
-        <div class="nav-links d-flex align-items-center">
-            <a href="/demo" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">Dashboard</a>
-            <a href="/demo/work-orders"
-                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">Work
-                Orders</a>
-            <a href="/demo/assets"
-                class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">Assets</a>
-            <a href="/analytics/dashboard"
-                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}">Analytics</a>
-            <a href="/demo/planner"
-                class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}active{% endif %}">Planner</a>
-            
-            <!-- More Modules Dropdown -->
-            <div class="dropdown d-inline-block">
-                <a href="#" class="nav-link dropdown-toggle {% if request.url and request.url.path and (request.url.path.startswith('/demo/purchasing') or request.url.path.startswith('/demo/team') or request.url.path.startswith('/manager') or request.url.path.startswith('/user-management') or request.url.path.startswith('/demo/training') or request.url.path == '/demo/ar-mode') %}active{% endif %}" 
-                   id="modulesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Modules
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark shadow" aria-labelledby="modulesDropdown" style="background: var(--bg-glass-heavy); backdrop-filter: blur(15px); border: var(--card-border);">
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/purchasing') %}active{% endif %}" href="/demo/purchasing"><i class="fas fa-shopping-cart me-2"></i> Purchasing</a></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/team') or request.url and request.url.path.startswith('/team') %}active{% endif %}" href="/demo/team"><i class="fas fa-users me-2"></i> Team</a></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/manager') %}active{% endif %}" href="/manager"><i class="fas fa-chart-line me-2"></i> Manager</a></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/user-management') %}active{% endif %}" href="/user-management/"><i class="fas fa-user-plus me-2"></i> User Management</a></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path.startswith('/demo/training') %}active{% endif %}" href="/demo/training"><i class="fas fa-graduation-cap me-2"></i> Training</a></li>
-                    <li><hr class="dropdown-divider" style="border-color: var(--border-glass);"></li>
-                    <li><a class="dropdown-item {% if request.url and request.url.path == '/demo/ar-mode' %}active{% endif %}" href="/demo/ar-mode"><i class="fas fa-vr-cardboard me-2"></i> AR Mode</a></li>
-                </ul>
+    <!-- Enhanced CMMS Navigation -->
+    <nav class="cmms-navigation" role="navigation" aria-label="Main navigation">
+        <!-- Top Bar with Quick Actions -->
+        <div class="nav-quickbar">
+            <a href="/" class="nav-brand">
+                <i class="fas fa-cogs"></i> ChatterFix
+            </a>
+            <div class="nav-quick-actions">
+                <button class="quick-action-btn" onclick="showCreateWorkOrderModal()" aria-label="Create Work Order" title="Create New Work Order (Ctrl+N)">
+                    <i class="fas fa-plus"></i> New WO
+                </button>
+                <button class="quick-action-btn emergency-btn" onclick="showEmergencyModal()" aria-label="Emergency" title="Emergency Work Order (Ctrl+E)">
+                    <i class="fas fa-exclamation-triangle"></i> Emergency
+                </button>
+                <div class="nav-search">
+                    <input type="search" id="globalSearch" placeholder="Search assets, work orders..." aria-label="Global search" 
+                           onkeyup="handleGlobalSearch(event)">
+                    <button class="search-filter-btn" onclick="toggleSearchFilters()" aria-label="Search filters">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Main Navigation with Workflow Groups -->
+        <div class="nav-main">
+            <div class="nav-group" data-group="operations">
+                <span class="nav-group-label">Operations</span>
+                <a href="/demo" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}" 
+                   aria-current="{% if request.url and request.url.path and request.url.path == '/demo' %}page{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="/demo/work-orders" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}page{% endif %}">
+                    <i class="fas fa-wrench"></i> Work Orders
+                    <span class="status-badge" id="urgentWOCount">3</span>
+                </a>
+                <a href="/demo/assets" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path == '/demo/assets' %}page{% endif %}">
+                    <i class="fas fa-industry"></i> Assets
+                </a>
+                <a href="/demo/planner" class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}page{% endif %}">
+                    <i class="fas fa-calendar-alt"></i> Planner
+                </a>
+            </div>
+            
+            <div class="nav-group" data-group="management">
+                <span class="nav-group-label">Management</span>
+                <a href="/analytics/dashboard" class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path.startswith('/analytics') %}page{% endif %}">
+                    <i class="fas fa-chart-line"></i> Analytics
+                </a>
+                <a href="/demo/team" class="nav-link {% if request.url and request.url.path and (request.url.path.startswith('/demo/team') or request.url.path.startswith('/team')) %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and (request.url.path.startswith('/demo/team') or request.url.path.startswith('/team')) %}page{% endif %}">
+                    <i class="fas fa-users"></i> Team
+                </a>
+                <a href="/demo/purchasing" class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/purchasing') %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path.startswith('/demo/purchasing') %}page{% endif %}">
+                    <i class="fas fa-shopping-cart"></i> Purchasing
+                </a>
+            </div>
+            
+            <div class="nav-group" data-group="tools">
+                <span class="nav-group-label">Tools</span>
+                <a href="/demo/training" class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/demo/training') %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path.startswith('/demo/training') %}page{% endif %}">
+                    <i class="fas fa-graduation-cap"></i> Training
+                </a>
+                <a href="/demo/ar-mode" class="nav-link {% if request.url and request.url.path and request.url.path == '/demo/ar-mode' %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path == '/demo/ar-mode' %}page{% endif %}">
+                    <i class="fas fa-vr-cardboard"></i> AR Mode
+                </a>
+                <a href="/user-management/" class="nav-link {% if request.url and request.url.path and request.url.path.startswith('/user-management') %}active{% endif %}"
+                   aria-current="{% if request.url and request.url.path and request.url.path.startswith('/user-management') %}page{% endif %}">
+                    <i class="fas fa-user-plus"></i> Users
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+        <a href="/demo" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/demo/work-orders" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">
+            <i class="fas fa-wrench"></i>
+            <span>Work Orders</span>
+            <span class="mobile-badge">3</span>
+        </a>
+        <button class="mobile-nav-item quick-create" onclick="showMobileQuickActions()">
+            <i class="fas fa-plus-circle"></i>
+            <span>Create</span>
+        </button>
+        <a href="/demo/assets" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
+            <i class="fas fa-industry"></i>
+            <span>Assets</span>
+        </a>
+        <button class="mobile-nav-item" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+            <span>More</span>
+        </button>
+    </nav>
         <div class="d-flex align-items-center gap-3">
             <button id="theme-toggle" class="cmms-btn cmms-btn-sm d-flex align-items-center gap-2" style="border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Theme">
                 <i class="fas fa-moon"></i>
@@ -581,6 +928,270 @@
         
         // Initialize mobile handling when DOM is ready
         document.addEventListener('DOMContentLoaded', setupMobileKeyboardHandling);
+
+        // Enhanced Navigation JavaScript
+        
+        // Global search functionality
+        function handleGlobalSearch(event) {
+            const searchTerm = event.target.value.trim();
+            
+            if (searchTerm.length < 2) {
+                hideSearchResults();
+                return;
+            }
+            
+            // Simulate search results (in real app, this would be an API call)
+            const mockResults = {
+                workOrders: [
+                    { id: 'WO-001', title: 'HVAC Maintenance - Building A', status: 'urgent' },
+                    { id: 'WO-002', title: 'Pump Inspection', status: 'pending' }
+                ],
+                assets: [
+                    { id: 'ASSET-101', name: 'Compressor Unit A-102', location: 'Building A' },
+                    { id: 'ASSET-202', name: 'Generator B-301', location: 'Building B' }
+                ]
+            };
+            
+            showSearchResults(mockResults, searchTerm);
+        }
+        
+        function showSearchResults(results, searchTerm) {
+            // Create or update search results dropdown
+            let dropdown = document.getElementById('searchResults');
+            if (!dropdown) {
+                dropdown = document.createElement('div');
+                dropdown.id = 'searchResults';
+                dropdown.className = 'search-results-dropdown';
+                dropdown.style.cssText = `
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    background: var(--bg-glass-heavy);
+                    backdrop-filter: blur(20px);
+                    border: var(--card-border);
+                    border-radius: 0 0 15px 15px;
+                    max-height: 400px;
+                    overflow-y: auto;
+                    z-index: 1001;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                `;
+                document.querySelector('.nav-search').appendChild(dropdown);
+            }
+            
+            let html = `<div style="padding: 1rem; color: var(--text-muted); font-size: 0.875rem;">
+                Search results for "${searchTerm}"
+            </div>`;
+            
+            if (results.workOrders.length > 0) {
+                html += '<div style="padding: 0.5rem 1rem; font-weight: 600; color: var(--accent-color);">Work Orders</div>';
+                results.workOrders.forEach(wo => {
+                    html += `<a href="/demo/work-orders/${wo.id}" class="search-result-item" style="
+                        display: block;
+                        padding: 0.75rem 1rem;
+                        color: var(--text-primary);
+                        text-decoration: none;
+                        border-left: 3px solid ${wo.status === 'urgent' ? '#f5576c' : '#667eea'};
+                        margin-left: 1rem;
+                        margin-right: 1rem;
+                        margin-bottom: 0.25rem;
+                        border-radius: 0 5px 5px 0;
+                        transition: background 0.2s ease;
+                    " onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
+                        <div style="font-weight: 500;">${wo.title}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${wo.id} • ${wo.status}</div>
+                    </a>`;
+                });
+            }
+            
+            if (results.assets.length > 0) {
+                html += '<div style="padding: 0.5rem 1rem; font-weight: 600; color: var(--accent-color); margin-top: 0.5rem;">Assets</div>';
+                results.assets.forEach(asset => {
+                    html += `<a href="/demo/assets/${asset.id}" class="search-result-item" style="
+                        display: block;
+                        padding: 0.75rem 1rem;
+                        color: var(--text-primary);
+                        text-decoration: none;
+                        border-left: 3px solid #4ecdc4;
+                        margin-left: 1rem;
+                        margin-right: 1rem;
+                        margin-bottom: 0.25rem;
+                        border-radius: 0 5px 5px 0;
+                        transition: background 0.2s ease;
+                    " onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
+                        <div style="font-weight: 500;">${asset.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${asset.id} • ${asset.location}</div>
+                    </a>`;
+                });
+            }
+            
+            dropdown.innerHTML = html;
+            dropdown.style.display = 'block';
+            
+            // Hide results when clicking outside
+            document.addEventListener('click', function hideOnOutsideClick(e) {
+                if (!document.querySelector('.nav-search').contains(e.target)) {
+                    hideSearchResults();
+                    document.removeEventListener('click', hideOnOutsideClick);
+                }
+            });
+        }
+        
+        function hideSearchResults() {
+            const dropdown = document.getElementById('searchResults');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        }
+        
+        // Quick action functions
+        function showCreateWorkOrderModal() {
+            // In a real app, this would open a modal
+            alert('🔧 Create New Work Order\\n\\nThis would open a comprehensive work order creation form with:\\n\\n• Asset selection\\n• Priority setting\\n• Technician assignment\\n• Parts and procedures\\n• Scheduling options');
+        }
+        
+        function showEmergencyModal() {
+            // In a real app, this would open emergency work order modal
+            if (confirm('🚨 Emergency Work Order\\n\\nThis will create an URGENT work order with highest priority.\\n\\nContinue?')) {
+                alert('🚨 Emergency work order created!\\n\\n• Priority: URGENT\\n• Response team notified\\n• Estimated response: 15 minutes\\n\\nWO-EMERG-' + Date.now());
+            }
+        }
+        
+        function toggleSearchFilters() {
+            alert('🔍 Search Filters\\n\\n• Work Order Status\\n• Asset Category\\n• Date Range\\n• Technician\\n• Priority Level\\n\\n(Feature coming soon)');
+        }
+        
+        // Mobile navigation functions
+        function showMobileQuickActions() {
+            const actions = [
+                { icon: 'fas fa-plus', text: 'New Work Order', action: showCreateWorkOrderModal },
+                { icon: 'fas fa-exclamation-triangle', text: 'Emergency', action: showEmergencyModal },
+                { icon: 'fas fa-qrcode', text: 'Scan Asset', action: () => alert('📱 QR/Barcode Scanner\\n\\nOpen camera to scan asset tags') },
+                { icon: 'fas fa-camera', text: 'Photo Report', action: () => alert('📷 Photo Report\\n\\nCapture and attach photos to work orders') }
+            ];
+            
+            let html = '<div style="background: var(--bg-glass-heavy); backdrop-filter: blur(20px); border: var(--card-border); border-radius: 15px; padding: 1rem; margin: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">';
+            html += '<h3 style="margin: 0 0 1rem 0; color: var(--accent-color);">Quick Actions</h3>';
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">';
+            
+            actions.forEach(action => {
+                html += `<button onclick="${action.action.name}(); hideMobileQuickActions();" style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 1rem;
+                    background: var(--accent-gradient);
+                    color: white;
+                    border: none;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="${action.icon}" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                    <span style="font-size: 0.875rem; text-align: center;">${action.text}</span>
+                </button>`;
+            });
+            
+            html += '</div>';
+            html += '<button onclick="hideMobileQuickActions()" style="width: 100%; margin-top: 1rem; padding: 0.75rem; background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">Cancel</button>';
+            html += '</div>';
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'mobileQuickActionsOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            overlay.innerHTML = html;
+            
+            document.body.appendChild(overlay);
+        }
+        
+        function hideMobileQuickActions() {
+            const overlay = document.getElementById('mobileQuickActionsOverlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+        
+        function toggleMobileMenu() {
+            alert('📱 More Options\\n\\n• Planner\\n• Analytics\\n• Training\\n• Settings\\n• Profile\\n\\n(Full mobile menu coming soon)');
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey || event.metaKey) {
+                switch(event.key) {
+                    case 'n':
+                        event.preventDefault();
+                        showCreateWorkOrderModal();
+                        break;
+                    case 'e':
+                        event.preventDefault();
+                        showEmergencyModal();
+                        break;
+                    case 'f':
+                        event.preventDefault();
+                        document.getElementById('globalSearch').focus();
+                        break;
+                }
+            }
+        });
+        
+        // Update badge counts from API (simulated)
+        function updateNavigationBadges() {
+            // Simulate API call for urgent work order count
+            fetch('/api/work-orders/urgent-count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('urgentWOCount');
+                    const mobileBadge = document.querySelector('.mobile-badge');
+                    if (badge && data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'block';
+                    }
+                    if (mobileBadge && data.count > 0) {
+                        mobileBadge.textContent = data.count;
+                        mobileBadge.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    // Fallback to demo data
+                    const badge = document.getElementById('urgentWOCount');
+                    const mobileBadge = document.querySelector('.mobile-badge');
+                    if (badge) badge.textContent = '3';
+                    if (mobileBadge) mobileBadge.textContent = '3';
+                });
+        }
+        
+        // Initialize navigation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNavigationBadges();
+            
+            // Add keyboard shortcut hints to tooltips
+            const shortcuts = {
+                'New WO': 'Ctrl+N',
+                'Emergency': 'Ctrl+E',
+                'Search': 'Ctrl+F'
+            };
+            
+            Object.keys(shortcuts).forEach(action => {
+                const button = Array.from(document.querySelectorAll('button')).find(btn => 
+                    btn.textContent.includes(action.split(' ')[0])
+                );
+                if (button && button.title) {
+                    button.title += ` (${shortcuts[action]})`;
+                }
+            });
+        });
 
         async function sendFloatingChatMessage() {
             const input = document.getElementById('floatingChatInput');

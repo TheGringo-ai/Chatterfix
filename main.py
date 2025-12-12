@@ -111,6 +111,7 @@ all_extended_routers = [
     'ai_team_collaboration',
     'analytics',
     'assets',
+    'autonomous_features',
     'demo',
     'fix_it_fred',
     'inventory',

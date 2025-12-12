@@ -120,6 +120,7 @@ all_extended_routers = [
     'public_demo',
     'purchasing',
     'team',
+    'training',
     'user_management',
     'work_orders',
 ]
@@ -330,6 +331,7 @@ router_descriptions = {
     'ai_team_collaboration': 'AI Team gRPC Collaboration',
     'fix_it_fred': 'Fix it Fred AI-powered autonomous fixing',
     'linesmart_integration': 'LineSmart training service integration',
+    'training': 'Training modules and learning management system',
     'user_management': 'User management dashboard with Firebase Auth',
     'analytics': 'Analytics dashboard with KPIs and reporting',
     'planner_simple': 'Simple planner for testing'

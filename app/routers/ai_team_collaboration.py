@@ -51,7 +51,7 @@ class StreamRequest(BaseModel):
 async def ai_team_health():
     """Check AI team service health"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
         health_status = await client.health_check()
         return health_status
     except Exception as e:
@@ -63,7 +63,7 @@ async def ai_team_health():
 async def get_available_models():
     """Get list of available AI models"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
         models = await client.get_available_models()
         return {"models": models}
     except Exception as e:
@@ -75,13 +75,12 @@ async def get_available_models():
 async def execute_ai_task(request: AITaskRequest):
     """Execute a collaborative task with the AI team"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
 
-        result = await client.execute_task(
+        result = await client.execute_collaborative_task(
             prompt=request.prompt,
             context=request.context or "",
-            required_models=request.required_models,
-            task_type=request.task_type,
+            required_agents=request.required_models,
             max_iterations=request.max_iterations,
         )
 
@@ -98,9 +97,9 @@ async def stream_ai_collaboration(request: StreamRequest):
 
     async def generate_stream():
         try:
-            client = get_ai_team_client()
+            client = await get_ai_team_client()
 
-            async for update in client.stream_collaboration(
+            async for update in client.stream_collaborative_task(
                 prompt=request.prompt, context=request.context or ""
             ):
                 # Format as Server-Sent Events
@@ -126,7 +125,7 @@ async def stream_ai_collaboration(request: StreamRequest):
 async def ai_team_analytics():
     """Get comprehensive AI team analytics"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
         analytics = await client.get_analytics()
         return analytics
     except Exception as e:
@@ -138,7 +137,7 @@ async def ai_team_analytics():
 async def search_knowledge(q: str, content_types: str = None, limit: int = 20):
     """Search the AI team knowledge base"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
 
         # Parse content types if provided
         content_type_list = None
@@ -146,7 +145,7 @@ async def search_knowledge(q: str, content_types: str = None, limit: int = 20):
             content_type_list = [t.strip() for t in content_types.split(",")]
 
         results = await client.search_memory(
-            query=q, content_types=content_type_list, limit=limit
+            query=q, max_results=limit
         )
 
         return results
@@ -159,7 +158,7 @@ async def search_knowledge(q: str, content_types: str = None, limit: int = 20):
 async def rebuild_knowledge_index():
     """Rebuild the searchable knowledge index"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
         result = await client.rebuild_index(force_rebuild=True)
         return result
     except Exception as e:
@@ -725,7 +724,7 @@ async def ai_team_dashboard():
 async def startup_event():
     """Initialize AI Team HTTP client"""
     try:
-        client = get_ai_team_client()
+        client = await get_ai_team_client()
         # Test connectivity
         health = await client.health_check()
         if health.get("healthy", False):

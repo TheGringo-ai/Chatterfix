@@ -86,54 +86,36 @@ class AITeamHTTPClient:
             
             logger.info(f"✅ AI team task completed in {result.get('total_time', 0):.2f}s")
             
-            # Convert to gRPC-compatible format for backward compatibility
+            # Convert to AITaskResponse-compatible format
             return {
                 "task_id": result.get("task_id", ""),
-                "final_answer": result.get("final_answer", ""),
-                "agent_responses": result.get("agent_responses", []),
-                "collaboration_log": result.get("collaboration_log", []),
-                "total_time": result.get("total_time", 0),
-                "confidence_score": result.get("confidence_score", 0.7),
                 "success": result.get("success", True),
-                "ai_team_analysis": {
-                    "collaborative_insight": result.get("final_answer", ""),
-                    "confidence": result.get("confidence_score", 0.7),
-                    "model_responses": result.get("agent_responses", [])
-                }
+                "final_result": result.get("final_answer", ""),
+                "model_responses": result.get("agent_responses", []),
+                "collaboration_summary": result.get("collaboration_summary", "AI team collaboration completed"),
+                "confidence_score": result.get("confidence_score", 0.7)
             }
             
         except httpx.HTTPError as e:
             logger.error(f"❌ AI team task failed: {e}")
-            # Return fallback response
+            # Return fallback response in correct format
             return {
                 "task_id": f"fallback-{int(time.time())}",
-                "final_answer": "AI team service temporarily unavailable. Please try again later.",
-                "agent_responses": [],
-                "collaboration_log": [f"Error: {str(e)}"],
-                "total_time": 0,
-                "confidence_score": 0.0,
                 "success": False,
-                "ai_team_analysis": {
-                    "collaborative_insight": "AI team service unavailable",
-                    "confidence": 0.0,
-                    "model_responses": []
-                }
+                "final_result": "AI team service temporarily unavailable. Please try again later.",
+                "model_responses": [],
+                "collaboration_summary": f"Error: {str(e)}",
+                "confidence_score": 0.0
             }
         except Exception as e:
             logger.error(f"Unexpected AI team error: {e}")
             return {
                 "task_id": f"error-{int(time.time())}",
-                "final_answer": "An unexpected error occurred with the AI team service.",
-                "agent_responses": [],
-                "collaboration_log": [f"Unexpected error: {str(e)}"],
-                "total_time": 0,
-                "confidence_score": 0.0,
                 "success": False,
-                "ai_team_analysis": {
-                    "collaborative_insight": "Unexpected error occurred",
-                    "confidence": 0.0,
-                    "model_responses": []
-                }
+                "final_result": "An unexpected error occurred with the AI team service.",
+                "model_responses": [],
+                "collaboration_summary": f"Unexpected error: {str(e)}",
+                "confidence_score": 0.0
             }
     
     async def stream_collaborative_task(
@@ -237,6 +219,27 @@ class AITeamHTTPClient:
         except Exception as e:
             logger.error(f"Unexpected memory search error: {e}")
             return {"results": [], "total_results": 0, "error": str(e)}
+    
+    async def rebuild_index(self, force_rebuild: bool = False) -> Dict[str, Any]:
+        """Rebuild search index for AI team memory"""
+        try:
+            request_data = {
+                "force_rebuild": force_rebuild
+            }
+            
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/memory/rebuild",
+                json=request_data
+            )
+            response.raise_for_status()
+            return response.json()
+            
+        except httpx.HTTPError as e:
+            logger.error(f"Index rebuild failed: {e}")
+            return {"status": "error", "error": str(e)}
+        except Exception as e:
+            logger.error(f"Unexpected rebuild error: {e}")
+            return {"status": "error", "error": str(e)}
 
 # Global client instance
 _ai_team_client: Optional[AITeamHTTPClient] = None

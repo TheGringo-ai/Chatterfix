@@ -6,7 +6,7 @@ Provides API endpoints for advanced analytics, KPIs, reporting, and Sales ROI Da
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import grpc
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

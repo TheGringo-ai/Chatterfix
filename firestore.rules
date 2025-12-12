@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// 🔒 MAXIMUM SECURITY FIRESTORE RULES
+// This configuration ensures complete public access denial while allowing
+// backend service account access only.
+//
+// ⚠️  CRITICAL SECURITY NOTICE:
+// - ALL public access is DENIED
+// - Only authenticated service accounts can access data
+// - No client-side SDK access allowed
+// - All operations must go through secured backend API
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🚨 DENY ALL PUBLIC ACCESS
+    // This is the most restrictive rule - denies ALL operations
+    // for any client attempting direct Firestore access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // 📝 DOCUMENTATION OF SECURITY MODEL:
+    // 
+    // 1. PUBLIC ACCESS: COMPLETELY BLOCKED
+    //    - Web clients cannot read/write any data
+    //    - Mobile clients cannot read/write any data
+    //    - Unauthenticated requests are denied
+    //    - Even authenticated users are denied direct access
+    //
+    // 2. SERVICE ACCOUNT ACCESS: FULLY ALLOWED
+    //    - Firebase Admin SDK bypasses these rules
+    //    - Service account in /secrets/firebase-admin.json has full access
+    //    - Backend API server can perform all CRUD operations
+    //    - Firestore operations work only from server-side code
+    //
+    // 3. SECURITY BENEFITS:
+    //    - Prevents data leaks from client-side vulnerabilities
+    //    - Forces all access through controlled API endpoints
+    //    - Enables proper authentication, authorization, and logging
+    //    - Protects against malicious client manipulation
+    //    - Ensures data validation happens server-side
+    //
+    // 4. IMPLEMENTATION:
+    //    - All Firestore operations must use Firebase Admin SDK
+    //    - Client requests go to FastAPI backend endpoints
+    //    - Backend validates permissions and performs Firestore operations
+    //    - No firebase-js-sdk or firebase-client usage allowed
+    //
+    // 🔐 VERIFICATION TESTS:
+    // - ✅ Service account can create/read/update/delete documents
+    // - ❌ Public client receives permission-denied errors
+    // - ❌ Authenticated client receives permission-denied errors
+    // - ❌ Direct firebase-js-sdk calls fail with security errors
+  }
+}
+
+// 📋 DEPLOYMENT VERIFICATION CHECKLIST:
+// □ Rules deployed without errors
+// □ Service account access confirmed working
+// □ Public client access denied (tested)
+// □ Backend API endpoints functional
+// □ No sensitive data exposed in client-side code
+// □ All operations properly authenticated through backend

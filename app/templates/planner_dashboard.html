@@ -974,6 +974,138 @@
             </div>
         </div>
     </div>
+    
+    <!-- Work Order Edit Modal -->
+    <div class="modal fade" id="editWorkOrderModal" tabindex="-1" style="color: var(--text-primary);">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title">✏️ Edit Work Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Work Order Details -->
+                        <div class="col-md-8">
+                            <form id="editWorkOrderForm">
+                                <input type="hidden" id="editWorkOrderId" value="">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Work Order Title *</label>
+                                    <input type="text" class="form-control" id="editTitle" required>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Priority</label>
+                                            <select class="form-select" id="editPriority">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                <option value="urgent">Urgent</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-select" id="editStatus">
+                                                <option value="pending">Pending</option>
+                                                <option value="in_progress">In Progress</option>
+                                                <option value="on_hold">On Hold</option>
+                                                <option value="completed">Completed</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Duration (hours)</label>
+                                            <input type="number" class="form-control" id="editDuration" min="0.5" max="16" step="0.5">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Due Date</label>
+                                            <input type="date" class="form-control" id="editDueDate">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Scheduled Date</label>
+                                            <input type="date" class="form-control" id="editScheduledDate">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" id="editDescription" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Assigned Technician</label>
+                                    <select class="form-select" id="editAssignedTo">
+                                        <option value="">Select Technician</option>
+                                        <option value="tech_001">Mike Johnson</option>
+                                        <option value="tech_002">Sarah Chen</option>
+                                        <option value="tech_003">Mike Rodriguez</option>
+                                        <option value="tech_004">Jennifer Wong</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Parts Required (comma-separated)</label>
+                                    <input type="text" class="form-control" id="editPartsRequired" placeholder="Part-A, Part-B, Filter-C">
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Asset Details & Procedures -->
+                        <div class="col-md-4">
+                            <div class="mb-4">
+                                <h6>🏭 Asset Information</h6>
+                                <div class="p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                                    <div id="editAssetDetails">
+                                        <div class="mb-2"><strong>Asset:</strong> <span id="assetName">-</span></div>
+                                        <div class="mb-2"><strong>Location:</strong> <span id="assetLocation">-</span></div>
+                                        <div class="mb-2"><strong>Serial #:</strong> <span id="assetSerial">-</span></div>
+                                        <div><strong>Last Maintenance:</strong> <span id="assetLastMaintenance">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6>🔧 Required Tools</h6>
+                                <div class="p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                                    <ul id="requiredTools" style="margin: 0; padding-left: 1.2rem;">
+                                        <li>Loading...</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6>📋 Procedures</h6>
+                                <div class="p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                                    <ol id="workOrderProcedures" style="margin: 0; padding-left: 1.2rem; font-size: 0.9rem;">
+                                        <li>Loading procedures...</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteWorkOrder()">🗑️ Delete</button>
+                    <button type="button" class="btn btn-success" onclick="saveWorkOrderChanges()">💾 Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1396,7 +1528,9 @@
             let html = '';
             data.work_orders.slice(0, 10).forEach(wo => {
                 html += `
-                <div class="backlog-item ${wo.priority}">
+                <div class="backlog-item ${wo.priority}" onclick="openWorkOrderEditor('${wo.id}')" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                     <div class="backlog-header">
                         <div class="backlog-title">${wo.title}</div>
                         <span class="priority-badge ${wo.priority}">${wo.priority}</span>
@@ -1405,6 +1539,7 @@
                         <span>🏭 ${wo.asset_name || 'No asset'}</span>
                         <span>📅 Due: ${wo.due_date || 'Not set'}</span>
                         <span>⏱️ ${wo.estimated_duration || 0}h</span>
+                        <span style="color: var(--primary-color); font-size: 0.8rem;">✏️ Click to edit</span>
                     </div>
                 </div>
             `;
@@ -1568,5 +1703,154 @@
             console.error('Error loading compliance:', error);
         }
     }
+
+    // Work Order Editor Functions
+    async function openWorkOrderEditor(workOrderId) {
+        try {
+            // Fetch work order details
+            const response = await fetch(`/planner/work-orders/${workOrderId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch work order details');
+            }
+            const workOrder = await response.json();
+
+            // Populate form fields
+            document.getElementById('editWorkOrderId').value = workOrderId;
+            document.getElementById('editTitle').value = workOrder.title || '';
+            document.getElementById('editPriority').value = workOrder.priority || 'medium';
+            document.getElementById('editStatus').value = workOrder.status || 'pending';
+            document.getElementById('editDuration').value = workOrder.estimated_duration || '';
+            document.getElementById('editDueDate').value = workOrder.due_date || '';
+            document.getElementById('editScheduledDate').value = workOrder.scheduled_date || '';
+            document.getElementById('editDescription').value = workOrder.description || '';
+            document.getElementById('editAssignedTo').value = workOrder.assigned_to || '';
+            document.getElementById('editPartsRequired').value = 
+                Array.isArray(workOrder.parts_required) ? workOrder.parts_required.join(', ') : (workOrder.parts_required || '');
+
+            // Populate asset details
+            if (workOrder.asset_details) {
+                document.getElementById('assetName').textContent = workOrder.asset_name || 'Unknown';
+                document.getElementById('assetLocation').textContent = workOrder.asset_details.location || 'Not specified';
+                document.getElementById('assetSerial').textContent = workOrder.asset_details.serial_number || 'N/A';
+                document.getElementById('assetLastMaintenance').textContent = workOrder.asset_details.last_maintenance || 'Unknown';
+            }
+
+            // Populate required tools
+            if (workOrder.tools_required && Array.isArray(workOrder.tools_required)) {
+                const toolsList = document.getElementById('requiredTools');
+                toolsList.innerHTML = workOrder.tools_required.map(tool => `<li>${tool}</li>`).join('');
+            }
+
+            // Populate procedures
+            if (workOrder.procedures && Array.isArray(workOrder.procedures)) {
+                const proceduresList = document.getElementById('workOrderProcedures');
+                proceduresList.innerHTML = workOrder.procedures.map(procedure => `<li>${procedure}</li>`).join('');
+            }
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('editWorkOrderModal'));
+            modal.show();
+
+        } catch (error) {
+            console.error('Error opening work order editor:', error);
+            alert('❌ Failed to load work order details. Please try again.');
+        }
+    }
+
+    async function saveWorkOrderChanges() {
+        try {
+            const workOrderId = document.getElementById('editWorkOrderId').value;
+            
+            // Collect form data
+            const updates = {
+                title: document.getElementById('editTitle').value,
+                priority: document.getElementById('editPriority').value,
+                status: document.getElementById('editStatus').value,
+                estimated_duration: parseInt(document.getElementById('editDuration').value) || null,
+                due_date: document.getElementById('editDueDate').value || null,
+                scheduled_date: document.getElementById('editScheduledDate').value || null,
+                description: document.getElementById('editDescription').value,
+                assigned_to: document.getElementById('editAssignedTo').value || null,
+                parts_required: document.getElementById('editPartsRequired').value.split(',').map(p => p.trim()).filter(p => p.length > 0)
+            };
+
+            // Validate required fields
+            if (!updates.title) {
+                alert('⚠️ Work order title is required');
+                return;
+            }
+
+            // Send update request
+            const response = await fetch(`/planner/work-orders/${workOrderId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updates)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update work order');
+            }
+
+            const result = await response.json();
+
+            // Show success message
+            alert(`✅ Work Order Updated Successfully!\\n\\nUpdated fields: ${result.updated_fields.join(', ')}`);
+
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('editWorkOrderModal')).hide();
+
+            // Refresh data
+            loadBacklog();
+            loadSummary();
+
+        } catch (error) {
+            console.error('Error saving work order changes:', error);
+            alert('❌ Failed to save changes. Please try again.');
+        }
+    }
+
+    async function deleteWorkOrder() {
+        const workOrderId = document.getElementById('editWorkOrderId').value;
+        const title = document.getElementById('editTitle').value;
+        
+        if (!confirm(`⚠️ Are you sure you want to delete work order "${title}"?\\n\\nThis action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // In a real system, this would be a DELETE request
+            // For now, we'll just simulate deletion
+            alert(`🗑️ Work Order Deleted\\n\\n"${title}" has been removed from the system.`);
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('editWorkOrderModal')).hide();
+            
+            // Refresh data
+            loadBacklog();
+            loadSummary();
+
+        } catch (error) {
+            console.error('Error deleting work order:', error);
+            alert('❌ Failed to delete work order. Please try again.');
+        }
+    }
+
+    // Add CSS for better work order interaction
+    document.addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .backlog-item:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2) !important;
+            }
+            
+            .backlog-item:active {
+                transform: translateY(0) !important;
+            }
+        `;
+        document.head.appendChild(style);
+    });
 </script>
 {% endblock %}

@@ -372,18 +372,11 @@ def is_authenticated(request: Request) -> bool:
 @app.get("/")
 async def root(request: Request):
     """
-    🚀 APP-FIRST LOGIC - Smart Entry System
+    🚀 ROOT REDIRECT - Direct to Demo
     
-    - If authenticated: Redirect to /dashboard (The CMMS Application)
-    - If not authenticated: Redirect to /login (The Gate)
-    - Marketing page (/landing) is available but not default
+    Always redirect to /demo page as requested
     """
-    if is_authenticated(request):
-        # User is logged in - take them straight to the application
-        return RedirectResponse(url="/dashboard", status_code=302)
-    else:
-        # User needs to log in - take them to the login screen
-        return RedirectResponse(url="/login", status_code=302)
+    return RedirectResponse(url="/demo", status_code=302)
 
 
 # Simple test endpoint to verify deployment

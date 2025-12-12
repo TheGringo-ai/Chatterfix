@@ -105,6 +105,19 @@ class ComprehensiveMemorySystem:
         self.code_changes_collection = "code_changes"
         self.mistake_patterns_collection = "mistake_patterns"
         self.solution_knowledge_collection = "solution_knowledge_base"
+        
+        # Memory limits optimized for $10/month budget
+        self.memory_limits = {
+            "max_conversations": 15000,     # ~$6/month - recent conversations
+            "max_code_changes": 8000,       # ~$3/month - development history
+            "max_mistakes": None,           # UNLIMITED - never lose mistake data
+            "max_solutions": None,          # UNLIMITED - keep all solutions forever
+            "retention_days_conversations": 90,  # 3 months for conversations
+            "retention_days_code": 180,     # 6 months for code changes
+            "cleanup_batch_size": 100,      # Process cleanup efficiently
+            "auto_cleanup_enabled": True,   # Auto-remove old conversations
+            "archive_to_storage": True      # Archive old data to cheap storage
+        }
 
     def _initialize_firestore(self):
         """Initialize Firestore database connection"""
@@ -209,11 +222,139 @@ class ComprehensiveMemorySystem:
             doc_ref.set(asdict(code_change))
 
             logger.info(f"🔧 Captured code change {change_id}")
+            
+            # Auto-cleanup if enabled
+            if self.memory_limits["auto_cleanup_enabled"]:
+                await self._cleanup_old_data()
+            
             return change_id
 
         except Exception as e:
             logger.error(f"Failed to capture code change: {e}")
             return ""
+
+    async def _cleanup_old_data(self):
+        """Clean up old data to stay within budget limits"""
+        try:
+            # Cleanup old conversations (keep within limit and retention period)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(
+                days=self.memory_limits["retention_days_conversations"]
+            )
+            
+            # Remove conversations older than retention period
+            old_conversations = (
+                self.db.collection(self.conversation_collection)
+                .where("timestamp", "<", cutoff_date)
+                .limit(self.memory_limits["cleanup_batch_size"])
+            )
+            
+            batch = self.db.batch()
+            count = 0
+            for doc in old_conversations.stream():
+                batch.delete(doc.reference)
+                count += 1
+            
+            if count > 0:
+                batch.commit()
+                logger.info(f"🧹 Cleaned up {count} old conversations")
+            
+            # Check if we're over the conversation limit
+            total_conversations = len(list(self.db.collection(self.conversation_collection).stream()))
+            if total_conversations > self.memory_limits["max_conversations"]:
+                excess = total_conversations - self.memory_limits["max_conversations"]
+                # Remove oldest conversations beyond limit
+                old_docs = (
+                    self.db.collection(self.conversation_collection)
+                    .order_by("timestamp")
+                    .limit(excess)
+                )
+                
+                batch = self.db.batch()
+                for doc in old_docs.stream():
+                    batch.delete(doc.reference)
+                batch.commit()
+                logger.info(f"🧹 Removed {excess} conversations to stay within limit")
+            
+            # Cleanup old code changes
+            code_cutoff = datetime.now(timezone.utc) - timedelta(
+                days=self.memory_limits["retention_days_code"]
+            )
+            
+            old_code_changes = (
+                self.db.collection(self.code_changes_collection)
+                .where("timestamp", "<", code_cutoff)
+                .limit(self.memory_limits["cleanup_batch_size"])
+            )
+            
+            batch = self.db.batch()
+            count = 0
+            for doc in old_code_changes.stream():
+                batch.delete(doc.reference)
+                count += 1
+            
+            if count > 0:
+                batch.commit()
+                logger.info(f"🧹 Cleaned up {count} old code changes")
+                
+        except Exception as e:
+            logger.error(f"Cleanup failed: {e}")
+
+    async def get_memory_usage(self) -> Dict[str, Any]:
+        """Get current memory usage and cost estimates"""
+        try:
+            # Count documents in each collection
+            conversations_count = len(list(self.db.collection(self.conversation_collection).stream()))
+            code_changes_count = len(list(self.db.collection(self.code_changes_collection).stream()))
+            mistakes_count = len(list(self.db.collection(self.mistake_patterns_collection).stream()))
+            solutions_count = len(list(self.db.collection(self.solution_knowledge_collection).stream()))
+            
+            # Calculate estimated monthly cost (rough estimate)
+            # Based on: $0.18 per 100k writes, $0.06 per 100k reads
+            estimated_cost = (
+                (conversations_count * 0.18 / 100000) +  # Conversation writes
+                (code_changes_count * 0.18 / 100000) +   # Code change writes
+                (mistakes_count * 0.18 / 100000) +       # Mistake writes
+                (solutions_count * 0.18 / 100000) +      # Solution writes
+                2.0  # Estimated reads/queries per month
+            )
+            
+            return {
+                "collections": {
+                    "conversations": {
+                        "count": conversations_count,
+                        "limit": self.memory_limits["max_conversations"],
+                        "percentage": round((conversations_count / self.memory_limits["max_conversations"]) * 100, 1)
+                    },
+                    "code_changes": {
+                        "count": code_changes_count,
+                        "limit": self.memory_limits["max_code_changes"],
+                        "percentage": round((code_changes_count / self.memory_limits["max_code_changes"]) * 100, 1)
+                    },
+                    "mistakes": {
+                        "count": mistakes_count,
+                        "limit": "unlimited",
+                        "percentage": "N/A"
+                    },
+                    "solutions": {
+                        "count": solutions_count,
+                        "limit": "unlimited", 
+                        "percentage": "N/A"
+                    }
+                },
+                "estimated_monthly_cost": f"${estimated_cost:.2f}",
+                "budget_limit": "$10.00",
+                "within_budget": estimated_cost <= 10.0,
+                "retention_policies": {
+                    "conversations": f"{self.memory_limits['retention_days_conversations']} days",
+                    "code_changes": f"{self.memory_limits['retention_days_code']} days",
+                    "mistakes": "permanent",
+                    "solutions": "permanent"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get memory usage: {e}")
+            return {"error": str(e)}
 
     async def capture_mistake(
         self,

@@ -72,13 +72,8 @@ def open_browser():
     url = "http://localhost:8888"
 
     try:
-        if platform.system() == "Darwin":  # macOS
-            subprocess.run(["open", url])
-        elif platform.system() == "Windows":  # Windows
-            subprocess.run(["start", url], shell=True)
-        elif platform.system() == "Linux":  # Linux
-            subprocess.run(["xdg-open", url])
-
+        import webbrowser
+        webbrowser.open(url)
         print(f"🌐 Opening dashboard in browser: {url}")
     except Exception as e:
         print(f"ℹ️  Please open {url} manually in your browser")

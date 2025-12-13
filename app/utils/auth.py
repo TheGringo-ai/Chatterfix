@@ -453,7 +453,7 @@ def create_secure_api_key(user_id: int, purpose: str = "general") -> str:
     random_part = secrets.token_urlsafe(32)
 
     # Create checksum for validation
-    checksum = hashlib.md5(f"{user_id}{purpose}{random_part}".encode()).hexdigest()[:8]
+    checksum = hashlib.md5(f"{user_id}{purpose}{random_part}".encode(), usedforsecurity=False).hexdigest()[:8]
 
     api_key = f"{prefix}_{random_part}_{checksum}"
 

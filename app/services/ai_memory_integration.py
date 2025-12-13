@@ -33,11 +33,11 @@ class AIMemoryService:
 
     def _generate_session_id(self) -> str:
         """Generate unique session ID"""
-        return hashlib.md5(f"{time.time()}".encode()).hexdigest()[:12]
+        return hashlib.md5(f"{time.time()}".encode(), usedforsecurity=False).hexdigest()[:12]
 
     def _generate_id(self, content: str) -> str:
         """Generate unique ID from content"""
-        return hashlib.md5(f"{content}{time.time()}".encode()).hexdigest()[:16]
+        return hashlib.md5(f"{content}{time.time()}".encode(), usedforsecurity=False).hexdigest()[:16]
 
     async def capture_interaction(
         self,

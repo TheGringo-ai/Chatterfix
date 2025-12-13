@@ -182,7 +182,7 @@ fix_it_fred_request = {
     def _generate_error_id(self, source: str, target: str, error_type: str) -> str:
         """Generate unique error ID"""
         content = f"{source}_{target}_{error_type}"
-        return hashlib.md5(content.encode()).hexdigest()[:12]
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:12]
 
     async def record_integration_error(
         self,

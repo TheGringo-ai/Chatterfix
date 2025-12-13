@@ -268,7 +268,8 @@ class UltimateMemorySystem:
 
         # Generate pattern ID
         pattern_id = hashlib.md5(
-            f"{mistake_description}{application}".encode()
+            f"{mistake_description}{application}".encode(),
+            usedforsecurity=False
         ).hexdigest()[:12]
 
         # Check if pattern exists
@@ -318,7 +319,8 @@ class UltimateMemorySystem:
         """Capture successful solutions for reuse"""
 
         pattern_id = hashlib.md5(
-            f"{problem_description}{application}".encode()
+            f"{problem_description}{application}".encode(),
+            usedforsecurity=False
         ).hexdigest()[:12]
 
         solution = SolutionPattern(
@@ -657,7 +659,8 @@ async def capture_interaction(
     """Easy function to capture any AI interaction"""
     if not session_id:
         session_id = hashlib.md5(
-            f"{time.time()}{user_request[:50]}".encode()
+            f"{time.time()}{user_request[:50]}".encode(),
+            usedforsecurity=False
         ).hexdigest()[:12]
 
     return await ultimate_memory.capture_conversation(

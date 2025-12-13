@@ -116,7 +116,8 @@ class UniversalAIPlatform:
         """Capture any interaction from any application"""
 
         session_id = hashlib.md5(
-            f"{application}{datetime.now().isoformat()}{user_request[:50]}".encode()
+            f"{application}{datetime.now().isoformat()}{user_request[:50]}".encode(),
+            usedforsecurity=False
         ).hexdigest()[:16]
 
         # Store in universal memory
@@ -286,7 +287,8 @@ class UniversalAIPlatform:
         """Learn from every deployment across all applications"""
 
         learning_id = hashlib.md5(
-            f"deployment_{application}_{datetime.now().isoformat()}".encode()
+            f"deployment_{application}_{datetime.now().isoformat()}".encode(),
+            usedforsecurity=False
         ).hexdigest()[:12]
 
         # Extract lessons from deployment

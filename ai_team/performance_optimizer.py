@@ -668,7 +668,7 @@ class PerformanceOptimizer:
             # Cache if quality is good enough
             if quality_assessment.overall_score > 0.5:
                 cache_key = self.response_cache.generate_cache_key(prompt, context, agent_name)
-                context_hash = hashlib.md5(context.encode()).hexdigest()[:8]
+                context_hash = hashlib.md5(context.encode(), usedforsecurity=False).hexdigest()[:8]
                 
                 await self.response_cache.store_cached_response(
                     cache_key, response, agent_name, model_type,

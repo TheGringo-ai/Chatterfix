@@ -352,9 +352,6 @@ if __name__ == "__main__":
     print("📊 Dashboard will be available at: http://localhost:8888")
     print("🔧 Features: Real-time monitoring, memory search, team collaboration")
 
-    # Create necessary template files
-    asyncio.run(dashboard.memory_system.initialize())
-
     # Run the dashboard
     uvicorn.run(
         "local_dashboard:app", host="0.0.0.0", port=8888, reload=True, log_level="info"

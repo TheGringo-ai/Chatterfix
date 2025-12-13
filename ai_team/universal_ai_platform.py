@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 
-from .autogen_framework import AutogenFramework
+from .autogen_framework import AutogenOrchestrator, get_orchestrator
 from .ultimate_memory_system import capture_interaction, learn_mistake, ultimate_memory
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class UniversalAIPlatform:
 
     def __init__(self):
         self.applications = {}
-        self.ai_team = AutogenFramework()
+        self.ai_team = get_orchestrator()
         self.memory_system = ultimate_memory
         self.active_sessions = {}
 

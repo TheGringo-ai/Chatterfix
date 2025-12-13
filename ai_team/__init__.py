@@ -21,6 +21,10 @@ Usage:
     )
 """
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 from .autogen_framework import (
     AutogenOrchestrator,
     CollaborationResult,

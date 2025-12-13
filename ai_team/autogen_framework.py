@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import time
+import importlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional, AsyncGenerator, Any
@@ -78,7 +79,11 @@ class ClaudeAgent(AIAgent):
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
             import os
-            import anthropic
+            try:
+                anthropic = importlib.import_module("anthropic")
+            except ModuleNotFoundError:
+                logger.error("Anthropic SDK not installed; Claude agent unavailable.")
+                return f"[{self.config.name}] Error: Anthropic SDK not installed"
             
             api_key = os.getenv('ANTHROPIC_API_KEY')
             if not api_key:
@@ -234,10 +239,11 @@ class GrokAgent(AIAgent):
         except Exception as e:
             logger.error(f"Grok agent error: {e}")
             return f"[{self.config.name}] Error: {str(e)}"
-    
+
     async def is_available(self) -> bool:
         import os
         return bool(os.getenv('XAI_API_KEY'))
+
 
 class AutogenOrchestrator:
     """

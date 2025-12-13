@@ -125,7 +125,7 @@ steps:
       - '--region=$REGION'
       - '--platform=managed'
       - '--allow-unauthenticated'
-      - '--set-env-vars=USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,LOG_LEVEL=info'
+      - '--set-env-vars=USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app'
       - '--memory=2Gi'
       - '--cpu=1'
       - '--concurrency=80'
@@ -159,7 +159,7 @@ else
       --region=$REGION \
       --platform=managed \
       --allow-unauthenticated \
-      --set-env-vars=USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,LOG_LEVEL=info \
+      --set-env-vars=USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app \
       --memory=2Gi \
       --cpu=1 \
       --concurrency=80 \

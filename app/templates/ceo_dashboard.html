@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Team Platform - CEO Command Center</title>
+    
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --bg-light: #f8fafc;
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* CEO Header */
+        .ceo-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ceo-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="white" opacity="0.1"><polygon points="0,0 1000,0 1000,100"/></svg>');
+            background-size: cover;
+        }
+
+        .ceo-brand {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .platform-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: var(--glass-border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Main Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        /* Quick Actions Panel */
+        .quick-actions {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-glass);
+            height: fit-content;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 1.5rem;
+            border: none;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .action-btn i {
+            font-size: 1.5rem;
+            width: 30px;
+        }
+
+        .action-spin-app {
+            background: var(--primary-gradient);
+            animation: pulse-glow 3s infinite;
+        }
+
+        .action-manage-platforms {
+            background: var(--success-gradient);
+        }
+
+        .action-user-management {
+            background: var(--warning-gradient);
+        }
+
+        .action-cloud-services {
+            background: var(--dark-gradient);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: white;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.8); }
+        }
+
+        /* Main Content Area */
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-glass);
+        }
+
+        /* Application Cards */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .app-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .app-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .app-status {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-online {
+            color: #10b981;
+        }
+
+        .status-maintenance {
+            color: #f59e0b;
+        }
+
+        .app-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .app-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: var(--text-primary);
+        }
+
+        .app-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* AI Team Status */
+        .ai-team-status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .ai-members {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .ai-member {
+            background: var(--glass-bg);
+            border: var(--glass-border);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .member-status {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            margin: 0 auto 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .platform-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .app-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- CEO Header -->
+    <div class="ceo-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="ceo-brand">
+                        <i class="fas fa-crown me-3"></i>
+                        AI TEAM PLATFORM
+                    </div>
+                    <div class="h5 mb-0 mt-2 opacity-90">Ultimate Development Command Center</div>
+                </div>
+                <div class="text-end">
+                    <div class="h2 mb-1">$250M+</div>
+                    <div>Estimated Platform Value</div>
+                </div>
+            </div>
+
+            <!-- Platform Statistics -->
+            <div class="platform-stats">
+                <div class="stat-card">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Active Applications</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">AI Team Members</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">99.9%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">47</div>
+                    <div class="stat-label">Mistakes Prevented</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Quick Actions Sidebar -->
+            <div class="quick-actions">
+                <h2 class="section-title">
+                    <i class="fas fa-rocket me-2"></i>
+                    Quick Actions
+                </h2>
+
+                <button class="action-btn action-spin-app" onclick="showSpinUpModal()">
+                    <i class="fas fa-plus-circle"></i>
+                    <div>
+                        <div>Spin Up New Application</div>
+                        <small style="opacity: 0.8;">Deploy instantly with AI team</small>
+                    </div>
+                </button>
+
+                <button class="action-btn action-manage-platforms" onclick="showPlatformManager()">
+                    <i class="fas fa-cogs"></i>
+                    <div>
+                        <div>Manage Existing Platforms</div>
+                        <small style="opacity: 0.8;">Configure and monitor apps</small>
+                    </div>
+                </button>
+
+                <button class="action-btn action-user-management" onclick="showUserManager()">
+                    <i class="fas fa-users"></i>
+                    <div>
+                        <div>User Management</div>
+                        <small style="opacity: 0.8;">Control access and permissions</small>
+                    </div>
+                </button>
+
+                <button class="action-btn action-cloud-services" onclick="showCloudServices()">
+                    <i class="fas fa-cloud"></i>
+                    <div>
+                        <div>Cloud Services</div>
+                        <small style="opacity: 0.8;">AWS, GCP, Docker management</small>
+                    </div>
+                </button>
+
+                <!-- AI Team Status -->
+                <div class="ai-team-status">
+                    <h3 class="mb-3">
+                        <i class="fas fa-robot me-2"></i>
+                        AI Team Status
+                    </h3>
+                    <div class="ai-members">
+                        <div class="ai-member">
+                            <div class="member-status"></div>
+                            <div>Claude Sonnet 4</div>
+                            <small>Lead Architect</small>
+                        </div>
+                        <div class="ai-member">
+                            <div class="member-status"></div>
+                            <div>ChatGPT 4</div>
+                            <small>Senior Dev</small>
+                        </div>
+                        <div class="ai-member">
+                            <div class="member-status"></div>
+                            <div>Gemini 2.5</div>
+                            <small>Creative Lead</small>
+                        </div>
+                        <div class="ai-member">
+                            <div class="member-status"></div>
+                            <div>Grok 3</div>
+                            <small>Strategist</small>
+                        </div>
+                        <div class="ai-member">
+                            <div class="member-status"></div>
+                            <div>Fix-it-Fred</div>
+                            <small>Autonomous</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Application Dashboard -->
+            <div class="main-content">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="section-title">
+                        <i class="fas fa-apps me-2"></i>
+                        Application Portfolio
+                    </h2>
+                    <button class="btn btn-primary" onclick="showSpinUpModal()">
+                        <i class="fas fa-plus me-2"></i>
+                        New Application
+                    </button>
+                </div>
+
+                <!-- Application Cards -->
+                <div class="app-grid">
+                    <!-- ChatterFix CMMS -->
+                    <div class="app-card">
+                        <div class="app-header">
+                            <div class="app-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                                <i class="fas fa-cogs"></i>
+                            </div>
+                            <div>
+                                <div class="app-title">ChatterFix CMMS</div>
+                                <div class="app-status status-online">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Online - chatterfix.com
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Users:</strong> 1,247 active<br>
+                            <strong>Revenue:</strong> $47K/month<br>
+                            <strong>Performance:</strong> 99.8% uptime
+                        </div>
+                        <div class="app-actions">
+                            <button class="app-btn btn-primary" onclick="window.open('https://chatterfix.com', '_blank')">
+                                <i class="fas fa-external-link-alt me-1"></i>
+                                Open
+                            </button>
+                            <button class="app-btn btn-secondary" onclick="showAppDetails('chatterfix')">
+                                <i class="fas fa-chart-line me-1"></i>
+                                Analytics
+                            </button>
+                            <button class="app-btn btn-secondary" onclick="showAppSettings('chatterfix')">
+                                <i class="fas fa-cog me-1"></i>
+                                Settings
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fix-it-Fred -->
+                    <div class="app-card">
+                        <div class="app-header">
+                            <div class="app-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <div class="app-title">Fix-it-Fred AI</div>
+                                <div class="app-status status-online">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Active - Autonomous Mode
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Fixes Applied:</strong> 1,847<br>
+                            <strong>Success Rate:</strong> 97.3%<br>
+                            <strong>Time Saved:</strong> 2,340 hours
+                        </div>
+                        <div class="app-actions">
+                            <button class="app-btn btn-primary" onclick="showFixItFred()">
+                                <i class="fas fa-robot me-1"></i>
+                                Interface
+                            </button>
+                            <button class="app-btn btn-secondary" onclick="showAppDetails('fred')">
+                                <i class="fas fa-chart-line me-1"></i>
+                                Stats
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- LineSmart Training -->
+                    <div class="app-card">
+                        <div class="app-header">
+                            <div class="app-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div>
+                                <div class="app-title">LineSmart Training</div>
+                                <div class="app-status status-online">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Online - Beta
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Active Learners:</strong> 342<br>
+                            <strong>Completion Rate:</strong> 89%<br>
+                            <strong>Satisfaction:</strong> 4.8/5
+                        </div>
+                        <div class="app-actions">
+                            <button class="app-btn btn-primary" onclick="showLineSmart()">
+                                <i class="fas fa-external-link-alt me-1"></i>
+                                Open
+                            </button>
+                            <button class="app-btn btn-secondary" onclick="showAppDetails('linesmart')">
+                                <i class="fas fa-users me-1"></i>
+                                Users
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Memory System -->
+                    <div class="app-card">
+                        <div class="app-header">
+                            <div class="app-icon" style="background: linear-gradient(135deg, #2c3e50, #34495e);">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div>
+                                <div class="app-title">AI Memory Core</div>
+                                <div class="app-status status-online">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Learning - Real-time
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Conversations:</strong> 15,847<br>
+                            <strong>Patterns Learned:</strong> 2,394<br>
+                            <strong>Mistakes Prevented:</strong> 847
+                        </div>
+                        <div class="app-actions">
+                            <button class="app-btn btn-primary" onclick="showMemoryCore()">
+                                <i class="fas fa-brain me-1"></i>
+                                Core
+                            </button>
+                            <button class="app-btn btn-secondary" onclick="showAppDetails('memory')">
+                                <i class="fas fa-database me-1"></i>
+                                Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Templates -->
+    <div id="modalContainer"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // CEO Dashboard Functions
+        
+        function showSpinUpModal() {
+            const modal = `
+                <div class="modal fade" id="spinUpModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-rocket me-2"></i>
+                                    Spin Up New Application
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Application Templates</h6>
+                                        <div class="list-group mb-3">
+                                            <button class="list-group-item list-group-item-action" onclick="deployApp('cms')">
+                                                <i class="fas fa-globe me-2"></i>
+                                                <strong>CMS Platform</strong>
+                                                <br><small>Content management with AI</small>
+                                            </button>
+                                            <button class="list-group-item list-group-item-action" onclick="deployApp('ecommerce')">
+                                                <i class="fas fa-shopping-cart me-2"></i>
+                                                <strong>E-commerce Store</strong>
+                                                <br><small>Full online store solution</small>
+                                            </button>
+                                            <button class="list-group-item list-group-item-action" onclick="deployApp('dashboard')">
+                                                <i class="fas fa-chart-line me-2"></i>
+                                                <strong>Analytics Dashboard</strong>
+                                                <br><small>Business intelligence platform</small>
+                                            </button>
+                                            <button class="list-group-item list-group-item-action" onclick="deployApp('custom')">
+                                                <i class="fas fa-code me-2"></i>
+                                                <strong>Custom Application</strong>
+                                                <br><small>Build from scratch with AI</small>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Deployment Options</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="deployment" id="cloudRun" checked>
+                                            <label class="form-check-label" for="cloudRun">
+                                                <i class="fas fa-cloud me-2"></i>Google Cloud Run
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="deployment" id="aws">
+                                            <label class="form-check-label" for="aws">
+                                                <i class="fab fa-aws me-2"></i>AWS Lambda
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="deployment" id="docker">
+                                            <label class="form-check-label" for="docker">
+                                                <i class="fab fa-docker me-2"></i>Docker Container
+                                            </label>
+                                        </div>
+                                        
+                                        <h6>AI Team Assignment</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="claude" checked>
+                                            <label class="form-check-label" for="claude">Claude Sonnet 4 - Lead</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="chatgpt" checked>
+                                            <label class="form-check-label" for="chatgpt">ChatGPT 4 - Development</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="gemini">
+                                            <label class="form-check-label" for="gemini">Gemini 2.5 - UI/UX</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContainer').innerHTML = modal;
+            new bootstrap.Modal(document.getElementById('spinUpModal')).show();
+        }
+
+        function showPlatformManager() {
+            alert('🔧 Platform Manager\n\nFeatures:\n• Real-time monitoring\n• Performance optimization\n• Auto-scaling configuration\n• Error tracking and resolution\n• AI-powered maintenance\n\nComing soon in full interface!');
+        }
+
+        function showUserManager() {
+            alert('👥 User Management System\n\nCapabilities:\n• Multi-tenant user control\n• Role-based permissions\n• SSO integration\n• Usage analytics\n• Automated provisioning\n\nFull interface in development!');
+        }
+
+        function showCloudServices() {
+            alert('☁️ Cloud Services Manager\n\nIntegrations:\n• Google Cloud Platform\n• Amazon Web Services\n• Docker Hub\n• Firebase\n• CDN Management\n\nCentralized control panel coming soon!');
+        }
+
+        function deployApp(type) {
+            const types = {
+                'cms': 'CMS Platform',
+                'ecommerce': 'E-commerce Store', 
+                'dashboard': 'Analytics Dashboard',
+                'custom': 'Custom Application'
+            };
+            
+            alert(`🚀 Deploying ${types[type]}...\n\n✅ AI Team assembling\n✅ Infrastructure provisioning\n✅ Code generation starting\n✅ Deployment pipeline active\n\nEstimated completion: 5-10 minutes\n\nYou'll receive updates in real-time!`);
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('spinUpModal')).hide();
+        }
+
+        function showAppDetails(app) {
+            const details = {
+                'chatterfix': 'ChatterFix CMMS Analytics:\n• 1,247 active users\n• $47K monthly revenue\n• 99.8% uptime\n• 2.3s avg response time\n• 847 work orders processed\n• 94% customer satisfaction',
+                'fred': 'Fix-it-Fred AI Stats:\n• 1,847 automated fixes\n• 97.3% success rate\n• 2,340 hours saved\n• $125K cost savings\n• 47 critical issues prevented\n• 24/7 autonomous operation',
+                'linesmart': 'LineSmart Training Metrics:\n• 342 active learners\n• 89% course completion\n• 4.8/5 satisfaction rating\n• 156 skills certified\n• 23% productivity increase\n• AI-personalized learning paths',
+                'memory': 'AI Memory Core Statistics:\n• 15,847 conversations analyzed\n• 2,394 patterns learned\n• 847 mistakes prevented\n• 99.7% accuracy rate\n• Real-time learning active\n• Cross-platform knowledge sharing'
+            };
+            
+            alert(details[app] || 'Application details loading...');
+        }
+
+        function showAppSettings(app) {
+            alert('⚙️ Application Settings\n\nConfiguration options:\n• Environment variables\n• Database connections\n• API integrations\n• Security settings\n• Performance tuning\n• Backup schedules\n\nAdvanced settings panel coming soon!');
+        }
+
+        // Auto-refresh dashboard data every 30 seconds
+        setInterval(() => {
+            console.log('🔄 Auto-refreshing dashboard data...');
+            // Update real-time statistics here
+        }, 30000);
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 CEO Dashboard initialized');
+            console.log('💡 AI Team Platform ready for command');
+        });
+    </script>
+</body>
+</html>

@@ -112,6 +112,7 @@ all_extended_routers = [
     'analytics',
     'assets',
     'autonomous_features',
+    'ceo_dashboard',
     'demo',
     'fix_it_fred',
     'inventory',

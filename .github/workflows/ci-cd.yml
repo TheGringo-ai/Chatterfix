@@ -148,91 +148,15 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    # Note: Staging environment not configured - remove environment block to avoid errors
+  # NOTE: Deployment is handled by production-ci-cd.yml workflow
+  # This workflow focuses on security scanning, testing, and building
+  # The deploy jobs below are disabled to avoid conflicts
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # deploy-staging:
+  #   Disabled - No staging environment configured
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run (Staging)
-        run: |
-          gcloud run deploy chatterfix-staging \
-            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.DOCKER_IMAGE }}:develop \
-            --region us-central1 \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 2Gi \
-            --cpu 2 \
-            --min-instances 0 \
-            --max-instances 5 \
-            --set-env-vars ENVIRONMENT=staging,LOG_LEVEL=info
-
-      - name: Run staging health check
-        run: |
-          sleep 30
-          curl -f https://chatterfix-staging.run.app/health || echo "Staging health check skipped"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-
-    environment:
-      name: production
-      url: https://chatterfix.com
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run (Production)
-        run: |
-          gcloud run deploy chatterfix-prod \
-            --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.DOCKER_IMAGE }}:latest \
-            --region us-central1 \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8080 \
-            --memory 4Gi \
-            --cpu 4 \
-            --min-instances 2 \
-            --max-instances 20 \
-            --set-env-vars ENVIRONMENT=production,LOG_LEVEL=warning \
-            --no-traffic
-
-      - name: Run production health check
-        run: |
-          sleep 45
-          curl -f https://chatterfix.com/health
-          
-      - name: Route traffic to new version
-        run: |
-          gcloud run services update-traffic chatterfix-prod \
-            --region us-central1 \
-            --to-latest
+  # deploy-production:
+  #   Disabled - Handled by production-ci-cd.yml which deploys to chatterfix-cmms
 
   ai-enhancement:
     name: AI-Enhanced Development
@@ -278,23 +202,6 @@ jobs:
               body: `## 🤖 AI Development Insights\n\n${insights}`
             });
 
-  performance-monitoring:
-    name: Performance Monitoring
-    runs-on: ubuntu-latest
-    needs: deploy-production
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Run performance tests
-        run: |
-          pip install locust
-          locust --headless --users 50 --spawn-rate 5 --run-time 300s --host https://chatterfix.com
-          
-      - name: Monitor application metrics
-        run: |
-          echo "Monitoring deployment for 5 minutes..."
-          sleep 300
-          # Add actual monitoring checks here
+  # performance-monitoring:
+  #   Disabled - Performance monitoring is optional and can be run manually
+  #   To run: locust --headless --users 50 --spawn-rate 5 --run-time 300s --host https://chatterfix.com

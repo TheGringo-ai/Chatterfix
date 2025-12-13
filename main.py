@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Load environment variables (override system defaults)
 load_dotenv(override=True)
 
-print("DEBUG: STARTING AI TEAM ROUTER FIX - 2025-12-12")
+# Production build - debug statements removed for clean deployment
 
 # Define version information immediately to avoid circular import issues
 APP_VERSION = "2.1.0-enterprise-planner"
@@ -48,12 +48,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# DEBUG: Check if this code section runs at all
-print("DEBUG: About to log AI team configuration")
+# Log AI team configuration
 
 # Log AI team configuration now that logger is initialized - SAFE VERSION
 try:
-    print("DEBUG: Inside try block for AI team config")
     logger.info("🤖 AI Team Configuration:")
     logger.info(f"   DISABLE_AI_TEAM_GRPC: {DISABLE_AI_TEAM_GRPC}")
     logger.info(f"   USE_AI_TEAM_HTTP: {USE_AI_TEAM_HTTP}")
@@ -67,9 +65,7 @@ try:
         logger.info("⚠️  AI Team gRPC service will be used (may cause startup timeout)")
     else:
         logger.info("❌ AI Team service disabled")
-    print("DEBUG: AI team config logging completed successfully")
 except Exception as e:
-    print(f"DEBUG: Exception in AI team config: {e}")
     logger.error(f"Failed to log AI team configuration: {e}")
     # Continue execution - don't let logging break the app
 
@@ -121,6 +117,8 @@ all_extended_routers = [
     'planner_simple',
     'public_demo',
     'purchasing',
+    'quality_management',
+    'safety_management',
     'team',
     'training',
     'user_management',
@@ -336,7 +334,9 @@ router_descriptions = {
     'training': 'Training modules and learning management system',
     'user_management': 'User management dashboard with Firebase Auth',
     'analytics': 'Analytics dashboard with KPIs and reporting',
-    'planner_simple': 'Simple planner for testing'
+    'planner_simple': 'Simple planner for testing',
+    'quality_management': 'Quality Management System with ISO 9001 compliance and supplier audits',
+    'safety_management': 'Safety Management System with incident tracking and lab results'
 }
 
 # Include each router that was successfully imported

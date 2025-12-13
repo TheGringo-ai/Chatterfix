@@ -515,6 +515,330 @@
                 transform: translateY(-1px);
             }
         }
+
+        /* 🏢 ENTERPRISE ADD-ON MODULES STYLING */
+        .enterprise-addons-section {
+            background: linear-gradient(135deg, var(--bg-secondary, #f8f9fa), var(--bg-tertiary, #e9ecef));
+            border-top: 2px solid var(--border-color, #dee2e6);
+            padding: 3rem 0 2rem 0;
+            margin-top: 2rem;
+        }
+
+        .addons-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .addons-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .addons-title {
+            color: var(--text-primary, #2c3e50);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+        }
+
+        .addons-subtitle {
+            color: var(--text-muted, #6c757d);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .addons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .addon-card {
+            background: var(--bg-primary, #ffffff);
+            border: 2px solid var(--border-color, #e9ecef);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .addon-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            border-color: var(--accent-color, #667eea);
+        }
+
+        .addon-card.addon-active {
+            border-color: var(--accent-color, #667eea);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(118, 75, 162, 0.02));
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+        }
+
+        .addon-card.addon-coming-soon {
+            opacity: 0.8;
+            background: linear-gradient(135deg, var(--bg-primary, #ffffff), rgba(108, 117, 125, 0.05));
+        }
+
+        .addon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .addon-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .addon-icon.safety-icon {
+            background: linear-gradient(135deg, #f5576c, #e94570);
+        }
+
+        .addon-icon.quality-icon {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .addon-icon.future-icon {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: var(--text-primary, #495057);
+        }
+
+        .addon-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .premium-badge {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #8b4513;
+        }
+
+        .coming-soon-badge {
+            background: var(--bg-glass, rgba(108, 117, 125, 0.1));
+            color: var(--text-muted, #6c757d);
+            border: 1px solid var(--border-color, #dee2e6);
+        }
+
+        .addon-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .addon-name {
+            color: var(--text-primary, #2c3e50);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .addon-description {
+            color: var(--text-secondary, #495057);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .addon-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .feature-tag {
+            background: var(--bg-glass, rgba(102, 126, 234, 0.1));
+            color: var(--accent-color, #667eea);
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .addon-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .addon-btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .addon-btn-primary {
+            background: linear-gradient(135deg, var(--accent-color, #667eea), var(--accent-secondary, #764ba2));
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .addon-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .addon-btn-secondary {
+            background: var(--bg-glass, rgba(108, 117, 125, 0.1));
+            color: var(--text-primary, #495057);
+            border: 2px solid var(--border-color, #dee2e6);
+        }
+
+        .addon-btn-secondary:hover {
+            background: var(--hover-bg, #e9ecef);
+            transform: translateY(-1px);
+        }
+
+        .addon-pricing {
+            text-align: center;
+            color: var(--text-muted, #6c757d);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .addons-footer {
+            border-top: 1px solid var(--border-color, #dee2e6);
+            padding-top: 2rem;
+        }
+
+        .enterprise-cta {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .enterprise-info h6 {
+            color: var(--accent-color, #667eea);
+            font-weight: 600;
+        }
+
+        /* Dark Mode Support for Add-On Modules */
+        .dark-mode .enterprise-addons-section {
+            background: linear-gradient(135deg, var(--bg-secondary, #1e1e2e), var(--bg-tertiary, #2a2a3e));
+            border-top-color: var(--border-color, #333);
+        }
+
+        .dark-mode .addon-card {
+            background: var(--bg-primary, #1a1a2e);
+            border-color: var(--border-color, #333);
+        }
+
+        .dark-mode .addon-card:hover {
+            border-color: var(--accent-color, #667eea);
+        }
+
+        .dark-mode .addon-card.addon-active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+        }
+
+        .dark-mode .addons-title {
+            color: var(--text-primary, rgba(255, 255, 255, 0.9));
+        }
+
+        .dark-mode .addon-name {
+            color: var(--text-primary, rgba(255, 255, 255, 0.9));
+        }
+
+        .dark-mode .addon-description {
+            color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+        }
+
+        .dark-mode .feature-tag {
+            background: rgba(102, 126, 234, 0.2);
+            color: rgba(102, 126, 234, 0.9);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .dark-mode .enterprise-cta {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        /* Mobile Responsiveness for Add-On Modules */
+        @media (max-width: 768px) {
+            .enterprise-addons-section {
+                padding: 2rem 0 1rem 0;
+            }
+
+            .addons-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .addon-card {
+                padding: 1.25rem;
+            }
+
+            .enterprise-cta {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .addons-title {
+                font-size: 1.5rem;
+            }
+
+            .addons-subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .addons-container {
+                padding: 0 0.75rem;
+            }
+
+            .addon-header {
+                margin-bottom: 0.75rem;
+            }
+
+            .addon-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.25rem;
+            }
+
+            .addon-features {
+                gap: 0.375rem;
+            }
+
+            .feature-tag {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.5rem;
+            }
+        }
     </style>
     
     {% block head %}{% endblock %}
@@ -597,6 +921,7 @@
                         <span class="nav-tab-badge" id="urgentWOCount">3</span>
                     </a>
                 </li>
+                
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
                     <a href="/demo/assets" class="nav-tab-link">
@@ -737,6 +1062,122 @@
         {% endif %}
 
         {% block content %}{% endblock %}
+    </div>
+
+    <!-- 🏢 ENTERPRISE ADD-ON MODULES SECTION -->
+    <div class="enterprise-addons-section">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="addons-container">
+                        <div class="addons-header">
+                            <h4 class="addons-title">
+                                <i class="fas fa-star text-warning me-2"></i>
+                                Enterprise Add-On Modules
+                            </h4>
+                            <p class="addons-subtitle">
+                                Professional extensions that integrate seamlessly with your ChatterFix CMMS
+                            </p>
+                        </div>
+                        
+                        <div class="addons-grid">
+                            <!-- SafetyFix Add-On Module -->
+                            <div class="addon-card {% if request.url and request.url.path and request.url.path.startswith('/safety') %}addon-active{% endif %}">
+                                <div class="addon-header">
+                                    <div class="addon-icon safety-icon">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div class="addon-badge premium-badge">Premium</div>
+                                </div>
+                                <div class="addon-content">
+                                    <h5 class="addon-name">SafetyFix</h5>
+                                    <p class="addon-description">
+                                        Complete safety management system with incident tracking, hazard assessment, and compliance reporting.
+                                    </p>
+                                    <div class="addon-features">
+                                        <span class="feature-tag">Incident Tracking</span>
+                                        <span class="feature-tag">OSHA Compliance</span>
+                                        <span class="feature-tag">Risk Assessment</span>
+                                    </div>
+                                </div>
+                                <div class="addon-actions">
+                                    <a href="/safety/dashboard" class="addon-btn addon-btn-primary">
+                                        <i class="fas fa-external-link-alt me-2"></i>Open SafetyFix
+                                    </a>
+                                    <div class="addon-pricing">From $49/month</div>
+                                </div>
+                            </div>
+                            
+                            <!-- QualityFix Add-On Module -->
+                            <div class="addon-card {% if request.url and request.url.path and request.url.path.startswith('/quality') %}addon-active{% endif %}">
+                                <div class="addon-header">
+                                    <div class="addon-icon quality-icon">
+                                        <i class="fas fa-award"></i>
+                                    </div>
+                                    <div class="addon-badge premium-badge">Premium</div>
+                                </div>
+                                <div class="addon-content">
+                                    <h5 class="addon-name">QualityFix</h5>
+                                    <p class="addon-description">
+                                        Advanced quality control system with inspection workflows, non-conformance tracking, and audit management.
+                                    </p>
+                                    <div class="addon-features">
+                                        <span class="feature-tag">Quality Audits</span>
+                                        <span class="feature-tag">ISO Standards</span>
+                                        <span class="feature-tag">CAP Tracking</span>
+                                    </div>
+                                </div>
+                                <div class="addon-actions">
+                                    <a href="/quality/dashboard" class="addon-btn addon-btn-primary">
+                                        <i class="fas fa-external-link-alt me-2"></i>Open QualityFix
+                                    </a>
+                                    <div class="addon-pricing">From $39/month</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Future Add-On Placeholder -->
+                            <div class="addon-card addon-coming-soon">
+                                <div class="addon-header">
+                                    <div class="addon-icon future-icon">
+                                        <i class="fas fa-plus"></i>
+                                    </div>
+                                    <div class="addon-badge coming-soon-badge">Coming Soon</div>
+                                </div>
+                                <div class="addon-content">
+                                    <h5 class="addon-name">More Extensions</h5>
+                                    <p class="addon-description">
+                                        Additional enterprise modules in development. Contact us for custom solutions.
+                                    </p>
+                                    <div class="addon-features">
+                                        <span class="feature-tag">Custom Modules</span>
+                                        <span class="feature-tag">API Integration</span>
+                                        <span class="feature-tag">Enterprise Support</span>
+                                    </div>
+                                </div>
+                                <div class="addon-actions">
+                                    <button class="addon-btn addon-btn-secondary" onclick="contactForCustomModules()">
+                                        <i class="fas fa-envelope me-2"></i>Contact Sales
+                                    </button>
+                                    <div class="addon-pricing">Custom Pricing</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="addons-footer">
+                            <div class="enterprise-cta">
+                                <div class="enterprise-info">
+                                    <h6 class="mb-1">🏢 Enterprise Package Available</h6>
+                                    <p class="text-muted mb-0">Get all add-on modules with volume discounts and dedicated support</p>
+                                </div>
+                                <button class="btn btn-outline-primary" onclick="showEnterprisePackageInfo()">
+                                    Learn More
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 🚀 ENHANCED AI ASSISTANT WIDGET -->

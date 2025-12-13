@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Safety Management Dashboard - ChatterFix SafetyFix</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .safety-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-good { color: #28a745; }
+        .status-warning { color: #ffc107; }
+        .status-danger { color: #dc3545; }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .incident-list, .violation-list, .lab-results-list {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .incident-item, .violation-item, .lab-result-item {
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 10px 10px 0;
+            background: rgba(248, 249, 250, 0.8);
+        }
+        
+        .incident-low { border-left-color: #28a745; }
+        .incident-medium { border-left-color: #ffc107; }
+        .incident-high { border-left-color: #fd7e14; }
+        .incident-critical { border-left-color: #dc3545; }
+        
+        .compliance-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+        
+        .ai-insights {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #333;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .btn-safety {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-safety:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="safety-dashboard">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header text-center">
+            <h1><i class="fas fa-shield-alt me-3"></i>🛡️ Safety Management Dashboard</h1>
+            <p class="lead mb-0">Comprehensive Safety, Environmental, and Compliance Management</p>
+            <small class="text-muted">Last updated: {{ current_time }}</small>
+        </div>
+        
+        <!-- Key Safety Metrics -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value status-warning">{{ safety_metrics.total_incidents_ytd }}</div>
+                    <div class="metric-label">Total Incidents YTD</div>
+                    <small class="text-muted">TRIR: {{ safety_metrics.trir }}</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value {% if safety_metrics.open_violations > 0 %}status-danger{% else %}status-good{% endif %}">
+                        {{ safety_metrics.open_violations }}
+                    </div>
+                    <div class="metric-label">Open Violations</div>
+                    <small class="text-muted">Regulatory Compliance</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value {% if safety_metrics.non_compliant_tests > 0 %}status-danger{% else %}status-good{% endif %}">
+                        {{ safety_metrics.non_compliant_tests }}
+                    </div>
+                    <div class="metric-label">Non-Compliant Tests</div>
+                    <small class="text-muted">Environmental Monitoring</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value status-good">{{ safety_metrics.avg_inspection_score }}%</div>
+                    <div class="metric-label">Avg Inspection Score</div>
+                    <small class="text-muted">Safety Audits</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Secondary Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value status-warning">{{ safety_metrics.dart }}</div>
+                    <div class="metric-label">DART Rate</div>
+                    <small class="text-muted">Days Away/Restricted/Transfer</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value status-good">{{ safety_metrics.near_miss_ratio }}</div>
+                    <div class="metric-label">Near Miss Ratio</div>
+                    <small class="text-muted">Per Recordable Incident</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <div class="metric-value status-good">{{ safety_metrics.safety_training_compliance }}%</div>
+                    <div class="metric-label">Training Compliance</div>
+                    <small class="text-muted">Current Certifications</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="metric-card text-center">
+                    <button class="btn btn-safety w-100" onclick="generateAIInsights()">
+                        <i class="fas fa-brain me-2"></i>AI Safety Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Tabs -->
+        <ul class="nav nav-tabs" id="safetyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Incidents
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="lab-results-tab" data-bs-toggle="tab" data-bs-target="#lab-results" type="button">
+                    <i class="fas fa-flask me-2"></i>Lab Results
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="violations-tab" data-bs-toggle="tab" data-bs-target="#violations" type="button">
+                    <i class="fas fa-gavel me-2"></i>Violations
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button">
+                    <i class="fas fa-chart-bar me-2"></i>Analytics
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="safetyTabContent">
+            <!-- Incidents Tab -->
+            <div class="tab-pane fade show active" id="incidents" role="tabpanel">
+                <div class="incident-list">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i>Recent Safety Incidents</h4>
+                        <button class="btn btn-safety" onclick="showIncidentModal()">
+                            <i class="fas fa-plus me-2"></i>Report Incident
+                        </button>
+                    </div>
+                    
+                    {% for incident in recent_incidents %}
+                    <div class="incident-item incident-{{ incident.severity.lower() }}">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>{{ incident.incident_type }} - {{ incident.location }}</h6>
+                                <p class="mb-2">{{ incident.description }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ incident.employee_name }} | 
+                                    <i class="fas fa-calendar me-1"></i>{{ incident.incident_date[:10] }} |
+                                    <i class="fas fa-building me-1"></i>{{ incident.department }}
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-{% if incident.severity == 'Low' %}success{% elif incident.severity == 'Medium' %}warning{% else %}danger{% endif %} mb-2">
+                                    {{ incident.severity }} Severity
+                                </span>
+                                <br>
+                                <span class="badge bg-{% if incident.investigation_status == 'Completed' %}success{% elif incident.investigation_status == 'In Progress' %}warning{% else %}secondary{% endif %}">
+                                    {{ incident.investigation_status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Lab Results Tab -->
+            <div class="tab-pane fade" id="lab-results" role="tabpanel">
+                <div class="lab-results-list">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-flask me-2"></i>Environmental Lab Results</h4>
+                        <button class="btn btn-safety" onclick="showLabResultModal()">
+                            <i class="fas fa-plus me-2"></i>Add Result
+                        </button>
+                    </div>
+                    
+                    {% for result in recent_lab_results %}
+                    <div class="lab-result-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6>{{ result.test_type }} - {{ result.sample_location }}</h6>
+                                <p class="mb-1">{{ result.parameter_tested }}: {{ result.result_value }} {{ result.unit_of_measure }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ result.lab_technician }} | 
+                                    <i class="fas fa-calendar me-1"></i>{{ result.test_date[:10] }}
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <strong>Limit: {{ result.regulatory_limit }} {{ result.unit_of_measure }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ ((result.result_value / result.regulatory_limit) * 100) | round(1) }}% of limit</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <span class="compliance-badge bg-{% if result.compliance_status == 'Compliant' %}success{% elif result.compliance_status == 'Warning' %}warning{% else %}danger{% endif %}">
+                                    {{ result.compliance_status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Violations Tab -->
+            <div class="tab-pane fade" id="violations" role="tabpanel">
+                <div class="violation-list">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-gavel me-2"></i>Safety Violations & Citations</h4>
+                        <button class="btn btn-safety" onclick="showViolationModal()">
+                            <i class="fas fa-plus me-2"></i>Record Violation
+                        </button>
+                    </div>
+                    
+                    {% for violation in active_violations %}
+                    <div class="violation-item">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>{{ violation.violation_type }} - {{ violation.regulatory_standard }}</h6>
+                                <p class="mb-2">{{ violation.violation_description }}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-building me-1"></i>{{ violation.location }} | 
+                                    <i class="fas fa-calendar me-1"></i>{{ violation.violation_date[:10] }} |
+                                    <i class="fas fa-user me-1"></i>{{ violation.responsible_person }}
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                {% if violation.penalty_amount %}
+                                <div class="text-danger mb-2">
+                                    <strong>${{ "{:,.0f}".format(violation.penalty_amount) }}</strong>
+                                </div>
+                                {% endif %}
+                                <span class="badge bg-{% if violation.severity == 'Minor' %}info{% elif violation.severity == 'Serious' %}warning{% elif violation.severity == 'Willful' %}danger{% else %}dark{% endif %} mb-2">
+                                    {{ violation.severity }}
+                                </span>
+                                <br>
+                                <span class="badge bg-{% if violation.status == 'Completed' %}success{% elif violation.status == 'In Progress' %}warning{% else %}danger{% endif %}">
+                                    {{ violation.status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div class="tab-pane fade" id="analytics" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <h5>Incident Trends - Last 12 Months</h5>
+                            <canvas id="incidentTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <h5>Incidents by Department</h5>
+                            <canvas id="incidentDepartmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="chart-container">
+                            <h5>Safety Performance Indicators</h5>
+                            <canvas id="safetyKpiChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="ai-insights">
+                            <h5><i class="fas fa-brain me-2"></i>AI Safety Insights</h5>
+                            <div id="aiInsights">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading AI insights...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions Floating Button -->
+    <div class="position-fixed bottom-0 end-0 p-4">
+        <div class="dropup">
+            <button class="btn btn-safety rounded-circle" style="width: 60px; height: 60px;" data-bs-toggle="dropdown">
+                <i class="fas fa-plus"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="showIncidentModal()">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Report Incident
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="showLabResultModal()">
+                    <i class="fas fa-flask me-2"></i>Add Lab Result
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="showViolationModal()">
+                    <i class="fas fa-gavel me-2"></i>Record Violation
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="generateComplianceReport()">
+                    <i class="fas fa-file-alt me-2"></i>Compliance Report
+                </a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadAIInsights();
+        });
+        
+        function initializeCharts() {
+            // Incident Trend Chart
+            const trendCtx = document.getElementById('incidentTrendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Safety Incidents',
+                        data: [3, 5, 2, 4, 6, 3, 2, 4, 5, 3, 4, 2],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // Department Chart
+            const deptCtx = document.getElementById('incidentDepartmentChart').getContext('2d');
+            new Chart(deptCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Production', 'Maintenance', 'Warehousing', 'Office', 'Facilities'],
+                    datasets: [{
+                        data: [35, 18, 12, 8, 10],
+                        backgroundColor: ['#667eea', '#764ba2', '#ffc107', '#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Safety KPI Chart
+            const kpiCtx = document.getElementById('safetyKpiChart').getContext('2d');
+            new Chart(kpiCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['TRIR', 'DART', 'Training', 'Compliance', 'Culture', 'Inspections'],
+                    datasets: [{
+                        label: 'Current Performance',
+                        data: [75, 82, 94, 91, 88, 87],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadAIInsights() {
+            try {
+                const response = await fetch('/safety/ai-safety-analysis');
+                const data = await response.json();
+                
+                let insightsHtml = '<ul class="list-unstyled">';
+                
+                // Add recommendations
+                data.recommendations.slice(0, 3).forEach(rec => {
+                    const priorityClass = rec.priority === 'High' ? 'danger' : 'warning';
+                    insightsHtml += `
+                        <li class="mb-3">
+                            <span class="badge bg-${priorityClass} me-2">${rec.priority}</span>
+                            <strong>${rec.action}</strong>
+                            <br><small>Expected Impact: ${rec.expected_impact}</small>
+                            <br><small>Cost: ${rec.cost_estimate} | Timeline: ${rec.timeline}</small>
+                        </li>
+                    `;
+                });
+                
+                insightsHtml += '</ul>';
+                
+                // Add ROI summary
+                insightsHtml += `
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6>💰 Safety Investment ROI</h6>
+                        <p class="mb-1"><strong>Current Annual Safety Costs:</strong> $${data.cost_benefit_analysis.current_annual_safety_costs.total.toLocaleString()}</p>
+                        <p class="mb-1"><strong>Projected Annual Savings:</strong> $${data.cost_benefit_analysis.projected_savings_with_improvements.total_annual_savings.toLocaleString()}</p>
+                        <p class="mb-0"><strong>ROI:</strong> ${data.cost_benefit_analysis.projected_savings_with_improvements.roi_percentage}%</p>
+                    </div>
+                `;
+                
+                document.getElementById('aiInsights').innerHTML = insightsHtml;
+                
+            } catch (error) {
+                document.getElementById('aiInsights').innerHTML = 
+                    '<p class="text-light">AI insights temporarily unavailable. Please try again later.</p>';
+            }
+        }
+        
+        function generateAIInsights() {
+            loadAIInsights();
+        }
+        
+        function showIncidentModal() {
+            alert('Incident Reporting Modal - To be implemented with form for digital incident reporting');
+        }
+        
+        function showLabResultModal() {
+            alert('Lab Result Entry Modal - To be implemented with form for environmental test results');
+        }
+        
+        function showViolationModal() {
+            alert('Violation Recording Modal - To be implemented with form for regulatory violations');
+        }
+        
+        function generateComplianceReport() {
+            window.open('/safety/compliance-report', '_blank');
+        }
+    </script>
+</body>
+</html>

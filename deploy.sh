@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # ChatterFix Unified Deployment Script
-# Single deployment script for all environments
+# Single deployment script for all environments and services
+# Optimized for speed, reliability, and AI team coordination
 # Usage: ./deploy.sh [direct|cloudbuild]
 
 set -e

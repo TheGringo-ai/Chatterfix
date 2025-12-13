@@ -1044,11 +1044,7 @@ class MaintenanceConsultationRequest(BaseModel):
         json_schema_extra={"example": "High"}
     )
 
-# Root redirect to demo
-@app.get("/", tags=["Core"])
-async def root():
-    """Redirect root to demo page"""
-    return RedirectResponse(url="/demo", status_code=302)
+# Root redirect to demo - REMOVED DUPLICATE (line 377 already defines root route)
 
 @app.get("/urgent-count", tags=["API"])
 async def urgent_count():

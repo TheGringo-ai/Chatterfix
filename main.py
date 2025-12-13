@@ -9,8 +9,8 @@ load_dotenv(override=True)
 # Production build - debug statements removed for clean deployment
 
 # Define version information immediately to avoid circular import issues
-APP_VERSION = "2.1.0-enterprise-planner"
-APP_DESCRIPTION = "Enhanced Demo Planner with Advanced Scheduler"
+APP_VERSION = "2.2.0-enterprise-plus"
+APP_DESCRIPTION = "Enterprise QualityFix & SafetyFix with AI Team Debugging"
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
@@ -390,8 +390,9 @@ async def test_endpoint():
         "message": "ChatterFix is running with CI/CD!",
         "version": APP_VERSION,
         "description": APP_DESCRIPTION,
-        "timestamp": "2025-12-10",
-        "environment": os.getenv("ENVIRONMENT", "unknown"),
+        "deployment_timestamp": "2025-12-13T03:20:00Z",
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "build_id": "AI-TEAM-ENTERPRISE-BUILD-20251213",
         "port": os.getenv("PORT", "unknown"),
         "host_middleware": "DISABLED for Cloud Run",
         "database": "Firebase/Firestore",
@@ -405,6 +406,10 @@ async def test_endpoint():
             "AI Team Collaboration",
             "Fix it Fred Autonomous Fixing",
             "LineSmart Training Integration",
+            "Enterprise QualityFix Module",
+            "Enterprise SafetyFix Module",
+            "AI Team Debugging Fixes",
+            "Zero-Crash Reliability",
         ],
         "ai_services": {
             "ai_team": "/ai-team",

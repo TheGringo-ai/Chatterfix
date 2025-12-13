@@ -33,33 +33,33 @@ def create_demo_data(user_id: int):
             "Hydraulic Press #1",
             "Main production hydraulic press",
             "Production Floor",
-            "Hydraulic Equipment",
+            "Manufacturing Equipment",
             "Active",
-            "https://placehold.co/600x400?text=Hydraulic+Press",
+            None,  # Use proper equipment icons instead of placeholder
         ),
         (
             "Conveyor Belt System",
             "Material transport conveyor",
             "Warehouse",
-            "Conveyor Systems",
+            "Material Handling",
             "Active",
-            "https://placehold.co/600x400?text=Conveyor",
+            None,  # Use proper equipment icons instead of placeholder
         ),
         (
             "Air Compressor Unit",
             "Central air supply compressor",
             "Utility Room",
-            "HVAC Equipment",
+            "HVAC",
             "Active",
-            "https://placehold.co/600x400?text=Compressor",
+            None,  # Use proper equipment icons instead of placeholder
         ),
         (
             "CNC Machine #3",
             "Computer numerical control machine",
             "Production Floor",
-            "Machining Equipment",
+            "Manufacturing Equipment",
             "Active",
-            "https://placehold.co/600x400?text=CNC+Machine",
+            None,  # Use proper equipment icons instead of placeholder
         ),
         (
             "Forklift #7",
@@ -67,7 +67,7 @@ def create_demo_data(user_id: int):
             "Warehouse",
             "Material Handling",
             "Active",
-            "https://placehold.co/600x400?text=Forklift",
+            None,  # Use proper equipment icons instead of placeholder
         ),
     ]
 

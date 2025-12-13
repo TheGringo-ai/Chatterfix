@@ -938,7 +938,7 @@
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}">
-                    <a href="/analytics/dashboard" class="nav-tab-link">
+                    <a href="/demo/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-chart-line"></i>
                         Analytics
                     </a>
@@ -973,35 +973,35 @@
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/linesmart') %}active{% endif %}">
-                    <a href="/linesmart/roi-dashboard" class="nav-tab-link">
+                    <a href="/demo/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-chart-bar"></i>
                         LineSmart ROI
                     </a>
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/ai-team') %}active{% endif %}">
-                    <a href="/ai-team/dashboard" class="nav-tab-link">
+                    <a href="/demo/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-brain"></i>
                         AI Team
                     </a>
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/autonomous') %}active{% endif %}">
-                    <a href="/autonomous/interface" class="nav-tab-link">
+                    <a href="/demo/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-magic"></i>
                         Auto Features
                     </a>
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/fix-it-fred') %}active{% endif %}">
-                    <a href="/fix-it-fred/interface" class="nav-tab-link">
+                    <a href="/demo/diagnostics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-tools"></i>
                         Fix-it-Fred
                     </a>
                 </li>
                 
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/user-management') %}active{% endif %}">
-                    <a href="/user-management/" class="nav-tab-link">
+                    <a href="/demo/team" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-user-plus"></i>
                         Users
                     </a>
@@ -1190,7 +1190,7 @@
         <!-- AI Quick Actions Panel -->
         <div class="ai-widget-expanded" id="aiQuickActions" style="display: none;">
             <div class="ai-quick-actions">
-                <a href="/fix-it-fred/interface" class="ai-quick-action">
+                <a href="/demo/diagnostics" class="ai-quick-action">
                     <i class="fas fa-tools"></i>
                     <span>Fix-it-Fred Assistant</span>
                 </a>
@@ -1418,7 +1418,7 @@
         
         function showAIInsights() {
             // Navigate to analytics with AI focus
-            window.location.href = '/analytics/dashboard?focus=ai';
+            window.location.href = '/demo/analytics?focus=ai';
         }
         
         function openVoiceAssistant() {
@@ -1731,6 +1731,65 @@
                 });
         }
         
+        async function sendFloatingChatMessage() {
+            const input = document.getElementById('floatingChatInput');
+            const messages = document.getElementById('floatingChatMessages');
+            const userMessage = input.value.trim();
+
+            if (!userMessage) return;
+
+            // Add user message with enhanced styling
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message message-user';
+            userDiv.innerHTML = `<div>${userMessage}</div>`;
+            messages.appendChild(userDiv);
+            
+            input.value = '';
+            messages.scrollTop = messages.scrollHeight;
+
+            // Show typing indicator
+            const typing = document.getElementById('aiTypingIndicator');
+            typing.style.display = 'block';
+
+            try {
+                const response = await fetch('/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage, context: '' })
+                });
+                
+                // Check if response is ok (status 200-299)
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Validate response structure
+                if (!data || !data.response) {
+                    throw new Error('Invalid response format from server');
+                }
+                
+                typing.style.display = 'none';
+                
+                // Add AI response with enhanced styling
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'message message-ai';
+                aiDiv.innerHTML = `<div>${data.response}</div>`;
+                messages.appendChild(aiDiv);
+                messages.scrollTop = messages.scrollHeight;
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                typing.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message message-ai';
+                errorDiv.innerHTML = `<div><strong>😕 Oops! Something went wrong.</strong><br>I'm having trouble connecting to our AI Team right now. Please try again in a moment, or check your connection.</div>`;
+                messages.appendChild(errorDiv);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
         // Initialize navigation on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateNavigationBadges();

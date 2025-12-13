@@ -7,7 +7,7 @@
     /* Dashboard specific styles that didn't make it to global css or need overrides */
     .dashboard-grid {
         display: grid;
-        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-columns: 1fr 2fr;
         grid-template-rows: auto auto 1fr;
         gap: 1.5rem;
         padding: 2rem 0;
@@ -68,7 +68,6 @@
 
     .predictions { grid-column: 1 / 2; }
     .realtime-monitor { grid-column: 2 / 3; }
-    .ai-assistant { grid-column: 3 / 4; }
 
     .metrics-grid {
         display: grid;
@@ -184,8 +183,8 @@
     }
 
     @media (max-width: 1200px) {
-        .dashboard-grid { grid-template-columns: 1fr 1fr; }
-        .ai-brain, .realtime-monitor { grid-column: 1 / -1; }
+        .dashboard-grid { grid-template-columns: 1fr; }
+        .ai-brain, .predictions, .realtime-monitor { grid-column: 1 / -1; }
     }
 
     @media (max-width: 768px) {
@@ -196,27 +195,49 @@
         .ai-brain {
             padding: 1.5rem 1rem;
             min-height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         
         .ai-brain h1 {
-            font-size: clamp(1.2rem, 4vw, 2rem);
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin-bottom: 0.75rem;
+            text-align: center;
         }
         
         .ai-brain p {
-            font-size: clamp(0.9rem, 3vw, 1.2rem) !important;
+            font-size: clamp(1rem, 3.5vw, 1.3rem) !important;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            max-width: 600px;
         }
         
-        .ai-brain div {
+        .ai-brain-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .ai-brain-content > div {
+            display: flex !important;
             flex-direction: row !important;
-            flex-wrap: wrap;
-            gap: 0.5rem !important;
-            justify-content: center;
+            flex-wrap: wrap !important;
+            gap: 0.75rem !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100%;
+            max-width: 800px;
         }
         
         .ai-brain .cmms-btn {
-            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
-            padding: 0.5rem 0.8rem;
+            font-size: clamp(0.8rem, 2.8vw, 1rem);
+            padding: 0.6rem 1rem;
             white-space: nowrap;
+            min-width: auto;
+            flex-shrink: 0;
         }
     }
     
@@ -312,30 +333,7 @@
         </div>
     </div>
 
-    <!-- AI Assistant -->
-    <div class="cmms-card ai-assistant">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div style="font-size: 1.3rem; font-weight: 600;">🤖 AI Assistant</div>
-            <div style="font-size: 2rem;">💬</div>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-            <div class="message message-ai">
-                <strong>AI:</strong> Good morning! I've analyzed overnight operations and identified 3 optimization
-                opportunities. Would you like me to brief you?
-            </div>
-            <div class="message message-user">
-                <strong>You:</strong> Yes, show me the priority items
-            </div>
-            <div class="message message-ai">
-                <strong>AI:</strong> 1) Conveyor Belt A needs bearing attention (87% failure probability)<br>2) HVAC
-                efficiency down 12% - filter replacement needed<br>3) Parts inventory low on hydraulic seals
-            </div>
-        </div>
-        <input type="text"
-            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 10px; color: #212529; margin-bottom: 0.5rem;"
-            id="chat-input" placeholder="Ask me anything..." onkeypress="handleChatInput(event)">
-        <button class="cmms-btn" style="width: 100%;" onclick="sendChatMessage()">Send Message</button>
-    </div>
+    <!-- Note: AI Assistant moved to floating widget for better UX across all modules -->
 
     <!-- AI Capabilities Grid -->
     <div class="ai-capabilities">
@@ -452,58 +450,7 @@
         }, 30000);
     }
 
-    // AI Chat functionality
-    function handleChatInput(event) {
-        if (event.key === 'Enter') {
-            sendChatMessage();
-        }
-    }
-
-    function sendChatMessage() {
-        const input = document.getElementById('chat-input');
-        const messages = document.getElementById('chat-messages');
-
-        if (input.value.trim()) {
-            const userMessage = input.value.trim();
-
-            // Add user message
-            const userMsg = document.createElement('div');
-            userMsg.className = 'message message-user';
-            userMsg.innerHTML = `<strong>You:</strong> ${userMessage}`;
-            messages.appendChild(userMsg);
-
-            input.value = '';
-            messages.scrollTop = messages.scrollHeight;
-
-            // Call actual AI endpoint
-            fetch('/ai/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: userMessage,
-                    context: ''
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    const aiMsg = document.createElement('div');
-                    aiMsg.className = 'message message-ai';
-                    aiMsg.innerHTML = `<strong>AI:</strong> ${data.response || data.message || 'I understand your request.'}`;
-                    messages.appendChild(aiMsg);
-                    messages.scrollTop = messages.scrollHeight;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    const aiMsg = document.createElement('div');
-                    aiMsg.className = 'message message-ai';
-                    aiMsg.innerHTML = `<strong>AI:</strong> I'm having trouble connecting right now. Please try again.`;
-                    messages.appendChild(aiMsg);
-                    messages.scrollTop = messages.scrollHeight;
-                });
-        }
-    }
+    // AI Chat functionality moved to floating widget
 
     // AI Action Functions
     function runFleetAnalysis() {

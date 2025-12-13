@@ -1084,5 +1084,7 @@ async def debug_version():
 
 # Main entry point
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8080"))  # Cloud Run expects port 8080
+    # Cloud Run sets PORT=8080, ignore local CMMS_PORT for Cloud deployment
+    port = int(os.getenv("PORT", "8080"))
+    logger.info(f"🚀 Starting server on port {port}")
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False, log_level="info")

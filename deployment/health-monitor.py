@@ -5,6 +5,7 @@ Continuously monitors service health and triggers rollback if needed
 """
 
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -125,9 +126,14 @@ class HealthMonitor:
         print(f"Failure threshold: {FAILURE_THRESHOLD}")
         print("\nExecuting rollback script...")
 
-        # Execute rollback
-        os.system(
-            f'./deployment/rollback.sh --reason "Automated rollback: {self.consecutive_failures} consecutive health check failures"'
+        # Execute rollback (using subprocess with shell=False for security)
+        subprocess.run(
+            [
+                "./deployment/rollback.sh",
+                "--reason",
+                f"Automated rollback: {self.consecutive_failures} consecutive health check failures",
+            ],
+            check=False,
         )
 
     def print_statistics(self):

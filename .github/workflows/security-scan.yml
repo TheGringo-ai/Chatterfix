@@ -18,52 +18,42 @@ on:
 jobs:
   security-scan:
     runs-on: ubuntu-latest
-    
-    # Add required permissions for CodeQL to upload security events
+
     permissions:
       actions: read
       contents: read
-      security-events: write
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
-        
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: python, javascript
-          
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
-          
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
-        
+        uses: actions/checkout@v4
+
+      # NOTE: CodeQL is configured via GitHub's default setup (Settings > Security > Code Scanning)
+      # Do not add CodeQL steps here as it conflicts with the default setup
+
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-          
+
       - name: Install security tools
         run: |
           python -m pip install --upgrade pip
           pip install bandit safety
-          
+
       - name: Run Bandit Security Linter
         run: |
           SEVERITY="${{ inputs.severity_level || 'medium' }}"
           bandit -r app/ -f json -o security-report.json --severity-level $SEVERITY || true
-          
+
           # Also create a summary report
           bandit -r app/ --severity-level $SEVERITY || echo "Security issues found - check full report"
-          
+
       - name: Run Safety Check (Dependencies)
         run: safety check --json --output safety-report.json || true
-          
+
       - name: Upload Security Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
@@ -5,12 +6,29 @@ from typing import Any, Dict, List, Optional, cast
 
 from google.cloud import firestore  # type: ignore
 from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud.firestore_v1._helpers import DatetimeWithNanoseconds
 
 logger = logging.getLogger(__name__)
 
 # Enforce Firestore availability
 
 FIRESTORE_AVAILABLE = True
+
+
+def convert_firestore_timestamps(data: Any) -> Any:
+    """
+    Convert Firestore DatetimeWithNanoseconds objects to JSON-serializable datetime strings
+    """
+    if isinstance(data, dict):
+        return {key: convert_firestore_timestamps(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_firestore_timestamps(item) for item in data]
+    elif isinstance(data, DatetimeWithNanoseconds):
+        return data.isoformat()
+    elif isinstance(data, datetime):
+        return data.isoformat()
+    else:
+        return data
 
 
 class FirestoreDB:
@@ -111,7 +129,8 @@ class FirestoreManager:
             if doc.exists:
                 data = cast(Dict[str, Any], doc.to_dict())
                 data["id"] = doc.id
-                return data
+                # Convert Firestore timestamps to JSON-serializable format
+                return convert_firestore_timestamps(data)
             return None
         except Exception as e:
             logger.error(f"Error getting document {doc_id} from {collection}: {e}")
@@ -191,7 +210,8 @@ class FirestoreManager:
             for doc in docs:
                 data = doc.to_dict()
                 data["id"] = doc.id
-                results.append(data)
+                # Convert Firestore timestamps to JSON-serializable format
+                results.append(convert_firestore_timestamps(data))
 
             return results
         except Exception as e:

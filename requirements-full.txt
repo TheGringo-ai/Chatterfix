@@ -46,6 +46,9 @@ easyocr>=1.7.0
 # Document processing
 reportlab>=4.0.0
 
+# Data analysis
+pandas>=2.0.0
+
 # TensorFlow for advanced AI features (optional - large package)
 # tensorflow>=2.14.0
 

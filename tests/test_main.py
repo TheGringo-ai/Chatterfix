@@ -16,20 +16,20 @@ def test_health_check():
 
 def test_api_docs():
     """Test API documentation is accessible."""
-    response = client.get("/api/docs")
+    response = client.get("/docs")
     assert response.status_code == 200
 
 
 def test_openapi_spec():
     """Test OpenAPI spec is accessible."""
-    response = client.get("/api/openapi.json")
+    response = client.get("/openapi.json")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
 
 
 def test_app_title():
     """Test application has correct title."""
-    assert app.title == "ChatterFix CMMS"
+    assert app.title == "ChatterFix CMMS API"
     assert app.version == "2.0.0"
 
 

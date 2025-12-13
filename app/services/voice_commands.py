@@ -3,6 +3,7 @@ Voice Commands Service
 AI-powered voice command processing with Grok integration
 """
 
+import traceback
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
@@ -11,6 +12,13 @@ import os
 import httpx
 
 from app.core.firestore_db import get_db_connection
+
+# Import AI Memory Service for capturing interactions
+try:
+    from app.services.ai_memory_integration import get_ai_memory_service
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +156,7 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
         conn.commit()
         conn.close()
 
-        return {
+        result = {
             "success": True,
             "work_order_id": work_order_id,
             "voice_text": voice_text,
@@ -158,8 +166,45 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
             "message": "Voice command processed and work order created",
         }
 
+        # Capture to AI Memory System
+        if MEMORY_AVAILABLE:
+            try:
+                memory = get_ai_memory_service()
+                await memory.capture_interaction(
+                    user_message=voice_text[:1000],
+                    ai_response=ai_analysis[:2000],
+                    model="grok-beta",
+                    context="voice_command",
+                    success=True,
+                    metadata={
+                        "work_order_id": work_order_id,
+                        "priority": priority,
+                        "technician_id": technician_id
+                    }
+                )
+            except Exception as mem_error:
+                logger.warning(f"Memory capture failed: {mem_error}")
+
+        return result
+
     except Exception as e:
         logger.error(f"Voice command processing failed: {e}")
+
+        # Capture error to AI Memory System
+        if MEMORY_AVAILABLE:
+            try:
+                memory = get_ai_memory_service()
+                await memory.capture_mistake(
+                    mistake_type="voice_command_error",
+                    description=f"Voice command processing failed",
+                    context={"voice_text": voice_text[:500], "technician_id": technician_id},
+                    error_message=str(e),
+                    stack_trace=traceback.format_exc(),
+                    severity="medium"
+                )
+            except Exception as mem_error:
+                logger.warning(f"Memory capture failed: {mem_error}")
+
         return {
             "success": False,
             "error": str(e),

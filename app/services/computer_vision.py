@@ -10,9 +10,28 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-import cv2
-import numpy as np
-from PIL import Image
+# Optional computer vision dependencies
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    cv2 = None
+    CV2_AVAILABLE = False
+    logging.warning("OpenCV (cv2) not available - some vision features disabled")
+
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    np = None
+    NUMPY_AVAILABLE = False
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    Image = None
+    PIL_AVAILABLE = False
 
 from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import GeminiService

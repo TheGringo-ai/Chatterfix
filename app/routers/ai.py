@@ -16,6 +16,13 @@ from app.services.voice_commands import (
     process_voice_command,
 )
 
+# Import AI Memory Service
+try:
+    from app.services.ai_memory_integration import get_ai_memory_service
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
@@ -330,3 +337,140 @@ async def voice_suggestions():
     """Get intelligent voice command suggestions"""
     suggestions = await get_voice_command_suggestions()
     return JSONResponse(suggestions)
+
+
+# ============ AI MEMORY ENDPOINTS ============
+
+@router.get("/memory/stats")
+async def get_memory_stats():
+    """Get AI memory system statistics"""
+    if not MEMORY_AVAILABLE:
+        return JSONResponse({
+            "error": "Memory service not available",
+            "available": False
+        })
+
+    try:
+        memory = get_ai_memory_service()
+        stats = await memory.get_memory_stats()
+        return JSONResponse({
+            "success": True,
+            "available": True,
+            **stats
+        })
+    except Exception as e:
+        return JSONResponse({
+            "error": str(e),
+            "available": False
+        }, status_code=500)
+
+
+@router.get("/memory/mistakes")
+async def get_recent_mistakes():
+    """Get recent mistake patterns from AI memory"""
+    if not MEMORY_AVAILABLE:
+        return JSONResponse({"error": "Memory service not available"})
+
+    try:
+        memory = get_ai_memory_service()
+        mistakes = await memory.firestore.get_collection(
+            "mistake_patterns",
+            limit=20,
+            order_by="-timestamp"
+        )
+        return JSONResponse({
+            "success": True,
+            "count": len(mistakes),
+            "mistakes": mistakes
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/memory/solutions")
+async def get_solutions():
+    """Get solution patterns from AI knowledge base"""
+    if not MEMORY_AVAILABLE:
+        return JSONResponse({"error": "Memory service not available"})
+
+    try:
+        memory = get_ai_memory_service()
+        solutions = await memory.firestore.get_collection(
+            "solution_knowledge_base",
+            limit=20,
+            order_by="-timestamp"
+        )
+        return JSONResponse({
+            "success": True,
+            "count": len(solutions),
+            "solutions": solutions
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.post("/memory/capture-solution")
+async def capture_solution(
+    problem: str = Form(...),
+    solution: str = Form(...),
+    code_template: str = Form(""),
+):
+    """Manually capture a solution pattern to the knowledge base"""
+    if not MEMORY_AVAILABLE:
+        return JSONResponse({"error": "Memory service not available"})
+
+    try:
+        memory = get_ai_memory_service()
+        solution_id = await memory.capture_solution(
+            problem_description=problem,
+            solution_steps=[solution],
+            code_template=code_template,
+            success_rate=1.0,
+        )
+        return JSONResponse({
+            "success": True,
+            "solution_id": solution_id,
+            "message": "Solution captured to knowledge base"
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.post("/memory/search")
+async def search_memory(query: str = Form(...)):
+    """Search AI memory for relevant solutions and past interactions"""
+    if not MEMORY_AVAILABLE:
+        return JSONResponse({"error": "Memory service not available"})
+
+    try:
+        memory = get_ai_memory_service()
+
+        # Find similar mistakes to warn about
+        similar_mistakes = await memory.find_similar_mistakes(query)
+
+        # Find relevant solutions
+        solutions = await memory.find_solutions(query)
+
+        return JSONResponse({
+            "success": True,
+            "query": query,
+            "warnings": [
+                {
+                    "type": "past_mistake",
+                    "description": m.get("description"),
+                    "prevention": m.get("prevention_strategy"),
+                    "severity": m.get("severity")
+                }
+                for m in similar_mistakes
+            ],
+            "solutions": [
+                {
+                    "problem": s.get("problem_pattern"),
+                    "solution": s.get("solution_steps"),
+                    "success_rate": s.get("success_rate")
+                }
+                for s in solutions
+            ]
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)

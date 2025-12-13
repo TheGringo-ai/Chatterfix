@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import traceback
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -13,6 +14,13 @@ except ImportError as e:
     logging.warning(f"Google Generative AI not available: {e}")
     genai = None
     GENAI_AVAILABLE = False
+
+# Import AI Memory Service for capturing interactions
+try:
+    from app.services.ai_memory_integration import get_ai_memory_service
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +87,42 @@ class GeminiService:
         try:
             full_prompt = f"{context}\n\nUser: {prompt}\nAssistant:"
             response = await model.generate_content_async(full_prompt)
-            return response.text
+            response_text = response.text
+
+            # Capture to AI Memory System
+            if MEMORY_AVAILABLE:
+                try:
+                    memory = get_ai_memory_service()
+                    await memory.capture_interaction(
+                        user_message=prompt[:1000],
+                        ai_response=response_text[:2000],
+                        model="gemini-2.5-flash",
+                        context=context[:500],
+                        success=True,
+                        metadata={"user_id": user_id}
+                    )
+                except Exception as mem_error:
+                    logger.warning(f"Memory capture failed: {mem_error}")
+
+            return response_text
         except Exception as e:
             logger.error(f"Error generating response: {e}")
+
+            # Capture error to AI Memory System
+            if MEMORY_AVAILABLE:
+                try:
+                    memory = get_ai_memory_service()
+                    await memory.capture_mistake(
+                        mistake_type="ai_error",
+                        description=f"Gemini generate_response failed",
+                        context={"prompt": prompt[:500], "user_id": user_id},
+                        error_message=str(e),
+                        stack_trace=traceback.format_exc(),
+                        severity="medium"
+                    )
+                except Exception as mem_error:
+                    logger.warning(f"Memory capture failed: {mem_error}")
+
             return f"I encountered an error processing your request: {str(e)}"
 
     async def analyze_image(

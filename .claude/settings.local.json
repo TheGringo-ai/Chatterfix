@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(rm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(docker:*)",
+      "Bash(git:*)",
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(pip:*)",
+      "Bash(gcloud:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

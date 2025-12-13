@@ -1243,10 +1243,14 @@
         <!-- AI Quick Actions Panel -->
         <div class="ai-widget-expanded" id="aiQuickActions" style="display: none;">
             <div class="ai-quick-actions">
-                <a href="/demo/diagnostics" class="ai-quick-action">
+                <div class="ai-quick-action" onclick="switchToFred()" id="fredModeBtn">
                     <i class="fas fa-tools"></i>
-                    <span>Fix-it-Fred Assistant</span>
-                </a>
+                    <span>Fix-it-Fred Mode</span>
+                </div>
+                <div class="ai-quick-action" onclick="switchToGeneral()" id="generalModeBtn" style="display: none;">
+                    <i class="fas fa-robot"></i>
+                    <span>General AI Mode</span>
+                </div>
                 <a href="/demo/training" class="ai-quick-action">
                     <i class="fas fa-graduation-cap"></i>
                     <span>AI Training Center</span>
@@ -1344,7 +1348,6 @@
     <script src="{{ url_for('static', path='js/demo-system.js') }}?v=3"></script>
     
     <!-- AI Chat Popup System -->
-    <script src="{{ url_for('static', path='js/ai-chat-popup.js') }}?v=1"></script>
     
     <!-- Enhanced UI Components Library -->
     <script src="{{ url_for('static', path='js/ui-components.js') }}?v=1"></script>
@@ -2084,6 +2087,120 @@
                 console.error('❌ AI TEAM: Failed to attach theme toggle handler');
             }
         });
+        
+        // AI Persona Management - Unified Widget Enhancement
+        let currentPersona = 'general'; // 'general', 'fred'
+        
+        function switchToFred() {
+            currentPersona = 'fred';
+            const chatWindow = document.getElementById('aiChatWindow');
+            const quickActions = document.getElementById('aiQuickActions');
+            const chatTitle = document.querySelector('.ai-chat-title div div');
+            const messages = document.getElementById('floatingChatMessages');
+            
+            // Toggle persona buttons
+            const fredBtn = document.getElementById('fredModeBtn');
+            const generalBtn = document.getElementById('generalModeBtn');
+            if (fredBtn) fredBtn.style.display = 'none';
+            if (generalBtn) generalBtn.style.display = 'block';
+            
+            // Update title
+            if (chatTitle) {
+                chatTitle.textContent = 'Fix-it-Fred AI Assistant';
+            }
+            
+            // Clear messages and show Fred's intro
+            if (messages) {
+                messages.innerHTML = `
+                    <div class="message message-ai" style="background: linear-gradient(135deg, rgba(230, 126, 34, 0.1), rgba(211, 84, 0, 0.05)); border-left: 3px solid #e67e22;">
+                        <div>
+                            <strong>🔧 Fix-it-Fred:</strong> Howdy! I'm Fred, your AI maintenance expert with 30+ years of experience. 
+                            I specialize in troubleshooting equipment issues, preventive maintenance, and safety procedures. 
+                            What's giving you trouble today?
+                            <div style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
+                                <strong>I can help with:</strong> Motor issues, hydraulic problems, electrical faults, HVAC systems, and safety protocols.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Update input placeholder
+            const chatInput = document.getElementById('floatingChatInput');
+            if (chatInput) {
+                chatInput.placeholder = "Describe your maintenance issue... (e.g., 'Hydraulic pump is overheating')";
+            }
+            
+            // Open chat
+            if (quickActions) quickActions.style.display = 'none';
+            if (chatWindow) chatWindow.style.display = 'flex';
+            aiWidgetState = 'chat';
+            if (chatInput) chatInput.focus();
+        }
+        
+        function switchToGeneral() {
+            currentPersona = 'general';
+            const chatTitle = document.querySelector('.ai-chat-title div div');
+            const messages = document.getElementById('floatingChatMessages');
+            
+            // Toggle persona buttons
+            const fredBtn = document.getElementById('fredModeBtn');
+            const generalBtn = document.getElementById('generalModeBtn');
+            if (fredBtn) fredBtn.style.display = 'block';
+            if (generalBtn) generalBtn.style.display = 'none';
+            
+            // Update title
+            if (chatTitle) {
+                chatTitle.textContent = 'ChatterFix AI Assistant';
+            }
+            
+            // Clear messages and show general intro
+            if (messages) {
+                messages.innerHTML = `
+                    <div class="message message-ai">
+                        <div>
+                            <strong>🚀 Welcome to ChatterFix AI!</strong><br>
+                            I'm your intelligent maintenance assistant, powered by our AI Team. I can help you with:
+                            <ul style="margin-top: 10px; margin-bottom: 0;">
+                                <li>Work order analysis and optimization</li>
+                                <li>Predictive maintenance insights</li>
+                                <li>Equipment troubleshooting</li>
+                                <li>Training and documentation</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Update input placeholder
+            const chatInput = document.getElementById('floatingChatInput');
+            if (chatInput) {
+                chatInput.placeholder = "Ask me anything about maintenance, assets, or workflows...";
+            }
+        }
+        
+        // Enhance chat message sending to include persona context
+        const originalSendFloatingChatMessage = window.sendFloatingChatMessage;
+        window.sendFloatingChatMessage = async function() {
+            const userMessage = document.getElementById('floatingChatInput').value.trim();
+            if (!userMessage) return;
+            
+            // Add persona context to the message
+            let contextMessage = userMessage;
+            if (currentPersona === 'fred') {
+                contextMessage = `[PERSONA: Fix-it-Fred - Maintenance Expert] ${userMessage}`;
+            }
+            
+            // Use the enhanced message for API call
+            const originalValue = document.getElementById('floatingChatInput').value;
+            document.getElementById('floatingChatInput').value = contextMessage;
+            
+            // Call the original function
+            await originalSendFloatingChatMessage();
+            
+            // Restore original for display purposes
+            // (the original function clears the input anyway)
+        };
     </script>
 </body>
 

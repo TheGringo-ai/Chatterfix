@@ -231,8 +231,8 @@ class TestAIOrchestrator:
         )
         
         # Test internal model selection
-        selected_models = ai_orchestrator._select_optimal_models(TaskType.ANALYSIS)
-        
+        selected_models = await ai_orchestrator._select_optimal_models(TaskType.ANALYSIS)
+
         assert len(selected_models) >= 2  # Should select multiple models for consensus
         assert all(isinstance(model, AIModelType) for model in selected_models)
         

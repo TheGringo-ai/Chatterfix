@@ -110,6 +110,21 @@
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            height: 350px; /* Fixed height for consistency */
+            overflow: hidden; /* Prevent chart overflow */
+        }
+        
+        .chart-container canvas {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            height: auto !important;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 280px; /* Leave space for title */
+            width: 100%;
         }
         
         .data-table {
@@ -313,7 +328,9 @@
                             <i class="fas fa-chart-pie text-primary me-2"></i>
                             Cost of Quality Breakdown
                         </h5>
-                        <canvas id="coqChart" width="400" height="200"></canvas>
+                        <div class="chart-wrapper">
+                            <canvas id="coqChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -322,7 +339,9 @@
                             <i class="fas fa-chart-line text-success me-2"></i>
                             Quality Trends (12 Months)
                         </h5>
-                        <canvas id="trendsChart" width="400" height="200"></canvas>
+                        <div class="chart-wrapper">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -535,7 +554,9 @@
                             <div class="col-md-6">
                                 <div class="chart-container">
                                     <h6 class="mb-3">{{ chart.parameter }} Control Chart</h6>
-                                    <canvas id="spcChart{{ loop.index }}" width="400" height="200"></canvas>
+                                    <div class="chart-wrapper">
+                                        <canvas id="spcChart{{ loop.index }}"></canvas>
+                                    </div>
                                     <div class="process-capability capability-{% if chart.cpk >= 1.33 %}capable{% elif chart.cpk >= 1.0 %}marginal{% else %}incapable{% endif %}">
                                         <strong>Process Capability:</strong><br>
                                         Cp = {{ chart.cp }} | Cpk = {{ chart.cpk }}<br>
@@ -554,13 +575,17 @@
                             <div class="col-md-6">
                                 <div class="chart-container">
                                     <h6 class="mb-3">Defect Analysis by Category</h6>
-                                    <canvas id="defectChart" width="400" height="200"></canvas>
+                                    <div class="chart-wrapper">
+                                        <canvas id="defectChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="chart-container">
                                     <h6 class="mb-3">Supplier Performance Radar</h6>
-                                    <canvas id="supplierRadar" width="400" height="200"></canvas>
+                                    <div class="chart-wrapper">
+                                        <canvas id="supplierRadar"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -614,8 +639,18 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8,
+                            font: {
+                                size: 11
+                            }
+                        }
                     }
+                },
+                layout: {
+                    padding: 10
                 }
             }
         });
@@ -638,11 +673,30 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: false,
                         min: 85,
-                        max: 100
+                        max: 100,
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 3,
+                        hoverRadius: 6
                     }
                 }
             }

@@ -91,19 +91,23 @@ push_image() {
 deploy_cloud_run() {
     log "Deploying to Cloud Run..."
     
+    # Deploy with optimized settings for ChatterFix CMMS
     gcloud run deploy "$PROJECT_NAME" \
         --image "gcr.io/${CLOUD_PROJECT}/${PROJECT_NAME}:latest" \
         --region "$CLOUD_REGION" \
         --platform managed \
         --port 8080 \
-        --memory 2Gi \
-        --cpu 2 \
-        --min-instances 1 \
-        --max-instances 10 \
-        --timeout 300 \
-        --concurrency 100 \
+        --memory 4Gi \
+        --cpu 4 \
+        --min-instances 2 \
+        --max-instances 20 \
+        --timeout 900 \
+        --concurrency 80 \
         --allow-unauthenticated \
-        --set-env-vars "ENVIRONMENT=production,USE_FIRESTORE=true,LOG_LEVEL=info" \
+        --set-env-vars "ENVIRONMENT=production,USE_FIRESTORE=true,LOG_LEVEL=info,REDIS_URL=redis://redis:6379" \
+        --execution-environment gen2 \
+        --cpu-boost \
+        --session-affinity \
         --quiet
     
     # Get service URL
@@ -111,7 +115,24 @@ deploy_cloud_run() {
         --region "$CLOUD_REGION" \
         --format="value(status.url)")
     
+    # Update traffic to latest revision
+    gcloud run services update-traffic "$PROJECT_NAME" \
+        --region "$CLOUD_REGION" \
+        --to-latest \
+        --quiet
+    
     success "Deployed to Cloud Run: $SERVICE_URL"
+    
+    # Test deployment
+    log "Testing deployment..."
+    sleep 10
+    if curl -f --max-time 30 "${SERVICE_URL}/health" >/dev/null 2>&1; then
+        success "Health check passed ✓"
+        success "ChatterFix CMMS is live at: $SERVICE_URL"
+    else
+        error "Health check failed - checking logs..."
+        gcloud run services logs read "$PROJECT_NAME" --region "$CLOUD_REGION" --limit=20
+    fi
 }
 
 # Deploy to GKE (optional)

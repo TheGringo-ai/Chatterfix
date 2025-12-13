@@ -121,7 +121,7 @@ steps:
       echo "🩺 Running comprehensive health validation..."
       
       # Get blue deployment URL
-      BLUE_URL=$(gcloud run services describe chatterfix-cmms --region $_DEPLOY_REGION --format="value(status.traffic[].revisionName,status.traffic[].url)" | grep blue | cut -d'	' -f2)
+      BLUE_URL=$(gcloud run services describe chatterfix-cmms --region $_DEPLOY_REGION --format="value(status.traffic[].revisionName,status.traffic[].url)" | grep blue | cut -d'  ' -f2)
       
       if [[ -z "$BLUE_URL" ]]; then
         echo "❌ Could not get blue deployment URL"

@@ -161,7 +161,7 @@ jobs:
             --max-instances=${{ env.MAX_INSTANCES }} \
             --timeout=300 \
             --concurrency=80 \
-            --set-env-vars=USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ENVIRONMENT=production,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app,FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }} \
+            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ENVIRONMENT=production,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app,FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
             --labels=managed-by=github-actions,environment=production,version=${{ github.sha }} \
             --quiet
           

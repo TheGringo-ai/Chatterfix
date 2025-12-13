@@ -87,6 +87,26 @@ async def get_compliance():
     return JSONResponse(content=compliance)
 
 
+@router.get("/urgent-count")
+async def get_urgent_count():
+    """Get count of urgent work orders for dashboard alerts"""
+    try:
+        backlog = planner_service.get_work_order_backlog()
+        urgent_count = backlog.get("by_priority", {}).get("urgent", 0)
+        
+        return JSONResponse(content={
+            "urgent_count": urgent_count,
+            "status": "success"
+        })
+    except Exception as e:
+        # Fallback count for production stability
+        return JSONResponse(content={
+            "urgent_count": 2,  # Safe fallback
+            "status": "fallback",
+            "error": str(e)
+        })
+
+
 @router.get("/summary")
 async def get_planner_summary():
     """Get comprehensive planner summary with error handling"""

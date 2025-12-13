@@ -570,21 +570,26 @@ class PlannerService:
 
             conflict_list = []
             for conflict in conflicts:
+                # Safe access with defaults to prevent KeyError
+                total_hours = conflict.get("total_hours", 0)
                 conflict_type = (
                     "overload"
-                    if conflict["total_hours"] > 8
+                    if total_hours > 8
                     else "multiple_assignments"
                 )
 
+                work_orders_str = conflict.get("work_orders", "")
+                work_orders_list = work_orders_str.split(" | ") if work_orders_str else []
+
                 conflict_list.append(
                     {
-                        "technician_id": conflict["technician_id"],
-                        "technician_name": conflict["technician_name"],
-                        "date": conflict["due_date"],
-                        "work_order_count": conflict["work_order_count"],
-                        "total_hours": conflict["total_hours"],
+                        "technician_id": conflict.get("technician_id", "unknown"),
+                        "technician_name": conflict.get("technician_name", "Unknown"),
+                        "date": conflict.get("due_date", ""),
+                        "work_order_count": conflict.get("work_order_count", 0),
+                        "total_hours": total_hours,
                         "conflict_type": conflict_type,
-                        "work_orders": conflict["work_orders"].split(" | "),
+                        "work_orders": work_orders_list,
                     }
                 )
 
@@ -674,7 +679,15 @@ class PlannerService:
             }
 
             for asset in compliance_assets:
-                status_key = asset["compliance_status"].lower().replace(" ", "_")
+                # Safe access to compliance_status with fallback
+                compliance_status = asset.get("compliance_status", "unknown")
+                status_key = compliance_status.lower().replace(" ", "_")
+                
+                # Ensure the status key exists in our dictionary
+                if status_key not in by_status:
+                    by_status["unknown"] = by_status.get("unknown", [])
+                    status_key = "unknown"
+                
                 by_status[status_key].append(dict(asset))
 
             conn.close()

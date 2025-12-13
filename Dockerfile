@@ -1,62 +1,91 @@
-# Optimized Production Dockerfile for ChatterFix CMMS
-# Multi-stage build for minimal size and enhanced security
+# ULTRA-OPTIMIZED Production Dockerfile for ChatterFix CMMS
+# AI Team Enhanced - Fast Build, Small Size, Enhanced Security
 FROM python:3.12-slim as python-base
+
+# Optimized environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_PROGRESS_BAR=off \
+    PYTHONPATH=/app \
+    DEBIAN_FRONTEND=noninteractive
 
-# Builder stage for dependencies
+# Builder stage for dependencies - OPTIMIZED FOR SPEED
 FROM python-base as builder
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    libc6-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Use BuildKit for faster builds with cache mounting
+# Install ALL build dependencies in one layer
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ libc6-dev curl build-essential \
+    libssl-dev libffi-dev libxml2-dev libxslt1-dev \
+    zlib1g-dev libjpeg-dev libpng-dev \
+    && apt-get clean
 
-# Copy requirements and install to user directory
+# Pre-install wheel and setuptools for faster pip installs
+RUN pip install --user --no-deps wheel setuptools packaging
+
+# Copy requirements and install with optimizations
 COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Production stage
+# Install Python dependencies with cache mounting
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --user --no-warn-script-location \
+    --find-links /root/.local/lib/python3.12/site-packages \
+    -r requirements.txt
+
+# Production stage - MINIMAL SIZE
 FROM python-base as production
 WORKDIR /app
 
-# Copy dependencies from builder
+# Copy only essential Python packages from builder
 COPY --from=builder /root/.local /root/.local
 
-# Install minimal runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# Install minimal runtime dependencies in one layer
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy application code
-COPY main.py .
-COPY app/ app/
+# Copy application code efficiently
+COPY --chown=1001:1001 main.py .
+COPY --chown=1001:1001 app/ app/
 
-# Create non-root user for security
-RUN useradd -m -u 1001 appuser && \
-    chown -R appuser:appuser /app
+# Create non-root user for security (single layer)
+RUN useradd -m -u 1001 -s /bin/bash appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appuser /app
 
+# Switch to non-root user
 USER appuser
 
-# Set environment variables
+# Optimized environment variables for production
 ENV PATH=/root/.local/bin:$PATH \
     PORT=8080 \
-    PYTHONPATH=/app \
-    PYTHONUNBUFFERED=1
+    ENVIRONMENT=production \
+    WORKERS=1 \
+    TIMEOUT=300 \
+    KEEP_ALIVE=2 \
+    MAX_REQUESTS=1000 \
+    MAX_REQUESTS_JITTER=100
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Enhanced health check with better timeout handling
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f --max-time 3 http://localhost:8080/health || exit 1
 
 # Expose port
 EXPOSE 8080
 
-# Optimized startup command
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+# Production-optimized startup with proper signal handling
+CMD ["python", "-m", "uvicorn", "main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8080", \
+     "--workers", "1", \
+     "--timeout-keep-alive", "2", \
+     "--access-log", \
+     "--no-use-colors"]

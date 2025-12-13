@@ -22,13 +22,15 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 try:
-    from autogen_agentchat import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
-    from autogen_agentchat.code_execution import LocalCommandLineCodeExecutor
+    # New autogen-agentchat package (v0.4+)
+    from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+    from autogen_agentchat.teams import RoundRobinGroupChat as GroupChat
+    from autogen_agentchat.base import TaskRunner as GroupChatManager
+    from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
     AUTOGEN_AVAILABLE = True
 except ImportError:
-    # Fallback for older autogen versions
     try:
-        import autogen
+        # Fallback for older autogen/pyautogen versions (< 0.4)
         from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
         from autogen.coding import LocalCommandLineCodeExecutor
         AUTOGEN_AVAILABLE = True

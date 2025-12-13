@@ -10,3 +10,5 @@ python-multipart>=0.0.18
 firebase-admin==6.2.0
 google-cloud-firestore==2.13.1
 python-dotenv==1.0.0
+autogen-agentchat>=0.4.0
+autogen-ext>=0.4.0

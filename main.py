@@ -978,17 +978,17 @@ class MaintenanceConsultationRequest(BaseModel):
     problem_description: str = Field(
         ..., 
         description="Detailed description of the maintenance issue",
-        example="Hydraulic pump is overheating and making loud noises"
+        json_schema_extra={"example": "Hydraulic pump is overheating and making loud noises"}
     )
     equipment_type: str = Field(
         None,
         description="Type of equipment (pump, motor, conveyor, etc.)",
-        example="Hydraulic Pump"
+        json_schema_extra={"example": "Hydraulic Pump"}
     )
     priority: str = Field(
         None,
         description="Issue priority level",
-        example="High"
+        json_schema_extra={"example": "High"}
     )
 
 # Root redirect to demo

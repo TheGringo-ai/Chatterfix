@@ -523,32 +523,7 @@
                 </a>
             </div>
         </div>
-    </nav>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
-        <a href="/demo" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="/demo/work-orders" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">
-            <i class="fas fa-wrench"></i>
-            <span>Work Orders</span>
-            <span class="mobile-badge">3</span>
-        </a>
-        <button class="mobile-nav-item quick-create" onclick="showMobileQuickActions()">
-            <i class="fas fa-plus-circle"></i>
-            <span>Create</span>
-        </button>
-        <a href="/demo/assets" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
-            <i class="fas fa-industry"></i>
-            <span>Assets</span>
-        </a>
-        <button class="mobile-nav-item" onclick="toggleMobileMenu()">
-            <i class="fas fa-bars"></i>
-            <span>More</span>
-        </button>
-    </nav>
+        <!-- Right side controls - Theme toggle and user menu -->
         <div class="d-flex align-items-center gap-3">
             <button id="theme-toggle" class="cmms-btn cmms-btn-sm d-flex align-items-center gap-2" style="border-radius: 25px; padding: 8px 12px; background: var(--bg-glass); color: var(--text-primary); border: var(--border-glass);" title="Toggle Theme">
                 <i class="fas fa-moon"></i>
@@ -590,7 +565,32 @@
             </div>
             {% endif %}
         </div>
-    </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+        <a href="/demo" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/demo/work-orders" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">
+            <i class="fas fa-wrench"></i>
+            <span>Work Orders</span>
+            <span class="mobile-badge">3</span>
+        </a>
+        <button class="mobile-nav-item quick-create" onclick="showMobileQuickActions()">
+            <i class="fas fa-plus-circle"></i>
+            <span>Create</span>
+        </button>
+        <a href="/demo/assets" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
+            <i class="fas fa-industry"></i>
+            <span>Assets</span>
+        </a>
+        <button class="mobile-nav-item" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+            <span>More</span>
+        </button>
+    </nav>
 
     <!-- Interactive Demo Bar -->
     <div id="demoBar" class="demo-bar" style="display: none;">

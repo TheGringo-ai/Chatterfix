@@ -24,11 +24,19 @@ archive/
 uploads/
 customer-data/
 
-# Secrets and credentials
+# Secrets and credentials - ENHANCED SECURITY
 secrets/
+credentials/
+service-account-*.json
+firebase-adminsdk-*.json
+*.p12
+*.jks
+.env.local
+.env.production
+.env.staging
 
-# IDE
-.vscode/
+# IDE - Keep VS Code config but protect sensitive settings
+.vscode/settings.json
 
 # Node.js & Build System
 node_modules/

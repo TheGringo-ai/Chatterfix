@@ -1,6 +1,6 @@
 # ULTRA-OPTIMIZED Production Dockerfile for ChatterFix CMMS
 # AI Team Enhanced - Fast Build, Small Size, Enhanced Security
-FROM python:3.12-slim as python-base
+FROM python:3.12-slim AS python-base
 
 # Optimized environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
 # Builder stage for dependencies - OPTIMIZED FOR SPEED
-FROM python-base as builder
+FROM python-base AS builder
 WORKDIR /app
 
 # Use BuildKit for faster builds with cache mounting
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN pip install --user --no-deps wheel setuptools packaging
 
 # Copy requirements and install with optimizations
-COPY requirements.txt .
+COPY requirements-full.txt requirements.txt
 
 # Install Python dependencies with cache mounting
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r requirements.txt
 
 # Production stage - MINIMAL SIZE
-FROM python-base as production
+FROM python-base AS production
 WORKDIR /app
 
 # Install minimal runtime dependencies in one layer

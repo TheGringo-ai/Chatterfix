@@ -1233,6 +1233,206 @@
         </div>
     </div>
 
+    <!-- 🔧 GLOBAL WORK ORDER CREATION MODAL -->
+    <div id="globalWorkOrderModal" class="modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; overflow-y: auto;">
+        <div class="modal-content glass-panel" style="margin: 2% auto; width: 95%; max-width: 900px; padding: 30px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0; color: var(--accent-color);">
+                    <i class="fas fa-plus-circle"></i> Create New Work Order
+                </h2>
+                <button onclick="closeGlobalWorkOrderModal()" class="btn btn-sm text-muted" 
+                    style="border: none; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 8px 12px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="globalWorkOrderForm" action="/demo/work-orders/create" method="post" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                    <!-- Basic Information -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-clipboard"></i> Work Order Title *
+                        </label>
+                        <input type="text" id="globalWOTitle" name="title" required
+                            placeholder="Enter descriptive title..."
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-exclamation-triangle"></i> Priority Level
+                        </label>
+                        <select id="globalWOPriority" name="priority"
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                            <option value="Low">🟢 Low Priority</option>
+                            <option value="Medium" selected>🟡 Medium Priority</option>
+                            <option value="High">🟠 High Priority</option>
+                            <option value="Critical">🔴 Critical Priority</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Asset Selection -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-cogs"></i> Asset/Equipment
+                        </label>
+                        <select id="globalWOAsset" name="asset_id"
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                            <option value="">Select Asset...</option>
+                        </select>
+                        <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">
+                            Choose the equipment this work order relates to
+                        </small>
+                    </div>
+                    
+                    <!-- Work Order Type -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-wrench"></i> Work Type
+                        </label>
+                        <select id="globalWOType" name="work_order_type"
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                            <option value="Corrective">🔧 Corrective Maintenance</option>
+                            <option value="Preventive">🛡️ Preventive Maintenance</option>
+                            <option value="Emergency">🚨 Emergency Repair</option>
+                            <option value="Inspection">🔍 Inspection</option>
+                            <option value="Installation">📦 Installation</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Technician Assignment -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-user-hard-hat"></i> Assign Technician
+                        </label>
+                        <select id="globalWOTechnician" name="assigned_to"
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                            <option value="">Select Technician...</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Estimated Hours -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-clock"></i> Estimated Hours
+                        </label>
+                        <input type="number" id="globalWOHours" name="estimated_hours" min="0" step="0.5" placeholder="2.5"
+                            style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        <i class="fas fa-align-left"></i> Problem Description *
+                    </label>
+                    <textarea id="globalWODescription" name="description" rows="3" required
+                        placeholder="Describe the issue, symptoms, or work to be performed..."
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); resize: vertical;"></textarea>
+                </div>
+
+                <!-- Scheduling Section -->
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(102, 126, 234, 0.05); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--accent-color); font-size: 1.1rem;">
+                        <i class="fas fa-calendar-alt"></i> Scheduling & Timeline
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Due Date</label>
+                            <input type="date" id="globalWODueDate" name="due_date"
+                                style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Scheduled Time</label>
+                            <input type="datetime-local" id="globalWOScheduledTime" name="scheduled_time"
+                                style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Instructions -->
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(243, 156, 18, 0.05); border-radius: 12px; border: 1px solid rgba(243, 156, 18, 0.2);">
+                    <h3 style="margin: 0 0 1rem 0; color: #f39c12; font-size: 1.1rem;">
+                        <i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes
+                    </h3>
+                    <textarea id="globalWOInstructions" name="work_instructions" rows="4"
+                        placeholder="Enter step-by-step instructions, safety requirements, special tools needed, PPE requirements..."
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); resize: vertical;"></textarea>
+                    <small style="color: #856404; display: block; margin-top: 0.5rem;">
+                        <i class="fas fa-shield-alt"></i> Include safety precautions, required PPE, lockout procedures, and special tools
+                    </small>
+                </div>
+
+                <!-- Parts Checkout Section -->
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(39, 174, 96, 0.05); border-radius: 12px; border: 1px solid rgba(39, 174, 96, 0.2);">
+                    <h3 style="margin: 0 0 1rem 0; color: #27ae60; font-size: 1.1rem;">
+                        <i class="fas fa-tools"></i> Parts & Materials Checkout
+                    </h3>
+                    <div id="globalPartsContainer">
+                        <div class="global-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Part/Material</label>
+                                <select name="parts[0][part_id]" class="global-part-select" onchange="updateGlobalPartStock(this)"
+                                    style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                                    <option value="">Select Part...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity</label>
+                                <input type="number" name="parts[0][quantity]" min="1" placeholder="1" onchange="validateGlobalQuantity(this)"
+                                    style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Available Stock</label>
+                                <span class="global-stock-display" style="display: block; padding: 0.8rem; background: rgba(0,0,0,0.05); border-radius: 8px; color: var(--text-muted); text-align: center;">-</span>
+                            </div>
+                            <div>
+                                <button type="button" onclick="removeGlobalPart(this)" style="padding: 0.8rem 1rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 1.8rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+                        <button type="button" onclick="addGlobalPart()" class="cmms-btn-secondary">
+                            <i class="fas fa-plus"></i> Add Part
+                        </button>
+                        <div style="font-size: 0.9em; color: var(--text-muted);">
+                            <i class="fas fa-info-circle"></i> Parts will be checked out when work order is created
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        <i class="fas fa-paperclip"></i> Attachments (Photos, Documents)
+                    </label>
+                    <input type="file" id="globalWOFiles" name="files" multiple accept="image/*,.pdf,.doc,.docx,.txt"
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">
+                        Upload photos, manuals, or related documents (Multiple files supported)
+                    </small>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+                    <button type="button" onclick="closeGlobalWorkOrderModal()" class="cmms-btn" style="background: #6c757d;">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" onclick="saveAsDraftWorkOrder()" class="cmms-btn-secondary">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                    <button type="submit" class="cmms-btn" style="background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));">
+                        <i class="fas fa-plus-circle"></i> Create Work Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 🚀 ENHANCED AI ASSISTANT WIDGET -->
     <div class="ai-widget-container">
         <!-- Enhanced AI FAB with Quick Actions -->
@@ -1664,14 +1864,41 @@
         
         // Quick action functions
         function showCreateWorkOrderModal() {
-            // In a real app, this would open a modal
-            alert('🔧 Create New Work Order\\n\\nThis would open a comprehensive work order creation form with:\\n\\n• Asset selection\\n• Priority setting\\n• Technician assignment\\n• Parts and procedures\\n• Scheduling options');
+            // Open the comprehensive work order modal
+            const modal = document.getElementById('globalWorkOrderModal');
+            if (modal) {
+                modal.style.display = 'block';
+                loadWorkOrderFormData();
+            } else {
+                // Fallback - navigate to work orders page
+                window.location.href = '/demo/work-orders';
+            }
         }
         
         function showEmergencyModal() {
-            // In a real app, this would open emergency work order modal
-            if (confirm('🚨 Emergency Work Order\\n\\nThis will create an URGENT work order with highest priority.\\n\\nContinue?')) {
-                alert('🚨 Emergency work order created!\\n\\n• Priority: URGENT\\n• Response team notified\\n• Estimated response: 15 minutes\\n\\nWO-EMERG-' + Date.now());
+            // Open work order modal with emergency priority pre-selected
+            const modal = document.getElementById('globalWorkOrderModal');
+            if (modal) {
+                modal.style.display = 'block';
+                loadWorkOrderFormData();
+                
+                // Pre-set emergency priority
+                setTimeout(() => {
+                    const prioritySelect = document.getElementById('globalWOPriority');
+                    const typeSelect = document.getElementById('globalWOType');
+                    if (prioritySelect) prioritySelect.value = 'Critical';
+                    if (typeSelect) typeSelect.value = 'Emergency';
+                    
+                    // Add emergency styling
+                    const modalContent = modal.querySelector('.modal-content');
+                    if (modalContent) {
+                        modalContent.style.borderLeft = '5px solid #e74c3c';
+                        modalContent.style.background = 'linear-gradient(135deg, rgba(231, 76, 60, 0.05), rgba(255, 255, 255, 0.95))';
+                    }
+                }, 100);
+            } else {
+                // Fallback - navigate to work orders page
+                window.location.href = '/demo/work-orders';
             }
         }
         
@@ -2178,6 +2405,364 @@
                 chatInput.placeholder = "Ask me anything about maintenance, assets, or workflows...";
             }
         }
+        
+        // 🔧 GLOBAL WORK ORDER MODAL FUNCTIONS
+        let globalPartCounter = 0;
+        let globalAvailableParts = [];
+        let globalAvailableAssets = [];
+        let globalAvailableTechnicians = [];
+        
+        async function loadWorkOrderFormData() {
+            try {
+                // Load assets
+                const assetResponse = await fetch('/api/demo/assets');
+                if (assetResponse.ok) {
+                    globalAvailableAssets = await assetResponse.json();
+                    populateGlobalAssetDropdown();
+                }
+                
+                // Load technicians
+                const techResponse = await fetch('/api/demo/users?role=technician');
+                if (techResponse.ok) {
+                    globalAvailableTechnicians = await techResponse.json();
+                    populateGlobalTechnicianDropdown();
+                } else {
+                    // Fallback demo data
+                    globalAvailableTechnicians = [
+                        {id: 'tech1', name: 'Mike Johnson', role: 'Senior Technician'},
+                        {id: 'tech2', name: 'Sarah Chen', role: 'Maintenance Specialist'},
+                        {id: 'tech3', name: 'Carlos Rodriguez', role: 'Equipment Technician'},
+                        {id: 'tech4', name: 'Ashley Kim', role: 'Electrical Technician'}
+                    ];
+                    populateGlobalTechnicianDropdown();
+                }
+                
+                // Load parts
+                const partsResponse = await fetch('/api/demo/parts');
+                if (partsResponse.ok) {
+                    globalAvailableParts = await partsResponse.json();
+                    populateGlobalPartSelects();
+                } else {
+                    // Fallback demo data
+                    globalAvailableParts = [
+                        {id: 'part1', name: 'Motor Belt v-4L', part_number: 'BLT-001', current_stock: 15},
+                        {id: 'part2', name: 'Oil Filter OF-125', part_number: 'FLT-125', current_stock: 8},
+                        {id: 'part3', name: 'Bearing 6205-2RS', part_number: 'BRG-205', current_stock: 25},
+                        {id: 'part4', name: 'Hydraulic Hose 1/2"', part_number: 'HSE-050', current_stock: 3},
+                        {id: 'part5', name: 'Temperature Sensor', part_number: 'SNS-T01', current_stock: 12}
+                    ];
+                    populateGlobalPartSelects();
+                }
+            } catch (error) {
+                console.error('Error loading work order form data:', error);
+                // Use fallback demo data
+                globalAvailableAssets = [
+                    {id: 'asset1', name: 'Hydraulic Press #1', asset_tag: 'HP-001'},
+                    {id: 'asset2', name: 'Conveyor Belt A', asset_tag: 'CB-A01'},
+                    {id: 'asset3', name: 'Air Compressor Unit', asset_tag: 'AC-002'},
+                    {id: 'asset4', name: 'CNC Milling Machine', asset_tag: 'CNC-M3'}
+                ];
+                populateGlobalAssetDropdown();
+                populateGlobalTechnicianDropdown();
+                populateGlobalPartSelects();
+            }
+        }
+        
+        function populateGlobalAssetDropdown() {
+            const select = document.getElementById('globalWOAsset');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select Asset...</option>';
+            globalAvailableAssets.forEach(asset => {
+                const option = document.createElement('option');
+                option.value = asset.id;
+                option.textContent = `${asset.name} (${asset.asset_tag || 'No Tag'})`;
+                select.appendChild(option);
+            });
+        }
+        
+        function populateGlobalTechnicianDropdown() {
+            const select = document.getElementById('globalWOTechnician');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select Technician...</option>';
+            globalAvailableTechnicians.forEach(tech => {
+                const option = document.createElement('option');
+                option.value = tech.id;
+                option.textContent = tech.name || tech.full_name || `${tech.first_name} ${tech.last_name}`;
+                select.appendChild(option);
+            });
+        }
+        
+        function populateGlobalPartSelects() {
+            const partSelects = document.querySelectorAll('.global-part-select');
+            partSelects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select Part...</option>';
+                
+                globalAvailableParts.forEach(part => {
+                    const option = document.createElement('option');
+                    option.value = part.id;
+                    option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+                    option.dataset.stock = part.current_stock || 0;
+                    option.dataset.cost = part.unit_cost || 0;
+                    select.appendChild(option);
+                });
+                
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            });
+        }
+        
+        function addGlobalPart() {
+            globalPartCounter++;
+            const container = document.getElementById('globalPartsContainer');
+            
+            const partRow = document.createElement('div');
+            partRow.className = 'global-parts-row';
+            partRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;';
+            
+            partRow.innerHTML = `
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Part/Material</label>
+                    <select name="parts[${globalPartCounter}][part_id]" class="global-part-select" onchange="updateGlobalPartStock(this)"
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        <option value="">Select Part...</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity</label>
+                    <input type="number" name="parts[${globalPartCounter}][quantity]" min="1" placeholder="1" onchange="validateGlobalQuantity(this)"
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Available Stock</label>
+                    <span class="global-stock-display" style="display: block; padding: 0.8rem; background: rgba(0,0,0,0.05); border-radius: 8px; color: var(--text-muted); text-align: center;">-</span>
+                </div>
+                <div>
+                    <button type="button" onclick="removeGlobalPart(this)" style="padding: 0.8rem 1rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(partRow);
+            
+            // Populate the new select with available parts
+            const newSelect = partRow.querySelector('.global-part-select');
+            globalAvailableParts.forEach(part => {
+                const option = document.createElement('option');
+                option.value = part.id;
+                option.textContent = `${part.name} (${part.part_number || 'No PN'})`;
+                option.dataset.stock = part.current_stock || 0;
+                option.dataset.cost = part.unit_cost || 0;
+                newSelect.appendChild(option);
+            });
+        }
+        
+        function removeGlobalPart(button) {
+            const partRow = button.closest('.global-parts-row');
+            partRow.remove();
+        }
+        
+        function updateGlobalPartStock(select) {
+            const selectedOption = select.options[select.selectedIndex];
+            const stockDisplay = select.closest('.global-parts-row').querySelector('.global-stock-display');
+            
+            if (selectedOption && selectedOption.dataset.stock !== undefined) {
+                const stock = parseInt(selectedOption.dataset.stock);
+                stockDisplay.textContent = stock;
+                stockDisplay.style.color = stock > 0 ? 'var(--success-color, #28a745)' : 'var(--danger-color, #dc3545)';
+                
+                // Update quantity validation
+                const quantityInput = select.closest('.global-parts-row').querySelector('input[type="number"]');
+                quantityInput.max = stock;
+                
+                if (stock === 0) {
+                    stockDisplay.style.background = 'rgba(231, 76, 60, 0.1)';
+                    stockDisplay.style.color = 'var(--danger-color, #e74c3c)';
+                } else if (stock <= 5) {
+                    stockDisplay.style.background = 'rgba(243, 156, 18, 0.1)';
+                    stockDisplay.style.color = 'var(--warning-color, #f39c12)';
+                } else {
+                    stockDisplay.style.background = 'rgba(39, 174, 96, 0.1)';
+                    stockDisplay.style.color = 'var(--success-color, #27ae60)';
+                }
+            } else {
+                stockDisplay.textContent = '-';
+                stockDisplay.style.background = 'rgba(0,0,0,0.05)';
+                stockDisplay.style.color = 'var(--text-muted)';
+            }
+        }
+        
+        function validateGlobalQuantity(input) {
+            const partRow = input.closest('.global-parts-row');
+            const stockDisplay = partRow.querySelector('.global-stock-display');
+            const availableStock = parseInt(stockDisplay.textContent) || 0;
+            const requestedQty = parseInt(input.value) || 0;
+            
+            if (requestedQty > availableStock) {
+                input.style.borderColor = 'var(--danger-color, #dc3545)';
+                input.title = `Only ${availableStock} available in stock`;
+                
+                // Show warning message
+                let warning = partRow.querySelector('.global-qty-warning');
+                if (!warning) {
+                    warning = document.createElement('small');
+                    warning.className = 'global-qty-warning';
+                    warning.style.cssText = 'color: var(--danger-color, #dc3545); display: block; margin-top: 0.25rem;';
+                    input.parentNode.appendChild(warning);
+                }
+                warning.textContent = `Only ${availableStock} available`;
+            } else {
+                input.style.borderColor = 'var(--border-color)';
+                input.title = '';
+                
+                const warning = partRow.querySelector('.global-qty-warning');
+                if (warning) {
+                    warning.remove();
+                }
+            }
+        }
+        
+        function closeGlobalWorkOrderModal() {
+            const modal = document.getElementById('globalWorkOrderModal');
+            if (modal) {
+                modal.style.display = 'none';
+                
+                // Reset form
+                document.getElementById('globalWorkOrderForm').reset();
+                
+                // Reset emergency styling
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.style.borderLeft = '';
+                    modalContent.style.background = '';
+                }
+                
+                // Reset parts container to single row
+                const container = document.getElementById('globalPartsContainer');
+                container.innerHTML = `
+                    <div class="global-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Part/Material</label>
+                            <select name="parts[0][part_id]" class="global-part-select" onchange="updateGlobalPartStock(this)"
+                                style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                                <option value="">Select Part...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity</label>
+                            <input type="number" name="parts[0][quantity]" min="1" placeholder="1" onchange="validateGlobalQuantity(this)"
+                                style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Available Stock</label>
+                            <span class="global-stock-display" style="display: block; padding: 0.8rem; background: rgba(0,0,0,0.05); border-radius: 8px; color: var(--text-muted); text-align: center;">-</span>
+                        </div>
+                        <div>
+                            <button type="button" onclick="removeGlobalPart(this)" style="padding: 0.8rem 1rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 1.8rem;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                populateGlobalPartSelects();
+                globalPartCounter = 0;
+            }
+        }
+        
+        function saveAsDraftWorkOrder() {
+            // Collect form data
+            const formData = new FormData(document.getElementById('globalWorkOrderForm'));
+            formData.append('status', 'draft');
+            
+            // Save to localStorage as draft
+            const draftData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                priority: formData.get('priority'),
+                asset_id: formData.get('asset_id'),
+                assigned_to: formData.get('assigned_to'),
+                work_order_type: formData.get('work_order_type'),
+                due_date: formData.get('due_date'),
+                scheduled_time: formData.get('scheduled_time'),
+                estimated_hours: formData.get('estimated_hours'),
+                work_instructions: formData.get('work_instructions'),
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('chatterfix_work_order_draft', JSON.stringify(draftData));
+            
+            alert('💾 Work order saved as draft!\\n\\nYou can continue editing later.');
+            closeGlobalWorkOrderModal();
+        }
+        
+        // Initialize global work order modal when document loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const globalForm = document.getElementById('globalWorkOrderForm');
+            if (globalForm) {
+                globalForm.addEventListener('submit', function(e) {
+                    // Validate parts quantities before submission
+                    const partRows = document.querySelectorAll('.global-parts-row');
+                    let hasErrors = false;
+                    
+                    partRows.forEach(row => {
+                        const select = row.querySelector('.global-part-select');
+                        const input = row.querySelector('input[type="number"]');
+                        
+                        if (select.value && input.value) {
+                            const stockDisplay = row.querySelector('.global-stock-display');
+                            const availableStock = parseInt(stockDisplay.textContent) || 0;
+                            const requestedQty = parseInt(input.value) || 0;
+                            
+                            if (requestedQty > availableStock) {
+                                hasErrors = true;
+                                input.style.borderColor = 'var(--danger-color, #dc3545)';
+                            }
+                        }
+                    });
+                    
+                    if (hasErrors) {
+                        e.preventDefault();
+                        alert('⚠️ Please check part quantities.\\n\\nSome requested quantities exceed available stock.');
+                        return;
+                    }
+                    
+                    // Show success message and close modal
+                    setTimeout(() => {
+                        closeGlobalWorkOrderModal();
+                        
+                        // Show success notification
+                        const notification = document.createElement('div');
+                        notification.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: linear-gradient(135deg, #27ae60, #2ecc71);
+                            color: white;
+                            padding: 15px 20px;
+                            border-radius: 10px;
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                            z-index: 10000;
+                            animation: slideInRight 0.3s ease;
+                        `;
+                        notification.innerHTML = `
+                            <div style="font-weight: 600; margin-bottom: 5px;">✅ Work Order Created!</div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Technician will be notified</div>
+                        `;
+                        
+                        document.body.appendChild(notification);
+                        
+                        setTimeout(() => {
+                            notification.remove();
+                        }, 4000);
+                    }, 500);
+                });
+            }
+        });
         
         // Enhance chat message sending to include persona context
         const originalSendFloatingChatMessage = window.sendFloatingChatMessage;

@@ -394,14 +394,16 @@ async def demo_assets(request: Request):
             "request": request,
             "assets": DEMO_ASSETS,
             "stats": {
-                "total_assets": len(DEMO_ASSETS),
-                "operational": len(
+                "total": len(DEMO_ASSETS),
+                "active": len(
                     [a for a in DEMO_ASSETS if a["status"] == "Operational"]
                 ),
-                "maintenance_required": len(
-                    [a for a in DEMO_ASSETS if a["status"] == "Maintenance Required"]
+                "critical": len(
+                    [a for a in DEMO_ASSETS if a["criticality"] == "Critical"]
                 ),
-                "down": len([a for a in DEMO_ASSETS if a["status"] == "Down"]),
+                "maintenance_due": len(
+                    [a for a in DEMO_ASSETS if a["status"] in ["Maintenance Required", "Down"] or a["next_maintenance"] == "Overdue"]
+                ),
             },
             "is_demo": True,
         },

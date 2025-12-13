@@ -20,22 +20,26 @@
     </div>
 </div>
 
-<!-- Stats Dashboard -->
+<!-- Stats Dashboard with Clickable Filter Tabs -->
 <div
     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-    <div class="cmms-card" style="text-align: center;">
+    <div class="cmms-card filter-tab active" data-filter="all" style="text-align: center; cursor: pointer; transition: all 0.3s ease;" 
+         onclick="filterAssets('all', this)">
         <div style="font-size: 2.5rem; font-weight: bold; color: #3498db;">{{ stats.total }}</div>
         <div style="opacity: 0.8;">Total Assets</div>
     </div>
-    <div class="cmms-card" style="text-align: center;">
+    <div class="cmms-card filter-tab" data-filter="active" style="text-align: center; cursor: pointer; transition: all 0.3s ease;" 
+         onclick="filterAssets('active', this)">
         <div style="font-size: 2.5rem; font-weight: bold; color: #27ae60;">{{ stats.active }}</div>
         <div style="opacity: 0.8;">Active</div>
     </div>
-    <div class="cmms-card" style="text-align: center;">
+    <div class="cmms-card filter-tab" data-filter="critical" style="text-align: center; cursor: pointer; transition: all 0.3s ease;" 
+         onclick="filterAssets('critical', this)">
         <div style="font-size: 2.5rem; font-weight: bold; color: #e74c3c;">{{ stats.critical }}</div>
         <div style="opacity: 0.8;">Critical Priority</div>
     </div>
-    <div class="cmms-card" style="text-align: center;">
+    <div class="cmms-card filter-tab" data-filter="maintenance" style="text-align: center; cursor: pointer; transition: all 0.3s ease;" 
+         onclick="filterAssets('maintenance', this)">
         <div style="font-size: 2.5rem; font-weight: bold; color: #f39c12;">{{ stats.maintenance_due }}</div>
         <div style="opacity: 0.8;">Maintenance Due</div>
     </div>
@@ -81,9 +85,30 @@
     {% for asset in assets %}
     <div class="asset-card {{ asset.criticality|lower }}" data-status="{{ asset.status }}"
         data-criticality="{{ asset.criticality }}" onclick="window.location.href='/assets/{{ asset.id }}'">
-        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #000; position: relative;">
-            <img src="{{ asset.image_url or 'https://placehold.co/600x400?text=Asset' }}" alt="{{ asset.name }}"
+        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #2c3e50; position: relative; display: flex; align-items: center; justify-content: center;">
+            {% if asset.image_url %}
+            <img src="{{ asset.image_url }}" alt="{{ asset.name }}"
                 style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+            <div style="text-align: center; color: #ecf0f1;">
+                {% if asset.category == 'HVAC' or asset.type == 'HVAC System' %}
+                <i class="fas fa-fan" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% elif asset.category == 'Manufacturing Equipment' or asset.type == 'Production' %}
+                <i class="fas fa-industry" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% elif asset.category == 'Material Handling' or asset.type == 'Forklift' %}
+                <i class="fas fa-truck" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% elif asset.category == 'Compressed Air' or asset.type == 'Compressor' %}
+                <i class="fas fa-tachometer-alt" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% elif asset.type == 'Pump' %}
+                <i class="fas fa-water" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% elif asset.type == 'Generator' %}
+                <i class="fas fa-bolt" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% else %}
+                <i class="fas fa-cogs" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                {% endif %}
+                <div style="font-size: 0.8rem; opacity: 0.7;">{{ asset.category or asset.type or 'Equipment' }}</div>
+            </div>
+            {% endif %}
             <div style="position: absolute; top: 10px; right: 10px;">
                 <span
                     class="cmms-badge {% if asset.status == 'Active' %}badge-operational{% elif asset.status == 'Maintenance' %}badge-maintenance{% else %}badge-down{% endif %}">
@@ -338,9 +363,66 @@
     .assets-list .asset-card {
         grid-column: 1 / -1;
     }
+
+    .filter-tab:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, rgba(52, 152, 219, 0.3) 0%, rgba(74, 144, 226, 0.3) 100%);
+        border: 2px solid rgba(52, 152, 219, 0.8);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+    }
 </style>
 
 <script>
+    // Asset filtering functions
+    function filterAssets(filterType, tabElement) {
+        // Remove active class from all filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active class to clicked tab
+        tabElement.classList.add('active');
+        
+        // Get all asset cards
+        const assetCards = document.querySelectorAll('.asset-card');
+        let visibleCount = 0;
+        
+        assetCards.forEach(card => {
+            let shouldShow = false;
+            
+            switch(filterType) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'active':
+                    shouldShow = card.dataset.status === 'Operational';
+                    break;
+                case 'critical':
+                    shouldShow = card.dataset.criticality === 'Critical';
+                    break;
+                case 'maintenance':
+                    shouldShow = card.dataset.status === 'Maintenance Required' || 
+                                card.dataset.status === 'Down' ||
+                                card.querySelector('[style*="Overdue"]');
+                    break;
+            }
+            
+            if (shouldShow) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        console.log(`Filtered ${filterType}: showing ${visibleCount} assets`);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         setupUnifiedFiltering('assets-grid', {
             itemSelector: '.asset-card',

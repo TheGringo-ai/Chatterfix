@@ -2608,6 +2608,12 @@ document.addEventListener('alpine:init', () => {
 
 // Initialize all stores when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize stunning card tilt effects FIRST for premium UX
+    if (UIComponents && UIComponents.TiltEffects) {
+        UIComponents.TiltEffects.init();
+        console.log('✨ Card tilt effects initialized - stunning UI restored!');
+    }
+    
     // Ensure Alpine.js stores are available
     if (window.Alpine) {
         // Initialize user preferences first

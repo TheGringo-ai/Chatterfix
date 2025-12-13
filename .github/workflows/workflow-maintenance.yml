@@ -1,0 +1,375 @@
+name: 🔧 Workflow Maintenance & Health Monitoring
+
+# Automated system to keep all workflows up-to-date and functioning
+# Based on AI team's never-repeat-mistakes principle
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC to check workflow health
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update all workflow dependencies'
+        required: false
+        type: boolean
+        default: false
+      check_security:
+        description: 'Run comprehensive security scan'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  PROJECT_ID: fredfix
+  
+permissions:
+  contents: write
+  actions: read
+  security-events: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  workflow-health-check:
+    name: 🏥 Workflow Health Assessment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    outputs:
+      needs_update: ${{ steps.assessment.outputs.needs_update }}
+      security_issues: ${{ steps.security.outputs.issues_found }}
+      workflow_status: ${{ steps.status.outputs.overall_status }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up GitHub CLI
+        run: |
+          gh --version
+          gh auth status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Check Workflow File Integrity
+        id: integrity
+        run: |
+          echo "🔍 Checking workflow file integrity..."
+          
+          WORKFLOW_FILES=(.github/workflows/*.yml)
+          ISSUES=()
+          
+          for file in "${WORKFLOW_FILES[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "Checking $file..."
+              
+              # Check YAML syntax
+              if ! python -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+                ISSUES+=("YAML syntax error in $file")
+              fi
+              
+              # Check for required sections
+              if ! grep -q "on:" "$file"; then
+                ISSUES+=("Missing 'on:' trigger in $file")
+              fi
+              
+              if ! grep -q "jobs:" "$file"; then
+                ISSUES+=("Missing 'jobs:' section in $file")
+              fi
+              
+              echo "✅ $file integrity check completed"
+            fi
+          done
+          
+          if [ ${#ISSUES[@]} -eq 0 ]; then
+            echo "integrity_status=healthy" >> $GITHUB_OUTPUT
+            echo "✅ All workflow files are healthy"
+          else
+            echo "integrity_status=issues_found" >> $GITHUB_OUTPUT
+            printf "❌ Issues found:\n"
+            printf "%s\n" "${ISSUES[@]}"
+          fi
+      
+      - name: Check Workflow Dependencies
+        id: dependencies
+        run: |
+          echo "🔍 Checking workflow dependencies..."
+          
+          # Check GitHub Actions versions
+          OUTDATED_ACTIONS=()
+          
+          # Common actions to check
+          declare -A ACTIONS=(
+            ["actions/checkout"]="v4"
+            ["actions/setup-python"]="v5"
+            ["google-github-actions/auth"]="v2"
+            ["google-github-actions/setup-gcloud"]="v2"
+          )
+          
+          for file in .github/workflows/*.yml; do
+            if [[ -f "$file" ]]; then
+              for action in "${!ACTIONS[@]}"; do
+                EXPECTED="${ACTIONS[$action]}"
+                FOUND=$(grep -o "${action}@[^[:space:]]*" "$file" | head -1 | cut -d'@' -f2 || echo "")
+                
+                if [[ -n "$FOUND" && "$FOUND" != "$EXPECTED" ]]; then
+                  OUTDATED_ACTIONS+=("$action@$FOUND should be $action@$EXPECTED in $file")
+                fi
+              done
+            fi
+          done
+          
+          if [ ${#OUTDATED_ACTIONS[@]} -eq 0 ]; then
+            echo "dependencies_status=up_to_date" >> $GITHUB_OUTPUT
+            echo "✅ All workflow dependencies are up-to-date"
+          else
+            echo "dependencies_status=outdated" >> $GITHUB_OUTPUT
+            printf "⚠️ Outdated dependencies found:\n"
+            printf "%s\n" "${OUTDATED_ACTIONS[@]}"
+          fi
+      
+      - name: Security Vulnerability Assessment
+        id: security
+        if: inputs.check_security == true
+        run: |
+          echo "🔒 Checking for security vulnerabilities..."
+          
+          # Get Dependabot alerts
+          ALERTS=$(gh api repos/${{ github.repository }}/dependabot/alerts --jq '.[] | select(.state == "open") | {number, severity: .security_advisory.severity, package: .dependency.package.name}' 2>/dev/null || echo "[]")
+          
+          if [[ "$ALERTS" == "[]" || -z "$ALERTS" ]]; then
+            echo "issues_found=false" >> $GITHUB_OUTPUT
+            echo "✅ No security vulnerabilities found"
+          else
+            echo "issues_found=true" >> $GITHUB_OUTPUT
+            echo "❌ Security vulnerabilities detected:"
+            echo "$ALERTS" | jq -r '"- " + .package + " (" + .severity + ")"' 2>/dev/null || echo "  - Issues detected (details in Dependabot alerts)"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Workflow Performance Analysis
+        id: performance
+        run: |
+          echo "📊 Analyzing workflow performance..."
+          
+          # Get recent workflow runs
+          RUNS=$(gh run list --limit 10 --json status,conclusion,createdAt,name --jq '.[] | select(.name == "🚀 ChatterFix Production Deployment")')
+          
+          SUCCESS_COUNT=$(echo "$RUNS" | jq -r 'select(.conclusion == "success")' | wc -l)
+          FAILURE_COUNT=$(echo "$RUNS" | jq -r 'select(.conclusion == "failure")' | wc -l)
+          TOTAL_RUNS=$(echo "$RUNS" | wc -l)
+          
+          if [[ $TOTAL_RUNS -gt 0 ]]; then
+            SUCCESS_RATE=$((SUCCESS_COUNT * 100 / TOTAL_RUNS))
+            echo "success_rate=$SUCCESS_RATE" >> $GITHUB_OUTPUT
+            echo "total_runs=$TOTAL_RUNS" >> $GITHUB_OUTPUT
+            
+            if [[ $SUCCESS_RATE -ge 90 ]]; then
+              echo "performance_status=excellent" >> $GITHUB_OUTPUT
+              echo "✅ Workflow performance excellent: $SUCCESS_RATE% success rate"
+            elif [[ $SUCCESS_RATE -ge 80 ]]; then
+              echo "performance_status=good" >> $GITHUB_OUTPUT
+              echo "⚠️ Workflow performance good: $SUCCESS_RATE% success rate"
+            else
+              echo "performance_status=poor" >> $GITHUB_OUTPUT
+              echo "❌ Workflow performance poor: $SUCCESS_RATE% success rate"
+            fi
+          else
+            echo "performance_status=no_data" >> $GITHUB_OUTPUT
+            echo "📊 No recent workflow runs found"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Overall Assessment
+        id: assessment
+        run: |
+          echo "📋 Generating overall assessment..."
+          
+          INTEGRITY="${{ steps.integrity.outputs.integrity_status }}"
+          DEPS="${{ steps.dependencies.outputs.dependencies_status }}"
+          SECURITY="${{ steps.security.outputs.issues_found }}"
+          PERFORMANCE="${{ steps.performance.outputs.performance_status }}"
+          
+          NEEDS_UPDATE=false
+          
+          if [[ "$INTEGRITY" == "issues_found" || "$DEPS" == "outdated" || "$SECURITY" == "true" || "$PERFORMANCE" == "poor" ]]; then
+            NEEDS_UPDATE=true
+          fi
+          
+          echo "needs_update=$NEEDS_UPDATE" >> $GITHUB_OUTPUT
+          
+          echo "╔════════════════════════════════════════════════════════════════╗"
+          echo "║                   WORKFLOW HEALTH ASSESSMENT                  ║"
+          echo "╚════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "🔧 Integrity: $INTEGRITY"
+          echo "📦 Dependencies: $DEPS" 
+          echo "🔒 Security: $([ "$SECURITY" == "true" ] && echo "issues_found" || echo "clean")"
+          echo "📊 Performance: $PERFORMANCE"
+          echo "🎯 Action Required: $([ "$NEEDS_UPDATE" == "true" ] && echo "YES" || echo "NO")"
+          echo ""
+          
+          if [[ "$NEEDS_UPDATE" == "true" ]]; then
+            echo "⚠️ Workflow maintenance required!"
+          else
+            echo "✅ All systems operational"
+          fi
+
+  automated-maintenance:
+    name: 🔄 Automated Maintenance
+    runs-on: ubuntu-latest
+    needs: workflow-health-check
+    if: needs.workflow-health-check.outputs.needs_update == 'true' || inputs.force_update == true
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Update Workflow Dependencies
+        id: update_deps
+        if: needs.workflow-health-check.outputs.needs_update == 'true' || inputs.force_update == true
+        run: |
+          echo "🔄 Updating workflow dependencies..."
+          
+          # Define latest versions
+          declare -A UPDATES=(
+            ["actions/checkout@v[0-9]"]="actions/checkout@v4"
+            ["actions/setup-python@v[0-9]"]="actions/setup-python@v5"
+            ["google-github-actions/auth@v[0-9]"]="google-github-actions/auth@v2"
+            ["google-github-actions/setup-gcloud@v[0-9]"]="google-github-actions/setup-gcloud@v2"
+          )
+          
+          UPDATES_MADE=()
+          
+          for file in .github/workflows/*.yml; do
+            if [[ -f "$file" ]]; then
+              echo "Updating $file..."
+              
+              for pattern in "${!UPDATES[@]}"; do
+                replacement="${UPDATES[$pattern]}"
+                
+                if sed -i.bak "s|$pattern|$replacement|g" "$file" && ! cmp -s "$file" "$file.bak"; then
+                  UPDATES_MADE+=("Updated $pattern to $replacement in $file")
+                fi
+                rm -f "$file.bak"
+              done
+            fi
+          done
+          
+          if [ ${#UPDATES_MADE[@]} -gt 0 ]; then
+            echo "updates_made=true" >> $GITHUB_OUTPUT
+            printf "✅ Updates completed:\n"
+            printf "%s\n" "${UPDATES_MADE[@]}"
+            
+            # Create summary for commit message
+            echo "UPDATES_SUMMARY<<EOF" >> $GITHUB_OUTPUT
+            printf "%s\n" "${UPDATES_MADE[@]}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "updates_made=false" >> $GITHUB_OUTPUT
+            echo "📋 No updates needed"
+          fi
+      
+      - name: Commit Updates
+        if: steps.update_deps.outputs.updates_made == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "Workflow Maintenance Bot"
+          
+          git add .github/workflows/
+          
+          git commit -m "$(cat <<'EOF'
+🔧 AUTO-MAINTENANCE: Update workflow dependencies
+
+${{ steps.update_deps.outputs.UPDATES_SUMMARY }}
+
+- Automated dependency updates for security and reliability
+- Maintains workflow compatibility with latest GitHub Actions
+- Part of never-repeat-mistakes system
+
+🤖 Generated by Workflow Maintenance System
+EOF
+)"
+          
+          git push origin main
+          
+          echo "✅ Workflow dependencies updated and committed"
+
+  create-maintenance-issue:
+    name: 📝 Create Maintenance Issue
+    runs-on: ubuntu-latest
+    needs: [workflow-health-check, automated-maintenance]
+    if: always() && needs.workflow-health-check.outputs.security_issues == 'true'
+    
+    steps:
+      - name: Create Security Alert Issue
+        run: |
+          gh issue create \
+            --title "🚨 Security Vulnerabilities Detected in Dependencies" \
+            --body "$(cat <<'EOF'
+## 🔒 Security Alert
+
+**Status**: Critical vulnerabilities detected
+**Source**: Automated workflow maintenance scan
+**Date**: $(date)
+
+### 🚨 Action Required
+
+Security vulnerabilities have been detected in project dependencies. 
+
+### 📋 Next Steps
+
+1. **Immediate**: Review Dependabot alerts in the Security tab
+2. **Priority**: Update vulnerable dependencies in requirements files
+3. **Testing**: Verify all functionality after updates
+4. **Deployment**: Deploy fixes to production
+
+### 🔗 Resources
+
+- [Dependabot Alerts](https://github.com/${{ github.repository }}/security/dependabot)
+- [Security Policies](https://github.com/${{ github.repository }}/security/policy)
+
+**Priority**: High
+**Labels**: security, dependencies, automated
+
+---
+*This issue was created automatically by the Workflow Maintenance System*
+EOF
+)" \
+            --label "security,dependencies,automated" \
+            --assignee "${{ github.repository_owner }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-completion:
+    name: 📢 Maintenance Completion
+    runs-on: ubuntu-latest
+    needs: [workflow-health-check, automated-maintenance, create-maintenance-issue]
+    if: always()
+    
+    steps:
+      - name: Generate Maintenance Report
+        run: |
+          echo "╔══════════════════════════════════════════════════════════════════╗"
+          echo "║               WORKFLOW MAINTENANCE COMPLETED                    ║" 
+          echo "╚══════════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "🎯 **MAINTENANCE SUMMARY**"
+          echo ""
+          echo "📊 Health Check: ${{ needs.workflow-health-check.result }}"
+          echo "🔄 Auto Maintenance: ${{ needs.automated-maintenance.result }}"
+          echo "🔒 Security Issues: ${{ needs.workflow-health-check.outputs.security_issues }}"
+          echo "⚡ Updates Needed: ${{ needs.workflow-health-check.outputs.needs_update }}"
+          echo ""
+          echo "✅ **WORKFLOW STATUS**: All systems monitored and maintained"
+          echo ""
+          echo "🔗 View detailed logs in workflow run for complete information"

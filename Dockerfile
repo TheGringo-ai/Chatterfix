@@ -41,9 +41,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 FROM python-base as production
 WORKDIR /app
 
-# Copy only essential Python packages from builder
-COPY --from=builder /root/.local /root/.local
-
 # Install minimal runtime dependencies in one layer
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -52,20 +49,23 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy application code efficiently
-COPY --chown=1001:1001 main.py .
-COPY --chown=1001:1001 app/ app/
-
 # Create non-root user for security (single layer)
 RUN useradd -m -u 1001 -s /bin/bash appuser \
     && mkdir -p /app/logs \
     && chown -R appuser:appuser /app
 
+# Copy essential Python packages and set ownership for appuser
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+
+# Copy application code efficiently
+COPY --chown=1001:1001 main.py .
+COPY --chown=1001:1001 app/ app/
+
 # Switch to non-root user
 USER appuser
 
 # Optimized environment variables for production
-ENV PATH=/root/.local/bin:$PATH \
+ENV PATH=/home/appuser/.local/bin:$PATH \
     PORT=8080 \
     ENVIRONMENT=production \
     WORKERS=1 \

@@ -62,10 +62,14 @@ reportlab>=4.0.0
 sentry-sdk>=1.40.0
 pydantic-settings>=2.1.0
 
-# Barcode scanning dependencies
+# Computer Vision & OCR dependencies
 pyzbar>=0.1.9
 qrcode[pil]>=7.4.2
 opencv-python-headless>=4.8.0
+pytesseract>=0.3.10
+pillow>=10.0.0
+easyocr>=1.7.0
+tensorflow>=2.14.0
 
 # Development dependencies (optional)
 # pytest>=7.4.0

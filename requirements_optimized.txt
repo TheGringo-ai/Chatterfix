@@ -1,0 +1,76 @@
+# ChatterFix CMMS - Optimized Requirements (Production)
+# Removed 12 unused dependencies, added 3 missing dependencies
+# Result: 34 packages (reduced from 44)
+
+# Core FastAPI dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+requests>=2.31.0
+jinja2>=3.1.2
+python-multipart>=0.0.6
+aiofiles>=23.2.1
+
+# HTTP client for AI Team service
+httpx>=0.25.0
+
+# Database - Firebase/Firestore (Primary)
+google-cloud-firestore>=2.13.1
+firebase-admin>=6.4.0
+pyrebase4>=4.7.1
+
+# Database - SQLite (Fallback only)
+aiosqlite>=0.19.0
+sqlalchemy>=2.0.0
+
+# AI & ML
+openai>=1.3.0
+google-generativeai>=0.3.2
+pandas>=2.1.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# gRPC & Autogen for AI Team
+grpcio>=1.60.0
+pyautogen>=0.2.0
+
+# Security & Auth
+bcrypt>=4.1.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+cryptography>=41.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+psutil>=5.9.0
+slowapi>=0.1.9
+
+# Production
+gunicorn>=21.2.0
+
+# MCP Server for demo validation
+mcp>=1.0.0
+
+# Computer Vision for barcode scanning
+pyzbar>=0.1.9
+qrcode[pil]>=7.4.2
+opencv-python-headless>=4.8.0
+
+# Missing dependencies (NEWLY ADDED)
+reportlab>=4.0.0          # PDF generation
+sentry-sdk>=1.40.0        # Error monitoring  
+pydantic-settings>=2.1.0  # Settings management
+
+# REMOVED UNUSED DEPENDENCIES:
+# websockets>=12.0          # Using FastAPI's built-in WebSocket
+# wsproto>=1.2.0           # WebSocket protocol (unused)
+# google-cloud-storage>=2.13.0  # No cloud storage usage found
+# google-auth>=2.25.2      # Using firebase-admin for auth
+# joblib>=1.3.0            # No ML model persistence found
+# grpcio-tools>=1.60.0     # gRPC development tools only
+# grpcio-status>=1.60.0    # Advanced gRPC status (unused)
+# protobuf>=4.25.0         # Not directly used
+# email-validator>=2.1.0   # No email validation found
+# duckduckgo-search>=3.9.0 # No search implementation found
+# setuptools               # Already in system
+# packaging>=23.0          # Not directly used

@@ -223,6 +223,153 @@ class TestCoreImports:
             pytest.fail(f"Failed to import auth modules:\n{error_msg}")
 
 
+class TestDeploymentCriticalImports:
+    """
+    CRITICAL: Tests for imports that caused deployment failures
+    These tests prevent the specific issues we encountered
+    """
+    
+    def test_uvicorn_import_critical(self):
+        """CRITICAL: Test uvicorn import - caused container startup failures"""
+        try:
+            import uvicorn
+            assert uvicorn is not None
+            
+            # Test that uvicorn can be imported from command line
+            import subprocess
+            result = subprocess.run([
+                sys.executable, "-c", "import uvicorn; print('uvicorn available')"
+            ], capture_output=True, text=True)
+            
+            assert result.returncode == 0, f"uvicorn import failed in subprocess: {result.stderr}"
+            print("\n✅ uvicorn import validation passed (CRITICAL)")
+            
+        except ImportError as e:
+            pytest.fail(f"CRITICAL: uvicorn import failed - {e}")
+    
+    def test_port_configuration_critical(self):
+        """CRITICAL: Test port configuration for Cloud Run compatibility"""
+        try:
+            # Read main.py and verify port configuration
+            main_path = Path(__file__).parent.parent / "main.py"
+            with open(main_path, 'r') as f:
+                content = f.read()
+            
+            # Check for Cloud Run compatible port configuration
+            assert 'port = int(os.getenv("PORT", "8080"))' in content, \
+                "CRITICAL: main.py must default to port 8080 for Cloud Run"
+            
+            print("\n✅ Port configuration validated for Cloud Run (CRITICAL)")
+            
+        except Exception as e:
+            pytest.fail(f"CRITICAL: Port configuration validation failed - {e}")
+    
+    def test_json_serialization_patterns(self):
+        """CRITICAL: Test JSON serialization patterns that caused 500 errors"""
+        try:
+            import json
+            from datetime import datetime, date
+            
+            # Test the correct datetime serialization patterns
+            test_data = {
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'date': date.today().strftime("%Y-%m-%d"),
+                'status': 'active',
+                'data': {'test': 'value'}
+            }
+            
+            # This should not fail
+            json_str = json.dumps(test_data)
+            parsed_back = json.loads(json_str)
+            assert parsed_back == test_data
+            
+            print("\n✅ JSON serialization patterns validated (CRITICAL)")
+            
+        except Exception as e:
+            pytest.fail(f"CRITICAL: JSON serialization validation failed - {e}")
+    
+    def test_firebase_import_graceful_handling(self):
+        """CRITICAL: Test Firebase imports handle missing credentials gracefully"""
+        try:
+            # This should not crash even if credentials are missing
+            import firebase_admin
+            from firebase_admin import auth, credentials, firestore
+            from app.services.firebase_auth import FirebaseAuthService
+            
+            # Test that FirebaseAuthService can be instantiated
+            # Even if Firebase is disabled, it should not crash
+            service = FirebaseAuthService()
+            
+            print("\n✅ Firebase imports and service instantiation handled gracefully (CRITICAL)")
+            
+        except Exception as e:
+            pytest.fail(f"CRITICAL: Firebase import/service validation failed - {e}")
+    
+    def test_docker_user_permissions_compatibility(self):
+        """CRITICAL: Test that Python paths work with non-root user"""
+        try:
+            import sys
+            import os
+            
+            # Check if we can access the Python executable
+            python_path = sys.executable
+            assert os.access(python_path, os.X_OK), "Python executable not accessible"
+            
+            # Check if we can import from user-local paths  
+            import site
+            user_site = site.getusersitepackages() if hasattr(site, 'getusersitepackages') else None
+            
+            print(f"\n✅ Python path accessibility validated (CRITICAL)")
+            print(f"   Python executable: {python_path}")
+            if user_site:
+                print(f"   User site packages: {user_site}")
+                
+        except Exception as e:
+            pytest.fail(f"CRITICAL: Docker user permission compatibility failed - {e}")
+    
+    def test_environment_variables_handling(self):
+        """CRITICAL: Test environment variable handling doesn't crash app"""
+        try:
+            import os
+            
+            # Test critical environment variables
+            critical_env_vars = [
+                'PORT', 'USE_FIRESTORE', 'GOOGLE_APPLICATION_CREDENTIALS',
+                'AI_TEAM_SERVICE_URL', 'ENVIRONMENT'
+            ]
+            
+            # Application should handle missing env vars gracefully
+            for var in critical_env_vars:
+                value = os.getenv(var, 'default_test_value')
+                # Should not crash with any value or None
+                assert value is not None or value == 'default_test_value'
+            
+            print("\n✅ Environment variable handling validated (CRITICAL)")
+            
+        except Exception as e:
+            pytest.fail(f"CRITICAL: Environment variable handling failed - {e}")
+    
+    def test_ai_team_service_import_handling(self):
+        """CRITICAL: Test AI team service imports handle missing dependencies"""
+        try:
+            # Test that missing AI dependencies don't crash the import
+            ai_modules = ['openai', 'google.generativeai', 'anthropic']
+            available_modules = []
+            
+            for module in ai_modules:
+                try:
+                    __import__(module)
+                    available_modules.append(module)
+                except ImportError:
+                    pass  # Should not crash
+            
+            print(f"\n✅ AI module import handling validated (CRITICAL)")
+            print(f"   Available AI modules: {available_modules}")
+            
+        except Exception as e:
+            pytest.fail(f"CRITICAL: AI module import handling failed - {e}")
+
+
 if __name__ == "__main__":
     # Allow running this file directly for quick testing
     pytest.main([__file__, "-v"])

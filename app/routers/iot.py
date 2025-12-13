@@ -1,271 +1,341 @@
 """
-IoT Router for ChatterFix CMMS
-Provides API endpoints for IoT sensor data collection and monitoring
+ChatterFix IoT Advanced Module - API Endpoints
+Premium sensor integration and analytics endpoints
 """
 
-from typing import List, Optional
-
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Dict, List, Optional, Any
+from datetime import datetime
 
-from app.services.iot_sensor_service import iot_sensor_service
-
-router = APIRouter(prefix="/iot", tags=["iot"])
-
-
-# Pydantic models for request validation
-
-
-class SensorReading(BaseModel):
-    sensor_id: str
-    asset_id: int
-    sensor_type: (
-        str  # temperature, vibration, pressure, humidity, rpm, current, noise_level
+# Import IoT Advanced Module components
+try:
+    from app.modules.iot_advanced.licensing import (
+        require_iot_license, 
+        require_enterprise_license,
+        get_license_status,
+        validate_sensor_count
     )
-    value: float
-    unit: Optional[str] = None
-    timestamp: Optional[str] = None
+    from app.modules.iot_advanced.sensor_manager import (
+        sensor_manager,
+        SensorConfig,
+        SensorType,
+        SensorProtocol
+    )
+    IOT_AVAILABLE = True
+except ImportError:
+    IOT_AVAILABLE = False
 
+from app.routers.auth import get_current_user
 
-class BatchSensorReadings(BaseModel):
-    readings: List[SensorReading]
+router = APIRouter(prefix="/iot", tags=["IoT Advanced Module"])
 
+# Request/Response Models
+class SensorConfigRequest(BaseModel):
+    name: str
+    sensor_type: str
+    protocol: str
+    connection_params: Dict[str, Any]
+    data_mapping: Dict[str, Any]
+    sampling_interval: int = 60
+    alert_thresholds: Optional[Dict[str, float]] = None
+    asset_id: Optional[str] = None
+    location: Optional[str] = None
 
-class ThresholdUpdate(BaseModel):
-    warning: Optional[float] = None
-    critical: Optional[float] = None
-    unit: Optional[str] = None
+# Premium Feature Check Endpoint
+@router.get("/license-status")
+async def check_license_status(current_user: dict = Depends(get_current_user)):
+    """Check IoT Advanced Module license status"""
+    if not IOT_AVAILABLE:
+        return JSONResponse({
+            "tier": "core",
+            "iot_available": False,
+            "message": "IoT Advanced Module not installed",
+            "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced"
+        })
+    
+    customer_id = current_user.get("customer_id", "demo_customer_1") 
+    license_info = await get_license_status(customer_id)
+    return JSONResponse(license_info)
 
-
-# Sensor Data Collection Endpoints
-
-
-@router.post("/sensors/data")
-async def record_sensor_reading(reading: SensorReading):
-    """
-    Record a single sensor reading from an IoT device
-
-    This endpoint accepts sensor data and:
-    - Stores the reading in the database
-    - Checks against configured thresholds
-    - Creates alerts if thresholds are exceeded
-    - Automatically creates work orders for critical alerts
-    """
-    try:
-        result = iot_sensor_service.record_sensor_data(reading.model_dump())
-        return JSONResponse(content=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/sensors/data/batch")
-async def record_batch_readings(batch: BatchSensorReadings):
-    """
-    Record multiple sensor readings in batch
-
-    Optimized for IoT gateways that aggregate data from multiple sensors
-    """
-    try:
-        readings = [r.model_dump() for r in batch.readings]
-        result = iot_sensor_service.record_batch_sensor_data(readings)
-        return JSONResponse(content=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Sensor Data Retrieval Endpoints
-
-
-@router.get("/sensors/readings")
-async def get_sensor_readings(
-    asset_id: Optional[int] = None,
-    sensor_type: Optional[str] = None,
-    hours: int = Query(24, ge=1, le=720),
+# Sensor Management Endpoints
+@router.post("/sensors")
+async def add_sensor(
+    config: SensorConfigRequest,
+    current_user: dict = Depends(get_current_user)
 ):
-    """
-    Get sensor readings with optional filters
-
-    Parameters:
-    - asset_id: Filter by specific asset
-    - sensor_type: Filter by sensor type (temperature, vibration, etc.)
-    - hours: Time range in hours (default: 24, max: 720/30 days)
-    """
+    """Add a new IoT sensor to monitoring system"""
+    if not IOT_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "IoT Advanced Module Required",
+            "message": "This feature requires ChatterFix IoT Advanced Module",
+            "upgrade_info": {
+                "tier_required": "iot_advanced",
+                "pricing": "$199/month + $25/sensor",
+                "contact_sales": "sales@chatterfix.com"
+            }
+        })
+    
+    customer_id = current_user.get("customer_id", "demo_customer_1")
+    
     try:
-        readings = iot_sensor_service.get_sensor_readings(asset_id, sensor_type, hours)
-        return JSONResponse(content={"count": len(readings), "readings": readings})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/sensors/asset/{asset_id}/summary")
-async def get_asset_sensor_summary(asset_id: int):
-    """
-    Get comprehensive sensor summary for a specific asset
-
-    Returns current readings, 24h averages, and status for all sensors
-    """
-    try:
-        summary = iot_sensor_service.get_asset_sensor_summary(asset_id)
-        return JSONResponse(content=summary)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/sensors/asset/{asset_id}/insights")
-async def get_predictive_insights(asset_id: int):
-    """
-    Get AI-powered predictive insights based on sensor data
-
-    Analyzes sensor trends and provides:
-    - Risk score (0-100)
-    - Trend analysis for each sensor type
-    - Maintenance recommendations
-    """
-    try:
-        insights = iot_sensor_service.get_predictive_insights(asset_id)
-        return JSONResponse(content=insights)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Alert Management Endpoints
-
-
-@router.get("/sensors/alerts")
-async def get_sensor_alerts(hours: int = Query(24, ge=1, le=720)):
-    """
-    Get recent sensor alerts
-
-    Returns alerts triggered when sensor values exceed thresholds
-    """
-    try:
-        alerts = iot_sensor_service.get_sensor_alerts(hours)
-        return JSONResponse(content={"count": len(alerts), "alerts": alerts})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Threshold Configuration Endpoints
-
-
-@router.get("/sensors/thresholds")
-async def get_all_thresholds():
-    """
-    Get all configured sensor thresholds
-    """
-    return JSONResponse(content={"thresholds": iot_sensor_service.sensor_thresholds})
-
-
-@router.get("/sensors/thresholds/{sensor_type}")
-async def get_sensor_thresholds(sensor_type: str):
-    """
-    Get thresholds for a specific sensor type
-    """
-    if sensor_type not in iot_sensor_service.sensor_thresholds:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No thresholds configured for sensor type: {sensor_type}",
+        # Convert request to sensor config
+        sensor_config = SensorConfig(
+            sensor_id=f"{config.name.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            name=config.name,
+            sensor_type=SensorType(config.sensor_type),
+            protocol=SensorProtocol(config.protocol),
+            connection_params=config.connection_params,
+            data_mapping=config.data_mapping,
+            sampling_interval=config.sampling_interval,
+            alert_thresholds=config.alert_thresholds,
+            asset_id=config.asset_id,
+            location=config.location
         )
-
-    return JSONResponse(
-        content={
-            "sensor_type": sensor_type,
-            "thresholds": iot_sensor_service.sensor_thresholds[sensor_type],
-        }
-    )
-
-
-@router.put("/sensors/thresholds/{sensor_type}")
-async def update_sensor_thresholds(sensor_type: str, thresholds: ThresholdUpdate):
-    """
-    Update thresholds for a sensor type
-
-    Example:
-    ```json
-    {
-        "warning": 85,
-        "critical": 100,
-        "unit": "°F"
-    }
-    ```
-    """
-    try:
-        threshold_data = {
-            k: v for k, v in thresholds.model_dump().items() if v is not None
-        }
-        result = iot_sensor_service.update_thresholds(sensor_type, threshold_data)
-        return JSONResponse(content=result)
+        
+        result = await sensor_manager.add_sensor(customer_id, sensor_config)
+        return JSONResponse(result)
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse({
+            "success": False,
+            "error": f"Failed to add sensor: {str(e)}"
+        })
 
+@router.get("/sensors")
+async def list_sensors(current_user: dict = Depends(get_current_user)):
+    """List all configured IoT sensors"""
+    if not IOT_AVAILABLE:
+        return JSONResponse({
+            "error": "IoT Advanced Module Required",
+            "sensors": [],
+            "total_sensors": 0,
+            "upgrade_required": True
+        })
+    
+    customer_id = current_user.get("customer_id", "demo_customer_1")
+    
+    # Apply IoT license check
+    @require_iot_license
+    async def _get_sensors():
+        return await sensor_manager.get_sensor_status(customer_id)
+    
+    result = await _get_sensors()
+    return JSONResponse(result)
 
-# Sensor Types and Documentation
-
-
-@router.get("/sensors/types")
-async def get_supported_sensor_types():
-    """
-    Get list of supported sensor types with their default thresholds
-    """
-    return JSONResponse(
-        content={
-            "sensor_types": list(iot_sensor_service.sensor_thresholds.keys()),
-            "default_thresholds": iot_sensor_service.sensor_thresholds,
-        }
-    )
-
-
-# Health Check for IoT Integration
-
-
-@router.get("/health")
-async def iot_health_check():
-    """
-    Health check endpoint for IoT integration
-    """
-    return JSONResponse(
-        content={
-            "status": "healthy",
-            "service": "iot_sensor_service",
-            "supported_sensor_types": len(iot_sensor_service.sensor_thresholds),
-            "active_alerts": len(iot_sensor_service.active_alerts),
-        }
-    )
-
-
-# WebSocket endpoint placeholder for real-time sensor data
-# Note: Full WebSocket implementation would require additional setup
-
-
-@router.get("/sensors/stream/info")
-async def sensor_stream_info():
-    """
-    Information about real-time sensor data streaming
-
-    For real-time sensor data, connect to the WebSocket endpoint at:
-    ws://[host]/iot/sensors/stream
-    """
-    return JSONResponse(
-        content={
-            "websocket_endpoint": "/iot/sensors/stream",
-            "protocol": "WebSocket",
-            "message_format": {
-                "subscribe": {
-                    "type": "subscribe",
-                    "asset_ids": [1, 2, 3],
-                    "sensor_types": ["temperature", "vibration"],
-                },
-                "data_message": {
-                    "type": "sensor_data",
-                    "sensor_id": "SENSOR-001",
-                    "asset_id": 1,
-                    "sensor_type": "temperature",
-                    "value": 75.5,
-                    "unit": "°F",
-                    "timestamp": "2025-01-01T12:00:00Z",
-                },
+@router.get("/dashboard/overview")
+async def get_dashboard_overview(current_user: dict = Depends(get_current_user)):
+    """Get IoT dashboard overview with key metrics"""
+    if not IOT_AVAILABLE:
+        return JSONResponse({
+            "overview": {
+                "total_sensors": 0,
+                "online_sensors": 0,
+                "offline_sensors": 0,
+                "active_alerts": 0,
+                "upgrade_required": True
             },
-            "note": "Real-time streaming requires WebSocket connection",
+            "message": "IoT Advanced Module required for sensor monitoring",
+            "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced"
+        })
+    
+    customer_id = current_user.get("customer_id", "demo_customer_1")
+    
+    @require_iot_license
+    async def _get_overview():
+        sensor_status = await sensor_manager.get_sensor_status(customer_id)
+        
+        total_sensors = sensor_status.get("total_sensors", 0)
+        online_sensors = sensor_status.get("online_sensors", 0)
+        
+        alerts = []
+        if "sensors" in sensor_status:
+            for sensor in sensor_status["sensors"]:
+                if sensor.get("alert_level") in ["warning", "critical"]:
+                    alerts.append({
+                        "sensor_id": sensor["sensor_id"],
+                        "name": sensor["name"],
+                        "level": sensor["alert_level"],
+                        "value": sensor.get("last_reading")
+                    })
+        
+        return {
+            "overview": {
+                "total_sensors": total_sensors,
+                "online_sensors": online_sensors,
+                "offline_sensors": total_sensors - online_sensors,
+                "active_alerts": len(alerts),
+                "critical_alerts": len([a for a in alerts if a["level"] == "critical"]),
+                "warning_alerts": len([a for a in alerts if a["level"] == "warning"])
+            },
+            "alerts": alerts[:10],
+            "system_health": "good" if online_sensors == total_sensors else "warning" if online_sensors > 0 else "critical"
         }
-    )
+    
+    result = await _get_overview()
+    return JSONResponse(result)
+
+# Voice Integration with IoT
+@router.post("/voice-sensor-query")
+async def process_voice_sensor_query(
+    voice_text: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Process voice queries about sensor data"""
+    if not IOT_AVAILABLE:
+        return JSONResponse({
+            "voice_query": voice_text,
+            "voice_response": "IoT sensor monitoring requires ChatterFix IoT Advanced Module. Contact sales@chatterfix.com for upgrade information.",
+            "iot_enhanced": False,
+            "upgrade_required": True
+        })
+    
+    customer_id = current_user.get("customer_id", "demo_customer_1")
+    voice_lower = voice_text.lower()
+    
+    @require_iot_license 
+    async def _process_voice_query():
+        # Parse sensor-related voice commands
+        if "temperature" in voice_lower:
+            sensor_status = await sensor_manager.get_sensor_status(customer_id)
+            temp_sensors = [s for s in sensor_status.get("sensors", []) if s.get("type") == "temperature"]
+            
+            if temp_sensors:
+                responses = []
+                for sensor in temp_sensors[:3]:
+                    if sensor.get("last_reading"):
+                        responses.append(f"{sensor['name']}: {sensor['last_reading']} degrees")
+                
+                voice_response = f"Temperature readings: {', '.join(responses)}" if responses else "No recent temperature readings available"
+            else:
+                voice_response = "No temperature sensors configured"
+        
+        elif "pressure" in voice_lower:
+            sensor_status = await sensor_manager.get_sensor_status(customer_id)
+            pressure_sensors = [s for s in sensor_status.get("sensors", []) if s.get("type") == "pressure"]
+            
+            if pressure_sensors:
+                responses = []
+                for sensor in pressure_sensors[:3]:
+                    if sensor.get("last_reading"):
+                        responses.append(f"{sensor['name']}: {sensor['last_reading']} PSI")
+                
+                voice_response = f"Pressure readings: {', '.join(responses)}" if responses else "No recent pressure readings available"
+            else:
+                voice_response = "No pressure sensors configured"
+        
+        elif "alert" in voice_lower or "alarm" in voice_lower:
+            overview = await get_dashboard_overview(current_user)
+            voice_response = "Checking sensor alerts for you..."
+        
+        else:
+            voice_response = "I can help you check temperature, pressure, vibration, or current alerts. What would you like to know?"
+        
+        return {
+            "voice_query": voice_text,
+            "voice_response": voice_response,
+            "iot_enhanced": True,
+            "command_recognized": True
+        }
+    
+    result = await _process_voice_query()
+    return JSONResponse(result)
+
+# Sensor Configuration Templates
+@router.get("/templates/sensor-configs")
+async def get_sensor_config_templates():
+    """Get pre-built sensor configuration templates"""
+    return JSONResponse({
+        "templates": [
+            {
+                "name": "Modbus Temperature Sensor",
+                "type": "temperature",
+                "protocol": "modbus_tcp",
+                "description": "Standard Modbus TCP temperature sensor with RTD input",
+                "connection_params": {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1
+                },
+                "data_mapping": {
+                    "registers": [
+                        {
+                            "address": 40001,
+                            "scale": 0.1,
+                            "offset": 0.0
+                        }
+                    ],
+                    "unit": "°C"
+                },
+                "alert_thresholds": {
+                    "warning_high": 80.0,
+                    "critical_high": 95.0
+                }
+            },
+            {
+                "name": "MQTT Pressure Sensor",
+                "type": "pressure",
+                "protocol": "mqtt", 
+                "description": "Wireless pressure sensor via MQTT broker",
+                "connection_params": {
+                    "broker": "iot.company.com",
+                    "port": 1883,
+                    "topic": "sensors/pressure/+",
+                    "username": "sensor_user"
+                },
+                "data_mapping": {
+                    "value_field": "pressure",
+                    "unit": "PSI"
+                },
+                "alert_thresholds": {
+                    "warning_high": 150.0,
+                    "critical_high": 175.0
+                }
+            }
+        ],
+        "iot_available": IOT_AVAILABLE,
+        "upgrade_required": not IOT_AVAILABLE
+    })
+
+# Upgrade Information
+@router.get("/upgrade-info")
+async def get_iot_upgrade_info(current_user: dict = Depends(get_current_user)):
+    """Get IoT Advanced Module upgrade information"""
+    if IOT_AVAILABLE:
+        customer_id = current_user.get("customer_id", "demo_customer_1")
+        license_info = await get_license_status(customer_id)
+        current_tier = license_info.get("tier", "core")
+    else:
+        current_tier = "core"
+    
+    return JSONResponse({
+        "current_tier": current_tier,
+        "iot_available": IOT_AVAILABLE,
+        "iot_features": [
+            "Real-time sensor monitoring",
+            "Predictive maintenance analytics",
+            "Advanced alert system", 
+            "Voice-integrated sensor queries",
+            "Custom dashboard builder",
+            "Historical trend analysis",
+            "MQTT, Modbus, HTTP API support",
+            "Unlimited sensors (with Enterprise)"
+        ],
+        "pricing": {
+            "iot_advanced": "$199/month + $25/sensor",
+            "enterprise": "$299/technician/month (includes IoT)"
+        },
+        "upgrade_benefits": {
+            "productivity_increase": "40%",
+            "downtime_reduction": "60%", 
+            "maintenance_cost_savings": "30%",
+            "failure_prediction_accuracy": "85%"
+        },
+        "contact_info": {
+            "sales_email": "sales@chatterfix.com",
+            "demo_url": "https://chatterfix.com/iot-demo",
+            "upgrade_url": "https://chatterfix.com/upgrade"
+        }
+    })

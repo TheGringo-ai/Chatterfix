@@ -30,6 +30,25 @@ secrets/
 # IDE
 .vscode/
 
+# Node.js & Build System
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.npm/
+.yarn/
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# Vite build outputs
+app/static/dist/
+app/static/css/*.min.css
+app/static/css/*.compiled.css
+bundle-analysis.html
+
 # Antigravity artifacts
 .gemini/
 secrets/*.json

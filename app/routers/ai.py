@@ -10,7 +10,7 @@ from app.core.firestore_db import get_db_connection
 # # from app.core.database import get_db_connection
 from app.routers.auth import get_current_user
 from app.services.ai_assistant import chatterfix_ai
-from app.services.computer_vision import analyze_asset_condition, recognize_part
+from app.services.computer_vision import analyze_asset_condition, recognize_part, extract_text_from_image, detect_equipment_issues
 from app.services.voice_commands import (
     get_voice_command_suggestions,
     process_voice_command,
@@ -131,9 +131,16 @@ async def assist(request: ChatRequest):
 
 @router.post("/voice-command")
 async def voice_command(voice_text: str = Form(...), technician_id: int = Form(None)):
-    """Process voice commands with AI"""
+    """Process voice commands with AI and Golden Workflows"""
     result = await process_voice_command(voice_text, technician_id)
     return JSONResponse(result)
+
+
+@router.get("/voice-suggestions")
+async def get_voice_suggestions():
+    """Get intelligent voice command suggestions and golden workflows"""
+    suggestions = await get_voice_command_suggestions()
+    return JSONResponse(suggestions)
 
 
 @router.post("/recognize-part")
@@ -169,6 +176,148 @@ async def analyze_condition_endpoint(
         with open(temp_path, "rb") as f:
             image_data = f.read()
         result = await analyze_asset_condition(image_data=image_data, asset_id=asset_id)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse(result)
+
+
+@router.post("/extract-text")
+async def extract_text_endpoint(image: UploadFile = File(...)):
+    """Advanced OCR text extraction for AR applications"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await extract_text_from_image(image_data=image_data)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse(result)
+
+
+@router.post("/inspect-equipment")
+async def inspect_equipment_endpoint(image: UploadFile = File(...)):
+    """Advanced equipment inspection with voice feedback for emergency scenarios"""
+    # Save temp file
+    temp_path = f"temp_{image.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await detect_equipment_issues(image_data)
+        
+        # Add emergency voice feedback for critical issues
+        if result.get("success") and result.get("overall_condition_score", 10) < 3.0:
+            urgent_issues = [issue for issue in result.get("detected_issues", []) 
+                           if issue.get("severity") in ["critical", "high", "severe"]]
+            
+            if urgent_issues:
+                result["emergency_voice_feedback"] = f"CRITICAL ALERT: {len(urgent_issues)} high-priority issues detected. " + \
+                    f"Overall condition score {result['overall_condition_score']} out of 10. " + \
+                    f"Immediate maintenance required. Safety precautions advised."
+                result["immediate_actions_required"] = True
+        
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return JSONResponse(result)
+
+
+@router.post("/emergency-workflow")
+async def emergency_workflow(
+    voice_text: str = Form(...), 
+    image: UploadFile = File(None),
+    technician_id: int = Form(1)
+):
+    """Complete emergency workflow: Voice + Vision + AI Analysis + Work Order Creation"""
+    try:
+        # Step 1: Process voice command for context and urgency
+        voice_result = await process_voice_command(voice_text, technician_id)
+        
+        workflow_result = {
+            "voice_analysis": voice_result,
+            "visual_analysis": None,
+            "integrated_response": None,
+            "emergency_actions": [],
+            "voice_feedback": "Voice command processed."
+        }
+        
+        # Step 2: Process image if provided
+        if image and image.filename:
+            temp_path = f"temp_{image.filename}"
+            with open(temp_path, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+            
+            try:
+                with open(temp_path, "rb") as f:
+                    image_data = f.read()
+                
+                # Comprehensive visual analysis
+                visual_result = await detect_equipment_issues(image_data)
+                part_result = await recognize_part(image_data=image_data)
+                text_result = await extract_text_from_image(image_data)
+                
+                workflow_result["visual_analysis"] = {
+                    "equipment_condition": visual_result,
+                    "part_recognition": part_result,
+                    "text_extraction": text_result
+                }
+                
+            finally:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+        
+        # Step 3: Integrate voice + vision for emergency response
+        if workflow_result["visual_analysis"]:
+            condition_score = workflow_result["visual_analysis"]["equipment_condition"].get("overall_condition_score", 10)
+            
+            # Emergency integration logic
+            if condition_score < 3.0 and voice_result.get("success"):
+                # Critical emergency detected
+                workflow_result["emergency_actions"] = [
+                    "IMMEDIATE: Stop equipment operation",
+                    "SAFETY: Implement lockout/tagout procedures", 
+                    "PARTS: Order replacement components automatically",
+                    "NOTIFY: Alert maintenance supervisor and safety team",
+                    "DOCUMENT: Auto-generate emergency work order"
+                ]
+                
+                workflow_result["voice_feedback"] = f"EMERGENCY PROTOCOL ACTIVATED. Critical equipment condition detected with score {condition_score} out of 10. " + \
+                    f"Work order {voice_result.get('work_order_id', 'EMERGENCY')} created with highest priority. " + \
+                    "Immediate shutdown and maintenance required. All safety teams have been notified."
+                
+                workflow_result["integrated_response"] = {
+                    "priority": "CRITICAL",
+                    "estimated_repair_time": "4-6 hours",
+                    "safety_level": "EXTREME CAUTION",
+                    "business_impact": "PRODUCTION LINE STOPPAGE PREVENTED"
+                }
+        
+        return JSONResponse(workflow_result)
+        
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "emergency_actions": ["Contact maintenance team immediately"],
+            "voice_feedback": f"Emergency workflow error: {str(e)}"
+        })
+        shutil.copyfileobj(image.file, buffer)
+
+    try:
+        with open(temp_path, "rb") as f:
+            image_data = f.read()
+        result = await detect_equipment_issues(image_data=image_data)
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

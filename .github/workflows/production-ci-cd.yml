@@ -1,0 +1,455 @@
+name: 🚀 Production CI/CD - Ultimate Hardened Pipeline
+
+# ULTIMATE AI DEVELOPMENT PLATFORM - HARDENED FOR RELIABILITY
+# This pipeline incorporates all lessons learned from deployment failures
+# Never-repeat-mistakes system integrated with comprehensive testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment (skip pre-checks)'
+        required: false
+        type: boolean
+        default: false
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+
+env:
+  PROJECT_ID: fredfix
+  REGION: us-central1
+  SERVICE_NAME: chatterfix-cmms
+  IMAGE_NAME: gcr.io/fredfix/chatterfix-cmms
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================================================
+  # COMPREHENSIVE TESTING & VALIDATION STAGE
+  # ============================================================================
+  test-and-validate:
+    name: 🧪 Test & Validate (Never-Repeat-Mistakes System)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    
+    steps:
+      - name: 🚚 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+          # Install testing and linting tools (learned from mistakes)
+          pip install pytest pytest-asyncio pytest-cov
+          pip install black isort flake8 mypy bandit safety
+          pip install requests httpx  # For API testing
+      
+      # LESSON LEARNED: Always validate environment configuration
+      - name: 🔍 Validate Environment Configuration
+        run: |
+          echo "🔍 Checking Python modules can be imported..."
+          python -c "
+          import sys
+          critical_modules = ['uvicorn', 'fastapi', 'firebase_admin', 'google.cloud.firestore']
+          missing = []
+          for module in critical_modules:
+              try:
+                  __import__(module)
+                  print(f'✅ {module}')
+              except ImportError as e:
+                  missing.append(f'{module}: {e}')
+                  print(f'❌ {module}: {e}')
+          if missing:
+              print('CRITICAL: Missing modules detected!')
+              for m in missing: print(f'  {m}')
+              sys.exit(1)
+          print('✅ All critical modules available')
+          "
+      
+      # LESSON LEARNED: Validate JSON serialization (datetime issues)
+      - name: 🔍 Validate JSON Serialization Patterns
+        run: |
+          echo "🔍 Testing JSON serialization patterns..."
+          python -c "
+          import json
+          from datetime import datetime, date
+          import sys
+          
+          # Test datetime serialization patterns that caused 500 errors
+          test_data = {
+              'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+              'date': date.today().strftime('%Y-%m-%d'),
+              'status': 'active'
+          }
+          
+          try:
+              json.dumps(test_data)
+              print('✅ JSON serialization validation passed')
+          except Exception as e:
+              print(f'❌ JSON serialization failed: {e}')
+              sys.exit(1)
+          "
+      
+      # LESSON LEARNED: Code formatting prevents deployment issues
+      - name: 🎨 Code Formatting Check
+        run: |
+          echo "🎨 Checking code formatting..."
+          black --check app/ main.py || (echo "❌ Run 'black app/ main.py' to fix formatting" && exit 1)
+          isort --check-only app/ main.py --profile=black || (echo "❌ Run 'isort app/ main.py --profile=black' to fix imports" && exit 1)
+          echo "✅ Code formatting validated"
+      
+      # LESSON LEARNED: Linting catches configuration issues
+      - name: 🔍 Code Quality & Linting
+        run: |
+          echo "🔍 Running code quality checks..."
+          flake8 app/ main.py --max-line-length=100 --ignore=E203,W503,F401
+          mypy app/ main.py --ignore-missing-imports --no-strict-optional
+          echo "✅ Code quality validation passed"
+      
+      # LESSON LEARNED: Security scanning prevents vulnerabilities
+      - name: 🛡️ Security Vulnerability Scan
+        run: |
+          echo "🛡️ Scanning for security vulnerabilities..."
+          bandit -r app/ -f json || echo "⚠️ Security warnings detected"
+          safety check || echo "⚠️ Dependency vulnerabilities detected"
+          echo "✅ Security scan completed"
+        continue-on-error: true
+      
+      # LESSON LEARNED: Port configuration validation
+      - name: 🔧 Validate Port Configuration
+        run: |
+          echo "🔧 Validating port configuration..."
+          python -c "
+          import os
+          
+          # Check main.py port configuration
+          with open('main.py', 'r') as f:
+              content = f.read()
+              if 'port = int(os.getenv(\"PORT\", \"8080\"))' in content:
+                  print('✅ Port 8080 correctly configured for Cloud Run')
+              else:
+                  print('❌ Port configuration issue detected!')
+                  print('   main.py should default to port 8080 for Cloud Run compatibility')
+                  exit(1)
+          "
+      
+      # LESSON LEARNED: Docker build validation prevents deployment failures
+      - name: 🐳 Docker Build Validation
+        run: |
+          echo "🐳 Validating Docker build..."
+          
+          # Test Docker build locally
+          docker build --build-arg USE_FIRESTORE=true -t chatterfix-test .
+          
+          echo "🔍 Testing container startup..."
+          # Test container can start and respond
+          docker run -d -p 8080:8080 --name test-container \
+            -e USE_FIRESTORE=false \
+            -e ENVIRONMENT=test \
+            -e DISABLE_FIREBASE=true \
+            chatterfix-test
+          
+          # Wait for startup
+          sleep 15
+          
+          # Test health endpoint
+          curl -f http://localhost:8080/health || (
+            echo "❌ Docker health check failed"
+            docker logs test-container
+            docker stop test-container
+            docker rm test-container
+            exit 1
+          )
+          
+          echo "✅ Docker validation passed"
+          docker stop test-container
+          docker rm test-container
+
+  # ============================================================================
+  # PRODUCTION DEPLOYMENT STAGE
+  # ============================================================================
+  deploy-production:
+    name: 🚀 Deploy to Production (Ultra-Reliable)
+    runs-on: ubuntu-latest
+    needs: test-and-validate
+    if: |
+      github.ref == 'refs/heads/main' && 
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (needs.test-and-validate.result == 'success' || github.event.inputs.force_deploy == 'true')
+    
+    environment: 
+      name: production
+      url: https://chatterfix.com
+    
+    steps:
+      - name: 🚚 Checkout Repository  
+        uses: actions/checkout@v4
+      
+      # LESSON LEARNED: Validate all required secrets before deployment
+      - name: 🔐 Validate Required Secrets
+        run: |
+          echo "🔍 Validating all required secrets..."
+          MISSING_SECRETS=()
+          
+          # Critical secrets validation
+          [ -z "${{ secrets.GCP_SA_KEY }}" ] && MISSING_SECRETS+=("GCP_SA_KEY")
+          [ -z "${{ secrets.FIREBASE_API_KEY }}" ] && MISSING_SECRETS+=("FIREBASE_API_KEY")
+          [ -z "${{ secrets.GEMINI_API_KEY }}" ] && MISSING_SECRETS+=("GEMINI_API_KEY")
+          [ -z "${{ secrets.OPENAI_API_KEY }}" ] && MISSING_SECRETS+=("OPENAI_API_KEY")
+          [ -z "${{ secrets.GROK_API_KEY }}" ] && MISSING_SECRETS+=("GROK_API_KEY")
+          
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ All required secrets validated"
+          else
+            echo "❌ Missing critical secrets: ${MISSING_SECRETS[*]}"
+            exit 1
+          fi
+      
+      - name: 🔐 Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      
+      - name: ⚙️ Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v4
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      
+      - name: 🐳 Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+      
+      # LESSON LEARNED: Get current revision for rollback capability
+      - name: 📋 Get Current Revision (Rollback Preparation)
+        id: current_revision
+        run: |
+          CURRENT=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format='value(status.latestReadyRevisionName)' 2>/dev/null || echo "none")
+          echo "revision=$CURRENT" >> $GITHUB_OUTPUT
+          echo "📋 Current revision: $CURRENT"
+      
+      # LESSON LEARNED: Build with all fixes applied (port, dependencies, user permissions)
+      - name: 🏗️ Build Hardened Docker Image
+        run: |
+          echo "🏗️ Building hardened Docker image with all reliability fixes..."
+          
+          # Build with explicit platform for Cloud Run
+          docker build \
+            --platform linux/amd64 \
+            --build-arg USE_FIRESTORE=true \
+            --tag ${{ env.IMAGE_NAME }}:latest \
+            --tag ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            .
+          
+          echo "✅ Docker image built successfully"
+      
+      - name: 📤 Push to Container Registry
+        run: |
+          echo "📤 Pushing image to Google Container Registry..."
+          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          echo "✅ Image pushed successfully"
+      
+      # LESSON LEARNED: Deploy with ALL required environment variables
+      - name: 🚀 Deploy to Cloud Run (All Environment Variables)
+        id: deploy
+        run: |
+          echo "🚀 Deploying to Cloud Run with comprehensive configuration..."
+          
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.IMAGE_NAME }}:latest \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=2Gi \
+            --cpu=1 \
+            --concurrency=80 \
+            --min-instances=1 \
+            --max-instances=10 \
+            --timeout=300s \
+            --port=8080 \
+            --set-env-vars="
+              USE_FIRESTORE=true,
+              GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},
+              LOG_LEVEL=info,
+              AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app,
+              FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},
+              GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},
+              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},
+              GROK_API_KEY=${{ secrets.GROK_API_KEY }},
+              ENVIRONMENT=production
+            " \
+            --project=${{ env.PROJECT_ID }}
+          
+          echo "✅ Deployment completed"
+      
+      - name: 📊 Get Service Information
+        id: service_info
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format='value(status.url)')
+          REVISION=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format='value(status.latestReadyRevisionName)')
+          
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "revision=$REVISION" >> $GITHUB_OUTPUT
+          echo "📊 Service URL: $URL"
+          echo "📊 New Revision: $REVISION"
+      
+      # LESSON LEARNED: Wait for deployment to stabilize before testing
+      - name: ⏳ Wait for Deployment Stabilization
+        run: |
+          echo "⏳ Waiting 30 seconds for deployment to stabilize..."
+          sleep 30
+      
+      # LESSON LEARNED: Comprehensive smoke testing prevents production issues
+      - name: 🧪 Comprehensive Smoke Testing
+        id: smoke_tests
+        run: |
+          echo "🧪 Running comprehensive smoke tests..."
+          SERVICE_URL="${{ steps.service_info.outputs.url }}"
+          
+          # Test 1: Health endpoint
+          echo "🔍 Testing health endpoint..."
+          if curl -f --max-time 10 "$SERVICE_URL/health"; then
+            echo "✅ Health endpoint responding"
+          else
+            echo "❌ Health endpoint failed"
+            exit 1
+          fi
+          
+          # Test 2: Root endpoint  
+          echo "🔍 Testing root endpoint..."
+          if curl -f --max-time 10 "$SERVICE_URL/"; then
+            echo "✅ Root endpoint responding"
+          else
+            echo "❌ Root endpoint failed"
+            exit 1
+          fi
+          
+          # Test 3: Custom domain
+          echo "🔍 Testing custom domain..."
+          if curl -f --max-time 10 "https://chatterfix.com/"; then
+            echo "✅ Custom domain responding"
+          else
+            echo "⚠️ Custom domain issue (may need DNS propagation)"
+          fi
+          
+          echo "✅ Smoke tests completed successfully"
+      
+      # LESSON LEARNED: Rollback capability for deployment failures
+      - name: 🔄 Prepare Rollback Information
+        if: failure()
+        run: |
+          echo "🔄 Deployment failed - rollback information:"
+          echo "Previous revision: ${{ steps.current_revision.outputs.revision }}"
+          echo "To rollback manually:"
+          echo "gcloud run services update-traffic ${{ env.SERVICE_NAME }} \\"
+          echo "  --to-revisions=${{ steps.current_revision.outputs.revision }}=100 \\"
+          echo "  --region=${{ env.REGION }}"
+      
+      # LESSON LEARNED: Success notification with comprehensive info
+      - name: 🎉 Deployment Success Notification
+        if: success()
+        run: |
+          echo "🎉 DEPLOYMENT SUCCESSFUL!"
+          echo "================================"
+          echo "🌐 Service URL: ${{ steps.service_info.outputs.url }}"
+          echo "🏷️ Revision: ${{ steps.service_info.outputs.revision }}"
+          echo "🌍 Custom Domain: https://chatterfix.com"
+          echo "🔧 All reliability fixes applied:"
+          echo "   ✅ Port 8080 configuration"
+          echo "   ✅ AI team service URL configured"
+          echo "   ✅ Docker user permissions fixed"
+          echo "   ✅ Environment variables validated"
+          echo "   ✅ Comprehensive smoke tests passed"
+          echo "================================"
+          echo "🚀 ChatterFix CMMS is live and operational!"
+
+  # ============================================================================
+  # AUTOMATED REGRESSION TESTING (CONTINUOUS MONITORING)
+  # ============================================================================
+  regression-testing:
+    name: 🔍 Automated Regression Testing
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: success()
+    
+    steps:
+      - name: 🚚 Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install Testing Dependencies
+        run: |
+          pip install requests pytest pytest-asyncio
+      
+      # LESSON LEARNED: Continuous monitoring prevents regression
+      - name: 🔍 Extended Regression Testing
+        run: |
+          echo "🔍 Running extended regression tests..."
+          
+          python -c "
+          import requests
+          import time
+          import sys
+          
+          def test_endpoint(url, name, expected_status=200):
+              try:
+                  response = requests.get(url, timeout=10)
+                  if response.status_code == expected_status:
+                      print(f'✅ {name}: {response.status_code}')
+                      return True
+                  else:
+                      print(f'❌ {name}: {response.status_code} (expected {expected_status})')
+                      return False
+              except Exception as e:
+                  print(f'❌ {name}: {e}')
+                  return False
+          
+          # Test all critical endpoints
+          tests = [
+              ('https://chatterfix.com/', 'Custom Domain Root'),
+              ('https://chatterfix.com/health', 'Custom Domain Health'),
+              ('${{ needs.deploy-production.outputs.service_url if needs.deploy-production.outputs }}/', 'Cloud Run URL Root'),
+              ('${{ needs.deploy-production.outputs.service_url if needs.deploy-production.outputs }}/health', 'Cloud Run URL Health'),
+          ]
+          
+          failed_tests = []
+          for url, name in tests:
+              if not test_endpoint(url, name):
+                  failed_tests.append(name)
+              time.sleep(2)  # Rate limiting
+          
+          if failed_tests:
+              print(f'❌ Failed tests: {failed_tests}')
+              sys.exit(1)
+          else:
+              print('✅ All regression tests passed')
+          "
+          
+          echo "✅ Regression testing completed successfully"

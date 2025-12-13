@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 ChatterFix CMMS - Component Showcase</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- UI Enhancement Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <script src="https://unpkg.com/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/choices.js@10.2.0/public/assets/styles/choices.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <!-- Design Tokens -->
+    <link rel="stylesheet" href="../app/static/css/design-tokens.css">
+    
+    <style>
+        /* Additional showcase styles */
+        .showcase-section {
+            margin-bottom: 4rem;
+            padding: 2rem;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: var(--border-glass);
+            border-radius: var(--radius-2xl);
+        }
+        
+        .component-demo {
+            padding: 2rem;
+            background: var(--bg-glass-light);
+            border: var(--border-glass-light);
+            border-radius: var(--radius-xl);
+            margin: 1rem 0;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        
+        .showcase-header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--accent-gradient);
+            color: white;
+        }
+        
+        .showcase-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-glass-heavy);
+            backdrop-filter: blur(30px);
+            border-bottom: var(--border-glass);
+            padding: 1rem 0;
+        }
+        
+        .nav-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            transition: all var(--duration-200);
+        }
+        
+        .nav-link:hover {
+            background: var(--bg-glass);
+            color: var(--primary-500);
+        }
+        
+        /* Animation examples */
+        .demo-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            margin: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-glass-heavy);
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-primary-500 to-secondary-500 min-h-screen">
+
+    <!-- Showcase Header -->
+    <div class="showcase-header">
+        <h1 class="text-5xl font-bold mb-4">
+            🎨 ChatterFix CMMS
+        </h1>
+        <h2 class="text-2xl font-light mb-6">
+            Ultimate UI Component Showcase
+        </h2>
+        <p class="text-lg opacity-90 max-w-2xl mx-auto">
+            The world's most advanced maintenance management platform with cutting-edge glassmorphism design, 
+            AI-powered components, and professional animations.
+        </p>
+        
+        <div class="mt-8 flex gap-4 justify-center flex-wrap">
+            <button class="glass-button" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i> Toggle Dark Mode
+            </button>
+            <button class="glass-button" onclick="showNotificationDemo()">
+                <i class="fas fa-bell"></i> Test Notifications
+            </button>
+            <button class="glass-button" onclick="triggerAnimationDemo()">
+                <i class="fas fa-magic"></i> Animation Demo
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="showcase-nav">
+        <div class="container mx-auto px-4">
+            <div class="flex gap-4 justify-center flex-wrap">
+                <a href="#buttons" class="nav-link">Buttons</a>
+                <a href="#forms" class="nav-link">Forms</a>
+                <a href="#cards" class="nav-link">Cards</a>
+                <a href="#navigation" class="nav-link">Navigation</a>
+                <a href="#charts" class="nav-link">Charts</a>
+                <a href="#animations" class="nav-link">Animations</a>
+                <a href="#ai-components" class="nav-link">AI Components</a>
+                <a href="#glassmorphism" class="nav-link">Glassmorphism</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+
+        <!-- Buttons Section -->
+        <section id="buttons" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">🔘 Button Components</h2>
+            
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Primary Buttons</h3>
+                <div class="flex gap-4 flex-wrap">
+                    <button class="glass-button animate-hover-scale bg-primary-500 text-white">
+                        <i class="fas fa-plus"></i> Create Work Order
+                    </button>
+                    <button class="glass-button animate-hover-scale bg-cmms-green text-white">
+                        <i class="fas fa-check"></i> Complete Task
+                    </button>
+                    <button class="glass-button animate-hover-scale bg-cmms-red text-white">
+                        <i class="fas fa-exclamation-triangle"></i> Emergency
+                    </button>
+                </div>
+            </div>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Glass Buttons</h3>
+                <div class="flex gap-4 flex-wrap">
+                    <button class="glass-button animate-hover-lift">
+                        <i class="fas fa-search"></i> Search Assets
+                    </button>
+                    <button class="glass-button animate-hover-lift">
+                        <i class="fas fa-filter"></i> Filter Results
+                    </button>
+                    <button class="glass-button animate-hover-lift">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Status Buttons</h3>
+                <div class="flex gap-4 flex-wrap">
+                    <button class="glass-button bg-status-success text-white">
+                        <i class="fas fa-check-circle"></i> Approved
+                    </button>
+                    <button class="glass-button bg-status-warning text-white">
+                        <i class="fas fa-clock"></i> Pending
+                    </button>
+                    <button class="glass-button bg-status-error text-white">
+                        <i class="fas fa-times-circle"></i> Rejected
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms Section -->
+        <section id="forms" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">📝 Form Components</h2>
+
+            <div class="component-demo" x-data="{ selectedCategory: '', tags: [] }">
+                <h3 class="text-xl font-semibold mb-4">Enhanced Form Elements</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Glass Input -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Asset Name</label>
+                        <input type="text" 
+                               class="glass-input w-full" 
+                               placeholder="Enter asset name..."
+                               x-model="assetName">
+                    </div>
+
+                    <!-- Date Picker -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Maintenance Date</label>
+                        <input type="text" 
+                               class="glass-input date-picker w-full" 
+                               placeholder="Select date...">
+                    </div>
+
+                    <!-- Enhanced Select -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Asset Category</label>
+                        <select class="enhanced-select w-full" x-model="selectedCategory">
+                            <option value="">Select category...</option>
+                            <option value="hvac">HVAC Equipment</option>
+                            <option value="electrical">Electrical Systems</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="mechanical">Mechanical</option>
+                        </select>
+                    </div>
+
+                    <!-- Tag Input -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tags</label>
+                        <select class="tag-select w-full" multiple>
+                            <option value="critical">Critical</option>
+                            <option value="routine">Routine</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Textarea -->
+                <div class="mt-6">
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea class="glass-input w-full h-32" 
+                              placeholder="Describe the maintenance task..."></textarea>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="mt-6 flex gap-4">
+                    <button class="glass-button bg-primary-500 text-white animate-hover-scale">
+                        <i class="fas fa-save"></i> Save Work Order
+                    </button>
+                    <button class="glass-button animate-hover-scale">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Form Validation Demo</h3>
+                <form class="validate-form" onsubmit="return false;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email *</label>
+                            <input type="email" 
+                                   class="glass-input w-full" 
+                                   data-validate="required|email"
+                                   placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password *</label>
+                            <input type="password" 
+                                   class="glass-input w-full" 
+                                   data-validate="required|min:8"
+                                   placeholder="Minimum 8 characters">
+                        </div>
+                    </div>
+                    <button type="submit" class="glass-button bg-primary-500 text-white mt-4">
+                        Test Validation
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Cards Section -->
+        <section id="cards" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">🃏 Card Components</h2>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Work Order Cards</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Critical Work Order -->
+                    <div class="demo-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold">WO-2024-001</h4>
+                            <span class="status-badge bg-status-error text-white px-3 py-1 rounded-full text-sm">
+                                Critical
+                            </span>
+                        </div>
+                        <p class="text-secondary mb-4">HVAC system failure in Building A - immediate attention required</p>
+                        <div class="flex items-center gap-4 text-sm text-muted mb-4">
+                            <span><i class="fas fa-calendar"></i> Due: Dec 15</span>
+                            <span><i class="fas fa-user"></i> John Smith</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="glass-button flex-1 text-sm">View Details</button>
+                            <button class="glass-button bg-primary-500 text-white flex-1 text-sm">Start Work</button>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Work Order -->
+                    <div class="demo-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold">WO-2024-002</h4>
+                            <span class="status-badge bg-status-warning text-white px-3 py-1 rounded-full text-sm">
+                                Scheduled
+                            </span>
+                        </div>
+                        <p class="text-secondary mb-4">Routine maintenance for elevator systems</p>
+                        <div class="flex items-center gap-4 text-sm text-muted mb-4">
+                            <span><i class="fas fa-calendar"></i> Dec 20</span>
+                            <span><i class="fas fa-user"></i> Sarah Johnson</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="glass-button flex-1 text-sm">Reschedule</button>
+                            <button class="glass-button bg-primary-500 text-white flex-1 text-sm">Start Early</button>
+                        </div>
+                    </div>
+
+                    <!-- Completed Work Order -->
+                    <div class="demo-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-lg font-semibold">WO-2024-003</h4>
+                            <span class="status-badge bg-status-success text-white px-3 py-1 rounded-full text-sm">
+                                Completed
+                            </span>
+                        </div>
+                        <p class="text-secondary mb-4">Plumbing repair in Conference Room B</p>
+                        <div class="flex items-center gap-4 text-sm text-muted mb-4">
+                            <span><i class="fas fa-check"></i> Dec 12</span>
+                            <span><i class="fas fa-user"></i> Mike Wilson</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="glass-button flex-1 text-sm">View Report</button>
+                            <button class="glass-button flex-1 text-sm">Rate Work</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">KPI Cards</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Efficiency KPI -->
+                    <div class="demo-card text-center">
+                        <div class="text-3xl mb-2">
+                            <i class="fas fa-tachometer-alt text-primary-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold mb-1" data-value="89">89%</div>
+                        <div class="text-sm text-muted">Efficiency Rate</div>
+                        <div class="text-xs text-success mt-2">
+                            <i class="fas fa-arrow-up"></i> +5.2%
+                        </div>
+                    </div>
+
+                    <!-- Active Work Orders KPI -->
+                    <div class="demo-card text-center">
+                        <div class="text-3xl mb-2">
+                            <i class="fas fa-wrench text-cmms-blue"></i>
+                        </div>
+                        <div class="text-2xl font-bold mb-1" data-value="24">24</div>
+                        <div class="text-sm text-muted">Active Work Orders</div>
+                        <div class="text-xs text-warning mt-2">
+                            <i class="fas fa-arrow-up"></i> +3
+                        </div>
+                    </div>
+
+                    <!-- Fleet Health KPI -->
+                    <div class="demo-card text-center">
+                        <div class="text-3xl mb-2">
+                            <i class="fas fa-heartbeat text-cmms-green"></i>
+                        </div>
+                        <div class="text-2xl font-bold mb-1" data-value="94.7">94.7%</div>
+                        <div class="text-sm text-muted">Fleet Health</div>
+                        <div class="text-xs text-success mt-2">
+                            <i class="fas fa-arrow-up"></i> +1.3%
+                        </div>
+                    </div>
+
+                    <!-- AI Suggestions KPI -->
+                    <div class="demo-card text-center">
+                        <div class="text-3xl mb-2">
+                            <i class="fas fa-robot text-secondary-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold mb-1" data-value="47">47</div>
+                        <div class="text-sm text-muted">AI Suggestions</div>
+                        <div class="text-xs text-info mt-2">
+                            <i class="fas fa-plus"></i> New
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section id="charts" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">📊 Chart Components</h2>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">ApexCharts Integration</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-lg font-medium mb-3">Efficiency Trend</h4>
+                        <div id="efficiency-chart" style="height: 300px;"></div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-medium mb-3">Work Orders Status</h4>
+                        <div id="work-orders-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animations Section -->
+        <section id="animations" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">⚡ Animation Examples</h2>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">GSAP Animations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <button class="glass-button mb-4" onclick="demoHoverEffects()">
+                            <i class="fas fa-magic"></i> Hover Effects Demo
+                        </button>
+                        <p class="text-sm text-muted">Magnetic attraction and 3D transforms</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="glass-button mb-4" onclick="demoStaggerAnimation()">
+                            <i class="fas fa-layer-group"></i> Stagger Demo
+                        </button>
+                        <p class="text-sm text-muted">Sequential element animations</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="glass-button mb-4" onclick="demoCounterAnimation()">
+                            <i class="fas fa-counter"></i> Counter Demo
+                        </button>
+                        <p class="text-sm text-muted">Animated number counting</p>
+                    </div>
+                </div>
+
+                <!-- Animation Demo Cards -->
+                <div class="mt-6">
+                    <h4 class="text-lg font-medium mb-3">Animated Cards</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="animatable-cards">
+                        <div class="demo-card fade-in-scroll">
+                            <h5 class="font-medium mb-2">Scroll Animation</h5>
+                            <p class="text-sm text-muted">Fades in when scrolled into view</p>
+                        </div>
+                        <div class="demo-card slide-in-left">
+                            <h5 class="font-medium mb-2">Slide Left</h5>
+                            <p class="text-sm text-muted">Slides from the left side</p>
+                        </div>
+                        <div class="demo-card slide-in-right">
+                            <h5 class="font-medium mb-2">Slide Right</h5>
+                            <p class="text-sm text-muted">Slides from the right side</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Components Section -->
+        <section id="ai-components" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">🤖 AI Components</h2>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">AI Chat Interface</h3>
+                <div class="max-w-md mx-auto">
+                    <div class="glass-card p-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-medium">ChatterFix AI Assistant</h5>
+                                <p class="text-xs text-muted">Powered by AI Team</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="text-xs bg-success text-white px-2 py-1 rounded-full">
+                                    <i class="fas fa-circle text-xs"></i> ONLINE
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Sample Messages -->
+                        <div class="space-y-3 mb-4">
+                            <div class="bg-glass-light p-3 rounded-lg">
+                                <p class="text-sm">🚀 Welcome! I can help you with:</p>
+                                <ul class="text-xs mt-2 space-y-1">
+                                    <li>• Work order analysis</li>
+                                    <li>• Predictive maintenance</li>
+                                    <li>• Equipment troubleshooting</li>
+                                    <li>• Performance optimization</li>
+                                </ul>
+                            </div>
+                            <div class="text-right">
+                                <div class="inline-block bg-primary-500 text-white p-2 rounded-lg text-sm">
+                                    Show me critical work orders
+                                </div>
+                            </div>
+                            <div class="bg-glass-light p-3 rounded-lg">
+                                <p class="text-sm">I found 3 critical work orders that need immediate attention:</p>
+                                <div class="mt-2 space-y-1">
+                                    <div class="text-xs bg-error text-white px-2 py-1 rounded">WO-001: HVAC Failure</div>
+                                    <div class="text-xs bg-error text-white px-2 py-1 rounded">WO-007: Pump Leak</div>
+                                    <div class="text-xs bg-error text-white px-2 py-1 rounded">WO-012: Power Outage</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="flex gap-2">
+                            <input type="text" 
+                                   class="glass-input flex-1 text-sm" 
+                                   placeholder="Ask me anything...">
+                            <button class="glass-button bg-primary-500 text-white px-3">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Glassmorphism Section -->
+        <section id="glassmorphism" class="showcase-section">
+            <h2 class="text-3xl font-bold mb-6 text-gradient">🔮 Glassmorphism Examples</h2>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Glass Effect Variations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Light Glass -->
+                    <div class="glass-effect p-6 text-center">
+                        <h5 class="font-medium mb-2">Light Glass</h5>
+                        <p class="text-sm text-muted">10% opacity with subtle blur</p>
+                        <div class="mt-3">
+                            <span class="text-xs bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                glass-effect
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Medium Glass -->
+                    <div class="bg-glass-light backdrop-blur-xl border border-glass p-6 rounded-2xl text-center">
+                        <h5 class="font-medium mb-2">Medium Glass</h5>
+                        <p class="text-sm text-muted">15% opacity with medium blur</p>
+                        <div class="mt-3">
+                            <span class="text-xs bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                glass-light
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Heavy Glass -->
+                    <div class="bg-glass-heavy backdrop-blur-xl border border-glass-heavy p-6 rounded-2xl text-center">
+                        <h5 class="font-medium mb-2">Heavy Glass</h5>
+                        <p class="text-sm text-muted">25% opacity with strong blur</p>
+                        <div class="mt-3">
+                            <span class="text-xs bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                glass-heavy
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-demo">
+                <h3 class="text-xl font-semibold mb-4">Layered Glass Effects</h3>
+                <div class="relative h-64 rounded-2xl overflow-hidden"
+                     style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    
+                    <!-- Background Layer -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-primary-400 to-secondary-600"></div>
+                    
+                    <!-- Glass Layer 1 -->
+                    <div class="absolute top-4 left-4 w-48 h-32 bg-glass backdrop-blur-lg border border-glass rounded-xl p-4">
+                        <h5 class="font-medium text-white">Background Layer</h5>
+                        <p class="text-sm text-white opacity-80">Base glassmorphism effect</p>
+                    </div>
+                    
+                    <!-- Glass Layer 2 -->
+                    <div class="absolute top-12 left-20 w-48 h-32 bg-glass-light backdrop-blur-xl border border-glass-light rounded-xl p-4">
+                        <h5 class="font-medium text-white">Middle Layer</h5>
+                        <p class="text-sm text-white opacity-80">Enhanced glass effect</p>
+                    </div>
+                    
+                    <!-- Glass Layer 3 -->
+                    <div class="absolute top-20 left-36 w-48 h-32 bg-glass-heavy backdrop-blur-2xl border border-glass-heavy rounded-xl p-4">
+                        <h5 class="font-medium text-white">Top Layer</h5>
+                        <p class="text-sm text-white opacity-80">Maximum glass effect</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Load UI Components Library -->
+    <script src="../app/static/js/ui-components.js"></script>
+
+    <script>
+        // Theme toggle function
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark-mode');
+            document.body.classList.toggle('dark-mode');
+            
+            const isDark = document.documentElement.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            
+            ModernComponents.showNotification(
+                `Switched to ${isDark ? 'Dark' : 'Light'} mode`, 
+                'info'
+            );
+        }
+
+        // Notification demo
+        function showNotificationDemo() {
+            const notifications = [
+                { message: 'Work order completed successfully!', type: 'success' },
+                { message: 'Maintenance scheduled for tomorrow', type: 'info' },
+                { message: 'Equipment requires attention', type: 'warning' },
+                { message: 'Critical system failure detected', type: 'error' }
+            ];
+            
+            notifications.forEach((notif, index) => {
+                setTimeout(() => {
+                    ModernComponents.showNotification(notif.message, notif.type);
+                }, index * 1000);
+            });
+        }
+
+        // Animation demos
+        function triggerAnimationDemo() {
+            UIAnimations.staggerReveal('.demo-card', { stagger: 0.1, from: 'bottom' });
+            ModernComponents.showNotification('Animation demo triggered!', 'success');
+        }
+
+        function demoHoverEffects() {
+            UIAnimations.enhanceCards();
+            ModernComponents.showNotification('Hover over the cards to see magnetic effects!', 'info');
+        }
+
+        function demoStaggerAnimation() {
+            UIAnimations.staggerReveal('#animatable-cards .demo-card', { 
+                stagger: 0.2, 
+                from: 'left' 
+            });
+        }
+
+        function demoCounterAnimation() {
+            document.querySelectorAll('[data-value]').forEach(element => {
+                const value = parseInt(element.dataset.value);
+                UIAnimations.animateMetric(element, value, { 
+                    duration: 2,
+                    suffix: element.textContent.includes('%') ? '%' : ''
+                });
+            });
+        }
+
+        // Initialize everything when DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎨 Component Showcase Initialized');
+            
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+            }
+            
+            // Initialize form components
+            ModernComponents.init();
+            
+            // Initialize charts
+            setTimeout(() => {
+                try {
+                    if (typeof ApexCharts !== 'undefined') {
+                        // Efficiency Chart
+                        const efficiencyChart = new ApexCharts(document.querySelector('#efficiency-chart'), {
+                            chart: { type: 'area', height: 300, toolbar: { show: false } },
+                            series: [{ name: 'Efficiency', data: [85, 87, 89, 91, 88, 92, 89, 94, 91, 89] }],
+                            xaxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'] },
+                            fill: { type: 'gradient', gradient: { colorStops: [{ offset: 0, color: '#667eea', opacity: 0.8 }, { offset: 100, color: '#764ba2', opacity: 0.1 }] }},
+                            stroke: { curve: 'smooth', width: 3, colors: ['#667eea'] }
+                        });
+                        efficiencyChart.render();
+
+                        // Work Orders Chart
+                        const workOrdersChart = new ApexCharts(document.querySelector('#work-orders-chart'), {
+                            chart: { type: 'donut', height: 300 },
+                            series: [44, 55, 13, 33],
+                            labels: ['Completed', 'In Progress', 'Critical', 'Scheduled'],
+                            colors: ['#27ae60', '#3498db', '#e74c3c', '#f39c12'],
+                            plotOptions: { pie: { donut: { size: '60%' }}}
+                        });
+                        workOrdersChart.render();
+                    }
+                } catch (error) {
+                    console.warn('Charts initialization warning:', error);
+                }
+            }, 500);
+
+            // Initialize animations
+            UIAnimations.init();
+            UIAnimations.enhanceCards();
+            UIAnimations.pageEnter();
+
+            // Smooth scrolling for navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = document.querySelector(link.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            console.log('✅ Component Showcase Ready!');
+        });
+    </script>
+
+</body>
+</html>

@@ -113,6 +113,7 @@ all_extended_routers = [
     'demo',
     'fix_it_fred',
     'inventory',
+    'iot',
     'linesmart_integration',
     'planner',
     'planner_simple',
@@ -225,6 +226,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"📋 Features: {app_description}")
         logger.info("🌐 ChatterFix ready for use!")
         logger.info("📊 Analytics dashboard: /analytics/dashboard")
+        logger.info("🔌 IoT Advanced Module: /iot/dashboard")
         logger.info("🔌 IoT API: /iot/sensors/")
         logger.info("🎯 Enterprise Planner: /demo/planner")
         logger.info("⚙️ Advanced Scheduler: /planner/advanced")
@@ -337,7 +339,8 @@ router_descriptions = {
     'analytics': 'Analytics dashboard with KPIs and reporting',
     'planner_simple': 'Simple planner for testing',
     'quality_management': 'Quality Management System with ISO 9001 compliance and supplier audits',
-    'safety_management': 'Safety Management System with incident tracking and lab results'
+    'safety_management': 'Safety Management System with incident tracking and lab results',
+    'iot': 'IoT Advanced Module - Premium sensor monitoring and predictive analytics'
 }
 
 # Include each router that was successfully imported
@@ -546,6 +549,50 @@ async def training_center_direct(request: Request):
 async def training_center_direct_slash(request: Request):
     """Direct training center endpoint with slash"""
     return await training_center_direct(request)
+
+
+@app.get("/iot/dashboard", response_class=HTMLResponse)
+async def iot_dashboard_direct(request: Request):
+    """Direct IoT dashboard endpoint - premium module interface"""
+    try:
+        from fastapi.templating import Jinja2Templates
+        
+        templates = Jinja2Templates(directory="app/templates")
+        
+        return templates.TemplateResponse(
+            "iot_dashboard.html",
+            {
+                "request": request,
+                "user_id": "demo_user"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in IoT dashboard endpoint: {e}")
+        return HTMLResponse(
+            content=f"""
+            <html>
+            <head>
+                <title>IoT Advanced Module - ChatterFix</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+            </head>
+            <body class="bg-gray-50">
+                <div class="min-h-screen flex items-center justify-center">
+                    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+                        <h1 class="text-2xl font-bold text-gray-900 mb-4">IoT Advanced Module</h1>
+                        <p class="text-gray-600 mb-6">Dashboard failed to load: {str(e)}</p>
+                        <a href="/demo" class="bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            Return to Demo
+                        </a>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """,
+            status_code=500
+        )
 
 
 @app.get("/debug/ai-config")

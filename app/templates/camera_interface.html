@@ -369,6 +369,8 @@
                     <select id="analysis_type" class="form-select">
                         <option value="recognize_part">Recognize Parts</option>
                         <option value="analyze_condition">Analyze Condition</option>
+                        <option value="extract_text">🔍 Extract Text (OCR)</option>
+                        <option value="inspect_equipment">🔍 Advanced Equipment Inspection</option>
                         <option value="general_analysis">General Analysis</option>
                     </select>
                 </div>
@@ -857,9 +859,14 @@ async function analyzeCurrentMedia() {
             if (assetId) formData.append('asset_id', assetId);
         }
         
-        const endpoint = analysisType === 'analyze_condition' 
-            ? '/ai/analyze-condition' 
-            : '/ai/recognize-part';
+        let endpoint = '/ai/recognize-part';
+        if (analysisType === 'analyze_condition') {
+            endpoint = '/ai/analyze-condition';
+        } else if (analysisType === 'extract_text') {
+            endpoint = '/ai/extract-text';
+        } else if (analysisType === 'inspect_equipment') {
+            endpoint = '/ai/inspect-equipment';
+        }
             
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -902,6 +909,89 @@ function displayAiAnalysisResult(result, analysisType) {
                 analysisHtml += `<li>${rec}</li>`;
             });
             analysisHtml += '</ul>';
+        }
+    } else if (analysisType === 'extract_text' && result.success) {
+        analysisHtml += `<p><strong>Texts Found:</strong> ${result.total_texts_found}</p>`;
+        
+        if (result.primary_part_number) {
+            analysisHtml += `<div style="background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">`;
+            analysisHtml += `<h6>🎯 Primary Part Number</h6>`;
+            analysisHtml += `<strong>${result.primary_part_number.text}</strong> `;
+            analysisHtml += `<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${(result.primary_part_number.confidence * 100).toFixed(1)}%</span>`;
+            analysisHtml += `<br><small>Location: ${result.primary_part_number.location}</small>`;
+            analysisHtml += `</div>`;
+        }
+        
+        if (result.part_numbers && result.part_numbers.length > 0) {
+            analysisHtml += '<p><strong>🔧 Part Numbers Found:</strong></p>';
+            result.part_numbers.forEach(part => {
+                analysisHtml += `<div style="margin: 0.3rem 0; padding: 0.5rem; background: #f0f8ff; border-radius: 4px;">`;
+                analysisHtml += `${part.text} <span style="color: #007bff;">(${(part.confidence * 100).toFixed(1)}%)</span>`;
+                analysisHtml += `</div>`;
+            });
+        }
+        
+        if (result.measurements && result.measurements.length > 0) {
+            analysisHtml += '<p><strong>📏 Measurements/Readings:</strong></p>';
+            result.measurements.forEach(measurement => {
+                analysisHtml += `<div style="margin: 0.3rem 0; padding: 0.5rem; background: #fff8dc; border-radius: 4px;">`;
+                analysisHtml += `${measurement.text} <span style="color: #ff8c00;">(${(measurement.confidence * 100).toFixed(1)}%)</span>`;
+                analysisHtml += `</div>`;
+            });
+        }
+        
+        if (result.serial_numbers && result.serial_numbers.length > 0) {
+            analysisHtml += '<p><strong>🏷️ Serial Numbers:</strong></p>';
+            result.serial_numbers.forEach(serial => {
+                analysisHtml += `<div style="margin: 0.3rem 0; padding: 0.5rem; background: #f5f5f5; border-radius: 4px;">`;
+                analysisHtml += `${serial.text} <span style="color: #666;">(${(serial.confidence * 100).toFixed(1)}%)</span>`;
+                analysisHtml += `</div>`;
+            });
+        }
+    } else if (analysisType === 'inspect_equipment' && result.success) {
+        analysisHtml += `<p><strong>Overall Condition Score:</strong> <span style="font-size: 1.2em; font-weight: bold; color: ${result.overall_condition_score >= 8 ? '#28a745' : result.overall_condition_score >= 6 ? '#ffc107' : '#dc3545'};">${result.overall_condition_score}/10</span></p>`;
+        analysisHtml += `<p><strong>Urgency Level:</strong> <span style="background: ${result.urgency_level === 'immediate' ? '#dc3545' : result.urgency_level === 'urgent' ? '#fd7e14' : result.urgency_level === 'normal' ? '#ffc107' : '#28a745'}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold;">${result.urgency_level.toUpperCase()}</span></p>`;
+        analysisHtml += `<p><strong>Issues Detected:</strong> ${result.issues_detected}</p>`;
+        
+        if (result.detected_issues && result.detected_issues.length > 0) {
+            analysisHtml += '<h6>🚨 Detected Issues:</h6>';
+            result.detected_issues.forEach(issue => {
+                const severityColor = {
+                    'critical': '#dc3545', 'high': '#fd7e14', 'moderate': '#ffc107', 'minor': '#17a2b8', 'low': '#6c757d'
+                }[issue.severity] || '#6c757d';
+                
+                const typeIcon = {
+                    'corrosion': '🦠', 'wear': '⚙️', 'leak': '💧', 'crack': '🔨'
+                }[issue.type] || '⚠️';
+                
+                analysisHtml += `<div style="margin: 0.5rem 0; padding: 1rem; background: ${severityColor}15; border-left: 4px solid ${severityColor}; border-radius: 8px;">`;
+                analysisHtml += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">`;
+                analysisHtml += `<strong style="color: #1f2937; font-size: 1rem;">${typeIcon} ${issue.type.toUpperCase()}</strong>`;
+                analysisHtml += `<span style="background: ${severityColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">${issue.severity} (${(issue.confidence * 100).toFixed(1)}%)</span>`;
+                analysisHtml += `</div>`;
+                analysisHtml += `<p style="margin: 0.25rem 0; color: #374151;">${issue.description}</p>`;
+                analysisHtml += `<small style="color: #6b7280;"><strong>Location:</strong> ${issue.location}</small>`;
+                analysisHtml += `</div>`;
+            });
+        }
+        
+        if (result.maintenance_recommendations && result.maintenance_recommendations.length > 0) {
+            analysisHtml += '<h6>🔧 Maintenance Recommendations:</h6>';
+            analysisHtml += '<ul style="margin: 0.5rem 0;">';
+            result.maintenance_recommendations.forEach(rec => {
+                analysisHtml += `<li style="margin: 0.3rem 0; color: #374151;">${rec}</li>`;
+            });
+            analysisHtml += '</ul>';
+        }
+        
+        if (result.surface_analysis) {
+            analysisHtml += `<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">`;
+            analysisHtml += `<h6>📊 Surface Analysis:</h6>`;
+            analysisHtml += `<p><strong>Surface Score:</strong> ${result.surface_analysis.surface_score}/10</p>`;
+            if (result.surface_analysis.condition_factors && result.surface_analysis.condition_factors.length > 0) {
+                analysisHtml += `<p><strong>Factors:</strong> ${result.surface_analysis.condition_factors.join(', ')}</p>`;
+            }
+            analysisHtml += `</div>`;
         }
     } else if (analysisType === 'recognize_part' && result.detected_parts) {
         analysisHtml += '<p><strong>Parts Detected:</strong></p>';

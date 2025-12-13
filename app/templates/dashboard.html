@@ -66,6 +66,58 @@
         50% { opacity: 0.5; transform: scale(1.2); }
     }
 
+    /* Fast pulse for learning mode */
+    .pulse-fast {
+        animation: pulse 0.8s infinite !important;
+        box-shadow: 0 0 20px #27ae60 !important;
+    }
+
+    /* Interactive button states */
+    .cmms-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .cmms-btn:disabled:hover {
+        transform: none !important;
+    }
+
+    /* Activity feed styling */
+    .ai-activity-feed {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        scrollbar-width: thin;
+    }
+
+    .ai-activity-feed::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .ai-activity-feed::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+    }
+
+    .ai-activity-feed::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+    }
+
+    /* Enhanced glass effects for metrics */
+    .ai-status-grid .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .ai-status-grid .glass-effect:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
     .predictions { grid-column: 1 / 2; }
     .realtime-monitor { grid-column: 2 / 3; }
 
@@ -260,76 +312,413 @@
 {% endblock %}
 
 {% block content %}
+<!-- Settings Control Panel -->
+<div class="settings-panel" x-data="userPreferences" style="position: fixed; top: 80px; right: 20px; z-index: 1000;">
+    <!-- Settings Toggle Button -->
+    <button @click="showSettings = !showSettings" 
+            class="settings-toggle glass-button btn btn-outline-light"
+            style="border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+        <i class="fas fa-cog" :class="showSettings ? 'fa-spin' : ''"></i>
+    </button>
+    
+    <!-- Settings Menu -->
+    <div x-show="showSettings" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="settings-menu glass-effect"
+         style="position: absolute; top: 60px; right: 0; min-width: 280px; padding: 1rem; border-radius: 15px; background: var(--bg-glass-heavy); border: 1px solid rgba(255,255,255,0.2);"
+         @click.away="showSettings = false">
+        
+        <div style="margin-bottom: 1rem; font-weight: bold; color: var(--text-accent);">
+            <i class="fas fa-palette"></i> Visual Effects
+        </div>
+        
+        <!-- Tilt Effects Toggle -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+            <div>
+                <div style="font-weight: 500;">Tilt Effects</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">3D hover animations on cards</div>
+            </div>
+            <label class="toggle-switch" style="margin: 0;">
+                <input type="checkbox" 
+                       x-model="tiltEffectsEnabled"
+                       @change="toggleTiltEffects()"
+                       style="display: none;">
+                <span class="toggle-slider" 
+                      :class="tiltEffectsEnabled ? 'active' : ''"
+                      style="display: block; width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 12px; position: relative; cursor: pointer; transition: all 0.3s ease;">
+                    <span style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 10px; transition: all 0.3s ease; transform: translateX(0px);"
+                          :style="tiltEffectsEnabled ? 'transform: translateX(20px); background: var(--accent);' : ''"></span>
+                </span>
+            </label>
+        </div>
+        
+        <!-- Animations Toggle -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+            <div>
+                <div style="font-weight: 500;">Animations</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">GSAP animations and transitions</div>
+            </div>
+            <label class="toggle-switch" style="margin: 0;">
+                <input type="checkbox" 
+                       x-model="animationsEnabled"
+                       @change="toggleAnimations()"
+                       style="display: none;">
+                <span class="toggle-slider" 
+                      :class="animationsEnabled ? 'active' : ''"
+                      style="display: block; width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 12px; position: relative; cursor: pointer; transition: all 0.3s ease;">
+                    <span style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 10px; transition: all 0.3s ease; transform: translateX(0px);"
+                          :style="animationsEnabled ? 'transform: translateX(20px); background: var(--accent);' : ''"></span>
+                </span>
+            </label>
+        </div>
+        
+        <!-- Voice Commands Section -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;">
+            <div style="margin-bottom: 1rem; font-weight: bold; color: var(--text-accent);">
+                <i class="fas fa-microphone"></i> Voice Commands
+            </div>
+            
+            <!-- Voice Control Toggle -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;" x-data="$store.voiceCommands">
+                <div>
+                    <div style="font-weight: 500;">Voice Feedback</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">AI voice responses and confirmations</div>
+                </div>
+                <label class="toggle-switch" style="margin: 0;">
+                    <input type="checkbox" 
+                           x-model="voiceEnabled"
+                           @change="toggleVoiceEnabled()"
+                           style="display: none;">
+                    <span class="toggle-slider" 
+                          :class="voiceEnabled ? 'active' : ''"
+                          style="display: block; width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 12px; position: relative; cursor: pointer; transition: all 0.3s ease;">
+                        <span style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 10px; transition: all 0.3s ease; transform: translateX(0px);"
+                              :style="voiceEnabled ? 'transform: translateX(20px); background: var(--accent);' : ''"></span>
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Voice Command Button -->
+            <div style="margin-bottom: 0.8rem;" x-data="$store.voiceCommands">
+                <button @click="toggleListening()" 
+                        :disabled="!isSupported"
+                        class="voice-command-btn glass-button"
+                        :class="isListening ? 'btn-danger' : 'btn-primary'"
+                        style="width: 100%; padding: 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;">
+                    <i class="fas" :class="isListening ? 'fa-stop' : 'fa-microphone'" 
+                       :style="isListening ? 'animation: voicePulse 1s infinite;' : ''"></i>
+                    <span x-text="isListening ? 'Stop Listening' : (isSupported ? 'Start Voice Commands' : 'Voice Not Supported')"></span>
+                </button>
+                
+                <!-- Voice Command Examples -->
+                <div x-show="!isListening" style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.7; text-align: center;">
+                    Try: "Create work order", "Go to dashboard", "Ask AI team"
+                </div>
+                
+                <!-- Last Command Display -->
+                <div x-show="lastCommand" style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; text-align: center; padding: 0.3rem; background: rgba(0,255,150,0.1); border-radius: 5px;">
+                    Last: "<span x-text="lastCommand"></span>" 
+                    <span x-text="confidence ? '(' + (confidence * 100).toFixed(0) + '%)' : ''"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Display -->
+        <div style="padding: 0.5rem; background: rgba(0,255,150,0.1); border-radius: 8px; border: 1px solid rgba(0,255,150,0.2); font-size: 0.8rem;">
+            <i class="fas fa-info-circle" style="color: #00ff96;"></i>
+            Settings are saved automatically and persist across sessions.
+        </div>
+    </div>
+</div>
+
 <div class="dashboard-grid">
-    <!-- AI Brain Center -->
-    <div class="ai-brain">
+    <!-- AI Brain Center - Fully Interactive -->
+    <div class="ai-brain" x-data="aiSystem" data-feature="ai-brain">
         <div class="ai-brain-content">
-            <h1>🧠 AI Neural Network <span class="ai-pulse"></span></h1>
-            <p style="font-size: 1.2rem; opacity: 0.9;">Orchestrating intelligent maintenance operations across your
-                entire facility</p>
+            <h1>🧠 AI Neural Network <span class="ai-pulse" :class="{ 'pulse-fast': learningMode }"></span></h1>
+            <p style="font-size: 1.2rem; opacity: 0.9;" x-text="systemDescription">Orchestrating intelligent maintenance operations across your entire facility</p>
+            
+            <!-- Interactive AI Status Display -->
+            <div class="ai-status-grid" style="margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; max-width: 500px;">
+                <div class="glass-effect p-2 rounded text-center">
+                    <div class="text-accent font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.processed"></div>
+                    <div style="font-size: 0.8rem;">Requests Today</div>
+                </div>
+                <div class="glass-effect p-2 rounded text-center">
+                    <div class="text-success font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.accuracy + '%'"></div>
+                    <div style="font-size: 0.8rem;">Accuracy</div>
+                </div>
+                <div class="glass-effect p-2 rounded text-center">
+                    <div class="text-warning font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.suggestions"></div>
+                    <div style="font-size: 0.8rem;">Suggestions</div>
+                </div>
+                <div class="glass-effect p-2 rounded text-center">
+                    <div class="text-info font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.efficiency + '%'"></div>
+                    <div style="font-size: 0.8rem;">Efficiency</div>
+                </div>
+            </div>
+            
+            <!-- Interactive Controls -->
             <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-                <button class="cmms-btn" onclick="runFleetAnalysis()">🔍 Fleet Analysis</button>
-                <button class="cmms-btn" onclick="window.location.href='/demo/analytics'">📊 Predictive Insights</button>
-                <button class="cmms-btn" onclick="optimizeOperations()">⚡ Optimize Operations</button>
-                <button class="cmms-btn" onclick="generateAIReport()">📑 AI Executive Report</button>
+                <button class="cmms-btn animate-hover-scale" 
+                        @click="runFleetAnalysis()" 
+                        :disabled="analyzing">
+                    <span x-show="!analyzing">🔍 Fleet Analysis</span>
+                    <span x-show="analyzing"><i class="fas fa-spinner fa-spin"></i> Analyzing...</span>
+                </button>
+                
+                <button class="cmms-btn animate-hover-scale" 
+                        @click="generatePredictiveInsights()"
+                        :disabled="predicting">
+                    <span x-show="!predicting">📊 Predictive Insights</span>
+                    <span x-show="predicting"><i class="fas fa-spinner fa-spin"></i> Predicting...</span>
+                </button>
+                
+                <button class="cmms-btn animate-hover-scale" 
+                        @click="optimizeOperations()" 
+                        :disabled="optimizing"
+                        :class="{ 'btn-success': lastOptimization === 'success', 'btn-warning': lastOptimization === 'running' }">
+                    <span x-show="!optimizing">⚡ Optimize Operations</span>
+                    <span x-show="optimizing"><i class="fas fa-cog fa-spin"></i> Optimizing...</span>
+                </button>
+                
+                <button class="cmms-btn animate-hover-scale" 
+                        @click="generateAIReport()"
+                        :disabled="reporting">
+                    <span x-show="!reporting">📑 AI Executive Report</span>
+                    <span x-show="reporting"><i class="fas fa-file-alt fa-pulse"></i> Generating...</span>
+                </button>
+            </div>
+            
+            <!-- Live System Mode Toggle -->
+            <div style="margin-top: 1.5rem;">
+                <button @click="toggleLearningMode()" 
+                        :class="learningMode ? 'cmms-btn btn-warning' : 'cmms-btn btn-outline-warning'"
+                        style="padding: 0.5rem 1rem;">
+                    <i class="fas fa-brain"></i> 
+                    <span x-text="learningMode ? 'Learning Mode: ON' : 'Learning Mode: OFF'"></span>
+                </button>
+            </div>
+            
+            <!-- Live Activity Feed -->
+            <div class="ai-activity-feed glass-effect" style="margin-top: 1.5rem; padding: 1rem; border-radius: 10px; max-height: 150px; overflow-y: auto;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">🔴 Live Activity</div>
+                <template x-for="activity in recentActivities" :key="activity.id">
+                    <div class="activity-item" style="font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.9;">
+                        <span x-text="activity.timestamp"></span> - <span x-text="activity.message"></span>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
 
-    <!-- Predictive Analytics -->
-    <div class="cmms-card predictions">
+    <!-- Interactive Predictive Analytics -->
+    <div class="cmms-card predictions animate-hover-lift" x-data="predictiveAnalytics" data-feature="predictive-analytics">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <div style="font-size: 1.3rem; font-weight: 600;">🔮 Predictive Analytics</div>
             <div style="font-size: 2rem;">📈</div>
         </div>
+        
+        <!-- Filter Controls -->
+        <div class="prediction-filters" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button @click="filterBy = 'all'" 
+                    :class="filterBy === 'all' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'"
+                    class="glass-button">All</button>
+            <button @click="filterBy = 'critical'" 
+                    :class="filterBy === 'critical' ? 'btn btn-sm btn-danger' : 'btn btn-sm btn-outline-secondary'"
+                    class="glass-button">Critical</button>
+            <button @click="filterBy = 'high'" 
+                    :class="filterBy === 'high' ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-outline-secondary'"
+                    class="glass-button">High</button>
+            <button @click="filterBy = 'low'" 
+                    :class="filterBy === 'low' ? 'btn btn-sm btn-success' : 'btn btn-sm btn-outline-secondary'"
+                    class="glass-button">Low</button>
+        </div>
+        
+        <!-- Interactive Predictions -->
         <div id="predictions-content">
-            <div class="item-card critical">
-                <strong>⚠️ Conveyor Belt A</strong><br>
-                <small>87% chance of failure in 3 days<br>Recommend immediate bearing inspection</small>
-            </div>
-            <div class="item-card high">
-                <strong>🔧 HVAC Unit #2</strong><br>
-                <small>Filter replacement needed in 5 days<br>Efficiency dropping 12%</small>
-            </div>
-            <div class="item-card low">
-                <strong>💡 Hydraulic System</strong><br>
-                <small>Optimal performance detected<br>Next service in 2 weeks</small>
+            <template x-for="prediction in filteredPredictions" :key="prediction.id">
+                <div :class="'item-card ' + prediction.priority" 
+                     style="cursor: pointer; transition: all 0.3s ease;"
+                     @click="selectPrediction(prediction)"
+                     class="animate-fade-in">
+                    <div style="display: flex; justify-content: between; align-items: start;">
+                        <div style="flex-grow: 1;">
+                            <strong x-html="prediction.icon + ' ' + prediction.equipment"></strong><br>
+                            <small>
+                                <span x-text="prediction.risk + '% chance of ' + prediction.issue"></span><br>
+                                <span x-text="prediction.recommendation"></span>
+                            </small>
+                        </div>
+                        <div style="margin-left: 1rem; text-align: center;">
+                            <div style="font-size: 0.7rem; opacity: 0.8;" x-text="'In ' + prediction.timeframe"></div>
+                            <button @click.stop="createWorkOrder(prediction)" 
+                                    class="btn btn-sm glass-button mt-1" 
+                                    style="font-size: 0.7rem;">
+                                <i class="fas fa-plus"></i> Work Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        
+        <!-- Interactive Controls -->
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button class="cmms-btn animate-hover-scale" 
+                    style="flex-grow: 1;" 
+                    @click="generateNewPredictions()"
+                    :disabled="generating">
+                <span x-show="!generating">🎯 Generate New Predictions</span>
+                <span x-show="generating"><i class="fas fa-spinner fa-spin"></i> Analyzing...</span>
+            </button>
+            <button class="glass-button btn btn-outline-primary" 
+                    @click="refreshPredictions()"
+                    title="Refresh predictions">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="prediction-stats" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 0.8rem; opacity: 0.8; display: flex; justify-content: between;">
+                <span>Total: <span x-text="predictions.length"></span></span>
+                <span>Critical: <span x-text="criticalCount"></span></span>
+                <span>Last Updated: <span x-text="lastUpdated"></span></span>
             </div>
         </div>
-        <button class="cmms-btn" style="width: 100%; margin-top: 1rem;" onclick="generatePredictions()">🎯 Generate New
-            Predictions</button>
     </div>
 
     <!-- Real-time Operations Monitor -->
-    <div class="cmms-card realtime-monitor">
+    <div class="cmms-card realtime-monitor" x-data="operationsMonitor" data-feature="operations-monitor">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <div style="font-size: 1.3rem; font-weight: 600;">⚡ Live Operations</div>
-            <div style="font-size: 2rem;">📊</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 2rem;">📊</div>
+                <button @click="refreshMetrics()" 
+                        class="glass-button btn btn-sm btn-outline-primary"
+                        :disabled="refreshing"
+                        title="Refresh metrics">
+                    <i class="fas fa-sync-alt" :class="refreshing ? 'fa-spin' : ''"></i>
+                </button>
+            </div>
         </div>
+        
+        <!-- Interactive Metrics Grid -->
         <div class="metrics-grid">
-            <div class="metric">
-                <div class="metric-value" id="fleet-health">94.7%</div>
+            <div class="metric" style="cursor: pointer; transition: all 0.3s ease;" 
+                 @click="drillDown('fleet-health')"
+                 @mouseenter="highlightMetric('fleet-health')"
+                 @mouseleave="clearHighlight()">
+                <div class="metric-value" 
+                     :style="getMetricStyle('fleet-health')"
+                     x-text="liveMetrics.fleetHealth + '%'"></div>
                 <div class="metric-label">Fleet Health</div>
+                <div style="font-size: 0.7rem; opacity: 0.6;" x-text="getHealthStatus(liveMetrics.fleetHealth)"></div>
             </div>
-            <div class="metric">
-                <div class="metric-value" id="active-work-orders">12</div>
+            <div class="metric" style="cursor: pointer; transition: all 0.3s ease;" 
+                 @click="drillDown('work-orders')"
+                 @mouseenter="highlightMetric('work-orders')"
+                 @mouseleave="clearHighlight()">
+                <div class="metric-value" 
+                     :style="getMetricStyle('work-orders')"
+                     x-text="liveMetrics.activeWorkOrders"></div>
                 <div class="metric-label">Active Work Orders</div>
+                <div style="font-size: 0.7rem; opacity: 0.6;" x-text="getWorkOrderStatus()"></div>
             </div>
-            <div class="metric">
-                <div class="metric-value" id="ai-suggestions">47</div>
+            <div class="metric" style="cursor: pointer; transition: all 0.3s ease;" 
+                 @click="drillDown('ai-suggestions')"
+                 @mouseenter="highlightMetric('ai-suggestions')"
+                 @mouseleave="clearHighlight()">
+                <div class="metric-value" 
+                     :style="getMetricStyle('ai-suggestions')"
+                     x-text="liveMetrics.aiSuggestions"></div>
                 <div class="metric-label">AI Suggestions Today</div>
+                <div style="font-size: 0.7rem; opacity: 0.6;" x-text="'+' + suggestionsIncrement + ' from yesterday'"></div>
             </div>
-            <div class="metric">
-                <div class="metric-value" id="efficiency-score">89%</div>
+            <div class="metric" style="cursor: pointer; transition: all 0.3s ease;" 
+                 @click="drillDown('efficiency')"
+                 @mouseenter="highlightMetric('efficiency')"
+                 @mouseleave="clearHighlight()">
+                <div class="metric-value" 
+                     :style="getMetricStyle('efficiency')"
+                     x-text="liveMetrics.efficiency + '%'"></div>
                 <div class="metric-label">Efficiency Score</div>
+                <div style="font-size: 0.7rem; opacity: 0.6;" x-text="getEfficiencyTrend()"></div>
             </div>
         </div>
+        
+        <!-- Interactive Controls -->
+        <div style="margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="glass-button btn btn-sm btn-primary" 
+                    @click="toggleAutoRefresh()"
+                    :class="autoRefresh ? 'btn-success' : 'btn-outline-primary'">
+                <i class="fas" :class="autoRefresh ? 'fa-pause' : 'fa-play'"></i>
+                <span x-text="autoRefresh ? 'Auto-Refresh On' : 'Auto-Refresh Off'"></span>
+            </button>
+            <button class="glass-button btn btn-sm btn-outline-info" 
+                    @click="exportMetrics()">
+                <i class="fas fa-download"></i> Export Data
+            </button>
+            <button class="glass-button btn btn-sm btn-outline-warning" 
+                    @click="setAlerts()">
+                <i class="fas fa-bell"></i> Set Alerts
+            </button>
+        </div>
+        
+        <!-- AI Achievements with Interactive Elements -->
         <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 1rem; margin-top: 1rem;">
-            <strong>🎯 Today's AI Achievements:</strong><br>
-            <small>• Prevented 2 equipment failures<br>
-                • Optimized 8 maintenance schedules<br>
-                • Saved $3,247 in emergency repairs<br>
-                • Improved efficiency by 7.3%</small>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <strong>🎯 Today's AI Achievements:</strong>
+                <button class="glass-button btn btn-xs btn-outline-light" 
+                        @click="viewDetailedReport()"
+                        style="font-size: 0.7rem;">
+                    View Details
+                </button>
+            </div>
+            <div style="display: grid; gap: 0.3rem;">
+                <template x-for="achievement in achievements" :key="achievement.id">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.2rem 0;">
+                        <small x-text="achievement.text" style="flex-grow: 1;"></small>
+                        <span x-text="achievement.impact" 
+                              style="font-size: 0.7rem; opacity: 0.8; margin-left: 1rem;"
+                              :class="achievement.positive ? 'text-success' : 'text-warning'"></span>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Real-time Activity Feed -->
+            <div x-show="showActivityFeed" 
+                 style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1rem; padding-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong style="font-size: 0.9rem;">🔄 Live Activity</strong>
+                    <button @click="showActivityFeed = false" 
+                            class="btn btn-xs btn-outline-light" 
+                            style="font-size: 0.6rem;">✕</button>
+                </div>
+                <div style="max-height: 150px; overflow-y: auto; font-size: 0.8rem;">
+                    <template x-for="activity in recentActivity.slice(-5)" :key="activity.timestamp">
+                        <div style="padding: 0.2rem 0; opacity: 0.8; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <span x-text="activity.time" style="font-size: 0.7rem; opacity: 0.6;"></span>
+                            <span x-text="' - ' + activity.message"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Toggle Activity Feed -->
+            <div style="text-align: center; margin-top: 0.5rem;" x-show="!showActivityFeed">
+                <button @click="showActivityFeed = true" 
+                        class="glass-button btn btn-xs btn-outline-light" 
+                        style="font-size: 0.7rem;">
+                    <i class="fas fa-chart-line"></i> Show Live Activity
+                </button>
+            </div>
         </div>
     </div>
 

@@ -36,14 +36,16 @@ async def login(
             )
             token = auth_result["idToken"]
 
-            # Set cookie
+            # Set cookie with secure settings
             response = RedirectResponse(url="/dashboard", status_code=302)
+            is_production = os.getenv("ENVIRONMENT", "development") == "production"
             response.set_cookie(
                 key="session_token",
                 value=token,
                 httponly=True,
-                max_age=86400,  # 24 hours
-                samesite="lax",
+                secure=is_production,  # HTTPS only in production
+                max_age=3600,  # 1 hour (reduced from 24 hours)
+                samesite="strict",  # Strict CSRF protection
             )
             return response
         except Exception:
@@ -64,14 +66,16 @@ async def login(
     user_agent = request.headers.get("user-agent", "unknown") if request else "unknown"
     token = auth_service.create_session(user["id"], ip_address, user_agent)
 
-    # Set cookie
+    # Set cookie with secure settings
     response = RedirectResponse(url="/dashboard", status_code=302)
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
     response.set_cookie(
         key="session_token",
         value=token,
         httponly=True,
-        max_age=86400,  # 24 hours
-        samesite="lax",
+        secure=is_production,  # HTTPS only in production
+        max_age=3600,  # 1 hour (reduced from 24 hours)
+        samesite="strict",  # Strict CSRF protection
     )
 
     return response

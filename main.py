@@ -260,12 +260,27 @@ app.add_middleware(
     environment=os.getenv("ENVIRONMENT", "development"),
 )
 
+# CORS Configuration - Secure settings for production
+allowed_origins = [
+    "https://chatterfix.com",
+    "https://www.chatterfix.com",
+    "https://chatterfix-cmms-667180410498.us-central1.run.app",
+    os.getenv("FRONTEND_URL", "http://localhost:8080"),
+]
+# In development, allow localhost
+if os.getenv("ENVIRONMENT", "development") == "development":
+    allowed_origins.extend([
+        "http://localhost:8080",
+        "http://localhost:3000",
+        "http://127.0.0.1:8080",
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 # Add trusted host middleware for production - DISABLED for Cloud Run

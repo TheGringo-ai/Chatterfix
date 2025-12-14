@@ -38,15 +38,18 @@ def get_current_user(session_token: Optional[str] = Cookie(None)):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return user
-    except Exception:
-        # For demo purposes, return a mock user if session validation fails
-        return {
-            "id": 1,
-            "username": "demo_user",
-            "email": "demo@chatterfix.com",
-            "role": "manager",
-            "full_name": "Demo User"
-        }
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        # Log the error and return proper authentication failure
+        import logging
+        logging.getLogger(__name__).error(f"Session validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 # Export the main functions that other modules expect
 __all__ = ['get_current_user']

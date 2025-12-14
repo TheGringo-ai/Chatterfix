@@ -20,8 +20,16 @@ from jose import JWTError, jwt
 
 logger = logging.getLogger(__name__)
 
-# JWT Configuration
-SECRET_KEY = "chatterfix_super_secret_key_change_in_production_12345"  # TODO: Move to environment
+# JWT Configuration - Load from environment
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    logger.warning("SECRET_KEY not set in environment - using fallback for development only")
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise ValueError("SECRET_KEY environment variable is required in production")
+    SECRET_KEY = "dev-only-secret-key-not-for-production"
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 

@@ -111,11 +111,11 @@ document.addEventListener('alpine:init', () => {
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
 
-            // Reduced tilt intensity: 3 degrees max (was 10)
-            const rotateX = (y - centerY) / centerY * -3;
-            const rotateY = (x - centerX) / centerX * 3;
+            // Very subtle tilt: 1 degree max (was 3, originally 10)
+            const rotateX = (y - centerY) / centerY * -1;
+            const rotateY = (x - centerX) / centerX * 1;
 
-            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
+            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.005)`;
         },
         
         handleTiltLeave(e) {

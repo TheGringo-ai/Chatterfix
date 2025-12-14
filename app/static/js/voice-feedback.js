@@ -62,11 +62,57 @@ class VoiceFeedbackSystem {
     }
 
     createUI() {
-        // Check if AI widget exists - if so, don't create voice feedback UI to avoid conflicts
-        if (document.querySelector('.ai-assistant-widget')) {
+        // Aggressive check for AI widget - remove any existing voice feedback UI immediately
+        const removeExistingVoiceUI = () => {
+            const existingContainer = document.getElementById(this.options.containerId);
+            if (existingContainer) {
+                existingContainer.remove();
+                console.log('🗑️ Removed existing voice feedback UI due to AI widget presence');
+            }
+        };
+
+        // Check if AI widget exists - if so, don't create voice feedback UI
+        const checkForAIWidget = () => {
+            return document.querySelector('.ai-assistant-widget') !== null;
+        };
+
+        if (checkForAIWidget()) {
             console.log('🤖 AI widget detected, disabling voice feedback system to avoid conflicts');
+            removeExistingVoiceUI();
             return;
         }
+
+        // Set up a mutation observer to watch for AI widget being added later
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        if (node.classList && node.classList.contains('ai-assistant-widget')) {
+                            console.log('🤖 AI widget added later, removing voice feedback UI');
+                            removeExistingVoiceUI();
+                            observer.disconnect();
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Also check periodically for AI widget
+        const periodicCheck = setInterval(() => {
+            if (checkForAIWidget()) {
+                console.log('🤖 AI widget detected during periodic check, removing voice feedback UI');
+                removeExistingVoiceUI();
+                clearInterval(periodicCheck);
+            }
+        }, 1000);
+
+        // Stop periodic check after 30 seconds
+        setTimeout(() => clearInterval(periodicCheck), 30000);
 
         // Check if container exists, create if not
         let container = document.getElementById(this.options.containerId);

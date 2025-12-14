@@ -2685,9 +2685,11 @@
         };
     </script>
 
-    <!-- Voice Feedback System for Hands-Free Operation -->
+    <!-- Voice Feedback System for Hands-Free Operation (disabled when AI widget is present) -->
+    {% if 'ai_assistant_widget.html' not in request.url_rule.endpoint %}
     <script src="{{ url_for('static', path='js/voice-feedback.js') }}"></script>
     <div id="voice-feedback-container" data-voice-feedback-auto data-auto-start="false" data-use-server="true"></div>
+    {% endif %}
 
     <!-- AI Assistant Widget with Microphone and Camera -->
     {% include 'ai_assistant_widget.html' %}

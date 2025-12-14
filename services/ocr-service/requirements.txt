@@ -1,0 +1,25 @@
+# ChatterFix OCR/Vision Service Dependencies
+# Heavy ML dependencies isolated for faster core builds
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.18
+httpx>=0.25.0
+pydantic>=2.5.0
+
+# OCR Engines
+pytesseract>=0.3.10
+easyocr>=1.7.0
+
+# QR Code Scanning
+pyzbar>=0.1.9
+
+# Image Processing
+opencv-python-headless>=4.8.0
+pillow>=10.0.0
+numpy>=1.24.0
+
+# Utilities
+python-dotenv>=1.0.0
+aiofiles>=23.2.1

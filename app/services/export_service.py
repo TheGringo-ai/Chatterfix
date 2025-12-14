@@ -8,7 +8,12 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from app.core.firestore_db import get_db_connection
+import json
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
+
+from app.core.firestore_db import get_firestore_manager
 from app.services.analytics_service import analytics_service
 
 logger = logging.getLogger(__name__)
@@ -19,16 +24,15 @@ class ExportService:
 
     def __init__(self):
         self.supported_formats = ["pdf", "excel", "csv", "json"]
+        self.firestore_manager = get_firestore_manager()
 
-    def export_kpi_report(self, format: str, days: int = 30) -> Dict[str, Any]:
+    async def export_kpi_report(self, format: str, days: int = 30) -> Dict[str, Any]:
         """
         Export KPI report in the specified format
         Returns the file content and metadata
         """
         try:
-            # Get KPI data
-            kpi_data = analytics_service.get_kpi_summary(days)
-
+            kpi_data = await analytics_service.get_kpi_summary(days)
             if format == "json":
                 return self._export_json(kpi_data, "kpi_report")
             elif format == "csv":
@@ -39,101 +43,62 @@ class ExportService:
                 return self._export_kpi_pdf(kpi_data)
             else:
                 raise ValueError(f"Unsupported format: {format}")
-
         except Exception as e:
             logger.error(f"Export error: {e}")
             raise
 
-    def export_work_orders(self, format: str, filters: Dict = None) -> Dict[str, Any]:
+    async def export_work_orders(self, format: str, filters: Dict = None) -> Dict[str, Any]:
         """Export work orders report"""
-        # from app.core.database import get_db_connection
+        work_orders = await self.firestore_manager.get_collection("work_orders", order_by="-created_date")
+        if format == "json":
+            return self._export_json(work_orders, "work_orders")
+        elif format == "csv":
+            return self._export_list_csv(work_orders, "work_orders")
+        elif format == "excel":
+            return self._export_list_excel(work_orders, "work_orders")
+        else:
+            raise ValueError(f"Unsupported format: {format}")
 
-        conn = get_db_connection()
-        try:
-            query = """
-                SELECT wo.*, a.name as asset_name
-                FROM work_orders wo
-                LEFT JOIN assets a ON wo.asset_id = a.id
-                ORDER BY wo.created_date DESC
-            """
-            work_orders = conn.execute(query).fetchall()
-            data = [dict(wo) for wo in work_orders]
-
-            if format == "json":
-                return self._export_json(data, "work_orders")
-            elif format == "csv":
-                return self._export_list_csv(data, "work_orders")
-            elif format == "excel":
-                return self._export_list_excel(data, "work_orders")
-            else:
-                raise ValueError(f"Unsupported format: {format}")
-
-        finally:
-            conn.close()
-
-    def export_assets(self, format: str, filters: Dict = None) -> Dict[str, Any]:
+    async def export_assets(self, format: str, filters: Dict = None) -> Dict[str, Any]:
         """Export assets report"""
-        # from app.core.database import get_db_connection
+        assets = await self.firestore_manager.get_collection("assets", order_by="name")
+        if format == "json":
+            return self._export_json(assets, "assets")
+        elif format == "csv":
+            return self._export_list_csv(assets, "assets")
+        elif format == "excel":
+            return self._export_list_excel(assets, "assets")
+        else:
+            raise ValueError(f"Unsupported format: {format}")
 
-        conn = get_db_connection()
-        try:
-            query = """
-                SELECT * FROM assets
-                ORDER BY name
-            """
-            assets = conn.execute(query).fetchall()
-            data = [dict(a) for a in assets]
-
-            if format == "json":
-                return self._export_json(data, "assets")
-            elif format == "csv":
-                return self._export_list_csv(data, "assets")
-            elif format == "excel":
-                return self._export_list_excel(data, "assets")
-            else:
-                raise ValueError(f"Unsupported format: {format}")
-
-        finally:
-            conn.close()
-
-    def export_maintenance_history(self, format: str, days: int = 30) -> Dict[str, Any]:
+    async def export_maintenance_history(self, format: str, days: int = 30) -> Dict[str, Any]:
         """Export maintenance history report"""
-        # from app.core.database import get_db_connection
-
-        conn = get_db_connection()
-        try:
-            query = """
-                SELECT mh.*, a.name as asset_name
-                FROM maintenance_history mh
-                LEFT JOIN assets a ON mh.asset_id = a.id
-                WHERE DATE(mh.created_date) >= DATE('now', ?)
-                ORDER BY mh.created_date DESC
-            """
-            history = conn.execute(query, (f"-{days} days",)).fetchall()
-            data = [dict(h) for h in history]
-
-            if format == "json":
-                return self._export_json(data, "maintenance_history")
-            elif format == "csv":
-                return self._export_list_csv(data, "maintenance_history")
-            elif format == "excel":
-                return self._export_list_excel(data, "maintenance_history")
-            else:
-                raise ValueError(f"Unsupported format: {format}")
-
-        finally:
-            conn.close()
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        history = await self.firestore_manager.get_collection(
+            "maintenance_history", 
+            filters=[{"field": "created_date", "operator": ">=", "value": start_date}],
+            order_by="-created_date"
+        )
+        if format == "json":
+            return self._export_json(history, "maintenance_history")
+        elif format == "csv":
+            return self._export_list_csv(history, "maintenance_history")
+        elif format == "excel":
+            return self._export_list_excel(history, "maintenance_history")
+        else:
+            raise ValueError(f"Unsupported format: {format}")
 
     def _export_json(self, data: Any, filename: str) -> Dict[str, Any]:
         """Export data as JSON"""
         content = json.dumps(data, indent=2, default=str)
-
         return {
             "content": content,
             "filename": f"{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
             "content_type": "application/json",
-            "size": len(content),
         }
+    
+    # Other export helper methods (_export_kpi_csv, _export_list_csv, etc.) remain the same
+    # as they already operate on dictionaries and lists of dictionaries.
 
     def _export_kpi_csv(self, kpi_data: Dict) -> Dict[str, Any]:
         """Export KPI data as CSV"""

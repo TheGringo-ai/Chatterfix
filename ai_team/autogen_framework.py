@@ -270,7 +270,8 @@ class AutogenOrchestrator:
         logger.info(f"Registered agent: {agent.config.name} ({agent.config.model_type.value})")
     
     def setup_default_agents(self):
-        """Setup default AI team with multiple models"""
+        """Setup default AI team, only initializing agents with available API keys."""
+        import os
         agents_config = [
             AgentConfig("claude-analyst", ModelType.CLAUDE, "Lead Analyst", ["analysis", "reasoning", "planning"]),
             AgentConfig("chatgpt-coder", ModelType.CHATGPT, "Senior Developer", ["coding", "debugging", "architecture"]),
@@ -279,19 +280,23 @@ class AutogenOrchestrator:
             AgentConfig("grok-reasoner", ModelType.GROK, "Strategic Thinker", ["reasoning", "analysis", "strategy"], "grok-3"),
         ]
         
+        agent_map = {
+            ModelType.CLAUDE: (ClaudeAgent, 'ANTHROPIC_API_KEY'),
+            ModelType.CHATGPT: (ChatGPTAgent, 'OPENAI_API_KEY'),
+            ModelType.GEMINI: (GeminiAgent, 'GEMINI_API_KEY'),
+            ModelType.GROK: (GrokAgent, 'XAI_API_KEY'),
+        }
+
         for config in agents_config:
-            if config.model_type == ModelType.CLAUDE:
-                agent = ClaudeAgent(config)
-            elif config.model_type == ModelType.CHATGPT:
-                agent = ChatGPTAgent(config)
-            elif config.model_type == ModelType.GEMINI:
-                agent = GeminiAgent(config)
-            elif config.model_type == ModelType.GROK:
-                agent = GrokAgent(config)
+            if config.model_type in agent_map:
+                agent_class, key_name = agent_map[config.model_type]
+                if os.getenv(key_name):
+                    agent = agent_class(config)
+                    self.register_agent(agent)
+                else:
+                    logger.warning(f"Skipping {config.name} agent: {key_name} not found.")
             else:
                 continue
-                
-            self.register_agent(agent)
     
     async def execute_collaborative_task(self, 
                                        task_id: str,

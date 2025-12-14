@@ -1,4 +1,22 @@
+---
+description: Invoke the multi-model AI team to collaborate on a task (usage: /ai-team <task>; optional args supported)
+---
+
 # AI Team Collaboration Workflow
+
+## Quick usage
+
+Run this command from Claude Code:
+
+```text
+/ai-team <TASK_DESCRIPTION>
+```
+
+Any text after `/ai-team` will be passed in as `$ARGUMENTS`.
+
+### Suggested prompt to Claude
+
+Use the AI team workflow below to solve: $ARGUMENTS
 
 Invoke the multi-model AI team for complex problem solving.
 

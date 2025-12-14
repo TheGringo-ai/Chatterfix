@@ -107,9 +107,10 @@ class ResponseCache:
         self.misses = 0
 
     def _generate_key(self, message: str, context: str, context_type: str) -> str:
-        """Generate cache key from request parameters"""
+        """Generate cache key from request parameters (not used for security)"""
         content = f"{message}:{context[:100]}:{context_type}"
-        return hashlib.md5(content.encode()).hexdigest()
+        # usedforsecurity=False because this is only for cache key generation, not cryptographic security
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
     def get(self, message: str, context: str, context_type: str) -> Optional[CacheEntry]:
         """Get cached response if valid"""

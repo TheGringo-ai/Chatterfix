@@ -21,6 +21,10 @@ safety>=2.3.0
 # API Testing
 httpx>=0.24.0
 requests>=2.31.0
+aiohttp>=3.9.0
+
+# AI SDK Testing
+anthropic>=0.18.0
 
 # Development Tools
 pre-commit>=3.0.0

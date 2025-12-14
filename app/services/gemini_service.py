@@ -38,51 +38,49 @@ class GeminiService:
         self.credentials = None
         self.default_api_key = None
         self.using_service_account = False
-        self.available = False  # Track if service is actually usable
+        self.available = False
 
-        # Check if GenAI is available
         if not GENAI_AVAILABLE:
             logger.info("🤖 Gemini AI library not installed - service disabled")
             return
 
-        # Try service account first (more secure)
-        # Set GOOGLE_APPLICATION_CREDENTIALS for ADC
+        # Prioritize Service Account if path exists
         if os.path.exists(GEMINI_SERVICE_ACCOUNT_PATH):
             try:
-                # Set environment variable for Application Default Credentials
                 abs_path = os.path.abspath(GEMINI_SERVICE_ACCOUNT_PATH)
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = abs_path
-
-                # Load credentials for verification
                 self.credentials = service_account.Credentials.from_service_account_file(
                     abs_path,
-                    scopes=['https://www.googleapis.com/auth/generative-language',
-                            'https://www.googleapis.com/auth/cloud-platform']
+                    scopes=['https://www.googleapis.com/auth/generative-language', 'https://www.googleapis.com/auth/cloud-platform']
                 )
-
-                # Configure genai with credentials
                 genai.configure(credentials=self.credentials)
                 self.using_service_account = True
                 self.available = True
                 logger.info(f"✨ Gemini AI initialized with service account: {GEMINI_SERVICE_ACCOUNT_PATH}")
-            except Exception as e:
-                logger.error(f"❌ Failed to load service account: {e}")
-                self.credentials = None
-                self.using_service_account = False
+                return  # Explicitly stop if service account is used
 
-        # Fallback to API key if service account not available
-        if not self.using_service_account:
-            self.default_api_key = os.getenv("GEMINI_API_KEY")
-            if self.default_api_key:
-                try:
-                    genai.configure(api_key=self.default_api_key)
-                    self.available = True
-                    logger.info("✨ Gemini AI initialized with API key (fallback)")
-                except Exception as e:
-                    logger.error(f"❌ Failed to initialize Gemini AI with API key: {e}")
-                    self.available = False
-            else:
-                logger.info("ℹ️ Gemini API key not configured - service will use fallback mode")
+            except Exception as e:
+                logger.error(
+                    f"Service account file found at '{GEMINI_SERVICE_ACCOUNT_PATH}' but failed to load. "
+                    f"The AI service will be unavailable. Please fix or remove the file to use an API key. Error: {e}"
+                )
+                os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+                self.available = False
+                return  # Stop processing, service is unavailable
+
+        # Fallback to API Key ONLY if no service account file was found
+        self.default_api_key = os.getenv("GEMINI_API_KEY")
+        if self.default_api_key:
+            try:
+                genai.configure(api_key=self.default_api_key)
+                self.available = True
+                logger.info("✨ Gemini AI initialized with API key.")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize Gemini AI with API key: {e}")
+                self.available = False
+        else:
+            logger.info("ℹ️ Neither service account nor API key is configured. AI service is unavailable.")
+            self.available = False
 
     def is_available(self) -> bool:
         """Check if the Gemini service is properly configured and available"""
@@ -100,20 +98,25 @@ class GeminiService:
 
     def _get_model(
         self, user_id: Optional[int] = None
-    ) -> Optional[genai.GenerativeModel]:
+    ) -> Optional["genai.GenerativeModel"]:
         """Get a configured model instance for the user"""
-        # If using service account, it's already configured
-        if self.using_service_account:
+        try:
+            # If using service account, it's already configured
+            if self.using_service_account:
+                return genai.GenerativeModel("gemini-2.0-flash")
+
+            # Fallback to API key
+            api_key = self._get_api_key(user_id)
+            if not api_key:
+                logger.warning("No API key available for _get_model")
+                return None
+
+            # Configure genai with the specific key
+            genai.configure(api_key=api_key)
             return genai.GenerativeModel("gemini-2.0-flash")
-
-        # Fallback to API key
-        api_key = self._get_api_key(user_id)
-        if not api_key:
+        except Exception as e:
+            logger.error(f"Failed to get Gemini model: {e}")
             return None
-
-        # Configure genai with the specific key
-        genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-2.0-flash")
 
     def _get_vision_model(
         self, user_id: Optional[int] = None

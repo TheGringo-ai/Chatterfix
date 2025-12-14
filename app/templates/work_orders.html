@@ -30,12 +30,12 @@
     <form id="create-wo-form" action="/work-orders" method="post" enctype="multipart/form-data" style="display: none; margin-top: 1rem;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Title</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Title</label>
                 <input type="text" name="title" required
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Priority</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Priority</label>
                 <select name="priority"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="Low" style="color: black;">Low</option>
@@ -47,7 +47,7 @@
             
             <!-- Asset Selection -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-cogs"></i> Asset</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-cogs"></i> Asset</label>
                 <select name="asset_id" id="assetSelect"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="">Select Asset...</option>
@@ -59,7 +59,7 @@
             
             <!-- Work Order Type -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Work Order Type</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Work Order Type</label>
                 <select name="work_order_type"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="Corrective">Corrective Maintenance</option>
@@ -71,26 +71,26 @@
             </div>
 
             <div style="grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 0.5rem;">Description</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Description</label>
                 <textarea name="description" rows="3"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
             </div>
             
             <!-- Scheduling Section -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar"></i> Due Date</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-calendar"></i> Due Date</label>
                 <input type="date" name="due_date"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Scheduled Time</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-clock"></i> Scheduled Time</label>
                 <input type="datetime-local" name="scheduled_time"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-user"></i> Assigned To</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-user"></i> Assigned To</label>
                 <select name="assigned_to" id="technicianSelect"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="">Select Technician...</option>
@@ -98,12 +98,12 @@
             </div>
             
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Estimated Hours</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Estimated Hours</label>
                 <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="2.5"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div style="grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 0.5rem;">📎 Attachments</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">📎 Attachments</label>
                 <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx,.txt"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 <small style="color: #6c757d; display: block; margin-top: 0.3rem;">
@@ -118,19 +118,19 @@
             <div id="partsContainer">
                 <div class="parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material</label>
                         <select name="parts[0][part_id]" class="part-select"
                             style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                             <option value="">Select Part...</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity</label>
                         <input type="number" name="parts[0][quantity]" min="1" placeholder="1"
                             style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                         <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
                     </div>
                     <div>
@@ -155,7 +155,7 @@
         <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
             <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Detailed Instructions for Technician</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Detailed Instructions for Technician</label>
                 <textarea name="work_instructions" rows="4" placeholder="Enter step-by-step instructions, safety requirements, special tools needed, etc."
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
                 <small style="color: #856404; display: block; margin-top: 0.3rem;">
@@ -242,8 +242,8 @@
 <!-- AI Assistant Modal -->
 <div id="aiAssistantModal" class="modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 5% auto; width: 500px; padding: 30px;">
-        <h2><i class="fas fa-robot"></i> AI Assistant</h2>
+    <div class="modal-content glass-panel" style="margin: 5% auto; width: 500px; padding: 30px; background: #ffffff; color: #212529;">
+        <h2 style="color: #212529;"><i class="fas fa-robot"></i> AI Assistant</h2>
         <div id="chatHistory"
             style="height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px;">
             <div class="message ai">Hello! I'm your maintenance assistant. How can I help you today?</div>
@@ -261,17 +261,17 @@
 <!-- Edit Work Order Modal -->
 <div id="editWOModal" class="modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px;">
-        <h2>✏️ Edit Work Order</h2>
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px; background: #ffffff; color: #212529;">
+        <h2 style="color: #212529;">✏️ Edit Work Order</h2>
         <form id="edit-wo-form" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Title</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Title</label>
                     <input type="text" name="title" id="edit-title" required
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Priority</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Priority</label>
                     <select name="priority" id="edit-priority"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         <option value="Low" style="color: black;">Low</option>
@@ -283,7 +283,7 @@
 
                 <!-- Enhanced Edit Fields -->
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-cogs"></i> Asset</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-cogs"></i> Asset</label>
                     <select name="asset_id" id="edit-asset-select"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         <option value="">Select Asset...</option>
@@ -291,7 +291,7 @@
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Work Order Type</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Work Order Type</label>
                     <select name="work_order_type" id="edit-work-order-type"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         <option value="Corrective">Corrective Maintenance</option>
@@ -303,25 +303,25 @@
                 </div>
 
                 <div style="grid-column: 1 / -1;">
-                    <label style="display: block; margin-bottom: 0.5rem;">Description</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Description</label>
                     <textarea name="description" id="edit-description" rows="3"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar"></i> Due Date</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-calendar"></i> Due Date</label>
                     <input type="date" name="due_date" id="edit-due-date"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Scheduled Time</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-clock"></i> Scheduled Time</label>
                     <input type="datetime-local" name="scheduled_time" id="edit-scheduled-time"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-user"></i> Assigned To</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-user"></i> Assigned To</label>
                     <select name="assigned_to" id="edit-assigned-to"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         <option value="">Select Technician...</option>
@@ -329,7 +329,7 @@
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Estimated Hours</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Estimated Hours</label>
                     <input type="number" name="estimated_hours" id="edit-estimated-hours" min="0" step="0.5"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
@@ -341,19 +341,19 @@
                 <div id="editPartsContainer">
                     <div class="parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material</label>
                             <select name="edit_parts[0][part_id]" class="edit-part-select" onchange="updateEditPartStock(this)"
                                 style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                                 <option value="">Select Part...</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity</label>
                             <input type="number" name="edit_parts[0][quantity]" min="1" placeholder="1" onchange="validateEditQuantity(this)"
                                 style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                             <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
                         </div>
                         <div>
@@ -373,7 +373,7 @@
             <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
                 <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Updated Instructions</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Updated Instructions</label>
                     <textarea name="work_instructions" id="edit-work-instructions" rows="4"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
                 </div>
@@ -391,7 +391,7 @@
 <!-- Work Order Completion Modal -->
 <div id="completionModal" class="modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 700px; padding: 30px;">
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 700px; padding: 30px; background: #ffffff; color: #212529;">
         <h2 style="color: #28a745;"><i class="fas fa-check-circle"></i> Complete Work Order</h2>
         <div id="completion-wo-title" style="margin-bottom: 2rem; padding: 1rem; background: rgba(40, 167, 69, 0.1); border-radius: 8px; border-left: 4px solid #28a745;">
             <h3 style="margin: 0; color: #155724;">Work Order Title</h3>
@@ -400,14 +400,14 @@
         <form id="completion-form" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-clock"></i> Actual Hours Worked</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-clock"></i> Actual Hours Worked</label>
                     <input type="number" name="actual_hours" id="completion-actual-hours" min="0" step="0.25" placeholder="2.5" required
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <small style="color: #6c757d;">Enter the actual time spent on this work order</small>
                 </div>
 
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;"><i class="fas fa-calendar-check"></i> Completion Date & Time</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-calendar-check"></i> Completion Date & Time</label>
                     <input type="datetime-local" name="completion_time" id="completion-time" required
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
@@ -435,19 +435,19 @@
                 <div id="completionPartsContainer">
                     <div class="completion-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material Used</label>
                             <select name="completion_parts[0][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
                                 style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                                 <option value="">Select Part...</option>
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity Used</label>
                             <input type="number" name="completion_parts[0][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
                                 style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                             <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
                         </div>
                         <div>
@@ -471,7 +471,7 @@
                 <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-exclamation-triangle"></i> Follow-up Actions & Recommendations</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem;">Asset Status After Completion</label>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Asset Status After Completion</label>
                         <select name="asset_status" id="completion-asset-status"
                             style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                             <option value="Operational">Fully Operational</option>
@@ -482,14 +482,14 @@
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem;">Next Service Due (Optional)</label>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Next Service Due (Optional)</label>
                         <input type="date" name="next_service_date" id="completion-next-service"
                             style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     </div>
                 </div>
 
                 <div style="margin-top: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">Additional Recommendations or Follow-up Required</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Additional Recommendations or Follow-up Required</label>
                     <textarea name="follow_up_notes" id="completion-follow-up" rows="3"
                         placeholder="Describe any additional maintenance needed, parts to order, or follow-up work orders required..."
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
@@ -500,7 +500,7 @@
             <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e3f2fd; border-radius: 8px; border: 1px solid #bbdefb;">
                 <h3 style="margin-bottom: 1rem; color: #0d47a1;"><i class="fas fa-camera"></i> Completion Documentation</h3>
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Upload Photos/Documents (Optional)</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Upload Photos/Documents (Optional)</label>
                     <input type="file" name="completion_files" id="completion-files" multiple accept="image/*,.pdf,.doc,.docx"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <small style="color: #1565c0; display: block; margin-top: 0.3rem;">
@@ -524,9 +524,9 @@
 <!-- Work Order Barcode Scanner Modal -->
 <div id="workOrderBarcodeScanModal" class="modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
-        <h2><i class="fas fa-qrcode"></i> Scan Asset for Work Orders</h2>
-        <p>Scan an asset's barcode to quickly view its work orders and create new ones.</p>
+    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px; background: #ffffff; color: #212529;">
+        <h2 style="color: #212529;"><i class="fas fa-qrcode"></i> Scan Asset for Work Orders</h2>
+        <p style="color: #495057;">Scan an asset's barcode to quickly view its work orders and create new ones.</p>
 
         <!-- Camera Interface -->
         <div id="woCameraSection" style="text-align: center; margin: 20px 0;">
@@ -945,19 +945,19 @@
         
         partRow.innerHTML = `
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material</label>
                 <select name="parts[${partCounter}][part_id]" class="part-select" onchange="updatePartStock(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="">Select Part...</option>
                 </select>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity</label>
                 <input type="number" name="parts[${partCounter}][quantity]" min="1" placeholder="1" onchange="validateQuantity(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                 <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
             </div>
             <div>
@@ -1060,19 +1060,19 @@
         
         partRow.innerHTML = `
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Part/Material</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material</label>
                 <select name="edit_parts[${editPartCounter}][part_id]" class="edit-part-select" onchange="updateEditPartStock(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="">Select Part...</option>
                 </select>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Quantity</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity</label>
                 <input type="number" name="edit_parts[${editPartCounter}][quantity]" min="1" placeholder="1" onchange="validateEditQuantity(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                 <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
             </div>
             <div>
@@ -1177,19 +1177,19 @@
         container.innerHTML = `
             <div class="completion-parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material Used</label>
                     <select name="completion_parts[0][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                         <option value="">Select Part...</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity Used</label>
                     <input type="number" name="completion_parts[0][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
                         style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                 </div>
                 <div>
-                    <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                     <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
                 </div>
                 <div>
@@ -1214,19 +1214,19 @@
         
         partRow.innerHTML = `
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Part/Material Used</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material Used</label>
                 <select name="completion_parts[${completionPartCounter}][part_id]" class="completion-part-select" onchange="updateCompletionPartStock(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
                     <option value="">Select Part...</option>
                 </select>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Quantity Used</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity Used</label>
                 <input type="number" name="completion_parts[${completionPartCounter}][quantity_used]" min="1" placeholder="1" onchange="validateCompletionQuantity(this)"
                     style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem;">Available Stock</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
                 <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
             </div>
             <div>

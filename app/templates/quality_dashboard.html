@@ -3,587 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏭 Quality Management Dashboard - ChatterFix QualityFix</title>
+    <title>�️ Food Processing Quality Management - HACCP & GMP Compliance</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0"></script>
     <style>
-        .quality-dashboard {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            --warning-gradient: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+            --danger-gradient: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            --info-gradient: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%);
         }
-        
-        .dashboard-header {
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 30px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
+        .industry-selector {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
         .metric-card {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(15px);
+            background: white;
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #667eea;
             transition: all 0.3s ease;
         }
-        
+
         .metric-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
-        
+
         .metric-value {
             font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 10px;
         }
-        
+
         .metric-label {
             color: #6c757d;
             font-size: 0.9rem;
             margin-bottom: 15px;
         }
-        
-        .metric-trend {
-            font-size: 0.8rem;
-            padding: 5px 10px;
-            border-radius: 15px;
-        }
-        
-        .trend-up {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .trend-down {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .trend-stable {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .quality-tabs {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(15px);
+
+        .status-badge {
+            padding: 5px 12px;
             border-radius: 20px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            font-size: 0.8rem;
+            font-weight: 500;
         }
-        
+
+        .status-pass { background: #d4edda; color: #155724; }
+        .status-fail { background: #f8d7da; color: #721c24; }
+        .status-conditional { background: #fff3cd; color: #856404; }
+
+        .haccp-card {
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A24 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .temperature-card {
+            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+            color: white;
+        }
+
+        .compliance-card {
+            background: linear-gradient(135deg, #45B7D1 0%, #96CEB4 100%);
+            color: white;
+        }
+
+        .alert-card {
+            background: linear-gradient(135deg, #F7DC6F 0%, #F39C12 100%);
+            color: #2c3e50;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table th {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .critical-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .critical-high { background: #e74c3c; }
+        .critical-medium { background: #f39c12; }
+        .critical-low { background: #27ae60; }
+
         .nav-tabs .nav-link {
             border: none;
-            border-radius: 15px;
-            margin-right: 10px;
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            margin-right: 5px;
+            padding: 12px 20px;
+            background: #f8f9fa;
             color: #495057;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
+
         .nav-tabs .nav-link.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
-        
-        .nav-tabs .nav-link:hover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-        
-        .chart-container {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            position: relative;
-            min-height: 400px; /* Minimum height for better visibility */
-        }
 
-        .chart-container canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            height: 320px; /* More space for charts */
-            width: 100%;
-        }
-        
-        .data-table {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-food-safety {
+            background: var(--primary-gradient);
             color: white;
             border: none;
-            padding: 15px;
-        }
-        
-        .table td {
-            padding: 12px 15px;
-            border-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-weight: 500;
+            transition: all 0.3s ease;
         }
-        
-        .status-pass {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-fail {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status-conditional {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-approved {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-conditional-supplier {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .ai-insights {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        .btn-food-safety:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
             color: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-        }
-        
-        .insight-item {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-left: 4px solid #fff;
-        }
-        
-        .confidence-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            margin-top: 10px;
-        }
-        
-        .confidence-fill {
-            height: 100%;
-            background: #fff;
-            border-radius: 4px;
-        }
-        
-        .spc-control-chart {
-            position: relative;
-            height: 300px;
-        }
-        
-        .process-capability {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px;
-        }
-        
-        .capability-capable {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .capability-marginal {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .capability-incapable {
-            background: #f8d7da;
-            color: #721c24;
         }
     </style>
 </head>
 <body>
-    <div class="quality-dashboard">
-        <div class="container-fluid">
-            <!-- Dashboard Header -->
-            <div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <!-- Industry Selector -->
+            <div class="industry-selector">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h1 class="mb-3">
-                            <i class="fas fa-award text-primary me-3"></i>
-                            Quality Management Dashboard
-                        </h1>
-                        <p class="lead mb-0">Enterprise Quality Control & ISO 9001 Compliance</p>
+                        <h1><i class="fas fa-industry"></i> {{ industry_config.name }} Quality Management System</h1>
+                        <p class="mb-0">HACCP • GMP • Food Safety Compliance • Industry: {{ industry }}</p>
                     </div>
                     <div class="col-md-4 text-end">
-                        <div class="d-flex justify-content-end gap-2">
-                            <button class="btn btn-outline-primary">
-                                <i class="fas fa-download me-2"></i>Export Report
-                            </button>
-                            <button class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>New Inspection
-                            </button>
-                        </div>
+                        <select class="form-select d-inline-block w-auto" id="industrySelect">
+                            <option value="cheese_plant" {% if industry == 'cheese_plant' %}selected{% endif %}>Cheese Plant</option>
+                            <option value="beverage_plant" {% if industry == 'beverage_plant' %}selected{% endif %}>Beverage Plant</option>
+                            <option value="dairy_processing" {% if industry == 'dairy_processing' %}selected{% endif %}>Dairy Processing</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
             <!-- Key Metrics Row -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="metric-card haccp-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="metric-value">{{ active_haccp_plans }}</div>
+                                <div class="metric-label">Active HACCP Plans</div>
+                            </div>
+                            <i class="fas fa-shield-alt fa-2x opacity-75"></i>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark">{{ critical_control_points }} Critical Control Points</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="metric-card temperature-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="metric-value">{{ temperature_deviations }}</div>
+                                <div class="metric-label">Temperature Deviations (24h)</div>
+                            </div>
+                            <i class="fas fa-thermometer-half fa-2x opacity-75"></i>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark">Monitoring Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="metric-card compliance-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="metric-value">{{ approved_suppliers }}</div>
+                                <div class="metric-label">Approved Suppliers</div>
+                            </div>
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark">{{ completed_batches }} Batches Released</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="metric-card alert-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="metric-value">{{ sanitation_compliance }}%</div>
+                                <div class="metric-label">Sanitation Compliance</div>
+                            </div>
+                            <i class="fas fa-broom fa-2x opacity-75"></i>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark">{{ environmental_compliance }}% Environmental</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food Safety Certification Status -->
             <div class="row mb-4">
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-success">{{ avg_quality_score }}%</div>
-                        <div class="metric-label">Average Quality Score</div>
-                        <div class="metric-trend trend-up">
-                            <i class="fas fa-arrow-up me-1"></i>+2.3%
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-warning">{{ open_ncrs }}</div>
-                        <div class="metric-label">Open NCRs</div>
-                        <div class="metric-trend trend-down">
-                            <i class="fas fa-arrow-down me-1"></i>-1
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-primary">{{ first_pass_yield }}%</div>
-                        <div class="metric-label">First Pass Yield</div>
-                        <div class="metric-trend trend-up">
-                            <i class="fas fa-arrow-up me-1"></i>+1.5%
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-info">{{ avg_supplier_score }}%</div>
-                        <div class="metric-label">Supplier Score</div>
-                        <div class="metric-trend trend-stable">
-                            <i class="fas fa-minus me-1"></i>0.0%
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-success">{{ iso_compliance }}%</div>
-                        <div class="metric-label">ISO 9001 Compliance</div>
-                        <div class="metric-trend trend-up">
-                            <i class="fas fa-arrow-up me-1"></i>+0.8%
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card text-center">
-                        <div class="metric-value text-secondary">${{ "{:,.0f}".format(total_coq) }}</div>
-                        <div class="metric-label">Cost of Quality</div>
-                        <div class="metric-trend trend-down">
-                            <i class="fas fa-arrow-down me-1"></i>-5.2%
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cost of Quality Chart -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h5 class="mb-3">
-                            <i class="fas fa-chart-pie text-primary me-2"></i>
-                            Cost of Quality Breakdown
-                        </h5>
-                        <div class="chart-wrapper">
-                            <canvas id="coqChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h5 class="mb-3">
-                            <i class="fas fa-chart-line text-success me-2"></i>
-                            Quality Trends (12 Months)
-                        </h5>
-                        <div class="chart-wrapper">
-                            <canvas id="trendsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quality Management Tabs -->
-            <div class="quality-tabs">
-                <ul class="nav nav-tabs" id="qualityTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="inspections-tab" data-bs-toggle="tab" data-bs-target="#inspections" type="button" role="tab">
-                            <i class="fas fa-search me-2"></i>Inspections
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="ncr-tab" data-bs-toggle="tab" data-bs-target="#ncr" type="button" role="tab">
-                            <i class="fas fa-exclamation-triangle me-2"></i>NCR/CAPA
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests" type="button" role="tab">
-                            <i class="fas fa-flask me-2"></i>Product Tests
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button" role="tab">
-                            <i class="fas fa-handshake me-2"></i>Suppliers
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="spc-tab" data-bs-toggle="tab" data-bs-target="#spc" type="button" role="tab">
-                            <i class="fas fa-chart-bar me-2"></i>SPC
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
-                            <i class="fas fa-analytics me-2"></i>Analytics
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content mt-4" id="qualityTabsContent">
-                    <!-- Inspections Tab -->
-                    <div class="tab-pane fade show active" id="inspections" role="tabpanel">
-                        <h5 class="mb-3">Recent Quality Inspections</h5>
-                        <div class="data-table">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Inspection ID</th>
-                                        <th>Type</th>
-                                        <th>Product</th>
-                                        <th>Inspector</th>
-                                        <th>Quality Score</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for inspection in inspections %}
-                                    <tr>
-                                        <td><strong>{{ inspection.inspection_id }}</strong></td>
-                                        <td>{{ inspection.inspection_type }}</td>
-                                        <td>{{ inspection.product_code }}</td>
-                                        <td>{{ inspection.inspector_name }}</td>
-                                        <td><strong>{{ inspection.quality_score }}%</strong></td>
-                                        <td>
-                                            <span class="status-badge {% if inspection.status == 'Pass' %}status-pass{% elif inspection.status == 'Fail' %}status-fail{% else %}status-conditional{% endif %}">
-                                                {{ inspection.status }}
-                                            </span>
-                                        </td>
-                                        <td>{{ inspection.inspection_date[:10] }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- NCR/CAPA Tab -->
-                    <div class="tab-pane fade" id="ncr" role="tabpanel">
-                        <h5 class="mb-3">Non-Conformance Records & Corrective Actions</h5>
-                        <div class="data-table">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>NCR ID</th>
-                                        <th>Severity</th>
-                                        <th>Product</th>
-                                        <th>Root Cause</th>
-                                        <th>Cost Impact</th>
-                                        <th>Status</th>
-                                        <th>CAPA Required</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for ncr in ncr_records %}
-                                    <tr>
-                                        <td><strong>{{ ncr.ncr_id }}</strong></td>
-                                        <td>
-                                            <span class="badge {% if ncr.severity == 'Critical' %}bg-danger{% elif ncr.severity == 'Major' %}bg-warning{% else %}bg-info{% endif %}">
-                                                {{ ncr.severity }}
-                                            </span>
-                                        </td>
-                                        <td>{{ ncr.affected_product }}</td>
-                                        <td>{{ ncr.root_cause }}</td>
-                                        <td>${{ "{:,.2f}".format(ncr.cost_impact) }}</td>
-                                        <td>
-                                            <span class="status-badge {% if ncr.status == 'Closed' %}status-pass{% elif ncr.status == 'Open' %}status-fail{% else %}status-conditional{% endif %}">
-                                                {{ ncr.status }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if ncr.capa_required %}
-                                                <i class="fas fa-check-circle text-success"></i> Yes
-                                            {% else %}
-                                                <i class="fas fa-times-circle text-muted"></i> No
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Product Tests Tab -->
-                    <div class="tab-pane fade" id="tests" role="tabpanel">
-                        <h5 class="mb-3">Product Testing & Validation</h5>
-                        <div class="data-table">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Test ID</th>
-                                        <th>Type</th>
-                                        <th>Product</th>
-                                        <th>Test Criteria</th>
-                                        <th>Measured Value</th>
-                                        <th>Specification</th>
-                                        <th>Result</th>
-                                        <th>Engineer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for test in product_tests %}
-                                    <tr>
-                                        <td><strong>{{ test.test_id }}</strong></td>
-                                        <td>{{ test.test_type }}</td>
-                                        <td>{{ test.product_code }}</td>
-                                        <td>{{ test.test_criteria }}</td>
-                                        <td><strong>{{ test.measured_value }}</strong></td>
-                                        <td>{{ test.specification_min }} - {{ test.specification_max }}</td>
-                                        <td>
-                                            <span class="status-badge {% if test.pass_status %}status-pass{% else %}status-fail{% endif %}">
-                                                {% if test.pass_status %}PASS{% else %}FAIL{% endif %}
-                                            </span>
-                                        </td>
-                                        <td>{{ test.test_engineer }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Suppliers Tab -->
-                    <div class="tab-pane fade" id="suppliers" role="tabpanel">
-                        <h5 class="mb-3">Supplier Quality Audits</h5>
-                        <div class="data-table">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Audit ID</th>
-                                        <th>Supplier</th>
-                                        <th>Audit Type</th>
-                                        <th>Overall Score</th>
-                                        <th>Quality</th>
-                                        <th>Delivery</th>
-                                        <th>Service</th>
-                                        <th>Status</th>
-                                        <th>Next Audit</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for audit in supplier_audits %}
-                                    <tr>
-                                        <td><strong>{{ audit.audit_id }}</strong></td>
-                                        <td>{{ audit.supplier_name }}</td>
-                                        <td>{{ audit.audit_type }}</td>
-                                        <td><strong>{{ audit.overall_score }}%</strong></td>
-                                        <td>{{ audit.quality_score }}%</td>
-                                        <td>{{ audit.delivery_score }}%</td>
-                                        <td>{{ audit.service_score }}%</td>
-                                        <td>
-                                            <span class="status-badge {% if audit.certification_status == 'Approved' %}status-approved{% else %}status-conditional-supplier{% endif %}">
-                                                {{ audit.certification_status }}
-                                            </span>
-                                        </td>
-                                        <td>{{ audit.next_audit_date[:10] }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- SPC Tab -->
-                    <div class="tab-pane fade" id="spc" role="tabpanel">
-                        <h5 class="mb-3">Statistical Process Control</h5>
+                <div class="col-12">
+                    <div class="metric-card">
+                        <h5><i class="fas fa-certificate"></i> Food Safety Certifications</h5>
                         <div class="row">
-                            {% for chart in spc_data.control_charts %}
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <h6 class="mb-3">{{ chart.parameter }} Control Chart</h6>
-                                    <div class="chart-wrapper">
-                                        <canvas id="spcChart{{ loop.index }}"></canvas>
-                                    </div>
-                                    <div class="process-capability capability-{% if chart.cpk >= 1.33 %}capable{% elif chart.cpk >= 1.0 %}marginal{% else %}incapable{% endif %}">
-                                        <strong>Process Capability:</strong><br>
-                                        Cp = {{ chart.cp }} | Cpk = {{ chart.cpk }}<br>
-                                        Status: {{ chart.process_capability }}
-                                    </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="metric-value text-success">{{ food_safety_metrics.haccp_compliance }}%</div>
+                                    <div class="metric-label">HACCP Compliance</div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- Analytics Tab -->
-                    <div class="tab-pane fade" id="analytics" role="tabpanel">
-                        <h5 class="mb-3">Quality Analytics & Performance</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <h6 class="mb-3">Defect Analysis by Category</h6>
-                                    <div class="chart-wrapper">
-                                        <canvas id="defectChart"></canvas>
-                                    </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="metric-value text-info">{{ food_safety_metrics.gmp_compliance }}%</div>
+                                    <div class="metric-label">GMP Compliance</div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="chart-container">
-                                    <h6 class="mb-3">Supplier Performance Radar</h6>
-                                    <div class="chart-wrapper">
-                                        <canvas id="supplierRadar"></canvas>
-                                    </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="metric-value text-primary">{{ food_safety_metrics.certification_status.score }}%</div>
+                                    <div class="metric-label">{{ food_safety_metrics.certification_status.current }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="metric-value text-warning">{{ food_safety_metrics.last_audit_score }}%</div>
+                                    <div class="metric-label">Last Audit Score</div>
                                 </div>
                             </div>
                         </div>
@@ -591,24 +299,406 @@
                 </div>
             </div>
 
-            <!-- AI Quality Insights -->
-            <div class="ai-insights">
-                <h5 class="mb-4">
-                    <i class="fas fa-robot me-2"></i>
-                    AI Quality Insights & Predictions
-                </h5>
-                <div class="row">
-                    <div class="col-md-8">
-                        <div id="qualityInsights">
-                            <!-- AI insights will be loaded here -->
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" id="qualityTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="haccp-tab" data-bs-toggle="tab" data-bs-target="#haccp" type="button" role="tab">
+                        <i class="fas fa-shield-alt"></i> HACCP Plans
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="temperature-tab" data-bs-toggle="tab" data-bs-target="#temperature" type="button" role="tab">
+                        <i class="fas fa-thermometer-half"></i> Temperature Monitoring
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="batches-tab" data-bs-toggle="tab" data-bs-target="#batches" type="button" role="tab">
+                        <i class="fas fa-boxes"></i> Batch Records
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button" role="tab">
+                        <i class="fas fa-truck"></i> Supplier Quality
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="inspections-tab" data-bs-toggle="tab" data-bs-target="#inspections" type="button" role="tab">
+                        <i class="fas fa-search"></i> Food Safety Inspections
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sanitation-tab" data-bs-toggle="tab" data-bs-target="#sanitation" type="button" role="tab">
+                        <i class="fas fa-broom"></i> Sanitation & Environment
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="capa-tab" data-bs-toggle="tab" data-bs-target="#capa" type="button" role="tab">
+                        <i class="fas fa-tools"></i> CAPA
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="qualityTabsContent">
+                <!-- HACCP Plans Tab -->
+                <div class="tab-pane fade show active" id="haccp" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>HACCP Critical Control Points</h4>
+                        <button class="btn btn-food-safety">
+                            <i class="fas fa-plus"></i> Add HACCP Plan
+                        </button>
+                    </div>
+                    <div class="data-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Process Step</th>
+                                    <th>Hazard Type</th>
+                                    <th>Critical Limits</th>
+                                    <th>Status</th>
+                                    <th>Last Review</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in haccp_plans %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ plan.process_step }}</strong>
+                                        {% if plan.critical_control_point %}
+                                        <span class="badge bg-danger ms-2">CCP</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ plan.hazard_type }}</td>
+                                    <td>
+                                        {% for key, value in plan.critical_limits.items() %}
+                                        <small class="d-block">{{ key }}: {{ value.min }}-{{ value.max }} {{ value.unit }}</small>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-pass">{{ plan.status }}</span>
+                                    </td>
+                                    <td>{{ plan.review_frequency }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Temperature Monitoring Tab -->
+                <div class="tab-pane fade" id="temperature" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Temperature Monitoring Dashboard</h4>
+                        <div>
+                            <select class="form-select d-inline-block w-auto me-2">
+                                <option>Last 24 Hours</option>
+                                <option>Last 7 Days</option>
+                                <option>Last 30 Days</option>
+                            </select>
+                            <button class="btn btn-food-safety">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="insight-item">
-                            <h6><i class="fas fa-chart-line me-2"></i>Next Month Prediction</h6>
-                            <p class="mb-2">First Pass Yield: <strong>98.2%</strong></p>
-                            <p class="mb-2">Expected NCRs: <strong>2</strong></p>
-                            <p class="mb-0">Cost Reduction Opportunity: <strong>$12,500</strong></p>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="chart-container">
+                                <canvas id="temperatureChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="data-table">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Location</th>
+                                            <th>Temperature</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for reading in temperature_readings %}
+                                        <tr>
+                                            <td>{{ reading.location }}</td>
+                                            <td>{{ reading.temperature }}°C</td>
+                                            <td>
+                                                {% if reading.within_limits %}
+                                                <span class="status-badge status-pass">OK</span>
+                                                {% else %}
+                                                <span class="status-badge status-fail">ALERT</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Records Tab -->
+                <div class="tab-pane fade" id="batches" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Batch Production Records</h4>
+                        <button class="btn btn-food-safety">
+                            <i class="fas fa-plus"></i> New Batch Record
+                        </button>
+                    </div>
+                    <div class="data-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Batch ID</th>
+                                    <th>Product</th>
+                                    <th>Production Date</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                    <th>Quality Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for batch in batch_records %}
+                                <tr>
+                                    <td><strong>{{ batch.batch_number }}</strong></td>
+                                    <td>{{ batch.product_name }}</td>
+                                    <td>{{ batch.production_date[:10] }}</td>
+                                    <td>{{ batch.quantity_produced }} {{ batch.unit_of_measure }}</td>
+                                    <td>
+                                        <span class="status-badge status-pass">{{ batch.status }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">Released</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-search"></i> Trace
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Supplier Quality Tab -->
+                <div class="tab-pane fade" id="suppliers" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Supplier Quality Management</h4>
+                        <button class="btn btn-food-safety">
+                            <i class="fas fa-plus"></i> Add Supplier
+                        </button>
+                    </div>
+                    <div class="row">
+                        {% for supplier in suppliers %}
+                        <div class="col-md-6 mb-3">
+                            <div class="metric-card">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6>{{ supplier.supplier_name }}</h6>
+                                        <small class="text-muted">{{ supplier.supplier_type }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="metric-value">{{ supplier.audit_score }}%</div>
+                                        <small class="text-muted">Audit Score</small>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small>Quality Incidents: {{ supplier.quality_incidents }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small>Delivery: {{ supplier.delivery_performance }}%</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="status-badge status-pass">{{ supplier.status }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Food Safety Inspections Tab -->
+                <div class="tab-pane fade" id="inspections" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Food Safety Inspections</h4>
+                        <button class="btn btn-food-safety">
+                            <i class="fas fa-plus"></i> Schedule Inspection
+                        </button>
+                    </div>
+                    <div class="data-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Inspection Type</th>
+                                    <th>Area/Location</th>
+                                    <th>Date</th>
+                                    <th>Inspector</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inspection in inspections %}
+                                <tr>
+                                    <td>{{ inspection.inspection_type }}</td>
+                                    <td>{{ inspection.area_location }}</td>
+                                    <td>{{ inspection.inspection_date[:10] }}</td>
+                                    <td>{{ inspection.inspector_name }}</td>
+                                    <td>{{ inspection.overall_score }}%</td>
+                                    <td>
+                                        <span class="status-badge status-pass">{{ inspection.status }}</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sanitation & Environment Tab -->
+                <div class="tab-pane fade" id="sanitation" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Sanitation Schedules</h4>
+                            <div class="data-table">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Area</th>
+                                            <th>Frequency</th>
+                                            <th>Last Completed</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for schedule in sanitation_schedules %}
+                                        <tr>
+                                            <td>{{ schedule.area }}</td>
+                                            <td>{{ schedule.frequency }}</td>
+                                            <td>{{ schedule.last_completed[:10] if schedule.last_completed else 'Never' }}</td>
+                                            <td>
+                                                <span class="status-badge status-pass">{{ schedule.status }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Environmental Monitoring</h4>
+                            <div class="chart-container">
+                                <canvas id="environmentalChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAPA Tab -->
+                <div class="tab-pane fade" id="capa" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Corrective and Preventive Actions (CAPA)</h4>
+                        <button class="btn btn-food-safety">
+                            <i class="fas fa-plus"></i> New CAPA
+                        </button>
+                    </div>
+                    <div class="data-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>CAPA ID</th>
+                                    <th>Source</th>
+                                    <th>Problem Description</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for capa in capa_records %}
+                                <tr>
+                                    <td><strong>{{ capa.capa_id }}</strong></td>
+                                    <td>{{ capa.source }}</td>
+                                    <td>{{ capa.problem_description[:50] }}...</td>
+                                    <td>
+                                        <span class="status-badge status-conditional">{{ capa.status }}</span>
+                                    </td>
+                                    <td>{{ capa.target_completion_date[:10] }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div class="tab-pane fade" id="analytics" role="tabpanel">
+                    <h4>Quality Analytics & Insights</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h6>HACCP Compliance Trend</h6>
+                                <canvas id="complianceChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h6>Quality Issues by Category</h6>
+                                <canvas id="issuesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-lightbulb"></i> AI Quality Insights</h6>
+                                <ul class="mb-0">
+                                    <li>Temperature monitoring shows 15% improvement in compliance over last month</li>
+                                    <li>Supplier quality scores trending upward - consider expanding approved supplier list</li>
+                                    <li>Predictive analysis suggests potential sanitation schedule optimization</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -616,254 +706,128 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Set Chart.js global defaults for better rendering
-        Chart.defaults.responsive = true;
-        Chart.defaults.maintainAspectRatio = false;
+        // Industry selector functionality
+        document.getElementById('industrySelect').addEventListener('change', function() {
+            const industry = this.value;
+            window.location.href = `/quality/dashboard?industry=${industry}`;
+        });
 
-        // Cost of Quality Chart
-        const coqCtx = document.getElementById('coqChart');
-        if (coqCtx) {
-            new Chart(coqCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Prevention', 'Appraisal', 'Internal Failure', 'External Failure'],
-                    datasets: [{
-                        data: [{{ cost_of_quality.prevention }}, {{ cost_of_quality.appraisal }}, {{ cost_of_quality.internal_failure }}, {{ cost_of_quality.external_failure }}],
-                        backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 15,
-                                padding: 15,
-                                font: {
-                                    size: 12,
-                                    weight: '500'
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': $' + context.raw.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: 20
-                    }
-                }
-            });
-        }
-
-        // Quality Trends Chart
-        const trendsEl = document.getElementById('trendsChart');
-        if (trendsEl) {
-            new Chart(trendsEl.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{
-                        label: 'First Pass Yield (%)',
-                        data: [92, 94, 93, 96, 95, 97, 96, 98, 97, 95, 96, 97],
-                        borderColor: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            min: 85,
-                            max: 100,
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Yield %'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            radius: 4,
-                            hoverRadius: 8,
-                            backgroundColor: '#28a745'
-                        }
-                    }
-                }
-            });
-        }
-
-        // SPC Control Charts
-        {% for chart in spc_data.control_charts %}
-        const spcCtx{{ loop.index }} = document.getElementById('spcChart{{ loop.index }}').getContext('2d');
-        new Chart(spcCtx{{ loop.index }}, {
+        // Temperature monitoring chart
+        const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+        new Chart(temperatureCtx, {
             type: 'line',
             data: {
-                labels: Array.from({length: {{ chart.measurements|length }}}, (_, i) => i + 1),
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
                 datasets: [{
-                    label: 'Measurements',
-                    data: {{ chart.measurements }},
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    pointBackgroundColor: '#007bff',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    fill: false
+                    label: 'Raw Milk Tank A1 (°C)',
+                    data: [4.1, 4.2, 4.0, 4.3, 4.1, 4.2],
+                    borderColor: '#4ECDC4',
+                    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                    tension: 0.4
                 }, {
-                    label: 'UCL',
-                    data: Array({{ chart.measurements|length }}).fill({{ chart.ucl }}),
-                    borderColor: '#dc3545',
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false
-                }, {
-                    label: 'Target',
-                    data: Array({{ chart.measurements|length }}).fill({{ chart.target }}),
-                    borderColor: '#28a745',
-                    borderDash: [2, 2],
-                    pointRadius: 0,
-                    fill: false
-                }, {
-                    label: 'LCL',
-                    data: Array({{ chart.measurements|length }}).fill({{ chart.lcl }}),
-                    borderColor: '#dc3545',
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false
+                    label: 'Cheese Aging Room B2 (°C)',
+                    data: [12.5, 12.8, 12.6, 13.0, 12.7, 12.9],
+                    borderColor: '#FF6B6B',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    tension: 0.4
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        position: 'top',
                     }
                 },
                 scales: {
                     y: {
-                        min: {{ chart.lcl - 0.1 }},
-                        max: {{ chart.ucl + 0.1 }}
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)'
+                        }
                     }
                 }
             }
         });
-        {% endfor %}
 
-        // Defect Analysis Chart
-        const defectCtx = document.getElementById('defectChart').getContext('2d');
-        new Chart(defectCtx, {
-            type: 'bar',
+        // Environmental monitoring chart
+        const environmentalCtx = document.getElementById('environmentalChart').getContext('2d');
+        new Chart(environmentalCtx, {
+            type: 'doughnut',
             data: {
-                labels: ['Dimensional', 'Surface', 'Assembly', 'Packaging', 'Electrical'],
+                labels: ['Within Limits', 'Out of Limits'],
                 datasets: [{
-                    label: 'Defect Count',
-                    data: [15, 8, 12, 5, 3],
-                    backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#6f42c1', '#20c997'],
+                    data: [95, 5],
+                    backgroundColor: ['#27ae60', '#e74c3c'],
                     borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        position: 'bottom',
                     }
                 }
             }
         });
 
-        // Supplier Performance Radar
-        const supplierCtx = document.getElementById('supplierRadar').getContext('2d');
-        new Chart(supplierCtx, {
-            type: 'radar',
+        // Compliance trend chart
+        const complianceCtx = document.getElementById('complianceChart').getContext('2d');
+        new Chart(complianceCtx, {
+            type: 'line',
             data: {
-                labels: ['Precision Components', 'FastTrack Logistics', 'Quality Materials', 'Expert Assembly'],
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 datasets: [{
-                    label: 'Performance Score',
-                    data: [91.5, 90.3, 88.7, 92.1],
-                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                    label: 'HACCP Compliance (%)',
+                    data: [92, 94, 93, 95, 96, 96.8],
                     borderColor: '#667eea',
-                    pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 scales: {
-                    r: {
-                        beginAtZero: true,
+                    y: {
+                        beginAtZero: false,
                         max: 100
                     }
                 }
             }
         });
 
-        // Load AI Quality Insights
-        async function loadQualityInsights() {
-            try {
-                const response = await fetch('/quality/ai-quality-insights');
-                const data = await response.json();
-                
-                const insightsContainer = document.getElementById('qualityInsights');
-                insightsContainer.innerHTML = '';
-                
-                data.insights.forEach(insight => {
-                    const insightDiv = document.createElement('div');
-                    insightDiv.className = 'insight-item';
-                    insightDiv.innerHTML = `
-                        <h6><i class="fas fa-lightbulb me-2"></i>${insight.category}</h6>
-                        <p class="mb-2">${insight.insight}</p>
-                        <p class="mb-2"><strong>Recommendation:</strong> ${insight.recommendation}</p>
-                        <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: ${insight.confidence}%"></div>
-                        </div>
-                        <small class="text-light">Confidence: ${insight.confidence}%</small>
-                    `;
-                    insightsContainer.appendChild(insightDiv);
-                });
-            } catch (error) {
-                console.error('Error loading quality insights:', error);
+        // Quality issues chart
+        const issuesCtx = document.getElementById('issuesChart').getContext('2d');
+        new Chart(issuesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Temperature', 'Packaging', 'Labeling', 'Microbial', 'Foreign Material'],
+                datasets: [{
+                    label: 'Issues Count',
+                    data: [12, 8, 5, 3, 2],
+                    backgroundColor: [
+                        '#FF6B6B',
+                        '#4ECDC4',
+                        '#45B7D1',
+                        '#F7DC6F',
+                        '#BB8FCE'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
             }
-        }
-
-        // Load insights on page load
-        document.addEventListener('DOMContentLoaded', loadQualityInsights);
+        });
     </script>
 </body>
 </html>

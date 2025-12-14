@@ -1238,7 +1238,7 @@ async def demo_manager_inventory(request: Request):
 # DEMO ANALYTICS API ENDPOINTS (No Authentication Required)
 # =============================================================================
 
-@router.get("/analytics/kpi/summary")
+@router.get("/demo/analytics/kpi/summary")
 async def demo_analytics_kpi_summary(days: int = 30):
     """Demo KPI summary data for analytics dashboard"""
     return {
@@ -1430,15 +1430,207 @@ async def demo_analytics_asset_health():
     }
 
 
-@router.get("/analytics/charts/cost-breakdown")
-async def demo_analytics_cost_breakdown(days: int = 30):
-    """Demo cost breakdown chart data"""
-    return {
-        "labels": ["Preventive", "Corrective", "Emergency"],
-        "data": [8500, 12250, 4000],
-        "colors": {
-            "Preventive": "#27ae60",
-            "Corrective": "#f39c12",
-            "Emergency": "#e74c3c"
+@router.get("/demo/food-processing-quality", response_class=HTMLResponse)
+async def demo_food_processing_quality(request: Request, industry: str = "cheese_plant"):
+    """Demo Food Processing Quality Management System with HACCP, GMP, and Food Safety Compliance"""
+    try:
+        # Industry configurations
+        industry_configs = {
+            "cheese_plant": {
+                "name": "Cheese Processing Plant",
+                "haccp_focus": ["Pasteurization", "Cooling", "Aging", "Packaging"],
+                "critical_limits": {
+                    "milk_temp": {"min": 4, "max": 7, "unit": "°C"},
+                    "pasteurization_temp": {"min": 72, "max": 75, "unit": "°C"},
+                    "aging_temp": {"min": 7, "max": 15, "unit": "°C"}
+                },
+                "certifications": ["SQF", "FSMA", "EU Organic", "Halal"]
+            },
+            "beverage_plant": {
+                "name": "Beverage Processing Plant",
+                "haccp_focus": ["Filtration", "Pasteurization", "Carbonation", "Packaging"],
+                "critical_limits": {
+                    "product_temp": {"min": 2, "max": 8, "unit": "°C"},
+                    "pasteurization_temp": {"min": 85, "max": 95, "unit": "°C"},
+                    "ph_range": {"min": 2.5, "max": 4.5, "unit": "pH"}
+                },
+                "certifications": ["FSSC 22000", "BRC", "IFS", "Organic"]
+            },
+            "dairy_processing": {
+                "name": "Dairy Processing Plant",
+                "haccp_focus": ["Pasteurization", "Homogenization", "Cooling", "Packaging"],
+                "critical_limits": {
+                    "milk_temp": {"min": 4, "max": 7, "unit": "°C"},
+                    "pasteurization_temp": {"min": 72, "max": 75, "unit": "°C"}
+                },
+                "certifications": ["SQF", "FSMA", "ISO 22000"]
+            }
         }
-    }
+
+        industry_config = industry_configs.get(industry, industry_configs["cheese_plant"])
+
+        # Demo HACCP plans
+        haccp_plans = [
+            {
+                "plan_id": "HACCP-001",
+                "process_step": "Milk Receiving & Storage",
+                "hazard_type": "Biological",
+                "hazard_description": "Pathogenic bacteria growth in raw milk",
+                "critical_control_point": True,
+                "critical_limits": {"temperature": {"min": 0, "max": 7, "unit": "°C"}, "time": {"max": 2, "unit": "hours"}},
+                "monitoring_procedures": "Temperature monitoring every 2 hours, visual inspection",
+                "corrective_actions": "Reject milk if temperature >7°C or holding time >2 hours",
+                "verification_procedures": "Daily calibration of thermometers, weekly review",
+                "responsible_person": "Receiving Supervisor",
+                "review_frequency": "Daily",
+                "status": "Active"
+            },
+            {
+                "plan_id": "HACCP-002",
+                "process_step": "Pasteurization",
+                "hazard_type": "Biological",
+                "hazard_description": "Survival of pathogenic microorganisms",
+                "critical_control_point": True,
+                "critical_limits": {"temperature": {"min": 72, "max": 75, "unit": "°C"}, "time": {"min": 15, "unit": "seconds"}},
+                "monitoring_procedures": "Continuous temperature recording, time-temperature integration",
+                "corrective_actions": "Stop production, re-pasteurize if temperature drops below 72°C",
+                "verification_procedures": "Weekly validation of pasteurization equipment",
+                "responsible_person": "Production Manager",
+                "review_frequency": "Daily",
+                "status": "Active"
+            }
+        ]
+
+        # Demo temperature readings
+        temperature_readings = [
+            {
+                "reading_id": "TEMP-001",
+                "location": "Raw Milk Storage Tank A1",
+                "equipment_id": "TANK-001",
+                "temperature": 4.2,
+                "unit": "°C",
+                "critical_limit_min": 0,
+                "critical_limit_max": 7,
+                "within_limits": True,
+                "recorded_by": "Maria Sanchez",
+                "reading_time": "2024-12-14T06:00:00"
+            },
+            {
+                "reading_id": "TEMP-002",
+                "location": "Cheese Aging Room B2",
+                "equipment_id": "ROOM-B2",
+                "temperature": 12.8,
+                "unit": "°C",
+                "critical_limit_min": 7,
+                "critical_limit_max": 15,
+                "within_limits": True,
+                "recorded_by": "Carlos Rodriguez",
+                "reading_time": "2024-12-14T08:30:00"
+            }
+        ]
+
+        # Demo batch records
+        batch_records = [
+            {
+                "batch_id": "BATCH-2024-001",
+                "product_code": "CHEDDAR-001",
+                "product_name": "Sharp Cheddar Cheese",
+                "batch_number": "CH24121401",
+                "production_date": "2024-12-14T08:00:00",
+                "expiry_date": "2025-06-14T00:00:00",
+                "quantity_produced": 2500,
+                "unit_of_measure": "kg",
+                "status": "Released",
+                "release_date": "2024-12-14T16:00:00"
+            }
+        ]
+
+        # Demo suppliers
+        suppliers = [
+            {
+                "supplier_id": "SUP-001",
+                "supplier_name": "Dairy Farms Inc",
+                "supplier_type": "Raw Materials",
+                "audit_score": 94.5,
+                "status": "Approved"
+            },
+            {
+                "supplier_id": "SUP-002",
+                "supplier_name": "Packaging Solutions Ltd",
+                "supplier_type": "Packaging",
+                "audit_score": 91.2,
+                "status": "Approved"
+            }
+        ]
+
+        # Demo inspections
+        inspections = [
+            {
+                "inspection_id": "FSI-2024-001",
+                "inspection_type": "HACCP Verification",
+                "area_location": "Pasteurization Area",
+                "inspector_name": "Dr. Sarah Johnson",
+                "inspection_date": "2024-12-14T09:00:00",
+                "overall_score": 92.5,
+                "status": "Pass"
+            }
+        ]
+
+        # Demo sanitation schedules
+        sanitation_schedules = [
+            {
+                "schedule_id": "SAN-001",
+                "area": "Cheese Processing Line A",
+                "frequency": "Daily",
+                "status": "Completed",
+                "last_completed": "2024-12-14T06:00:00"
+            }
+        ]
+
+        # Demo CAPA records
+        capa_records = [
+            {
+                "capa_id": "CAPA-2024-001",
+                "source": "HACCP Deviation",
+                "problem_description": "Pasteurization temperature dropped below 72°C",
+                "status": "In Progress",
+                "target_completion_date": "2025-01-31"
+            }
+        ]
+
+        context = {
+            "request": request,
+            "industry_config": industry_config,
+            "industry": industry,
+            "active_haccp_plans": len([p for p in haccp_plans if p["status"] == "Active"]),
+            "critical_control_points": len([p for p in haccp_plans if p["critical_control_point"]]),
+            "temperature_deviations": len([t for t in temperature_readings if not t["within_limits"]]),
+            "approved_suppliers": len([s for s in suppliers if s["status"] == "Approved"]),
+            "completed_batches": len([b for b in batch_records if b["status"] == "Released"]),
+            "sanitation_compliance": 95.0,
+            "environmental_compliance": 98.0,
+            "food_safety_metrics": {
+                "haccp_compliance": 96.8,
+                "gmp_compliance": 94.2,
+                "certification_status": "SQF Level 3",
+                "last_audit_score": 92.5
+            },
+            "haccp_plans": haccp_plans,
+            "temperature_readings": temperature_readings,
+            "batch_records": batch_records,
+            "suppliers": suppliers,
+            "inspections": inspections,
+            "sanitation_schedules": sanitation_schedules,
+            "capa_records": capa_records,
+            "is_demo": True,
+            "demo_banner": f"Demo: {industry_config['name']} - Complete HACCP & GMP Quality Management System"
+        }
+
+        return templates.TemplateResponse("quality_dashboard.html", context)
+
+    except Exception as e:
+        import traceback
+        return HTMLResponse(
+            content=f"<h1>Demo Error</h1><pre>{traceback.format_exc()}</pre>",
+            status_code=500,
+        )

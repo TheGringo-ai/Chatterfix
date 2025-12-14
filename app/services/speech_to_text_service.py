@@ -18,7 +18,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import AsyncGenerator, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,7 @@ class SpeechToTextService:
             logger.error(f"Failed to initialize Speech client: {e}")
             self.client = None
 
-    def _build_speech_context(self) -> Optional[types.SpeechContext]:
+    def _build_speech_context(self) -> Optional[Any]:
         """Build speech context with manufacturing vocabulary"""
         if not GOOGLE_SPEECH_AVAILABLE:
             return None

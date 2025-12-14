@@ -33,12 +33,12 @@ The AI Team has completed a comprehensive review of the Firebase and Firebase Au
 The following credentials are exposed in the repository:
 
 ```
-GEMINI_API_KEY=AIzaSyBG6kfp-ZOrYVFI2MTLnQ_9OUbqn3dNc7Q
-OPENAI_API_KEY=sk-proj-j_6pD6gVNpP5BJwsrwFa05n_b-...
-XAI_API_KEY=xai-14EVpITNaIsna5zeaEypT32OHUN4XIdX...
-FIREBASE_API_KEY=AIzaSyAaXlvuopHtTZglfghnlc_hBqGr1YzPrBk
-SECRET_KEY=chatterfix-super-secret-key-technician-first-cmms-2024
-JWT_SECRET_KEY=jwt-secret-key-for-secure-technician-authentication
+GEMINI_API_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
+OPENAI_API_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
+XAI_API_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
+FIREBASE_API_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
+SECRET_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
+JWT_SECRET_KEY=<REDACTED - DO NOT COMMIT REAL KEYS>
 ```
 
 **Risk:** Complete compromise of:

@@ -86,7 +86,7 @@ jobs:
         run: |
           pip install uv
           uv pip install --system -r requirements-core.txt
-          uv pip install --system pytest pytest-cov pytest-asyncio httpx
+          uv pip install --system -r requirements-dev.txt
           
       - name: Run tests
         env:

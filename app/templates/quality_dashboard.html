@@ -179,6 +179,218 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
             color: white;
         }
+
+        /* 🚀 AI CHAT WIDGET STYLES */
+        .ai-fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.6), 0 0 0 0 rgba(102, 126, 234, 0.5);
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 9999;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: ai-widget-pulse 3s infinite, ai-widget-float 6s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .ai-fab:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.8), 0 0 30px rgba(118, 75, 162, 0.6);
+            background: linear-gradient(135deg, #7c89f0 0%, #8b5ca8 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .ai-fab:active {
+            transform: scale(1.05);
+        }
+
+        @keyframes ai-widget-pulse {
+            0%, 100% {
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.6), 0 0 0 0 rgba(102, 126, 234, 0.5);
+            }
+            50% {
+                box-shadow: 0 10px 40px rgba(102, 126, 234, 0.6), 0 0 0 20px rgba(102, 126, 234, 0.1);
+            }
+        }
+
+        @keyframes ai-widget-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .ai-chat-window {
+            position: fixed;
+            bottom: 150px;
+            right: 30px;
+            width: 420px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUpEnhanced 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUpEnhanced {
+            from {
+                transform: translateY(30px) scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .ai-chat-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .ai-chat-messages {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+            position: relative;
+            animation: messageSlideIn 0.3s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-ai {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            margin-right: 20%;
+        }
+
+        .message-user {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 8px;
+            margin-left: 20%;
+        }
+
+        .message-ai::before {
+            content: '🤖';
+            position: absolute;
+            left: -35px;
+            top: 15px;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .message-user::after {
+            content: '👤';
+            position: absolute;
+            right: -35px;
+            top: 15px;
+            font-size: 1.2rem;
+            background: #667eea;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .ai-typing-indicator {
+            display: none;
+            padding: 15px 25px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .ai-chat-input-area {
+            padding: 20px 25px;
+            background: white;
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .ai-chat-input-area .input-group {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 25px;
+            overflow: hidden;
+        }
+
+        .ai-chat-input-area input {
+            border: none;
+            padding: 12px 20px;
+            background: white;
+        }
+
+        .ai-chat-input-area input:focus {
+            box-shadow: none;
+        }
+
+        .ai-chat-input-area .btn {
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+        }
+
+        .ai-chat-input-area .btn:hover {
+            background: linear-gradient(135deg, #7c89f0 0%, #8b5ca8 100%);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -828,6 +1040,112 @@
                 }
             }
         });
+    </script>
+
+    <!-- AI Chat Widget -->
+    <button class="ai-fab" onclick="toggleAIChat()" title="Chat with AI Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="ai-chat-window" id="aiChatWindow" style="display: none;">
+        <div class="ai-chat-header">
+            <div>
+                <i class="fas fa-robot me-2"></i> Quality Assistant
+                <span class="badge bg-success ms-2" style="font-size: 0.6rem;">ONLINE</span>
+            </div>
+            <button onclick="toggleAIChat()" class="btn btn-sm text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="message message-ai">
+                <strong>AI:</strong> Hello! I'm your Quality Management Assistant. I can help you with HACCP compliance, GMP standards, quality audits, and food safety insights. How can I assist you today?
+            </div>
+        </div>
+        <div class="ai-typing-indicator" id="aiTypingIndicator" style="display: none;">
+            AI is thinking...
+        </div>
+        <div class="ai-chat-input-area">
+            <div class="input-group">
+                <input type="text" id="aiChatInput" class="form-control" placeholder="Ask about quality management..."
+                    onkeypress="handleAIChatInput(event)">
+                <button class="btn btn-primary" onclick="sendAIMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI Chat Widget Functions
+        function toggleAIChat() {
+            const chatWindow = document.getElementById('aiChatWindow');
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'flex';
+                document.getElementById('aiChatInput').focus();
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+
+        function handleAIChatInput(event) {
+            if (event.key === 'Enter') {
+                sendAIMessage();
+            }
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('aiChatInput');
+            const messages = document.getElementById('aiChatMessages');
+            const typingIndicator = document.getElementById('aiTypingIndicator');
+            const userMessage = input.value.trim();
+
+            if (!userMessage) return;
+
+            // Add user message
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message message-user';
+            userMessageDiv.innerHTML = `<strong>You:</strong> ${userMessage}`;
+            messages.appendChild(userMessageDiv);
+
+            // Clear input
+            input.value = '';
+
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+            messages.scrollTop = messages.scrollHeight;
+
+            // Simulate AI response (replace with actual API call)
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+
+                const aiResponse = generateQualityResponse(userMessage);
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message message-ai';
+                aiMessageDiv.innerHTML = `<strong>AI:</strong> ${aiResponse}`;
+                messages.appendChild(aiMessageDiv);
+
+                messages.scrollTop = messages.scrollHeight;
+            }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+        }
+
+        function generateQualityResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+
+            if (message.includes('haccp') || message.includes('critical control point')) {
+                return "For HACCP compliance, ensure you monitor critical control points like temperature, pH levels, and cooking times. I can help you create monitoring checklists and corrective action plans.";
+            } else if (message.includes('temperature') || message.includes('cold chain')) {
+                return "Temperature monitoring is crucial for food safety. Maintain refrigeration at ≤4°C (39°F) and frozen storage at ≤-18°C (0°F). Regular calibration of thermometers is essential.";
+            } else if (message.includes('audit') || message.includes('inspection')) {
+                return "Quality audits should include document review, facility inspection, and staff interviews. Focus on GMP compliance, pest control, and sanitation procedures.";
+            } else if (message.includes('supplier') || message.includes('vendor')) {
+                return "Supplier qualification should include facility audits, product testing, and performance monitoring. Maintain approved supplier lists and conduct regular re-evaluations.";
+            } else if (message.includes('recall') || message.includes('withdrawal')) {
+                return "For product recalls, immediately isolate affected products, notify customers, and conduct root cause analysis. Document all actions taken and implement preventive measures.";
+            } else if (message.includes('training') || message.includes('certification')) {
+                return "Food safety training should cover personal hygiene, allergen management, and emergency procedures. Regular refresher training is required for all staff.";
+            } else {
+                return "I'm here to help with food safety and quality management questions. I can assist with HACCP plans, GMP compliance, quality audits, supplier management, and regulatory requirements. What specific area would you like to discuss?";
+            }
+        }
     </script>
 </body>
 </html>

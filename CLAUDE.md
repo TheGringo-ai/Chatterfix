@@ -91,11 +91,33 @@ This is not just a memory system - this is a **COMPLETE AI-POWERED DEVELOPMENT R
 **Root Cause**: Domain mapping correct but missing root route (/) in FastAPI app
 **Solution**: Add root route with redirect: `@app.get("/") -> RedirectResponse("/demo", 302)`
 **Prevention**: Always include root route in FastAPI apps for domain-mapped services
-**Code Pattern**: 
+**Code Pattern**:
 ```python
 @app.get("/", tags=["Core"])
 async def root():
     return RedirectResponse(url="/demo", status_code=302)
+```
+
+#### **LESSON #5: VS Code Memory Crash Prevention**
+**Problem**: VS Code crashes with "Trace/BPT trap" signal during development
+**Root Cause**: System memory pressure triggering V8 garbage collection failures
+**Symptoms**:
+- System using >90% memory
+- High swap activity (millions of swapins/swapouts)
+- VS Code extension host consuming excessive memory
+**Solution**:
+1. Created Memory Guardian daemon (`scripts/memory-guardian.py`)
+2. Added VS Code memory optimizations in `.vscode/settings.json`
+3. Script monitors memory and warns before critical levels
+**Prevention**:
+- Run `./scripts/start-memory-guardian.sh start` to enable monitoring
+- Check status with `./scripts/start-memory-guardian.sh status`
+- VS Code settings limit file watchers and editor instances
+**Commands**:
+```bash
+./scripts/start-memory-guardian.sh start   # Start monitoring
+./scripts/start-memory-guardian.sh status  # Check memory
+./scripts/start-memory-guardian.sh stop    # Stop monitoring
 ```
 
 ### 🔧 **MANDATORY DEVELOPMENT WORKFLOW:**
@@ -185,6 +207,8 @@ async def root():
 - ❌ **NEW**: Ignoring workflow health warnings or security alerts
 - ❌ **NEW**: Deploying with outdated or vulnerable dependencies
 - ❌ **NEW**: Running workflows without proper timeout configurations
+- ❌ **NEW**: Running heavy development without Memory Guardian active
+- ❌ **NEW**: Ignoring memory warnings (>85% usage)
 
 This file serves as the AI team's persistent memory to prevent repeated mistakes and ensure consistent quality.
 - I want everyone to be on the same page everybody chatterfix was developed 4 the technician the guy on the floor it is data that is built from the ground up taking it to the highest level is this comprehensive of the work order quality safety and training modules this was built pretty user easy to use with voice command commands OCR for document scans part rec recognition the voice command commands can interact with AI create work orders check out parts or even having a natural conversation about the department that helps the manager gain insights and also in efficiencies in the department this will be integrated in the future with smart glasses or full-fledged AR experience such as training reviewing and working on machine machinery with technicians etc. This should be completely hands-free and natural conversation together all the data that people hate to import daily but manual entry and edits are still there for the user also can we get all of the AI team on board with this vision of the future so we can quickly work towards it and provide your users with an experience of the future this is a statement from the CEO

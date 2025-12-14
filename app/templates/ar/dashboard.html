@@ -45,6 +45,37 @@
         </div>
     </div>
     <script src="/static/js/ar.js"></script>
+    <script src="/static/js/voice-feedback.js"></script>
+    <script>
+        // Initialize enhanced voice feedback system
+        document.addEventListener('DOMContentLoaded', () => {
+            window.voiceFeedback = new VoiceFeedbackSystem({
+                autoStart: true,
+                useServerTranscription: true,
+                continuousListening: true,
+                onCommand: (result) => {
+                    // Log command to system log
+                    const logEntries = document.getElementById('log-entries');
+                    logEntries.innerHTML += `<br>> CMD: ${result.command || 'Processed'}`;
+                    document.getElementById('last-command').textContent = result.command || 'PROCESSED';
+                },
+                onTranscript: (result) => {
+                    console.log('Transcript:', result);
+                },
+                onStateChange: (state) => {
+                    // Update HUD status
+                    const voiceStatus = document.getElementById('voice-status');
+                    if (state.isProcessing) {
+                        voiceStatus.textContent = 'PROCESSING...';
+                    } else if (state.isListening) {
+                        voiceStatus.textContent = 'LISTENING...';
+                    } else {
+                        voiceStatus.textContent = 'STANDBY';
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

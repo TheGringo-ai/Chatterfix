@@ -64,9 +64,37 @@
 ### 🧠 AI Team Collaboration Framework
 **Access:** [AI Team Dashboard](http://localhost:8000/ai-team/dashboard)
 
+**Architecture Overview:**
+The AI Team is built as an enterprise-grade, multi-agent collaboration platform with a **gRPC core** for high-performance inter-service communication and a **REST API wrapper** for web/frontend access.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Web Interface                        │
+│              (AI Team Dashboard)                        │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│              REST API (FastAPI)                         │
+│         /ai-team/execute, /ai-team/stream               │
+│         app/routers/ai_team_collaboration.py            │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│              gRPC Service Layer                         │
+│           protos/ai_team.proto                          │
+│           ai_team/grpc_server.py                        │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────┐
+│            AutogenOrchestrator Core                     │
+│         ai_team/autogen_framework.py                    │
+│    (Multi-model coordination & memory system)           │
+└─────────────────────────────────────────────────────────┘
+```
+
 **Multi-Model Orchestration:**
 - **Claude Sonnet 4**: Lead architect for complex analysis and planning
-- **ChatGPT 4o**: Senior developer for coding and optimization  
+- **ChatGPT 4o**: Senior developer for coding and optimization
 - **Gemini 2.5 Flash**: Creative innovator for UI/UX solutions
 - **Grok 3**: Strategic reasoner for analysis and decision making
 - **Grok Code Fast**: Rapid coding specialist for quick implementations
@@ -77,11 +105,28 @@
 - **Knowledge Search**: Instant access to all solutions, mistakes, and patterns
 - **Cross-Application Learning**: Shared intelligence across ChatterFix, LineSmart, Fix-it-Fred
 
-**APIs:**
+**gRPC Interface (Primary - for service-to-service):**
+```protobuf
+service AITeamService {
+  rpc ExecuteTask(TaskRequest) returns (TaskResponse);
+  rpc StreamCollaboration(TaskRequest) returns (stream CollaborationResponse);
+  rpc GetAvailableModels(ModelsRequest) returns (ModelsResponse);
+  rpc HealthCheck(HealthRequest) returns (HealthResponse);
+}
+```
+- Proto definition: `protos/ai_team.proto`
+- Server implementation: `ai_team/grpc_server.py`
+- Client: `ai_team/grpc_client.py`
+
+**REST APIs (for web/frontend access):**
+- `GET /ai-team/health` - Check AI team service health
+- `GET /ai-team/models` - List available AI models
 - `POST /ai-team/execute` - Multi-model collaborative task execution
-- `POST /ai-team/stream` - Real-time AI collaboration streaming
+- `POST /ai-team/stream` - Real-time AI collaboration streaming (SSE)
 - `GET /ai-team/memory/search` - Search AI knowledge base
+- `POST /ai-team/memory/index/rebuild` - Rebuild knowledge index
 - `GET /ai-team/analytics` - AI team performance metrics
+- `GET /ai-team/dashboard` - Interactive web dashboard
 
 ### 📊 LineSmart Training Intelligence
 **Access:** [LineSmart ROI Dashboard](http://localhost:8000/linesmart/roi-dashboard)

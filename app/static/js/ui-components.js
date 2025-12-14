@@ -7,7 +7,221 @@
 
 // 🚀 Alpine.js Global Data Store
 document.addEventListener('alpine:init', () => {
-    
+
+    // ========================================
+    // 🎯 Alpine.data() COMPONENT REGISTRATIONS
+    // These allow x-data="componentName" usage in templates
+    // ========================================
+
+    // User Preferences Component (wraps store)
+    Alpine.data('userPreferences', () => ({
+        get animationsEnabled() { return Alpine.store('userPreferences')?.animationsEnabled ?? true; },
+        set animationsEnabled(val) { if (Alpine.store('userPreferences')) Alpine.store('userPreferences').animationsEnabled = val; },
+        showSettings: false,
+        toggleAnimations() {
+            const store = Alpine.store('userPreferences');
+            if (store) store.toggleAnimations();
+        },
+        init() {
+            console.log('✅ userPreferences component initialized');
+        }
+    }));
+
+    // AI System Component (wraps store)
+    Alpine.data('aiSystem', () => ({
+        get learningMode() { return Alpine.store('aiSystem')?.learningMode ?? false; },
+        set learningMode(val) { if (Alpine.store('aiSystem')) Alpine.store('aiSystem').learningMode = val; },
+        get analyzing() { return Alpine.store('aiSystem')?.analyzing ?? false; },
+        get predicting() { return Alpine.store('aiSystem')?.predicting ?? false; },
+        get optimizing() { return Alpine.store('aiSystem')?.optimizing ?? false; },
+        get reporting() { return Alpine.store('aiSystem')?.reporting ?? false; },
+        get lastOptimization() { return Alpine.store('aiSystem')?.lastOptimization ?? null; },
+        get systemDescription() { return Alpine.store('aiSystem')?.systemDescription ?? 'AI System Ready'; },
+        get metrics() { return Alpine.store('aiSystem')?.metrics ?? { processed: 0, accuracy: 0, suggestions: 0, efficiency: 0 }; },
+        get recentActivities() { return Alpine.store('aiSystem')?.recentActivities ?? []; },
+        toggleLearningMode() {
+            const store = Alpine.store('aiSystem');
+            if (store) store.toggleLearningMode();
+        },
+        runFleetAnalysis() {
+            const store = Alpine.store('aiSystem');
+            if (store) store.runFleetAnalysis();
+        },
+        generatePredictiveInsights() {
+            const store = Alpine.store('aiSystem');
+            if (store) store.generatePredictiveInsights();
+        },
+        optimizeOperations() {
+            const store = Alpine.store('aiSystem');
+            if (store) store.optimizeOperations();
+        },
+        generateAIReport() {
+            const store = Alpine.store('aiSystem');
+            if (store) store.generateAIReport();
+        },
+        init() {
+            console.log('✅ aiSystem component initialized');
+        }
+    }));
+
+    // Predictive Analytics Component (NEW)
+    Alpine.data('predictiveAnalytics', () => ({
+        filterBy: 'all',
+        generating: false,
+        lastUpdated: new Date().toLocaleTimeString(),
+        selectedPrediction: null,
+        predictions: [
+            { id: 1, equipment: 'HVAC Unit #3', issue: 'bearing failure', risk: 87, priority: 'critical', icon: '🔴', timeframe: '3 days', recommendation: 'Schedule immediate bearing inspection' },
+            { id: 2, equipment: 'Conveyor Belt A', issue: 'motor overheating', risk: 72, priority: 'high', icon: '🟠', timeframe: '7 days', recommendation: 'Check motor cooling system' },
+            { id: 3, equipment: 'Pump Station B', issue: 'seal degradation', risk: 65, priority: 'high', icon: '🟠', timeframe: '10 days', recommendation: 'Order replacement seals' },
+            { id: 4, equipment: 'Generator #1', issue: 'fuel filter clog', risk: 45, priority: 'low', icon: '🟢', timeframe: '14 days', recommendation: 'Schedule routine filter replacement' }
+        ],
+        get filteredPredictions() {
+            if (this.filterBy === 'all') return this.predictions;
+            return this.predictions.filter(p => p.priority === this.filterBy);
+        },
+        get criticalCount() {
+            return this.predictions.filter(p => p.priority === 'critical').length;
+        },
+        selectPrediction(prediction) {
+            this.selectedPrediction = prediction;
+            console.log('Selected prediction:', prediction);
+        },
+        async createWorkOrder(prediction) {
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification(`Creating work order for ${prediction.equipment}...`, 'info');
+            }
+            // Simulate work order creation
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification(`Work order created for ${prediction.equipment}!`, 'success');
+            }
+        },
+        async generateNewPredictions() {
+            this.generating = true;
+            await new Promise(resolve => setTimeout(resolve, 2500));
+            // Add a new random prediction
+            const newPrediction = {
+                id: Date.now(),
+                equipment: `Equipment ${Math.floor(Math.random() * 100)}`,
+                issue: 'anomaly detected',
+                risk: Math.floor(Math.random() * 40) + 60,
+                priority: Math.random() > 0.5 ? 'high' : 'critical',
+                icon: Math.random() > 0.5 ? '🟠' : '🔴',
+                timeframe: `${Math.floor(Math.random() * 10) + 2} days`,
+                recommendation: 'AI-generated recommendation pending review'
+            };
+            this.predictions.unshift(newPrediction);
+            this.lastUpdated = new Date().toLocaleTimeString();
+            this.generating = false;
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification('New predictions generated!', 'success');
+            }
+        },
+        refreshPredictions() {
+            this.lastUpdated = new Date().toLocaleTimeString();
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification('Predictions refreshed!', 'info');
+            }
+        },
+        init() {
+            console.log('✅ predictiveAnalytics component initialized');
+        }
+    }));
+
+    // Operations Monitor Component (wraps store)
+    Alpine.data('operationsMonitor', () => ({
+        refreshing: false,
+        autoRefresh: true,
+        showActivityFeed: false,
+        highlightedMetric: null,
+        suggestionsIncrement: 5,
+        get liveMetrics() {
+            return Alpine.store('operationsMonitor')?.liveMetrics ?? { fleetHealth: 94.7, activeWorkOrders: 12, aiSuggestions: 47, efficiency: 89 };
+        },
+        get achievements() {
+            return Alpine.store('operationsMonitor')?.achievements ?? [
+                { id: 1, text: 'Prevented HVAC failure - saved $12,400', impact: '+$12.4K', positive: true },
+                { id: 2, text: 'Optimized technician routes - 23% faster', impact: '+23%', positive: true },
+                { id: 3, text: 'Auto-ordered 5 critical parts', impact: '5 parts', positive: true }
+            ];
+        },
+        get recentActivity() {
+            return Alpine.store('operationsMonitor')?.recentActivity ?? [
+                { time: '14:32', message: 'Work order #1234 completed', timestamp: Date.now() },
+                { time: '14:28', message: 'New prediction generated', timestamp: Date.now() }
+            ];
+        },
+        getMetricStyle(metric) {
+            if (this.highlightedMetric === metric) {
+                return 'color: var(--accent-color); transform: scale(1.1);';
+            }
+            return '';
+        },
+        getHealthStatus(health) {
+            if (health >= 90) return 'Excellent';
+            if (health >= 75) return 'Good';
+            if (health >= 50) return 'Fair';
+            return 'Needs Attention';
+        },
+        getWorkOrderStatus() {
+            const wo = this.liveMetrics.activeWorkOrders;
+            if (wo <= 5) return 'Light workload';
+            if (wo <= 15) return 'Normal workload';
+            return 'Heavy workload';
+        },
+        getEfficiencyTrend() {
+            return this.liveMetrics.efficiency >= 85 ? '↑ Trending up' : '→ Stable';
+        },
+        highlightMetric(metric) {
+            this.highlightedMetric = metric;
+        },
+        clearHighlight() {
+            this.highlightedMetric = null;
+        },
+        drillDown(metric) {
+            console.log('Drilling down into:', metric);
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification(`Opening ${metric} details...`, 'info');
+            }
+        },
+        async refreshMetrics() {
+            this.refreshing = true;
+            const store = Alpine.store('operationsMonitor');
+            if (store && store.refreshMetrics) {
+                await store.refreshMetrics();
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            this.refreshing = false;
+        },
+        toggleAutoRefresh() {
+            this.autoRefresh = !this.autoRefresh;
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification(`Auto-refresh ${this.autoRefresh ? 'enabled' : 'disabled'}`, 'info');
+            }
+        },
+        exportMetrics() {
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification('Exporting metrics to CSV...', 'info');
+            }
+        },
+        setAlerts() {
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification('Alert configuration coming soon!', 'info');
+            }
+        },
+        viewDetailedReport() {
+            if (typeof ModernComponents !== 'undefined') {
+                ModernComponents.showNotification('Opening detailed report...', 'info');
+            }
+        },
+        init() {
+            console.log('✅ operationsMonitor component initialized');
+        }
+    }));
+
+    // ========================================
     // 🎛️ User Preferences Store
     Alpine.store('userPreferences', {
         // Visual Effects Settings

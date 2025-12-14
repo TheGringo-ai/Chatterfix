@@ -72,6 +72,25 @@
                 </div>
             </div>
 
+            <!-- Chat Input Area -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-keyboard text-blue-500 mr-2"></i>
+                    Ask AI Assistant
+                </h4>
+                <div class="flex gap-2">
+                    <input type="text" id="ai-chat-input"
+                           placeholder="Type your question or command..."
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           onkeypress="if(event.key==='Enter') window.aiAssistantWidget?.processVoiceCommand(this.value)">
+                    <button id="ai-send-btn"
+                            onclick="window.aiAssistantWidget?.processVoiceCommand(document.getElementById('ai-chat-input').value)"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
             <!-- AI Response Area -->
             <div class="mb-4">
                 <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
@@ -408,7 +427,18 @@ class AIAssistantWidget {
     }
 
     async processVoiceCommand(command) {
-        console.log('🎤 Processing voice command:', command);
+        // Skip empty commands
+        if (!command || !command.trim()) {
+            return;
+        }
+
+        console.log('🎤 Processing command:', command);
+
+        // Clear the text input if it exists
+        const chatInput = document.getElementById('ai-chat-input');
+        if (chatInput) {
+            chatInput.value = '';
+        }
 
         this.updateVoiceStatus('processing', 'Processing...');
 

@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         :root {
@@ -763,5 +765,400 @@
 
     <!-- AI Assistant Widget with Microphone and Camera -->
     {% include 'ai_assistant_widget.html' %}
+
+    <!-- CEO Chat Interface -->
+    <div id="ceo-chat-widget" class="fixed bottom-6 left-6 z-[999998] hidden">
+        <!-- Chat Toggle Button -->
+        <div id="ceo-chat-toggle" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-full w-16 h-16 flex items-center justify-center cursor-pointer shadow-2xl transition-all duration-300 hover:scale-110 border-4 border-white relative">
+            <i class="fas fa-comments text-xl"></i>
+            <!-- Notification indicator -->
+            <div class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white hidden" id="chat-notification">!</div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div id="ceo-chat-panel" class="hidden absolute bottom-20 left-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-4rem)] overflow-hidden">
+            <!-- Chat Header -->
+            <div class="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-crown text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">CEO Command Chat</h3>
+                            <p class="text-sm opacity-90">AI Team Communication</p>
+                        </div>
+                    </div>
+                    <button id="ceo-chat-close" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div id="chat-messages" class="p-4 max-h-96 overflow-y-auto bg-gray-50 min-h-[300px]">
+                <!-- Welcome message -->
+                <div class="message ai-message mb-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-sm">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 shadow-sm max-w-[80%]">
+                            <div class="text-xs text-gray-500 mb-1">AI Team Lead • just now</div>
+                            <div class="text-gray-800">Welcome to the CEO Command Center! I'm here to help you manage your AI team platform. What would you like to accomplish today?</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="p-4 border-t border-gray-200 bg-white">
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Type your command or question..." 
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <button id="send-chat-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="flex space-x-2 mt-2">
+                    <button id="voice-chat-btn" class="text-gray-500 hover:text-purple-600 p-2 rounded-lg transition-colors" title="Voice command">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="attach-file-btn" class="text-gray-500 hover:text-purple-600 p-2 rounded-lg transition-colors" title="Attach file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button id="quick-commands-btn" class="text-gray-500 hover:text-purple-600 p-2 rounded-lg transition-colors" title="Quick commands">
+                        <i class="fas fa-bolt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CEO Chat Interface Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatWidget = document.getElementById('ceo-chat-widget');
+            const chatToggle = document.getElementById('ceo-chat-toggle');
+            const chatPanel = document.getElementById('ceo-chat-panel');
+            const chatClose = document.getElementById('ceo-chat-close');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-chat-btn');
+            const messagesContainer = document.getElementById('chat-messages');
+            const notification = document.getElementById('chat-notification');
+
+            // Show chat widget after page load
+            setTimeout(() => {
+                chatWidget.classList.remove('hidden');
+                // Show welcome notification
+                setTimeout(() => {
+                    notification.classList.remove('hidden');
+                    notification.classList.add('animate-pulse');
+                }, 2000);
+            }, 1000);
+
+            // Toggle chat panel
+            chatToggle.addEventListener('click', function() {
+                chatPanel.classList.toggle('hidden');
+                notification.classList.add('hidden');
+                notification.classList.remove('animate-pulse');
+                
+                if (!chatPanel.classList.contains('hidden')) {
+                    chatInput.focus();
+                }
+            });
+
+            // Close chat panel
+            chatClose.addEventListener('click', function() {
+                chatPanel.classList.add('hidden');
+            });
+
+            // Send message
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                // Add user message immediately
+                addMessage(message, 'user');
+                chatInput.value = '';
+
+                // Show typing indicator
+                showTypingIndicator();
+
+                // Send to backend API
+                fetch('/ceo/api/chat/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        user_id: 'ceo',
+                        session_id: 'default'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideTypingIndicator();
+                    if (data.status === 'success') {
+                        addMessage(data.ai_response, 'ai');
+                    } else {
+                        addMessage('Sorry, I encountered an error processing your message.', 'ai');
+                    }
+                })
+                .catch(error => {
+                    hideTypingIndicator();
+                    console.error('Chat API error:', error);
+                    addMessage('Sorry, I\'m having trouble connecting right now. Please try again.', 'ai');
+                });
+            }
+
+            // Send on button click
+            sendBtn.addEventListener('click', sendMessage);
+
+            // Send on Enter key
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Add message to chat
+            function addMessage(content, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}-message mb-4`;
+
+                const avatar = type === 'ai' ? 
+                    '<i class="fas fa-robot"></i>' : 
+                    '<i class="fas fa-user"></i>';
+                
+                const bgColor = type === 'ai' ? 
+                    'bg-gradient-to-r from-purple-500 to-pink-600' : 
+                    'bg-gradient-to-r from-blue-500 to-purple-600';
+
+                const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const sender = type === 'ai' ? 'AI Team Lead' : 'You';
+
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 ${bgColor} rounded-full flex items-center justify-center text-white text-sm">
+                            ${avatar}
+                        </div>
+                        <div class="bg-white rounded-lg p-3 shadow-sm max-w-[80%]">
+                            <div class="text-xs text-gray-500 mb-1">${sender} • ${timestamp}</div>
+                            <div class="text-gray-800">${content.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    </div>
+                `;
+
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Show typing indicator
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typing-indicator';
+                typingDiv.className = 'message ai-message mb-4';
+                typingDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-sm">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <div class="text-xs text-gray-500 mb-1">AI Team Lead • typing...</div>
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Hide typing indicator
+            function hideTypingIndicator() {
+                const typingDiv = document.getElementById('typing-indicator');
+                if (typingDiv) {
+                    typingDiv.remove();
+                }
+            }
+
+            // Quick commands functionality
+            document.getElementById('quick-commands-btn').addEventListener('click', function() {
+                const commands = [
+                    "Check platform status",
+                    "Deploy new application", 
+                    "View analytics dashboard",
+                    "AI team performance",
+                    "System health report",
+                    "Configure monitoring"
+                ];
+                
+                const randomCommand = commands[Math.floor(Math.random() * commands.length)];
+                chatInput.value = randomCommand;
+                chatInput.focus();
+            });
+
+            // Voice chat functionality
+            let recognition = null;
+            let isListening = false;
+            
+            document.getElementById('voice-chat-btn').addEventListener('click', function() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    alert('🎤 Voice recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+                    return;
+                }
+
+                if (isListening) {
+                    stopVoiceRecognition();
+                } else {
+                    startVoiceRecognition();
+                }
+            });
+
+            function startVoiceRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    document.getElementById('voice-chat-btn').classList.add('text-red-500');
+                    document.getElementById('voice-chat-btn').innerHTML = '<i class="fas fa-stop"></i>';
+                    addMessage('🎤 Listening... Speak your command now.', 'ai');
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    chatInput.value = transcript;
+                    addMessage(`🎤 You said: "${transcript}"`, 'ai');
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    addMessage('❌ Voice recognition error. Please try again.', 'ai');
+                };
+
+                recognition.onend = function() {
+                    stopVoiceRecognition();
+                };
+
+                recognition.start();
+            }
+
+            function stopVoiceRecognition() {
+                if (recognition) {
+                    recognition.stop();
+                }
+                isListening = false;
+                document.getElementById('voice-chat-btn').classList.remove('text-red-500');
+                document.getElementById('voice-chat-btn').innerHTML = '<i class="fas fa-microphone"></i>';
+            }
+
+            // File attachment functionality
+            document.getElementById('attach-file-btn').addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*,audio/*,video/*,application/pdf,text/*';
+                input.multiple = true;
+                
+                input.onchange = function(e) {
+                    const files = Array.from(e.target.files);
+                    handleFileAttachments(files);
+                };
+                
+                input.click();
+            });
+
+            function handleFileAttachments(files) {
+                files.forEach(file => {
+                    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                        addMessage(`❌ File "${file.name}" is too large. Maximum size is 10MB.`, 'ai');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const fileData = e.target.result;
+                        let message = `📎 Attached: ${file.name} (${formatFileSize(file.size)})`;
+                        
+                        if (file.type.startsWith('image/')) {
+                            message += '\n\n![Image](' + fileData + ')';
+                        } else if (file.type.startsWith('audio/')) {
+                            message += '\n\n🎵 Audio file attached';
+                        } else if (file.type.startsWith('video/')) {
+                            message += '\n\n🎥 Video file attached';
+                        }
+                        
+                        // Add file attachment message
+                        addMessage(message, 'user');
+                        
+                        // Send file to backend
+                        sendFileToBackend(file, fileData);
+                    };
+                    
+                    if (file.type.startsWith('text/') || file.type === 'application/pdf') {
+                        reader.readAsText(file);
+                    } else {
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            function sendFileToBackend(file, fileData) {
+                // Show typing indicator
+                showTypingIndicator();
+                
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('user_id', 'ceo');
+                formData.append('session_id', 'default');
+                
+                // Send to backend API
+                fetch('/ceo/api/chat/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideTypingIndicator();
+                    if (data.status === 'success') {
+                        addMessage(`✅ File "${file.name}" processed successfully. ${data.analysis || ''}`, 'ai');
+                    } else {
+                        addMessage(`❌ Failed to process file "${file.name}": ${data.message || 'Unknown error'}`, 'ai');
+                    }
+                })
+                .catch(error => {
+                    hideTypingIndicator();
+                    console.error('File upload error:', error);
+                    addMessage(`❌ Error uploading file "${file.name}". Please try again.`, 'ai');
+                });
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Auto-show chat after 10 seconds if no interaction
+            setTimeout(() => {
+                if (chatPanel.classList.contains('hidden')) {
+                    notification.classList.remove('hidden');
+                    notification.classList.add('animate-pulse');
+                }
+            }, 10000);
+        });
+    </script>
 </body>
 </html>

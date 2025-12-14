@@ -7,51 +7,51 @@
     /* Manager Pages - Consistent CMMS Styling */
     .container-fluid {
         background: transparent !important;
-        color: #fff !important;
+        color: var(--text-primary) !important;
         min-height: 100vh;
         padding: 2rem;
     }
     
     /* CMMS Card styling - glassmorphism */
     .card, .asset-card {
-        background: rgba(255, 255, 255, 0.15) !important;
+        background: var(--bg-card) !important;
         border-radius: 15px !important;
         padding: 2rem !important;
         backdrop-filter: blur(15px) !important;
         -webkit-backdrop-filter: blur(15px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border: var(--card-border) !important;
         margin-bottom: 2rem !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-        color: #fff !important;
+        box-shadow: var(--shadow-card) !important;
+        color: var(--text-primary) !important;
     }
     
     .card:hover, .asset-card:hover {
         transform: translateY(-5px) !important;
-        background: rgba(255, 255, 255, 0.25) !important;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        background: var(--bg-glass-hover) !important;
+        box-shadow: var(--shadow-glass) !important;
+        border-color: rgba(79, 172, 254, 0.3) !important;
     }
     
     .card-header {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-        color: #fff !important;
+        background: var(--bg-glass) !important;
+        border-bottom: var(--card-border) !important;
+        color: var(--text-primary) !important;
         border-radius: 15px 15px 0 0 !important;
     }
     
     .card-body {
         background: transparent !important;
-        color: #fff !important;
+        color: var(--text-primary) !important;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        color: #fff !important;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
+        color: var(--text-primary) !important;
+        text-shadow: none !important;
     }
     
     .text-muted {
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: var(--text-muted) !important;
     }
     .asset-health-score {
         width: 60px;

@@ -357,54 +357,20 @@
             </label>
         </div>
         
-        <!-- Voice Commands Section -->
+        <!-- AI Assistant Access -->
         <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem;">
             <div style="margin-bottom: 1rem; font-weight: bold; color: var(--text-accent);">
-                <i class="fas fa-microphone"></i> Voice Commands
+                <i class="fas fa-robot"></i> AI Assistant
             </div>
-            
-            <!-- Voice Control Toggle -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;" x-data="$store.voiceCommands">
-                <div>
-                    <div style="font-weight: 500;">Voice Feedback</div>
-                    <div style="font-size: 0.8rem; opacity: 0.7;">AI voice responses and confirmations</div>
-                </div>
-                <label class="toggle-switch" style="margin: 0;">
-                    <input type="checkbox" 
-                           x-model="voiceEnabled"
-                           @change="toggleVoiceEnabled()"
-                           style="display: none;">
-                    <span class="toggle-slider" 
-                          :class="voiceEnabled ? 'active' : ''"
-                          style="display: block; width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 12px; position: relative; cursor: pointer; transition: all 0.3s ease;">
-                        <span style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 10px; transition: all 0.3s ease; transform: translateX(0px);"
-                              :style="voiceEnabled ? 'transform: translateX(20px); background: var(--accent);' : ''"></span>
-                    </span>
-                </label>
-            </div>
-            
-            <!-- Voice Command Button -->
-            <div style="margin-bottom: 0.8rem;" x-data="$store.voiceCommands">
-                <button @click="toggleListening()" 
-                        :disabled="!isSupported"
-                        class="voice-command-btn glass-button"
-                        :class="isListening ? 'btn-danger' : 'btn-primary'"
-                        style="width: 100%; padding: 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;">
-                    <i class="fas" :class="isListening ? 'fa-stop' : 'fa-microphone'" 
-                       :style="isListening ? 'animation: voicePulse 1s infinite;' : ''"></i>
-                    <span x-text="isListening ? 'Stop Listening' : (isSupported ? 'Start Voice Commands' : 'Voice Not Supported')"></span>
-                </button>
-                
-                <!-- Voice Command Examples -->
-                <div x-show="!isListening" style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.7; text-align: center;">
-                    Try: "Create work order", "Go to dashboard", "Ask AI team"
-                </div>
-                
-                <!-- Last Command Display -->
-                <div x-show="lastCommand" style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.8; text-align: center; padding: 0.3rem; background: rgba(0,255,150,0.1); border-radius: 5px;">
-                    Last: "<span x-text="lastCommand"></span>" 
-                    <span x-text="confidence ? '(' + (confidence * 100).toFixed(0) + '%)' : ''"></span>
-                </div>
+
+            <button onclick="document.getElementById('ai-widget-toggle')?.click()"
+                    class="glass-button btn btn-primary"
+                    style="width: 100%; padding: 12px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;">
+                <i class="fas fa-microphone"></i>
+                <span>Open AI Assistant</span>
+            </button>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.7; text-align: center;">
+                Voice commands, image recognition & quick actions
             </div>
         </div>
         

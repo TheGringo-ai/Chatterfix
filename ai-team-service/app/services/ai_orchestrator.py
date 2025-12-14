@@ -59,26 +59,40 @@ class AIOrchestrator:
         required_agents: Optional[List[str]] = None,
         max_iterations: int = 3,
         project_context: str = "ChatterFix",
-        stream_response: bool = False
+        stream_response: bool = False,
+        fast_mode: bool = False
     ) -> CollaborationResult:
-        """Execute collaborative task using the AI team"""
-        
+        """
+        Execute collaborative task using the AI team
+
+        Args:
+            prompt: Task prompt
+            context: Additional context
+            required_agents: Specific agents to use
+            max_iterations: Max collaboration rounds
+            project_context: Project name
+            stream_response: Enable streaming (not yet implemented)
+            fast_mode: Skip refinement for ~50% faster response
+        """
+
         # Generate unique task ID
         self.task_counter += 1
         task_id = f"task-{int(time.time())}-{self.task_counter}"
-        
-        logger.info(f"🚀 Starting collaborative task {task_id}")
+
+        mode_indicator = "⚡ FAST" if fast_mode else "🔄 FULL"
+        logger.info(f"🚀 Starting {mode_indicator} collaborative task {task_id}")
         logger.info(f"📝 Prompt: {prompt[:100]}...")
-        
+
         try:
             # Store task in active tasks
             self.active_tasks[task_id] = {
                 "prompt": prompt,
                 "context": context,
                 "status": "running",
-                "start_time": time.time()
+                "start_time": time.time(),
+                "fast_mode": fast_mode
             }
-            
+
             # Execute the collaborative task
             result = await self.base_orchestrator.execute_collaborative_task(
                 task_id=task_id,
@@ -86,7 +100,8 @@ class AIOrchestrator:
                 context=context,
                 required_agents=required_agents,
                 max_iterations=max_iterations,
-                project_context=project_context
+                project_context=project_context,
+                fast_mode=fast_mode
             )
             
             # Update task status

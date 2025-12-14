@@ -181,32 +181,32 @@ class GeminiAgent(AIAgent):
         return bool(os.getenv('GEMINI_API_KEY'))
 
 class GrokAgent(AIAgent):
-    """Grok AI Agent using xAI API"""
-    
+    """Grok AI Agent using xAI API - ASYNC OPTIMIZED"""
+
     async def generate_response(self, prompt: str, context: str = "") -> str:
         try:
             import os
-            import requests
-            
+            import httpx  # Use async httpx instead of sync requests
+
             api_key = os.getenv('XAI_API_KEY')
             if not api_key:
                 return f"[{self.config.name}] Error: XAI_API_KEY not configured"
-            
+
             # Use the specific model name from config, default to grok-3
             model_name = self.config.model_name or "grok-3"
-            
+
             url = 'https://api.x.ai/v1/chat/completions'
             headers = {
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json'
             }
-            
+
             # Customize system prompt based on the model
             if "code" in model_name.lower():
                 system_prompt = "You are a coding specialist AI. Focus on clean, efficient code solutions."
             else:
                 system_prompt = "You are a reasoning AI. Provide thoughtful analysis and insights."
-            
+
             data = {
                 'messages': [
                     {'role': 'system', 'content': system_prompt},
@@ -217,9 +217,11 @@ class GrokAgent(AIAgent):
                 'temperature': self.config.temperature,
                 'max_tokens': min(self.config.max_tokens, 4000)
             }
-            
-            response = requests.post(url, headers=headers, json=data, timeout=30)
-            
+
+            # Use async httpx for non-blocking requests
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, headers=headers, json=data)
+
             if response.status_code == 200:
                 result = response.json()
                 content = result['choices'][0]['message']['content']
@@ -230,11 +232,11 @@ class GrokAgent(AIAgent):
                 error_msg = f"API Error {response.status_code}: {response.text}"
                 logger.error(f"Grok agent error: {error_msg}")
                 return f"[{self.config.name}] Error: {error_msg}"
-            
+
         except Exception as e:
             logger.error(f"Grok agent error: {e}")
             return f"[{self.config.name}] Error: {str(e)}"
-    
+
     async def is_available(self) -> bool:
         import os
         return bool(os.getenv('XAI_API_KEY'))
@@ -290,14 +292,26 @@ class AutogenOrchestrator:
                 
             self.register_agent(agent)
     
-    async def execute_collaborative_task(self, 
+    async def execute_collaborative_task(self,
                                        task_id: str,
-                                       prompt: str, 
+                                       prompt: str,
                                        context: str = "",
                                        required_agents: Optional[List[str]] = None,
                                        max_iterations: int = 3,
-                                       project_context: str = "ChatterFix") -> CollaborationResult:
-        """Execute a task using multiple AI agents in collaboration WITH MEMORY INTEGRATION"""
+                                       project_context: str = "ChatterFix",
+                                       fast_mode: bool = False) -> CollaborationResult:
+        """
+        Execute a task using multiple AI agents in collaboration WITH MEMORY INTEGRATION
+
+        Args:
+            task_id: Unique task identifier
+            prompt: The task prompt
+            context: Additional context
+            required_agents: Specific agents to use (None = all available)
+            max_iterations: Max collaboration rounds (default 3)
+            project_context: Project name for memory tracking
+            fast_mode: Skip refinement phase for faster responses (~50% faster)
+        """
         
         start_time = time.time()
         collaboration_log = []
@@ -346,45 +360,94 @@ class AutogenOrchestrator:
         
         collaboration_log.append(f"Starting collaboration with {len(active_agents)} agents")
         
-        # Phase 1: Initial responses from all agents
-        initial_responses = []
-        for agent in active_agents:
-            if await agent.is_available():
-                response = await agent.generate_response(prompt, context)
-                initial_responses.append({
-                    "agent": agent.config.name,
-                    "role": agent.config.role,
-                    "response": response,
-                    "model_type": agent.config.model_type.value
-                })
-                collaboration_log.append(f"{agent.config.name}: Generated initial response")
-        
-        agent_responses.extend(initial_responses)
-        
-        # Phase 2: Cross-agent review and refinement
-        if len(initial_responses) > 1 and max_iterations > 1:
-            collaboration_log.append("Starting cross-agent collaboration phase")
-            
-            # Create summary of all responses for review
-            summary = "Previous responses from the team:\n"
-            for resp in initial_responses:
-                summary += f"\n{resp['agent']} ({resp['role']}): {resp['response'][:200]}...\n"
-            
-            refinement_prompt = f"Review the team responses and provide your refined analysis:\n{summary}\n\nOriginal task: {prompt}"
-            
-            refined_responses = []
-            for agent in active_agents:
+        # Phase 1: Initial responses from all agents - PARALLEL EXECUTION
+        collaboration_log.append("🚀 Phase 1: Gathering initial responses in PARALLEL")
+
+        async def get_agent_response(agent):
+            """Get response from a single agent with timeout"""
+            try:
                 if await agent.is_available():
-                    response = await agent.generate_response(refinement_prompt, context)
-                    refined_responses.append({
+                    # Add timeout per agent to prevent slowdowns
+                    response = await asyncio.wait_for(
+                        agent.generate_response(prompt, context),
+                        timeout=30.0  # 30 second timeout per agent
+                    )
+                    return {
                         "agent": agent.config.name,
                         "role": agent.config.role,
                         "response": response,
                         "model_type": agent.config.model_type.value,
-                        "phase": "refinement"
-                    })
-                    collaboration_log.append(f"{agent.config.name}: Provided refinement")
-            
+                        "timestamp": time.time()
+                    }
+            except asyncio.TimeoutError:
+                logger.warning(f"⏱️ Agent {agent.config.name} timed out")
+                return {
+                    "agent": agent.config.name,
+                    "role": agent.config.role,
+                    "response": f"[{agent.config.name}] Response timed out",
+                    "model_type": agent.config.model_type.value,
+                    "timeout": True
+                }
+            except Exception as e:
+                logger.error(f"Agent {agent.config.name} error: {e}")
+                return None
+            return None
+
+        # Execute ALL agents in parallel
+        parallel_tasks = [get_agent_response(agent) for agent in active_agents]
+        parallel_results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
+
+        initial_responses = [r for r in parallel_results if r is not None and not isinstance(r, Exception)]
+        collaboration_log.append(f"✅ Received {len(initial_responses)}/{len(active_agents)} responses in parallel")
+
+        agent_responses.extend(initial_responses)
+        
+        # Phase 2: Cross-agent review and refinement - PARALLEL EXECUTION
+        # Skip refinement in fast_mode for ~50% faster responses
+        if fast_mode:
+            collaboration_log.append("⚡ FAST MODE: Skipping refinement phase for speed")
+        elif len(initial_responses) > 1 and max_iterations > 1:
+            collaboration_log.append("🚀 Phase 2: Cross-agent refinement in PARALLEL")
+
+            # Create summary of all responses for review
+            summary = "Previous responses from the team:\n"
+            for resp in initial_responses:
+                response_preview = resp['response'][:200] if len(resp['response']) > 200 else resp['response']
+                summary += f"\n{resp['agent']} ({resp['role']}): {response_preview}...\n"
+
+            refinement_prompt = f"Review the team responses and provide your refined analysis:\n{summary}\n\nOriginal task: {prompt}"
+
+            async def get_refinement(agent):
+                """Get refinement response with timeout"""
+                try:
+                    if await agent.is_available():
+                        response = await asyncio.wait_for(
+                            agent.generate_response(refinement_prompt, context),
+                            timeout=25.0  # Slightly shorter timeout for refinement
+                        )
+                        return {
+                            "agent": agent.config.name,
+                            "role": agent.config.role,
+                            "response": response,
+                            "model_type": agent.config.model_type.value,
+                            "phase": "refinement",
+                            "timestamp": time.time()
+                        }
+                except asyncio.TimeoutError:
+                    logger.warning(f"⏱️ Refinement timeout for {agent.config.name}")
+                    return None
+                except Exception as e:
+                    logger.error(f"Refinement error for {agent.config.name}: {e}")
+                    return None
+                return None
+
+            # Execute refinements in parallel
+            refinement_tasks = [get_refinement(agent) for agent in active_agents]
+            refinement_results = await asyncio.gather(*refinement_tasks, return_exceptions=True)
+
+            refined_responses = [r for r in refinement_results if r is not None and not isinstance(r, Exception)]
+            collaboration_log.append(f"✅ Received {len(refined_responses)} refinements in parallel")
+
             agent_responses.extend(refined_responses)
         
         # Phase 3: Synthesis and final answer

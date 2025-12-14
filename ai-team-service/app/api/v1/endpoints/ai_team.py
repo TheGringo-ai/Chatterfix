@@ -38,14 +38,16 @@ async def execute_collaborative_task(
 ):
     """Execute a collaborative AI task"""
     try:
-        logger.info(f"📝 Executing task: {request.prompt[:100]}...")
-        
+        mode = "⚡ FAST" if request.fast_mode else "🔄 FULL"
+        logger.info(f"📝 Executing {mode} task: {request.prompt[:100]}...")
+
         result = await orchestrator.execute_collaborative_task(
             prompt=request.prompt,
             context=request.context or "",
             required_agents=request.required_agents,
             max_iterations=request.max_iterations or 3,
-            project_context=request.project_context or "ChatterFix"
+            project_context=request.project_context or "ChatterFix",
+            fast_mode=request.fast_mode or False
         )
         
         # Convert result to response format

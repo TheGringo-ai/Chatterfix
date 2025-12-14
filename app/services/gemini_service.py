@@ -8,12 +8,20 @@ from typing import Any, Dict, Optional
 # Import Google Generative AI with error handling
 try:
     import google.generativeai as genai
+    from google.oauth2 import service_account
 
     GENAI_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Google Generative AI not available: {e}")
     genai = None
     GENAI_AVAILABLE = False
+
+# Service account configuration - check multiple env vars
+GEMINI_SERVICE_ACCOUNT_PATH = (
+    os.getenv("GEMINI_SERVICE_ACCOUNT_PATH") or
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or
+    "secrets/fredfix-045ebcc1422c.json"
+)
 
 # Import AI Memory Service for capturing interactions
 try:
@@ -32,14 +40,43 @@ class GeminiService:
             logger.info("🤖 Gemini AI not available - service disabled")
             return
 
-        # We no longer initialize a global model here because keys can be user-specific
-        self.default_api_key = os.getenv("GEMINI_API_KEY")
-        if self.default_api_key:
+        self.credentials = None
+        self.default_api_key = None
+        self.using_service_account = False
+
+        # Try service account first (more secure)
+        # Set GOOGLE_APPLICATION_CREDENTIALS for ADC
+        if os.path.exists(GEMINI_SERVICE_ACCOUNT_PATH):
             try:
-                genai.configure(api_key=self.default_api_key)
-                logger.info("✨ Gemini AI initialized with default system key")
+                # Set environment variable for Application Default Credentials
+                abs_path = os.path.abspath(GEMINI_SERVICE_ACCOUNT_PATH)
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = abs_path
+
+                # Load credentials for verification
+                self.credentials = service_account.Credentials.from_service_account_file(
+                    abs_path,
+                    scopes=['https://www.googleapis.com/auth/generative-language',
+                            'https://www.googleapis.com/auth/cloud-platform']
+                )
+
+                # Configure genai with credentials
+                genai.configure(credentials=self.credentials)
+                self.using_service_account = True
+                logger.info(f"✨ Gemini AI initialized with service account: {GEMINI_SERVICE_ACCOUNT_PATH}")
             except Exception as e:
-                logger.error(f"❌ Failed to initialize Gemini AI with default key: {e}")
+                logger.error(f"❌ Failed to load service account: {e}")
+                self.credentials = None
+                self.using_service_account = False
+
+        # Fallback to API key if service account not available
+        if not self.using_service_account:
+            self.default_api_key = os.getenv("GEMINI_API_KEY")
+            if self.default_api_key:
+                try:
+                    genai.configure(api_key=self.default_api_key)
+                    logger.info("✨ Gemini AI initialized with API key (fallback)")
+                except Exception as e:
+                    logger.error(f"❌ Failed to initialize Gemini AI with API key: {e}")
 
     def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
         """
@@ -55,26 +92,32 @@ class GeminiService:
         self, user_id: Optional[int] = None
     ) -> Optional[genai.GenerativeModel]:
         """Get a configured model instance for the user"""
+        # If using service account, it's already configured
+        if self.using_service_account:
+            return genai.GenerativeModel("gemini-2.0-flash")
+
+        # Fallback to API key
         api_key = self._get_api_key(user_id)
         if not api_key:
             return None
 
         # Configure genai with the specific key
-        # Note: This changes the global configuration for the library.
-        # In a high-concurrency async environment, this could be race-condition prone if different keys are used simultaneously.
-        # However, for this implementation scope, it's acceptable. A more robust solution would use client instances if supported.
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-2.5-flash")
+        return genai.GenerativeModel("gemini-2.0-flash")
 
     def _get_vision_model(
         self, user_id: Optional[int] = None
     ) -> Optional[genai.GenerativeModel]:
         """Get a configured vision model instance for the user"""
+        # If using service account, it's already configured
+        if self.using_service_account:
+            return genai.GenerativeModel("gemini-2.0-flash")
+
         api_key = self._get_api_key(user_id)
         if not api_key:
             return None
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-2.5-flash")
+        return genai.GenerativeModel("gemini-2.0-flash")
 
     async def generate_response(
         self, prompt: str, context: str = "", user_id: Optional[int] = None

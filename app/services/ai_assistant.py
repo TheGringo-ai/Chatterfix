@@ -63,7 +63,8 @@ class ChatterFixAIClient:
         context: str = "",
         user_id: int = None,
         context_type: str = "general",
-        force_team: bool = False
+        force_team: bool = False,
+        fast_mode: bool = False
     ) -> str:
         """
         Process a user message and return an AI response
@@ -79,6 +80,7 @@ class ChatterFixAIClient:
             user_id: User ID for personalization
             context_type: Type of request for routing
             force_team: Force full AI team collaboration
+            fast_mode: Skip refinement for faster responses (~50% faster)
 
         Returns:
             AI response string
@@ -92,7 +94,8 @@ class ChatterFixAIClient:
                 context=context,
                 context_type=context_type,
                 user_id=user_id,
-                force_team=force_team
+                force_team=force_team,
+                fast_mode=fast_mode
             )
 
             if result.get("success"):
@@ -114,10 +117,18 @@ class ChatterFixAIClient:
         message: str,
         context: str = "",
         user_id: int = None,
-        context_type: str = "general"
+        context_type: str = "general",
+        fast_mode: bool = False
     ) -> dict:
         """
         Force full AI team processing and return detailed result
+
+        Args:
+            message: User message
+            context: Additional context
+            user_id: User ID
+            context_type: Type of request
+            fast_mode: Skip refinement for faster responses (~50% faster)
 
         Returns full response dict with model info, complexity, etc.
         """
@@ -129,7 +140,8 @@ class ChatterFixAIClient:
                 context=context,
                 context_type=context_type,
                 user_id=user_id,
-                force_team=True
+                force_team=True,
+                fast_mode=fast_mode
             )
 
         # Fallback

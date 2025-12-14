@@ -63,18 +63,31 @@ class AITeamHTTPClient:
         context: str = "",
         required_agents: Optional[List[str]] = None,
         max_iterations: int = 3,
-        project_context: str = "ChatterFix"
+        project_context: str = "ChatterFix",
+        fast_mode: bool = False
     ) -> Dict[str, Any]:
-        """Execute collaborative AI task via HTTP API"""
+        """
+        Execute collaborative AI task via HTTP API
+
+        Args:
+            prompt: Task prompt
+            context: Additional context
+            required_agents: Specific agents to use (None = all)
+            max_iterations: Max collaboration rounds
+            project_context: Project name
+            fast_mode: Skip refinement phase for ~50% faster responses
+        """
         try:
-            logger.info(f"🚀 Executing AI team task: {prompt[:100]}...")
-            
+            mode = "⚡ FAST" if fast_mode else "🔄 FULL"
+            logger.info(f"🚀 Executing {mode} AI team task: {prompt[:100]}...")
+
             request_data = {
                 "prompt": prompt,
                 "context": context,
                 "required_agents": required_agents,
                 "max_iterations": max_iterations,
-                "project_context": project_context
+                "project_context": project_context,
+                "fast_mode": fast_mode
             }
             
             response = await self.client.post(
@@ -124,7 +137,8 @@ class AITeamHTTPClient:
         context: str = "",
         required_agents: Optional[List[str]] = None,
         max_iterations: int = 3,
-        project_context: str = "ChatterFix"
+        project_context: str = "ChatterFix",
+        fast_mode: bool = False
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Stream collaborative AI task responses"""
         try:
@@ -133,7 +147,8 @@ class AITeamHTTPClient:
                 "context": context,
                 "required_agents": required_agents,
                 "max_iterations": max_iterations,
-                "project_context": project_context
+                "project_context": project_context,
+                "fast_mode": fast_mode
             }
             
             async with self.client.stream(
@@ -258,16 +273,28 @@ async def execute_ai_team_task(
     context: str = "",
     required_agents: Optional[List[str]] = None,
     max_iterations: int = 3,
-    project_context: str = "ChatterFix"
+    project_context: str = "ChatterFix",
+    fast_mode: bool = False
 ) -> Dict[str, Any]:
-    """Convenience function to execute AI team task"""
+    """
+    Convenience function to execute AI team task
+
+    Args:
+        prompt: Task prompt
+        context: Additional context
+        required_agents: Specific agents to use
+        max_iterations: Max collaboration rounds
+        project_context: Project name
+        fast_mode: Skip refinement for faster responses (~50% faster)
+    """
     client = await get_ai_team_client()
     return await client.execute_collaborative_task(
         prompt=prompt,
         context=context,
         required_agents=required_agents,
         max_iterations=max_iterations,
-        project_context=project_context
+        project_context=project_context,
+        fast_mode=fast_mode
     )
 
 async def check_ai_team_health() -> bool:

@@ -39,6 +39,7 @@ class ChatRequest(BaseModel):
     user_id: int = 1
     context_type: str = "general"  # general, equipment_diagnosis, troubleshooting, etc.
     force_team: bool = False  # Force full AI team collaboration
+    fast_mode: bool = False  # Skip AI team refinement for ~50% faster responses
 
 
 @router.post("/chat")
@@ -49,7 +50,9 @@ async def chat(request: ChatRequest):
     Simple queries: Fast Gemini response (< 2 seconds)
     Complex tasks: Full AI team collaboration (6 models)
 
-    Set force_team=true to always use the full AI team.
+    Options:
+    - force_team=true: Always use the full AI team
+    - fast_mode=true: Skip AI team refinement for ~50% faster responses
     """
     try:
         # Use smart routing via updated process_message
@@ -58,7 +61,8 @@ async def chat(request: ChatRequest):
             context=request.context,
             user_id=request.user_id,
             context_type=request.context_type,
-            force_team=request.force_team
+            force_team=request.force_team,
+            fast_mode=request.fast_mode
         )
         return JSONResponse({"response": response})
     except Exception as e:
@@ -74,13 +78,17 @@ async def chat_with_team(request: ChatRequest):
 
     Returns detailed response with model info, complexity analysis, etc.
     Use this for complex diagnostics, troubleshooting, and analysis tasks.
+
+    Options:
+    - fast_mode=true: Skip refinement phase for ~50% faster responses
     """
     try:
         result = await chatterfix_ai.process_with_team(
             message=request.message,
             context=request.context,
             user_id=request.user_id,
-            context_type=request.context_type
+            context_type=request.context_type,
+            fast_mode=request.fast_mode
         )
         return JSONResponse(result)
     except Exception as e:

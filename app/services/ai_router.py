@@ -466,7 +466,8 @@ class AIRouter:
         context_type: str = "general",
         user_id: Optional[int] = None,
         force_team: bool = False,
-        use_cache: bool = True
+        use_cache: bool = True,
+        fast_mode: bool = False
     ) -> Dict[str, Any]:
         """
         Route a request to the appropriate AI model(s)
@@ -478,6 +479,7 @@ class AIRouter:
             user_id: User ID for personalization
             force_team: Force use of full AI team
             use_cache: Whether to use response caching (default True)
+            fast_mode: Skip AI team refinement for ~50% faster responses
 
         Returns:
             Response dict with 'response', 'model_used', 'complexity', 'confidence', etc.
@@ -552,8 +554,8 @@ class AIRouter:
             else:  # COMPLEX
                 # Use full AI team collaboration
                 if team_available:
-                    response = await self._route_to_team(message, context, context_type)
-                    model_used = "full-ai-team"
+                    response = await self._route_to_team(message, context, context_type, fast_mode=fast_mode)
+                    model_used = "full-ai-team" + (" (fast)" if fast_mode else "")
                 else:
                     # Fallback to Gemini with enhanced prompt
                     enhanced_context = f"[COMPLEX TASK - Provide thorough analysis]\n{context}"
@@ -669,15 +671,16 @@ Be concise, professional, and action-oriented. Prioritize safety.
         return await gemini_service.generate_response(message, cmms_context, user_id)
 
     async def _route_to_specialists(self, message: str, context: str, specialists: List[str]) -> str:
-        """Route to specific specialist agents"""
-        logger.info(f"🎯 Routing to specialists: {specialists}")
+        """Route to specific specialist agents - uses FAST MODE for quick responses"""
+        logger.info(f"🎯 Routing to specialists (fast mode): {specialists}")
 
         result = await execute_ai_team_task(
             prompt=message,
             context=f"ChatterFix CMMS Context:\n{context}",
             required_agents=specialists,
             max_iterations=2,  # Quick specialist response
-            project_context="ChatterFix"
+            project_context="ChatterFix",
+            fast_mode=True  # Skip refinement for faster specialist responses
         )
 
         if result.get("success"):
@@ -686,9 +689,18 @@ Be concise, professional, and action-oriented. Prioritize safety.
             # Fallback
             return await self._route_to_gemini(message, context, None)
 
-    async def _route_to_team(self, message: str, context: str, context_type: str) -> str:
-        """Route to full AI team for complex collaborative task"""
-        logger.info("🤖 Routing to FULL AI TEAM for complex task")
+    async def _route_to_team(self, message: str, context: str, context_type: str, fast_mode: bool = False) -> str:
+        """
+        Route to full AI team for complex collaborative task
+
+        Args:
+            message: User message
+            context: Additional context
+            context_type: Type of task
+            fast_mode: If True, skip refinement for faster response (~50% faster)
+        """
+        mode = "⚡ FAST" if fast_mode else "🔄 FULL"
+        logger.info(f"🤖 Routing to {mode} AI TEAM for complex task")
 
         enhanced_prompt = f"""
 [ChatterFix CMMS - Complex Task Analysis Required]
@@ -712,8 +724,9 @@ Collaborate as a team to provide the best possible guidance.
             prompt=enhanced_prompt,
             context=context,
             required_agents=None,  # Use all available agents
-            max_iterations=3,  # Allow thorough collaboration
-            project_context="ChatterFix"
+            max_iterations=2 if fast_mode else 3,  # Fewer iterations in fast mode
+            project_context="ChatterFix",
+            fast_mode=fast_mode
         )
 
         if result.get("success"):
@@ -738,13 +751,25 @@ async def smart_ai_response(
     context: str = "",
     context_type: str = "general",
     user_id: Optional[int] = None,
-    force_team: bool = False
+    force_team: bool = False,
+    fast_mode: bool = False
 ) -> Dict[str, Any]:
-    """Convenience function to get smart AI response"""
+    """
+    Convenience function to get smart AI response
+
+    Args:
+        message: User message
+        context: Additional context
+        context_type: Type of request
+        user_id: User ID
+        force_team: Force full AI team collaboration
+        fast_mode: Skip refinement for faster response (~50% faster)
+    """
     return await ai_router.route_request(
         message=message,
         context=context,
         context_type=context_type,
         user_id=user_id,
-        force_team=force_team
+        force_team=force_team,
+        fast_mode=fast_mode
     )

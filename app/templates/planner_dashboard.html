@@ -365,82 +365,86 @@
         color: var(--text-secondary) !important;
     }
     
-    /* FullCalendar Customizations - Modern Glass Morphism Design */
+    /* FullCalendar Customizations - Theme-Aware Design */
     .fc {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+        background: var(--bg-card) !important;
         backdrop-filter: blur(15px) !important;
         -webkit-backdrop-filter: blur(15px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid var(--border-glass) !important;
         border-radius: 16px !important;
         padding: 20px !important;
         font-family: "Outfit", "Segoe UI", sans-serif !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
     }
-    
+
     .fc-theme-standard .fc-scrollgrid {
-        border: 1px solid rgba(134, 142, 150, 0.2) !important;
-        background: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid var(--border-glass) !important;
+        background: transparent !important;
         border-radius: 12px !important;
         overflow: hidden !important;
     }
-    
+
     .fc-theme-standard td, .fc-theme-standard th {
-        border-color: rgba(134, 142, 150, 0.15) !important;
+        border-color: var(--border-glass) !important;
         background: transparent !important;
         transition: background-color 0.3s ease !important;
     }
-    
+
     .fc-theme-standard td:hover {
-        background: rgba(102, 126, 234, 0.05) !important;
+        background: rgba(102, 126, 234, 0.1) !important;
     }
-    
+
     .fc-theme-standard .fc-popover {
-        background: rgba(30, 30, 47, 0.95) !important;
+        background: var(--bg-card) !important;
         backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid var(--border-glass) !important;
         border-radius: 12px !important;
-        color: #ffffff !important;
+        color: var(--text-primary) !important;
         font-family: "Outfit", sans-serif !important;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
     }
-    
+
     .fc-daygrid-day {
         background: transparent !important;
-        color: #e2e8f0 !important;
+        color: var(--text-primary) !important;
         position: relative !important;
     }
-    
+
     .fc-day-today {
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
         border: 2px solid rgba(102, 126, 234, 0.3) !important;
         border-radius: 8px !important;
     }
-    
+
     .fc-col-header-cell {
-        background: linear-gradient(135deg, rgba(51, 65, 85, 0.8) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
-        color: #f1f5f9 !important;
+        background: var(--bg-glass) !important;
+        color: var(--text-primary) !important;
         font-weight: 700 !important;
         font-size: 0.9rem !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
         padding: 12px 8px !important;
     }
-    
+
+    .fc-col-header-cell-cushion {
+        color: var(--text-primary) !important;
+    }
+
     .fc-daygrid-day-number {
-        color: #cbd5e1 !important;
+        color: var(--text-primary) !important;
         font-weight: 600 !important;
         font-size: 0.95rem !important;
         padding: 6px !important;
         border-radius: 6px !important;
         transition: all 0.3s ease !important;
     }
-    
+
     .fc-daygrid-day-number:hover {
         background: rgba(102, 126, 234, 0.2) !important;
-        color: #ffffff !important;
+        color: var(--text-primary) !important;
         transform: scale(1.1) !important;
     }
-    
+
     .fc-button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         border: none !important;
@@ -452,26 +456,25 @@
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
     }
-    
+
     .fc-button:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
         transform: translateY(-2px) !important;
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
     }
-    
+
     .fc-button:disabled {
         background: rgba(100, 116, 139, 0.3) !important;
         color: rgba(148, 163, 184, 0.6) !important;
         box-shadow: none !important;
         transform: none !important;
     }
-    
+
     .fc-toolbar-title {
-        color: #f1f5f9 !important;
+        color: var(--text-primary) !important;
         font-family: "Outfit", sans-serif !important;
         font-weight: 700 !important;
         font-size: 1.5rem !important;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
     }
 
     .fc-event {
@@ -486,7 +489,7 @@
         transition: all 0.3s ease !important;
         cursor: pointer !important;
     }
-    
+
     .fc-event:hover {
         transform: translateY(-1px) !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
@@ -498,25 +501,60 @@
         color: #ffffff !important;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
     }
-    
+
     /* Weekend styling */
     .fc-day-sat, .fc-day-sun {
         background: rgba(148, 163, 184, 0.05) !important;
     }
-    
+
+    /* Additional theme-aware calendar elements */
+    .fc-daygrid-day-frame {
+        color: var(--text-primary) !important;
+    }
+
+    .fc-daygrid-day-events {
+        color: var(--text-primary) !important;
+    }
+
+    .fc-daygrid-more-link {
+        color: var(--accent-color) !important;
+    }
+
+    .fc-timegrid-slot-label {
+        color: var(--text-secondary) !important;
+    }
+
+    .fc-list-day-cushion {
+        background: var(--bg-glass) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .fc-list-event-title {
+        color: var(--text-primary) !important;
+    }
+
+    /* FullCalendar additional text elements */
+    .fc .fc-toolbar {
+        color: var(--text-primary) !important;
+    }
+
+    .fc .fc-daygrid-event-harness {
+        color: var(--text-primary) !important;
+    }
+
     /* Event color variations for different types */
     .fc-event.maintenance {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
     }
-    
+
     .fc-event.urgent {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
     }
-    
+
     .fc-event.scheduled {
         background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%) !important;
     }
-    
+
     .fc-event.inspection {
         background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
         color: #333333 !important;

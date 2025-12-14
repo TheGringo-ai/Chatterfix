@@ -793,3 +793,138 @@ def _generate_voice_feedback(transcription_result: dict, execution_result: dict)
         return "Equipment inspection logged."
 
     return f"Command processed: {transcription_result['command']}"
+
+
+# ============ VOICE/VISION MEMORY ENDPOINTS ============
+# Learning analytics from voice commands and vision analysis
+
+# Import Voice/Vision Memory service
+try:
+    from app.services.voice_vision_memory import get_voice_vision_memory
+    VOICE_VISION_MEMORY_AVAILABLE = True
+except ImportError:
+    VOICE_VISION_MEMORY_AVAILABLE = False
+
+
+@router.get("/learning/voice-analytics")
+async def get_voice_analytics(technician_id: str = None, days: int = 30):
+    """
+    Get analytics about voice command usage and learning
+
+    Returns success rates, command distribution, and noise levels.
+    """
+    if not VOICE_VISION_MEMORY_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Voice/Vision memory service not available"
+        })
+
+    try:
+        memory = get_voice_vision_memory()
+        analytics = await memory.get_voice_analytics(technician_id, days)
+
+        return JSONResponse({
+            "success": True,
+            **analytics
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/learning/suggestions/{technician_id}")
+async def get_command_suggestions(technician_id: str, context: str = ""):
+    """
+    Get personalized command suggestions based on technician history
+
+    Returns most-used commands and context-aware suggestions.
+    """
+    if not VOICE_VISION_MEMORY_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "suggestions": []
+        })
+
+    try:
+        memory = get_voice_vision_memory()
+        suggestions = await memory.get_command_suggestions(technician_id, context)
+
+        return JSONResponse({
+            "success": True,
+            "technician_id": technician_id,
+            "suggestions": suggestions
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/learning/technician/{technician_id}")
+async def get_technician_profile(technician_id: str):
+    """
+    Get technician profile with learned patterns
+
+    Returns command history, success rates, and preferences.
+    """
+    if not VOICE_VISION_MEMORY_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Voice/Vision memory service not available"
+        })
+
+    try:
+        memory = get_voice_vision_memory()
+        profile = await memory.get_technician_profile(technician_id)
+
+        if profile:
+            return JSONResponse({
+                "success": True,
+                "profile": profile
+            })
+        else:
+            return JSONResponse({
+                "success": False,
+                "error": "Technician not found"
+            }, status_code=404)
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/learning/equipment/{equipment_type}")
+async def get_equipment_learning(equipment_type: str):
+    """
+    Get learned data about equipment for better recognition
+
+    Returns recognition hints, common issues, and condition trends.
+    """
+    if not VOICE_VISION_MEMORY_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Voice/Vision memory service not available"
+        })
+
+    try:
+        memory = get_voice_vision_memory()
+        data = await memory.get_equipment_recognition_data(equipment_type)
+
+        return JSONResponse({
+            "success": True,
+            "equipment_type": equipment_type,
+            "learning_data": data
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)

@@ -37,6 +37,16 @@ from app.core.db_adapter import get_db_adapter
 from app.services.gemini_service import GeminiService
 from app.services.openai_service import OpenAIService
 
+# Import Voice/Vision Memory for learning
+try:
+    from app.services.voice_vision_memory import (
+        get_voice_vision_memory,
+        VisionTaskType,
+    )
+    VOICE_MEMORY_AVAILABLE = True
+except ImportError:
+    VOICE_MEMORY_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # Initialize AI services
@@ -366,7 +376,7 @@ async def detect_equipment_issues(image_data: bytes) -> Dict[str, Any]:
         # Determine urgency
         urgency = _determine_urgency(detected_issues, overall_score)
         
-        return {
+        result = {
             "success": True,
             "overall_condition_score": round(overall_score, 1),
             "issues_detected": len(detected_issues),
@@ -377,7 +387,28 @@ async def detect_equipment_issues(image_data: bytes) -> Dict[str, Any]:
             "inspection_timestamp": "2024-12-13T12:00:00Z",
             "analysis_method": "advanced_computer_vision"
         }
-        
+
+        # Capture to Voice/Vision Memory for learning
+        if VOICE_MEMORY_AVAILABLE:
+            try:
+                import hashlib
+                image_hash = hashlib.md5(image_data[:1000]).hexdigest()[:16]
+                voice_memory = get_voice_vision_memory()
+                await voice_memory.capture_vision_analysis(
+                    technician_id="system",
+                    task_type=VisionTaskType.EQUIPMENT_INSPECTION,
+                    image_hash=image_hash,
+                    detected_items=["equipment"],
+                    confidence_scores={"equipment_inspection": overall_score / 10},
+                    equipment_condition=overall_score,
+                    issues_found=detected_issues,
+                    outcome="success",
+                )
+            except Exception as vm_error:
+                logger.debug(f"Vision memory capture failed: {vm_error}")
+
+        return result
+
     except Exception as e:
         logger.error(f"Visual equipment inspection failed: {e}")
         return {

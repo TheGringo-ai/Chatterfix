@@ -20,6 +20,16 @@ try:
 except ImportError:
     MEMORY_AVAILABLE = False
 
+# Import Voice/Vision Memory for learning from interactions
+try:
+    from app.services.voice_vision_memory import (
+        get_voice_vision_memory,
+        CommandOutcome,
+    )
+    VOICE_MEMORY_AVAILABLE = True
+except ImportError:
+    VOICE_MEMORY_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -184,6 +194,23 @@ async def process_voice_command(voice_text: str, technician_id: Optional[int] = 
                 )
             except Exception as mem_error:
                 logger.warning(f"Memory capture failed: {mem_error}")
+
+        # Capture to Voice/Vision Memory for learning
+        if VOICE_MEMORY_AVAILABLE:
+            try:
+                voice_memory = get_voice_vision_memory()
+                await voice_memory.capture_voice_command(
+                    technician_id=str(technician_id) if technician_id else "anonymous",
+                    raw_transcript=voice_text,
+                    processed_command=title,
+                    command_type="work_order",
+                    confidence=0.9,  # High confidence for successfully processed
+                    outcome=CommandOutcome.SUCCESS,
+                    result_data={"work_order_id": work_order_id, "priority": priority},
+                    feedback_given=f"Work order {work_order_id} created with {priority} priority",
+                )
+            except Exception as vm_error:
+                logger.debug(f"Voice memory capture failed: {vm_error}")
 
         return result
 

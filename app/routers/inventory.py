@@ -1,50 +1,37 @@
 import os
-
-# # from app.core.database import get_db_connection
 import shutil
-
-from fastapi import APIRouter, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from typing import List
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.core.firestore_db import get_db_connection
+from app.auth import get_current_active_user, require_permission
+from app.models.user import User
+from app.core.firestore_db import get_firestore_manager
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-# Ensure upload directory exists
 UPLOAD_DIR = "app/static/uploads/parts"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
 @router.get("/inventory", response_class=HTMLResponse)
-async def inventory_list(request: Request):
+async def inventory_list(request: Request, current_user: User = Depends(get_current_active_user)):
     """Render the inventory list"""
-    conn = get_db_connection()
-    parts = conn.execute(
-        """
-        SELECT p.*, v.name as vendor_name
-        FROM parts p
-        LEFT JOIN vendors v ON p.vendor_id = v.id
-        ORDER BY p.name
-    """
-    ).fetchall()
-    conn.close()
+    firestore_manager = get_firestore_manager()
+    parts = await firestore_manager.get_collection("parts", order_by="name")
     return templates.TemplateResponse(
-        "inventory/list.html", {"request": request, "parts": parts}
+        "inventory/list.html", {"request": request, "parts": parts, "user": current_user}
     )
-
 
 @router.get("/inventory/add", response_class=HTMLResponse)
-async def add_part_form(request: Request):
+async def add_part_form(request: Request, current_user: User = Depends(require_permission("manage_inventory"))):
     """Render the add part form"""
-    conn = get_db_connection()
-    vendors = conn.execute("SELECT * FROM vendors ORDER BY name").fetchall()
-    conn.close()
+    firestore_manager = get_firestore_manager()
+    vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
-        "inventory/add.html", {"request": request, "vendors": vendors}
+        "inventory/add.html", {"request": request, "vendors": vendors, "user": current_user}
     )
-
 
 @router.post("/inventory/add")
 async def add_part(
@@ -56,161 +43,92 @@ async def add_part(
     minimum_stock: int = Form(5),
     location: str = Form(""),
     unit_cost: float = Form(0.0),
-    vendor_id: int = Form(None),
-    files: list[UploadFile] = File(None),
+    vendor_id: str = Form(None),
+    files: List[UploadFile] = File(None),
+    current_user: User = Depends(require_permission("manage_inventory")),
 ):
     """Add a new part to inventory"""
-    conn = get_db_connection()
-    try:
-        cursor = conn.execute(
-            """
-            INSERT INTO parts (name, part_number, category, description, current_stock, minimum_stock, location, unit_cost, vendor_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-            (
-                name,
-                part_number,
-                category,
-                description,
-                current_stock,
-                minimum_stock,
-                location,
-                unit_cost,
-                vendor_id,
-            ),
-        )
+    firestore_manager = get_firestore_manager()
+    part_data = {
+        "name": name, "part_number": part_number, "category": category,
+        "description": description, "current_stock": current_stock,
+        "minimum_stock": minimum_stock, "location": location,
+        "unit_cost": unit_cost, "vendor_id": vendor_id
+    }
+    part_id = await firestore_manager.create_document("parts", part_data)
 
-        part_id = cursor.lastrowid
-
-        # Handle file uploads
-        if files:
-            part_dir = os.path.join(UPLOAD_DIR, str(part_id))
-            os.makedirs(part_dir, exist_ok=True)
-
-            for file in files:
-                if file.filename:
-                    file_path = os.path.join(part_dir, file.filename)
-                    with open(file_path, "wb") as buffer:
-                        shutil.copyfileobj(file.file, buffer)
-
-                    rel_path = f"/static/uploads/parts/{part_id}/{file.filename}"
-                    file_type = (
-                        "image"
-                        if file.content_type.startswith("image/")
-                        else "document"
-                    )
-
-                    # If it's the first image, set it as the main image_url for the part
-                    if file_type == "image":
-                        # Check if part already has an image
-                        current_image = conn.execute(
-                            "SELECT image_url FROM parts WHERE id = ?", (part_id,)
-                        ).fetchone()[0]
-                        if not current_image:
-                            conn.execute(
-                                "UPDATE parts SET image_url = ? WHERE id = ?",
-                                (rel_path, part_id),
-                            )
-
-                    conn.execute(
-                        """
-                        INSERT INTO part_media (part_id, file_path, file_type, title, description)
-                        VALUES (?, ?, ?, ?, ?)
-                    """,
-                        (
-                            part_id,
-                            rel_path,
-                            file_type,
-                            file.filename,
-                            "Uploaded during creation",
-                        ),
-                    )
-
-        conn.commit()
-    except Exception:
-        # Handle duplicate part number
-        pass  # In a real app, show error
-    finally:
-        conn.close()
-
+    if files:
+        part_dir = os.path.join(UPLOAD_DIR, str(part_id))
+        os.makedirs(part_dir, exist_ok=True)
+        image_url_set = False
+        for file in files:
+            if file.filename:
+                file_path = os.path.join(part_dir, file.filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                rel_path = f"/static/uploads/parts/{part_id}/{file.filename}"
+                if "image" in file.content_type and not image_url_set:
+                    await firestore_manager.update_document("parts", part_id, {"image_url": rel_path})
+                    image_url_set = True
+    
     return RedirectResponse(url="/inventory", status_code=303)
 
-
 @router.get("/inventory/{part_id}", response_class=HTMLResponse)
-async def part_detail(request: Request, part_id: int):
+async def part_detail(request: Request, part_id: str, current_user: User = Depends(get_current_active_user)):
     """Render part details"""
-    conn = get_db_connection()
-    part = conn.execute(
-        """
-        SELECT p.*, v.name as vendor_name, v.phone as vendor_phone, v.email as vendor_email
-        FROM parts p
-        LEFT JOIN vendors v ON p.vendor_id = v.id
-        WHERE p.id = ?
-    """,
-        (part_id,),
-    ).fetchone()
-
+    firestore_manager = get_firestore_manager()
+    part = await firestore_manager.get_document("parts", part_id)
     if not part:
-        conn.close()
         return RedirectResponse(url="/inventory")
+    
+    vendor = None
+    if part.get("vendor_id"):
+        vendor = await firestore_manager.get_document("vendors", part["vendor_id"])
 
-    media = conn.execute(
-        "SELECT * FROM part_media WHERE part_id = ? ORDER BY uploaded_date DESC",
-        (part_id,),
-    ).fetchall()
-    conn.close()
+    media = await firestore_manager.get_collection(
+        "part_media", filters=[{"field": "part_id", "operator": "==", "value": part_id}]
+    )
+    
+    part["vendor_name"] = vendor.get("name") if vendor else "N/A"
 
     return templates.TemplateResponse(
-        "inventory/detail.html", {"request": request, "part": part, "media": media}
+        "inventory/detail.html", {"request": request, "part": part, "media": media, "user": current_user}
     )
-
 
 @router.post("/inventory/{part_id}/media")
 async def upload_part_media(
-    part_id: int,
+    part_id: str,
     file: UploadFile = File(...),
-    file_type: str = Form("image"),
-    title: str = Form(""),
-    description: str = Form(""),
+    current_user: User = Depends(require_permission("manage_inventory")),
 ):
     """Upload media for part"""
-    # Create part-specific directory
     part_dir = os.path.join(UPLOAD_DIR, str(part_id))
     os.makedirs(part_dir, exist_ok=True)
-
-    # Save file
     file_path = os.path.join(part_dir, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Store in database
     rel_path = f"/static/uploads/parts/{part_id}/{file.filename}"
-
-    conn = get_db_connection()
-    conn.execute(
-        """
-        INSERT INTO part_media (part_id, file_path, file_type, title, description)
-        VALUES (?, ?, ?, ?, ?)
-    """,
-        (part_id, rel_path, file_type, title, description),
-    )
-    conn.commit()
-    conn.close()
-
+    
+    firestore_manager = get_firestore_manager()
+    media_data = {
+        "part_id": part_id, "file_path": rel_path,
+        "file_type": "image" if "image" in file.content_type else "document",
+        "title": file.filename, "description": "User upload",
+    }
+    await firestore_manager.create_document("part_media", media_data)
+    
     return RedirectResponse(f"/inventory/{part_id}", status_code=303)
-
 
 # Vendor Routes
 @router.get("/vendors", response_class=HTMLResponse)
-async def vendor_list(request: Request):
+async def vendor_list(request: Request, current_user: User = Depends(require_permission("manage_vendors"))):
     """Render vendor list"""
-    conn = get_db_connection()
-    vendors = conn.execute("SELECT * FROM vendors ORDER BY name").fetchall()
-    conn.close()
+    firestore_manager = get_firestore_manager()
+    vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
-        "inventory/vendors.html", {"request": request, "vendors": vendors}
+        "inventory/vendors.html", {"request": request, "vendors": vendors, "user": current_user}
     )
-
 
 @router.post("/vendors/add")
 async def add_vendor(
@@ -218,13 +136,13 @@ async def add_vendor(
     contact_name: str = Form(""),
     email: str = Form(""),
     phone: str = Form(""),
+    current_user: User = Depends(require_permission("manage_vendors")),
 ):
     """Add a new vendor"""
-    conn = get_db_connection()
-    conn.execute(
-        "INSERT INTO vendors (name, contact_name, email, phone) VALUES (?, ?, ?, ?)",
-        (name, contact_name, email, phone),
-    )
-    conn.commit()
-    conn.close()
+    firestore_manager = get_firestore_manager()
+    vendor_data = {
+        "name": name, "contact_name": contact_name,
+        "email": email, "phone": phone
+    }
+    await firestore_manager.create_document("vendors", vendor_data)
     return RedirectResponse(url="/vendors", status_code=303)

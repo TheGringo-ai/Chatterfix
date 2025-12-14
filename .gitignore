@@ -90,3 +90,5 @@ bundle-analysis.html
 # Test files with secrets
 test_upload.txt
 "Attached HTML and CSS Context"
+venv_debug/
+.pre-commit-config.yaml.lock

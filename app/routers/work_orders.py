@@ -116,7 +116,7 @@ async def work_order_detail(request: Request, wo_id: str):
 
 @router.post("/work-orders/{wo_id}/media")
 async def upload_wo_media(
-    wo_id: int,
+    wo_id: str,
     file: UploadFile = File(...),
     file_type: str = Form("image"),
     title: str = Form(""),
@@ -134,19 +134,19 @@ async def upload_wo_media(
         shutil.copyfileobj(file.file, buffer)
 
     # Store in database
-    # Use relative path for serving
     rel_path = f"/static/uploads/work_orders/{wo_id}/{file.filename}"
-
-    conn = get_db_connection()
-    conn.execute(
-        """
-        INSERT INTO work_order_media (work_order_id, file_path, file_type, title, description)
-        VALUES (?, ?, ?, ?, ?)
-    """,
-        (wo_id, rel_path, file_type, title, description),
-    )
-    conn.commit()
-    conn.close()
+    
+    firestore_manager = get_firestore_manager()
+    media_data = {
+        "work_order_id": wo_id,
+        "file_path": rel_path,
+        "file_type": file_type,
+        "title": title or file.filename,
+        "description": description,
+        "uploaded_by": current_user.uid,
+        "uploaded_date": datetime.now(timezone.utc),
+    }
+    await firestore_manager.create_document("work_order_media", media_data)
 
     return RedirectResponse(f"/work-orders/{wo_id}", status_code=303)
 
@@ -613,21 +613,25 @@ async def complete_work_order_enhanced(
 
 @router.post("/work-orders/{wo_id}/update")
 async def update_work_order(
-    wo_id: int,
+    wo_id: str,
     title: str = Form(...),
     description: str = Form(...),
     priority: str = Form(...),
     assigned_to: str = Form(...),
     due_date: str = Form(...),
+    current_user: User = Depends(require_permission("update_status")),
 ):
     """Update an existing work order"""
-    conn = get_db_connection()
-    conn.execute(
-        "UPDATE work_orders SET title = ?, description = ?, priority = ?, assigned_to = ?, due_date = ? WHERE id = ?",
-        (title, description, priority, assigned_to, due_date, wo_id),
-    )
-    conn.commit()
-    conn.close()
+    firestore_manager = get_firestore_manager()
+    update_data = {
+        "title": title,
+        "description": description,
+        "priority": priority,
+        "assigned_to": assigned_to,
+        "due_date": due_date,
+        "updated_at": datetime.now(timezone.utc),
+    }
+    await firestore_manager.update_document("work_orders", wo_id, update_data)
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 
 

@@ -11,17 +11,14 @@ from fastapi.templating import Jinja2Templates
 
 from app.services import auth_service
 from app.services.firebase_auth import firebase_auth_service
-from app.services.mock_data_service import create_demo_data
 
 router = APIRouter(prefix="/signup", tags=["signup"])
 templates = Jinja2Templates(directory="app/templates")
-
 
 @router.get("", response_class=HTMLResponse)
 async def signup_page(request: Request):
     """Redirect to main signup page (landing)"""
     return RedirectResponse(url="/landing", status_code=302)
-
 
 @router.post("")
 async def signup(
@@ -56,9 +53,6 @@ async def signup(
             user_data = await firebase_auth_service.get_or_create_user(user_record)
             user_id = user_data.get("uid")
 
-            # Create demo data for new user
-            create_demo_data(user_id)
-
             # Create Firebase session token
             token = await firebase_auth_service.create_custom_token(user_record.uid)
 
@@ -82,9 +76,6 @@ async def signup(
                 "signup.html",
                 {"request": request, "error": "Username or email already exists"},
             )
-
-        # Create demo data for new user
-        create_demo_data(user_id)
 
         # Auto-login: create session
         ip_address = request.client.host if (request and request.client) else "unknown"

@@ -15,6 +15,8 @@ source venv_debug/bin/activate
 # Install dependencies if needed
 echo "📦 Installing MCP dependencies..."
 pip install mcp --quiet
+echo "📦 Installing project dependencies..."
+pip install -r requirements.txt --quiet
 
 # Set environment
 export PYTHONPATH="."

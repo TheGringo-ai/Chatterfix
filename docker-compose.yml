@@ -24,6 +24,7 @@ services:
       PORT: 8080
       REDIS_URL: redis://redis:6379
       OCR_SERVICE_URL: http://ocr-service:8081
+      AI_TEAM_SERVICE_URL: http://ai-team-service:8082
     env_file:
       - .env
     volumes:
@@ -39,6 +40,8 @@ services:
       redis:
         condition: service_healthy
       ocr-service:
+        condition: service_healthy
+      ai-team-service:
         condition: service_healthy
     networks:
       - chatterfix-network
@@ -84,6 +87,44 @@ services:
         reservations:
           cpus: '0.5'
           memory: 1G
+
+  # AI Team Service for Multi-Model AI Collaboration (AutoGen)
+  ai-team-service:
+    build:
+      context: ./ai-team-service
+      dockerfile: Dockerfile
+    image: gcr.io/fredfix/chatterfix-ai-team:latest
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common-variables
+      PORT: 8082
+      SERVICE_NAME: ai-team-service
+      REDIS_URL: redis://redis:6379
+    env_file:
+      - .env
+    volumes:
+      - ./secrets:/app/secrets:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - chatterfix-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
 
   # Redis for session management and caching
   redis:

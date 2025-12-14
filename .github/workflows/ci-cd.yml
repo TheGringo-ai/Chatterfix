@@ -112,6 +112,10 @@ jobs:
             dockerfile: services/ocr-service/Dockerfile
             context: services/ocr-service
             image: chatterfix-ocr
+          - name: ai-team-service
+            dockerfile: ai-team-service/Dockerfile
+            context: ai-team-service
+            image: chatterfix-ai-team
       fail-fast: false
 
     steps:

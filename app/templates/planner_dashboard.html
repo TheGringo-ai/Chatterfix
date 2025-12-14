@@ -1056,6 +1056,70 @@
         </div>
     </div>
     
+    <!-- Date Actions Modal - Shows when clicking a date on the calendar -->
+    <div class="modal fade" id="dateActionsModal" tabindex="-1" style="color: var(--text-primary);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border-glass);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-glass);">
+                    <h5 class="modal-title">📅 <span id="selectedDateDisplay">December 15, 2025</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="selectedDate" value="">
+
+                    <!-- Daily Summary -->
+                    <div id="dailySummary" class="mb-4 p-3" style="background: var(--bg-glass); border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>📋 Scheduled Work Orders</strong>
+                            <span id="dailyWOCount" class="badge bg-primary">0</span>
+                        </div>
+                        <div id="dailyWorkOrders" style="max-height: 150px; overflow-y: auto;">
+                            <p class="text-muted mb-0">No work orders scheduled</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-lg" onclick="createJobForDate()">
+                            ➕ Create Work Order
+                        </button>
+                        <button class="btn btn-warning" onclick="schedulePMForDate()">
+                            🔧 Schedule Preventive Maintenance
+                        </button>
+                        <button class="btn btn-info" onclick="viewDaySchedule()">
+                            👁️ View Full Day Schedule
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="assignFromBacklog()">
+                            📥 Assign from Backlog
+                        </button>
+                    </div>
+
+                    <!-- Technician Availability -->
+                    <div class="mt-4">
+                        <h6>👥 Technician Availability</h6>
+                        <div id="techAvailability" class="mt-2">
+                            <div class="d-flex justify-content-between align-items-center p-2 mb-1" style="background: var(--bg-glass); border-radius: 6px;">
+                                <span>Jake Anderson</span>
+                                <span class="badge bg-danger">130% - Overloaded</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 mb-1" style="background: var(--bg-glass); border-radius: 6px;">
+                                <span>Sarah Chen</span>
+                                <span class="badge bg-warning text-dark">90% - Near Capacity</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center p-2 mb-1" style="background: var(--bg-glass); border-radius: 6px;">
+                                <span>Mike Rodriguez</span>
+                                <span class="badge bg-success">60% - Available</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-glass);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Work Order Edit Modal -->
     <div class="modal fade" id="editWorkOrderModal" tabindex="-1" style="color: var(--text-primary);">
         <div class="modal-dialog modal-xl">
@@ -1228,10 +1292,13 @@
         event.target.className = event.target.className.replace('btn-outline-primary', 'btn-primary');
     }
 
+    // Store calendar events globally for reference
+    let calendarEvents = [];
+
     function initializeFullCalendar() {
         var calendarEl = document.getElementById('fullcalendar');
         if (!calendarEl) return;
-        
+
         window.calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             headerToolbar: {
@@ -1241,85 +1308,316 @@
             },
             editable: true,
             droppable: true,
-            selectable: true,
-            selectMirror: true,
-            dayMaxEvents: true,
-            events: [
-                {
-                    title: 'HVAC Maintenance - Unit B-2',
-                    start: '2025-12-05T09:00:00',
-                    end: '2025-12-05T11:00:00',
-                    color: '#f5576c',
-                    extendedProps: {
-                        priority: 'urgent',
-                        technician: 'Mike Johnson',
-                        asset: 'HVAC Unit B-2'
-                    }
-                },
-                {
-                    title: 'Production Line Calibration',
-                    start: '2025-12-06T08:00:00',
-                    end: '2025-12-07T17:00:00',
-                    color: '#4facfe',
-                    extendedProps: {
-                        priority: 'high',
-                        technician: 'Sarah Chen',
-                        asset: 'Production Line A'
-                    }
-                },
-                {
-                    title: 'Compressor Oil Change',
-                    start: '2025-12-07T09:00:00',
-                    end: '2025-12-07T10:30:00',
-                    color: '#f093fb',
-                    extendedProps: {
-                        priority: 'medium',
-                        technician: 'Carlos Rodriguez',
-                        asset: 'Air Compressor #1'
-                    }
-                },
-                {
-                    title: 'Forklift Inspection',
-                    start: '2025-12-08T14:00:00',
-                    end: '2025-12-08T15:30:00',
-                    color: '#00f2fe',
-                    extendedProps: {
-                        priority: 'low',
-                        technician: 'Jennifer Wong',
-                        asset: 'Forklift FL-005'
-                    }
-                }
-            ],
-            select: function(arg) {
-                // Quick create job from calendar selection
-                var title = prompt('Enter work order title for ' + arg.startStr + ':');
-                if (title) {
-                    window.calendar.addEvent({
-                        title: title,
-                        start: arg.start,
-                        end: arg.end,
-                        color: '#4facfe'
+            selectable: false,  // Use dateClick instead
+            dayMaxEvents: 3,
+            eventDisplay: 'block',
+
+            // Load events from API
+            events: function(info, successCallback, failureCallback) {
+                loadCalendarEvents(info.startStr, info.endStr)
+                    .then(events => {
+                        calendarEvents = events;
+                        successCallback(events);
+                    })
+                    .catch(error => {
+                        console.error('Error loading calendar events:', error);
+                        failureCallback(error);
                     });
-                    alert('✅ Work order \"' + title + '\" created and scheduled!');
-                }
-                window.calendar.unselect();
             },
+
+            // Handle clicking on a date
+            dateClick: function(info) {
+                openDateActionsModal(info.date, info.dateStr);
+            },
+
+            // Handle clicking on an event
             eventClick: function(info) {
-                const props = info.event.extendedProps;
-                const startTime = info.event.start.toLocaleString();
-                const endTime = info.event.end ? info.event.end.toLocaleString() : 'Not set';
-                
-                alert(`🔧 Work Order Details:\\n\\nTitle: ${info.event.title}\\nPriority: ${props.priority || 'Not set'}\\nTechnician: ${props.technician || 'Unassigned'}\\nAsset: ${props.asset || 'Not specified'}\\nStart: ${startTime}\\nEnd: ${endTime}\\n\\n📝 Actions: Edit | Reschedule | Complete | Cancel`);
+                openEventEditor(info.event);
             },
+
+            // Handle drag and drop rescheduling
             eventDrop: function(info) {
-                alert(`✅ \"${info.event.title}\" rescheduled to ${info.event.start.toLocaleDateString()}\\n\\nTechnician has been notified of the schedule change.`);
+                rescheduleEvent(info.event, info.oldEvent);
             },
+
+            // Handle resizing events
             eventResize: function(info) {
-                alert(`✅ \"${info.event.title}\" duration updated\\n\\nNew end time: ${info.event.end.toLocaleString()}`);
+                updateEventDuration(info.event);
+            },
+
+            // Customize event rendering
+            eventDidMount: function(info) {
+                // Add tooltip
+                info.el.title = `${info.event.title}\n${info.event.extendedProps.technician || 'Unassigned'}\n${info.event.extendedProps.asset || ''}`;
             }
         });
-        
+
         calendar.render();
+    }
+
+    // Load calendar events from the backlog API
+    async function loadCalendarEvents(startDate, endDate) {
+        try {
+            const response = await fetch('/planner/backlog');
+            const data = await response.json();
+
+            const events = [];
+            const priorityColors = {
+                'critical': '#dc3545',
+                'urgent': '#f5576c',
+                'high': '#f093fb',
+                'medium': '#4facfe',
+                'low': '#00f2fe'
+            };
+
+            // Convert work orders to calendar events
+            if (data.work_orders) {
+                data.work_orders.forEach(wo => {
+                    if (wo.due_date) {
+                        events.push({
+                            id: wo.id,
+                            title: wo.title,
+                            start: wo.due_date + 'T09:00:00',
+                            end: wo.due_date + 'T' + (9 + (wo.estimated_duration || 2)).toString().padStart(2, '0') + ':00:00',
+                            color: priorityColors[wo.priority.toLowerCase()] || '#4facfe',
+                            extendedProps: {
+                                workOrderId: wo.id,
+                                priority: wo.priority,
+                                technician: wo.assigned_to ? getTechnicianName(wo.assigned_to) : 'Unassigned',
+                                asset: wo.asset_name,
+                                status: wo.status,
+                                duration: wo.estimated_duration
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Add some sample PM events
+            const today = new Date();
+            events.push({
+                id: 'pm_weekly_1',
+                title: 'Weekly Conveyor Inspection',
+                start: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T10:00:00',
+                end: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T11:00:00',
+                color: '#4ecdc4',
+                extendedProps: {
+                    priority: 'Medium',
+                    technician: 'Mike Rodriguez',
+                    asset: 'Conveyor Belt A',
+                    type: 'PM'
+                }
+            });
+
+            return events;
+        } catch (error) {
+            console.error('Error loading calendar events:', error);
+            return [];
+        }
+    }
+
+    // Get technician name from ID
+    function getTechnicianName(techId) {
+        const techNames = {
+            'tech_001': 'Jake Anderson',
+            'tech_002': 'Sarah Chen',
+            'tech_003': 'Mike Rodriguez',
+            'tech_004': 'Jennifer Wong'
+        };
+        return techNames[techId] || techId;
+    }
+
+    // Open date actions modal when clicking a date
+    function openDateActionsModal(date, dateStr) {
+        // Format the date for display
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = date.toLocaleDateString('en-US', options);
+
+        document.getElementById('selectedDateDisplay').textContent = formattedDate;
+        document.getElementById('selectedDate').value = dateStr;
+
+        // Get work orders for this date
+        const dayEvents = calendarEvents.filter(e => e.start.startsWith(dateStr));
+        const woContainer = document.getElementById('dailyWorkOrders');
+        const woCount = document.getElementById('dailyWOCount');
+
+        woCount.textContent = dayEvents.length;
+
+        if (dayEvents.length > 0) {
+            woContainer.innerHTML = dayEvents.map(e => `
+                <div class="d-flex justify-content-between align-items-center p-2 mb-1" style="background: var(--bg-glass); border-radius: 6px; border-left: 3px solid ${e.color};">
+                    <div>
+                        <strong style="font-size: 0.9rem;">${e.title}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            👤 ${e.extendedProps.technician} | 🏭 ${e.extendedProps.asset || 'N/A'}
+                        </div>
+                    </div>
+                    <span class="badge" style="background: ${e.color};">${e.extendedProps.priority}</span>
+                </div>
+            `).join('');
+        } else {
+            woContainer.innerHTML = '<p class="text-muted mb-0">No work orders scheduled for this day</p>';
+        }
+
+        // Load technician availability
+        loadTechAvailability(dateStr);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('dateActionsModal'));
+        modal.show();
+    }
+
+    // Load technician availability for a specific date
+    async function loadTechAvailability(dateStr) {
+        try {
+            const response = await fetch('/planner/resource-capacity');
+            const data = await response.json();
+
+            const container = document.getElementById('techAvailability');
+
+            if (data.technicians && data.technicians.length > 0) {
+                container.innerHTML = data.technicians.filter(t => t.status === 'active').map(tech => {
+                    let badgeClass = 'bg-success';
+                    let statusText = tech.capacity_percentage + '% - Available';
+
+                    if (tech.capacity_percentage >= 100) {
+                        badgeClass = 'bg-danger';
+                        statusText = tech.capacity_percentage + '% - Overloaded';
+                    } else if (tech.capacity_percentage >= 80) {
+                        badgeClass = 'bg-warning text-dark';
+                        statusText = tech.capacity_percentage + '% - Near Capacity';
+                    }
+
+                    return `
+                        <div class="d-flex justify-content-between align-items-center p-2 mb-1" style="background: var(--bg-glass); border-radius: 6px;">
+                            <span>${tech.name}</span>
+                            <span class="badge ${badgeClass}">${statusText}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            console.error('Error loading technician availability:', error);
+        }
+    }
+
+    // Create job for selected date
+    function createJobForDate() {
+        const selectedDate = document.getElementById('selectedDate').value;
+
+        // Close date actions modal
+        bootstrap.Modal.getInstance(document.getElementById('dateActionsModal')).hide();
+
+        // Set the date in the create job form
+        document.getElementById('jobDate').value = selectedDate;
+
+        // Open create job modal
+        setTimeout(() => {
+            const modal = new bootstrap.Modal(document.getElementById('createJobModal'));
+            modal.show();
+        }, 300);
+    }
+
+    // Schedule PM for selected date
+    function schedulePMForDate() {
+        const selectedDate = document.getElementById('selectedDate').value;
+
+        // Close date actions modal
+        bootstrap.Modal.getInstance(document.getElementById('dateActionsModal')).hide();
+
+        // Set the date in the PM form
+        document.getElementById('pmStartDate').value = selectedDate;
+
+        // Open PM modal
+        setTimeout(() => {
+            const modal = new bootstrap.Modal(document.getElementById('schedulePMModal'));
+            modal.show();
+        }, 300);
+    }
+
+    // View full day schedule
+    function viewDaySchedule() {
+        const selectedDate = document.getElementById('selectedDate').value;
+
+        // Close date actions modal
+        bootstrap.Modal.getInstance(document.getElementById('dateActionsModal')).hide();
+
+        // Switch calendar to day view for that date
+        setTimeout(() => {
+            window.calendar.changeView('timeGridDay', selectedDate);
+        }, 300);
+    }
+
+    // Assign work from backlog
+    function assignFromBacklog() {
+        const selectedDate = document.getElementById('selectedDate').value;
+
+        // Close date actions modal
+        bootstrap.Modal.getInstance(document.getElementById('dateActionsModal')).hide();
+
+        // Open bulk schedule modal with date pre-filled
+        setTimeout(() => {
+            document.getElementById('bulkStartDate').value = selectedDate;
+            document.getElementById('bulkEndDate').value = selectedDate;
+            const modal = new bootstrap.Modal(document.getElementById('bulkScheduleModal'));
+            modal.show();
+        }, 300);
+    }
+
+    // Open event editor when clicking on an event
+    function openEventEditor(event) {
+        const props = event.extendedProps;
+
+        if (props.workOrderId) {
+            // Open the work order editor
+            openWorkOrderEditor(props.workOrderId);
+        } else {
+            // Show event details for non-work-order events (like PM)
+            const startTime = event.start.toLocaleString();
+            const endTime = event.end ? event.end.toLocaleString() : 'Not set';
+
+            alert(`📋 Event Details\n\nTitle: ${event.title}\nType: ${props.type || 'Work Order'}\nPriority: ${props.priority || 'N/A'}\nTechnician: ${props.technician || 'Unassigned'}\nAsset: ${props.asset || 'N/A'}\nStart: ${startTime}\nEnd: ${endTime}`);
+        }
+    }
+
+    // Handle rescheduling via drag and drop
+    function rescheduleEvent(event, oldEvent) {
+        const newDate = event.start.toLocaleDateString();
+        const techName = event.extendedProps.technician || 'Unassigned technician';
+
+        // Show confirmation
+        if (confirm(`Reschedule "${event.title}" to ${newDate}?\n\n${techName} will be notified of this change.`)) {
+            // In production, this would call the API to update the work order
+            console.log('Rescheduling event:', event.id, 'to', event.start);
+
+            // Show success toast
+            showToast('success', `Work order rescheduled to ${newDate}`);
+        } else {
+            // Revert the change
+            event.setStart(oldEvent.start);
+            event.setEnd(oldEvent.end);
+        }
+    }
+
+    // Handle duration changes via resize
+    function updateEventDuration(event) {
+        const duration = Math.round((event.end - event.start) / (1000 * 60 * 60) * 10) / 10;
+
+        // In production, this would call the API to update the work order
+        console.log('Updating duration for event:', event.id, 'to', duration, 'hours');
+
+        showToast('success', `Duration updated to ${duration} hours`);
+    }
+
+    // Simple toast notification
+    function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `${type === 'success' ? '✅' : '❌'} ${message}`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.remove(), 3000);
     }
 
     function initializeGanttChart() {

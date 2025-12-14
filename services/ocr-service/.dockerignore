@@ -1,0 +1,52 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+test_*.py
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Git files
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Docker files (not needed in context)
+Dockerfile*
+docker-compose*.yml
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db

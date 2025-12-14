@@ -1,7 +1,7 @@
 version: '3.8'
 
 # ChatterFix CMMS - Technician-First Maintenance Management
-# Production-optimized Docker Compose for Cloud Deployment
+# Multi-Service Docker Compose for Local Development & Production
 
 x-common-variables: &common-variables
   ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -11,11 +11,11 @@ x-common-variables: &common-variables
 
 services:
   # Main ChatterFix CMMS Application
-  chatterfix:
-    build: 
+  core-web:
+    build:
       context: .
       dockerfile: Dockerfile
-      target: production
+      target: ${BUILD_TARGET:-production}
     image: gcr.io/fredfix/chatterfix-cmms:latest
     ports:
       - "${PORT:-8080}:8080"
@@ -23,6 +23,7 @@ services:
       <<: *common-variables
       PORT: 8080
       REDIS_URL: redis://redis:6379
+      OCR_SERVICE_URL: http://ocr-service:8081
     env_file:
       - .env
     volumes:
@@ -37,6 +38,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      ocr-service:
+        condition: service_healthy
     networks:
       - chatterfix-network
     deploy:
@@ -46,6 +49,40 @@ services:
           memory: 2G
         reservations:
           cpus: '1.0'
+          memory: 1G
+
+  # OCR Service for Document Scanning (Tesseract, EasyOCR, QR codes)
+  ocr-service:
+    build:
+      context: ./services/ocr-service
+      dockerfile: Dockerfile
+    image: gcr.io/fredfix/chatterfix-ocr:latest
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *common-variables
+      PORT: 8081
+      SERVICE_NAME: ocr-service
+    env_file:
+      - .env
+    volumes:
+      - ocr_temp:/tmp/ocr
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - chatterfix-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
           memory: 1G
 
   # Redis for session management and caching
@@ -79,7 +116,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - chatterfix
+      - core-web
     restart: unless-stopped
     networks:
       - chatterfix-network
@@ -88,6 +125,8 @@ services:
 
 volumes:
   redis_data:
+    driver: local
+  ocr_temp:
     driver: local
 
 networks:

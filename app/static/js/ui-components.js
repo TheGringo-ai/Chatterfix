@@ -470,51 +470,23 @@ const UIAnimations = {
         this.setupTextAnimations();
     },
     
-    // Enhanced card hover effects with magnetic attraction
+    // Simple card hover effects (tilt/rotation removed)
     enhanceCards() {
         gsap.utils.toArray('.cmms-card, .capability-card, .kpi-card').forEach(card => {
-            const magnetic = gsap.quickTo(card, "x", {duration: 0.6, ease: "power3"});
-            const magneticY = gsap.quickTo(card, "y", {duration: 0.6, ease: "power3"});
-            
-            card.addEventListener('mousemove', (e) => {
-                const { clientX, clientY } = e;
-                const { width, height, left, top } = card.getBoundingClientRect();
-                const x = clientX - (left + width / 2);
-                const y = clientY - (top + height / 2);
-                
-                magnetic(x * 0.3);
-                magneticY(y * 0.3);
-                
-                gsap.to(card, {
-                    rotationY: x * 0.05,
-                    rotationX: -y * 0.05,
-                    transformPerspective: 1000,
-                    transformOrigin: "center center",
-                    duration: 0.3,
-                    ease: "power2.out"
-                });
-            });
-            
             card.addEventListener('mouseenter', () => {
                 gsap.to(card, {
-                    scale: 1.05,
-                    duration: 0.4,
+                    y: -4,
+                    duration: 0.3,
                     ease: "power2.out",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+                    boxShadow: "0 8px 16px rgba(0,0,0,0.15)"
                 });
             });
-            
+
             card.addEventListener('mouseleave', () => {
-                magnetic(0);
-                magneticY(0);
                 gsap.to(card, {
-                    x: 0,
                     y: 0,
-                    scale: 1,
-                    rotationY: 0,
-                    rotationX: 0,
-                    duration: 0.6,
-                    ease: "power3.out",
+                    duration: 0.3,
+                    ease: "power2.out",
                     boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
                 });
             });

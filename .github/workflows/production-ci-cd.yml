@@ -66,16 +66,18 @@ jobs:
         run: |
           echo "🔐 Validating required secrets..."
           MISSING_SECRETS=()
-          
+
           [ -z "${{ secrets.GCP_SA_KEY }}" ] && MISSING_SECRETS+=("GCP_SA_KEY")
           [ -z "${{ secrets.FIREBASE_API_KEY }}" ] && MISSING_SECRETS+=("FIREBASE_API_KEY")
           [ -z "${{ secrets.GEMINI_API_KEY }}" ] && MISSING_SECRETS+=("GEMINI_API_KEY")
-          
+          [ -z "${{ secrets.SECRET_KEY }}" ] && MISSING_SECRETS+=("SECRET_KEY")
+          [ -z "${{ secrets.JWT_SECRET_KEY }}" ] && MISSING_SECRETS+=("JWT_SECRET_KEY")
+
           if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
             echo "❌ Missing critical secrets: ${MISSING_SECRETS[*]}"
             exit 1
           fi
-          
+
           echo "✅ All required secrets validated"
 
   # Main deployment job
@@ -161,7 +163,8 @@ jobs:
             --max-instances=${{ env.MAX_INSTANCES }} \
             --timeout=300 \
             --concurrency=80 \
-            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ENVIRONMENT=production,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app,FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }},GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},GROK_API_KEY=${{ secrets.GROK_API_KEY }}" \
+            --set-env-vars="USE_FIRESTORE=true,GOOGLE_CLOUD_PROJECT=${{ env.PROJECT_ID }},ENVIRONMENT=production,LOG_LEVEL=info,AI_TEAM_SERVICE_URL=https://ai-team-service-650169261019.us-central1.run.app" \
+            --set-secrets="SECRET_KEY=SECRET_KEY:latest,JWT_SECRET_KEY=jwt-secret-key:latest,FIREBASE_API_KEY=FIREBASE_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,OPENAI_API_KEY=openai-api-key:latest,XAI_API_KEY=xai-api-key:latest" \
             --labels=managed-by=github-actions,environment=production,version=${{ github.sha }} \
             --quiet
           

@@ -99,24 +99,33 @@ document.addEventListener('alpine:init', () => {
         
         handleTiltMove(e) {
             if (!this.tiltEffectsEnabled) return;
-            
+
             const element = e.currentTarget;
+
+            // Don't tilt modals or elements inside modals
+            if (element.closest('.modal') || element.classList.contains('modal')) return;
+
             const rect = element.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
-            
-            const rotateX = (y - centerY) / centerY * -10;
-            const rotateY = (x - centerX) / centerX * 10;
-            
-            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+
+            // Reduced tilt intensity: 3 degrees max (was 10)
+            const rotateX = (y - centerY) / centerY * -3;
+            const rotateY = (x - centerX) / centerX * 3;
+
+            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
         },
         
         handleTiltLeave(e) {
             if (!this.tiltEffectsEnabled) return;
-            
+
             const element = e.currentTarget;
+
+            // Don't process modals
+            if (element.closest('.modal') || element.classList.contains('modal')) return;
+
             element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
         },
         

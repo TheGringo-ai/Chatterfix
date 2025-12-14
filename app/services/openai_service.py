@@ -12,23 +12,28 @@ logger = logging.getLogger(__name__)
 
 class OpenAIService:
     def __init__(self):
-        # Initialize with the provided API key
-        self.default_api_key = os.getenv("OPENAI_API_KEY")
+        self.default_api_key = None
+        self.client = None
+        self.available = False
 
-        # Also check for environment variable as fallback
-        env_key = os.getenv("OPENAI_API_KEY")
-        if env_key:
-            self.default_api_key = env_key
+        # Initialize with API key from environment
+        self.default_api_key = os.getenv("OPENAI_API_KEY")
 
         if self.default_api_key:
             try:
                 self.client = OpenAI(api_key=self.default_api_key)
+                self.available = True
                 logger.info("✨ OpenAI initialized with API key")
             except Exception as e:
                 logger.error(f"❌ Failed to initialize OpenAI: {e}")
                 self.client = None
+                self.available = False
         else:
-            self.client = None
+            logger.info("ℹ️ OpenAI API key not configured - service will use fallback mode")
+
+    def is_available(self) -> bool:
+        """Check if the OpenAI service is properly configured and available"""
+        return self.available and bool(self.default_api_key) and self.client is not None
 
     def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
         """

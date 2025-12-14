@@ -35,14 +35,15 @@ logger = logging.getLogger(__name__)
 
 class GeminiService:
     def __init__(self):
-        # Check if GenAI is available
-        if not GENAI_AVAILABLE:
-            logger.info("🤖 Gemini AI not available - service disabled")
-            return
-
         self.credentials = None
         self.default_api_key = None
         self.using_service_account = False
+        self.available = False  # Track if service is actually usable
+
+        # Check if GenAI is available
+        if not GENAI_AVAILABLE:
+            logger.info("🤖 Gemini AI library not installed - service disabled")
+            return
 
         # Try service account first (more secure)
         # Set GOOGLE_APPLICATION_CREDENTIALS for ADC
@@ -62,6 +63,7 @@ class GeminiService:
                 # Configure genai with credentials
                 genai.configure(credentials=self.credentials)
                 self.using_service_account = True
+                self.available = True
                 logger.info(f"✨ Gemini AI initialized with service account: {GEMINI_SERVICE_ACCOUNT_PATH}")
             except Exception as e:
                 logger.error(f"❌ Failed to load service account: {e}")
@@ -74,9 +76,17 @@ class GeminiService:
             if self.default_api_key:
                 try:
                     genai.configure(api_key=self.default_api_key)
+                    self.available = True
                     logger.info("✨ Gemini AI initialized with API key (fallback)")
                 except Exception as e:
                     logger.error(f"❌ Failed to initialize Gemini AI with API key: {e}")
+                    self.available = False
+            else:
+                logger.info("ℹ️ Gemini API key not configured - service will use fallback mode")
+
+    def is_available(self) -> bool:
+        """Check if the Gemini service is properly configured and available"""
+        return self.available and (self.using_service_account or bool(self.default_api_key))
 
     def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
         """

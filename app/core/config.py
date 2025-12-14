@@ -78,6 +78,32 @@ class AIServiceConfig(BaseSettings):
             services.append("anthropic")
         return services
 
+    def has_any_ai_service(self) -> bool:
+        """Check if ANY AI service is configured - graceful for optional keys"""
+        return len(self.get_available_services()) > 0
+
+    def get_primary_ai_service(self) -> Optional[str]:
+        """Get the best available AI service based on priority"""
+        # Priority order: gemini (fastest), openai, anthropic, grok
+        priority_order = ["gemini", "openai", "anthropic", "grok"]
+        available = self.get_available_services()
+        for service in priority_order:
+            if service in available:
+                return service
+        return None
+
+    def get_ai_status_summary(self) -> dict:
+        """Get summary of AI service availability for debugging"""
+        return {
+            "any_available": self.has_any_ai_service(),
+            "primary_service": self.get_primary_ai_service(),
+            "available_services": self.get_available_services(),
+            "gemini_configured": bool(self.gemini_api_key),
+            "openai_configured": bool(self.openai_api_key),
+            "grok_configured": bool(self.grok_api_key),
+            "anthropic_configured": bool(self.anthropic_api_key),
+        }
+
 
 class DatabaseConfig(BaseSettings):
     """Database Configuration"""
@@ -189,10 +215,11 @@ class Settings(BaseSettings):
         """Validate that critical configuration is present"""
 
         issues = []
+        warnings = []
 
-        # Check AI services
-        if not any([self.ai.gemini_api_key, self.ai.openai_api_key]):
-            issues.append("No AI service API keys configured")
+        # Check AI services - warn but don't fail (keys are optional)
+        if not self.ai.has_any_ai_service():
+            warnings.append("No AI service API keys configured - running in demo mode")
 
         # Check database
         if self.database.use_firestore and not self.database.google_cloud_project:
@@ -201,6 +228,12 @@ class Settings(BaseSettings):
         # Check security
         if not self.security.secret_key:
             issues.append("SECRET_KEY not configured")
+
+        # Log warnings (non-fatal)
+        if warnings:
+            logger.warning("⚠️ Configuration warnings:")
+            for warning in warnings:
+                logger.warning(f"  - {warning}")
 
         if issues:
             logger.error("❌ Configuration validation failed:")

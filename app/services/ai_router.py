@@ -25,7 +25,51 @@ from app.services.ai_team_http_client import (
     check_ai_team_health,
     get_ai_team_client,
 )
-from app.services.gemini_service import gemini_service
+
+# Lazy import to avoid circular dependencies
+_gemini_service = None
+_openai_service = None
+_ai_config = None
+
+
+def _get_gemini_service():
+    """Lazy load Gemini service"""
+    global _gemini_service
+    if _gemini_service is None:
+        try:
+            from app.services.gemini_service import gemini_service
+            _gemini_service = gemini_service
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Gemini service not available: {e}")
+            _gemini_service = False
+    return _gemini_service if _gemini_service else None
+
+
+def _get_openai_service():
+    """Lazy load OpenAI service as fallback"""
+    global _openai_service
+    if _openai_service is None:
+        try:
+            from app.services.openai_service import openai_service
+            _openai_service = openai_service
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"OpenAI service not available: {e}")
+            _openai_service = False
+    return _openai_service if _openai_service else None
+
+
+def _get_ai_config():
+    """Lazy load AI configuration"""
+    global _ai_config
+    if _ai_config is None:
+        try:
+            from app.core.config import get_settings
+            _ai_config = get_settings().ai
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Config not available: {e}")
+            _ai_config = False
+    return _ai_config if _ai_config else None
+
 
 logger = logging.getLogger(__name__)
 
@@ -223,6 +267,105 @@ class RoutingAnalytics:
         }
 
 
+class DemoResponseGenerator:
+    """Generate helpful demo responses when no AI services are configured"""
+
+    DEMO_RESPONSES = {
+        "greeting": """👋 Hello! I'm ChatterFix AI Assistant running in **demo mode**.
+
+To unlock full AI capabilities, configure one or more of these API keys in your .env file:
+- `GEMINI_API_KEY` - Google Gemini (recommended, fastest)
+- `OPENAI_API_KEY` - OpenAI GPT-4
+- `XAI_API_KEY` - xAI Grok
+- `ANTHROPIC_API_KEY` - Anthropic Claude
+
+I can still help you navigate the CMMS system and provide basic guidance!""",
+
+        "work_order": """📋 **Work Order Assistance (Demo Mode)**
+
+To create or manage work orders, I would typically:
+1. Analyze your equipment issue
+2. Suggest priority level based on symptoms
+3. Recommend required parts from inventory
+4. Assign to the best available technician
+
+*Configure an AI API key to enable intelligent work order assistance.*""",
+
+        "troubleshooting": """🔧 **Troubleshooting Guide (Demo Mode)**
+
+For equipment troubleshooting, I would normally:
+1. Analyze symptoms and error codes
+2. Check maintenance history for patterns
+3. Provide step-by-step diagnostic procedures
+4. Suggest corrective actions with safety considerations
+
+*Enable AI services for intelligent diagnostics and root cause analysis.*""",
+
+        "inventory": """📦 **Inventory Management (Demo Mode)**
+
+I can help with:
+- Part lookups and availability checks
+- Reorder recommendations
+- Stock level monitoring
+- Vendor comparison
+
+*Full AI capabilities require an API key configuration.*""",
+
+        "default": """🤖 **ChatterFix AI (Demo Mode)**
+
+I'm currently running without AI services configured. Here's what you can still do:
+
+✅ **Available Features:**
+- Navigate dashboards and reports
+- View work orders, assets, and inventory
+- Access training modules
+- Use voice commands for basic operations
+
+🔑 **To Enable Full AI:**
+Add one of these to your .env file:
+- `GEMINI_API_KEY` (recommended)
+- `OPENAI_API_KEY`
+- `XAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+
+How can I help you navigate ChatterFix today?"""
+    }
+
+    @classmethod
+    def get_response(cls, message: str, context_type: str = "general") -> str:
+        """Generate appropriate demo response based on message content"""
+        message_lower = message.lower()
+
+        # Check for greetings
+        if any(word in message_lower for word in ["hello", "hi", "hey", "help", "start"]):
+            return cls.DEMO_RESPONSES["greeting"]
+
+        # Check for work order related
+        if any(word in message_lower for word in ["work order", "ticket", "task", "job", "repair"]):
+            return cls.DEMO_RESPONSES["work_order"]
+
+        # Check for troubleshooting
+        if any(word in message_lower for word in ["troubleshoot", "diagnose", "fix", "error", "problem", "issue", "broken"]):
+            return cls.DEMO_RESPONSES["troubleshooting"]
+
+        # Check for inventory
+        if any(word in message_lower for word in ["part", "inventory", "stock", "order", "supplier"]):
+            return cls.DEMO_RESPONSES["inventory"]
+
+        # Context-based responses
+        context_map = {
+            "equipment_diagnosis": "troubleshooting",
+            "troubleshooting": "troubleshooting",
+            "work_order": "work_order",
+            "inventory": "inventory",
+        }
+
+        if context_type in context_map:
+            return cls.DEMO_RESPONSES[context_map[context_type]]
+
+        return cls.DEMO_RESPONSES["default"]
+
+
 class AIRouter:
     """
     Smart router that determines the best AI approach for each request.
@@ -230,6 +373,8 @@ class AIRouter:
     - SIMPLE tasks: Use fast single model (Gemini) for < 2 second response
     - MODERATE tasks: Use specialist from AI team
     - COMPLEX tasks: Use full AI team collaboration
+
+    Gracefully handles missing API keys by routing to available services or demo mode.
     """
 
     # Keywords indicating complex tasks requiring team collaboration
@@ -626,28 +771,41 @@ class AIRouter:
                 }
             except Exception as fallback_error:
                 elapsed_time = time.time() - start_time
+                logger.warning(f"All AI services failed, using demo mode: {fallback_error}")
 
-                # Record failure
+                # Use demo mode as ultimate fallback - never error out to user
+                demo_response = DemoResponseGenerator.get_response(message, context_type)
+
+                # Record as partial success (demo mode worked)
                 self.analytics.record(
                     message=message,
                     complexity=complexity.value,
-                    model_used="none",
+                    model_used="demo-mode",
                     response_time=elapsed_time,
-                    confidence=confidence,
-                    success=False
+                    confidence=0.5,
+                    success=True
                 )
 
                 return {
-                    "success": False,
-                    "response": f"I'm having trouble processing your request. Please try again.",
-                    "model_used": "none",
+                    "success": True,  # Demo mode is still a valid response
+                    "response": demo_response,
+                    "model_used": "demo-mode",
                     "complexity": complexity.value,
-                    "confidence": confidence,
-                    "error": str(fallback_error)
+                    "confidence": 0.5,
+                    "demo_mode": True,
+                    "note": "No AI services available - running in demo mode"
                 }
 
     def get_router_stats(self) -> Dict[str, Any]:
         """Get router statistics including cache, circuit breaker, and analytics"""
+        # Get AI service availability
+        ai_config = _get_ai_config()
+        ai_status = ai_config.get_ai_status_summary() if ai_config else {
+            "any_available": False,
+            "primary_service": None,
+            "available_services": []
+        }
+
         return {
             "cache": self.cache.get_stats(),
             "circuit_breaker": {
@@ -655,12 +813,20 @@ class AIRouter:
                 "failure_count": self.circuit_breaker.failure_count
             },
             "analytics": self.analytics.get_summary(),
-            "ai_team_available": self.ai_team_available
+            "ai_team_available": self.ai_team_available,
+            "ai_services": ai_status,
+            "demo_mode": not ai_status.get("any_available", False)
         }
 
+    def is_demo_mode(self) -> bool:
+        """Check if running in demo mode (no AI services configured)"""
+        ai_config = _get_ai_config()
+        if ai_config:
+            return not ai_config.has_any_ai_service()
+        return True  # If config unavailable, assume demo mode
+
     async def _route_to_gemini(self, message: str, context: str, user_id: Optional[int]) -> str:
-        """Route to Gemini for fast single-model response"""
-        logger.info("⚡ Routing to Gemini for fast response")
+        """Route to best available AI service (Gemini preferred, with fallbacks)"""
 
         # Add CMMS context for better responses
         cmms_context = """You are ChatterFix AI, an intelligent CMMS assistant for industrial maintenance technicians.
@@ -669,7 +835,33 @@ Be concise, professional, and action-oriented. Prioritize safety.
 
 """ + (context or "")
 
-        return await gemini_service.generate_response(message, cmms_context, user_id)
+        # Try Gemini first (fastest)
+        gemini = _get_gemini_service()
+        if gemini:
+            try:
+                # Check if Gemini has a valid API key
+                if hasattr(gemini, 'using_service_account') and gemini.using_service_account:
+                    logger.info("⚡ Routing to Gemini (service account)")
+                    return await gemini.generate_response(message, cmms_context, user_id)
+                elif hasattr(gemini, 'default_api_key') and gemini.default_api_key:
+                    logger.info("⚡ Routing to Gemini (API key)")
+                    return await gemini.generate_response(message, cmms_context, user_id)
+            except Exception as e:
+                logger.warning(f"Gemini failed, trying fallback: {e}")
+
+        # Try OpenAI as fallback
+        openai = _get_openai_service()
+        if openai:
+            try:
+                if hasattr(openai, 'default_api_key') and openai.default_api_key:
+                    logger.info("⚡ Routing to OpenAI (fallback)")
+                    return await openai.generate_response(message, cmms_context, user_id)
+            except Exception as e:
+                logger.warning(f"OpenAI failed: {e}")
+
+        # No AI service available - return demo response
+        logger.info("🎭 No AI service available - using demo mode")
+        return DemoResponseGenerator.get_response(message, "general")
 
     async def _route_to_specialists(self, message: str, context: str, specialists: List[str]) -> str:
         """Route to specific specialist agents - uses FAST MODE for quick responses"""

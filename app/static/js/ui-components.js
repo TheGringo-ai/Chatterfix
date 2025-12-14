@@ -11,133 +11,33 @@ document.addEventListener('alpine:init', () => {
     // 🎛️ User Preferences Store
     Alpine.store('userPreferences', {
         // Visual Effects Settings
-        tiltEffectsEnabled: localStorage.getItem('tiltEffectsEnabled') !== 'false', // Default to true
         animationsEnabled: localStorage.getItem('animationsEnabled') !== 'false', // Default to true
         showSettings: false, // Settings panel visibility
-        
-        // Toggle Functions
-        toggleTiltEffects() {
-            this.tiltEffectsEnabled = !this.tiltEffectsEnabled;
-            localStorage.setItem('tiltEffectsEnabled', this.tiltEffectsEnabled);
-            
-            // Apply or remove tilt effects immediately
-            this.applyTiltEffectsSetting();
-            
-            // Show feedback
-            ModernComponents.showNotification(
-                `Tilt effects ${this.tiltEffectsEnabled ? 'enabled' : 'disabled'}`,
-                'info',
-                2000
-            );
-        },
-        
+
         toggleAnimations() {
             this.animationsEnabled = !this.animationsEnabled;
             localStorage.setItem('animationsEnabled', this.animationsEnabled);
-            
+
             // Apply setting to GSAP
             if (this.animationsEnabled) {
                 gsap.globalTimeline.timeScale(1);
             } else {
                 gsap.globalTimeline.timeScale(0.01); // Nearly instant animations
             }
-            
+
             ModernComponents.showNotification(
                 `Animations ${this.animationsEnabled ? 'enabled' : 'disabled'}`,
                 'info',
                 2000
             );
         },
-        
-        applyTiltEffectsSetting() {
-            const tiltElements = document.querySelectorAll('.cmms-card, .capability-card, .metric, .item-card, .ai-brain, .realtime-monitor');
-            
-            tiltElements.forEach(element => {
-                if (this.tiltEffectsEnabled) {
-                    // Enable tilt effects
-                    element.classList.add('tilt-enabled');
-                    element.style.transform = '';
-                    element.style.transition = 'transform 0.1s ease-out';
-                } else {
-                    // Disable tilt effects
-                    element.classList.remove('tilt-enabled');
-                    element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-                    element.style.transition = 'none';
-                }
-            });
-            
-            // Re-initialize or destroy tilt listeners
-            if (this.tiltEffectsEnabled) {
-                this.initializeTiltEffects();
-            } else {
-                this.destroyTiltEffects();
-            }
-        },
-        
-        initializeTiltEffects() {
-            const tiltElements = document.querySelectorAll('.cmms-card, .capability-card, .metric, .item-card, .ai-brain, .realtime-monitor');
-            
-            tiltElements.forEach(element => {
-                if (element.dataset.tiltInitialized === 'true') return;
-                
-                element.addEventListener('mousemove', this.handleTiltMove.bind(this));
-                element.addEventListener('mouseleave', this.handleTiltLeave.bind(this));
-                element.dataset.tiltInitialized = 'true';
-            });
-        },
-        
-        destroyTiltEffects() {
-            const tiltElements = document.querySelectorAll('.cmms-card, .capability-card, .metric, .item-card, .ai-brain, .realtime-monitor');
-            
-            tiltElements.forEach(element => {
-                element.removeEventListener('mousemove', this.handleTiltMove);
-                element.removeEventListener('mouseleave', this.handleTiltLeave);
-                element.dataset.tiltInitialized = 'false';
-                element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-            });
-        },
-        
-        handleTiltMove(e) {
-            if (!this.tiltEffectsEnabled) return;
 
-            const element = e.currentTarget;
-
-            // Don't tilt modals or elements inside modals
-            if (element.closest('.modal') || element.classList.contains('modal')) return;
-
-            const rect = element.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            // Very subtle tilt: 1 degree max (was 3, originally 10)
-            const rotateX = (y - centerY) / centerY * -1;
-            const rotateY = (x - centerX) / centerX * 1;
-
-            element.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.005)`;
-        },
-        
-        handleTiltLeave(e) {
-            if (!this.tiltEffectsEnabled) return;
-
-            const element = e.currentTarget;
-
-            // Don't process modals
-            if (element.closest('.modal') || element.classList.contains('modal')) return;
-
-            element.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-        },
-        
         init() {
-            // Apply settings on page load
-            this.applyTiltEffectsSetting();
-            
             // Apply animation settings
             if (!this.animationsEnabled) {
                 gsap.globalTimeline.timeScale(0.01);
             }
-            
+
             console.log('✅ User preferences initialized');
         }
     });
@@ -2617,12 +2517,6 @@ document.addEventListener('alpine:init', () => {
 
 // Initialize all stores when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize stunning card tilt effects FIRST for premium UX
-    if (UIComponents && UIComponents.TiltEffects) {
-        UIComponents.TiltEffects.init();
-        console.log('✨ Card tilt effects initialized - stunning UI restored!');
-    }
-    
     // Ensure Alpine.js stores are available
     if (window.Alpine) {
         // Initialize user preferences first

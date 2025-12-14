@@ -302,16 +302,10 @@ body {
     transition: opacity 0.3s ease;
 }
 
-.cmms-card:hover:not(.tilt-enabled) {
-    transform: translateY(-8px) scale(1.02);
+.cmms-card:hover {
+    transform: translateY(-4px);
     box-shadow: var(--shadow-glass);
     border-color: var(--accent-color);
-}
-
-.cmms-card.tilt-enabled:hover {
-    box-shadow: var(--shadow-glass);
-    border-color: var(--accent-color);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s ease;
 }
 
 .cmms-card:hover::before {

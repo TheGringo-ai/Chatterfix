@@ -368,71 +368,96 @@ DEMO_STATS = {
 
 @router.get("/demo", response_class=HTMLResponse)
 async def demo_dashboard(request: Request):
-    """Demo dashboard with sample data"""
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "stats": DEMO_STATS,
-            "recent_work_orders": DEMO_WORK_ORDERS[:3],
-            "critical_assets": [
-                a
-                for a in DEMO_ASSETS
-                if a["criticality"] == "Critical" or a["status"] == "Down"
-            ],
-            "is_demo": True,
-        },
-    )
+    """Demo dashboard with real Firestore data"""
+    # Redirect to public_demo dashboard which uses real data
+    return RedirectResponse(url="/demo/dashboard", status_code=302)
 
 
 @router.get("/demo/assets", response_class=HTMLResponse)
 async def demo_assets(request: Request):
-    """Demo assets page with sample data"""
-    return templates.TemplateResponse(
-        "assets_list.html",
-        {
-            "request": request,
-            "assets": DEMO_ASSETS,
-            "stats": {
-                "total": len(DEMO_ASSETS),
-                "active": len(
-                    [a for a in DEMO_ASSETS if a["status"] == "Operational"]
-                ),
-                "critical": len(
-                    [a for a in DEMO_ASSETS if a["criticality"] == "Critical"]
-                ),
-                "maintenance_due": len(
-                    [a for a in DEMO_ASSETS if a["status"] in ["Maintenance Required", "Down"] or a["next_maintenance"] == "Overdue"]
-                ),
+    """Demo assets page with real Firestore data"""
+    from app.core.firestore_db import get_firestore_manager
+
+    try:
+        fm = get_firestore_manager()
+        assets = await fm.get_assets()
+
+        # Calculate stats from real data
+        stats = {
+            "total": len(assets),
+            "active": len([a for a in assets if a.get("status") in ["Operational", "Active", "operational"]]),
+            "critical": len([a for a in assets if a.get("criticality") == "Critical" or a.get("status") in ["Critical", "Down"]]),
+            "maintenance_due": len([a for a in assets if a.get("status") in ["Maintenance Required", "Warning", "Needs Attention"]]),
+        }
+
+        return templates.TemplateResponse(
+            "assets_list.html",
+            {
+                "request": request,
+                "assets": assets,
+                "stats": stats,
+                "is_demo": True,
+                "demo_mode": True,
+                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
             },
-            "is_demo": True,
-        },
-    )
+        )
+    except Exception as e:
+        import logging
+        logging.error(f"Error loading demo assets: {e}")
+        # Fallback to mock data if Firestore fails
+        return templates.TemplateResponse(
+            "assets_list.html",
+            {
+                "request": request,
+                "assets": DEMO_ASSETS,
+                "stats": {"total": len(DEMO_ASSETS), "active": 3, "critical": 1, "maintenance_due": 1},
+                "is_demo": True,
+            },
+        )
 
 
 @router.get("/demo/work-orders", response_class=HTMLResponse)
 async def demo_work_orders(request: Request):
-    """Demo work orders page with sample data"""
-    return templates.TemplateResponse(
-        "work_orders.html",
-        {
-            "request": request,
-            "work_orders": DEMO_WORK_ORDERS,
-            "stats": {
-                "total": len(DEMO_WORK_ORDERS),
-                "in_progress": len(
-                    [w for w in DEMO_WORK_ORDERS if w["status"] == "In Progress"]
-                ),
-                "scheduled": len(
-                    [w for w in DEMO_WORK_ORDERS if w["status"] == "Scheduled"]
-                ),
-                "overdue": len(
-                    [w for w in DEMO_WORK_ORDERS if w["status"] == "Overdue"]
-                ),
+    """Demo work orders page with real Firestore data"""
+    from app.core.firestore_db import get_firestore_manager
+
+    try:
+        fm = get_firestore_manager()
+        work_orders = await fm.get_work_orders()
+
+        # Calculate stats from real data
+        stats = {
+            "total": len(work_orders),
+            "in_progress": len([w for w in work_orders if w.get("status") in ["In Progress", "active"]]),
+            "scheduled": len([w for w in work_orders if w.get("status") in ["Scheduled", "Open", "pending"]]),
+            "overdue": len([w for w in work_orders if w.get("status") in ["Overdue", "On Hold"]]),
+            "completed": len([w for w in work_orders if w.get("status") in ["Completed", "completed"]]),
+        }
+
+        return templates.TemplateResponse(
+            "work_orders.html",
+            {
+                "request": request,
+                "work_orders": work_orders,
+                "stats": stats,
+                "is_demo": True,
+                "demo_mode": True,
+                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
             },
-            "is_demo": True,
-        },
-    )
+        )
+    except Exception as e:
+        import logging
+        logging.error(f"Error loading demo work orders: {e}")
+        # Fallback to mock data if Firestore fails
+        return templates.TemplateResponse(
+            "work_orders.html",
+            {
+                "request": request,
+                "work_orders": DEMO_WORK_ORDERS,
+                "stats": {"total": len(DEMO_WORK_ORDERS), "in_progress": 2, "scheduled": 1, "overdue": 1},
+                "is_demo": True,
+            },
+        )
 
 
 @router.get("/demo/team", response_class=HTMLResponse)
@@ -915,78 +940,48 @@ async def demo_diagnostics(request: Request):
 
 @router.get("/demo/inventory", response_class=HTMLResponse)
 async def demo_inventory(request: Request):
-    """Demo intelligent parts/inventory page"""
-    demo_parts = [
-        {
-            "id": 1,
-            "part_number": "FLT-001",
-            "name": "HVAC Air Filter - 20x25x1",
-            "category": "Filters",
-            "quantity": 15,
-            "reorder_point": 10,
-            "cost": 12.50,
-            "supplier": "FilterPro Inc",
-            "status": "In Stock",
-            "compatible_assets": ["HVAC Unit B-2", "HVAC Unit C-1"],
-            "monthly_usage": 4,
-            "ai_recommendation": "Current stock sufficient for 3.75 months",
-        },
-        {
-            "id": 2,
-            "part_number": "OIL-COMP-5W30",
-            "name": "Compressor Oil 5W-30 - 5L",
-            "category": "Lubricants",
-            "quantity": 3,
-            "reorder_point": 5,
-            "cost": 85.00,
-            "supplier": "Industrial Lubricants",
-            "status": "Low Stock",
-            "compatible_assets": ["Compressor C-5", "Compressor D-2"],
-            "monthly_usage": 2,
-            "ai_recommendation": "⚠️ Reorder recommended - only 1.5 months supply remaining",
-        },
-        {
-            "id": 3,
-            "part_number": "BELT-V001",
-            "name": "V-Belt - Industrial Grade",
-            "category": "Belts",
-            "quantity": 0,
-            "reorder_point": 2,
-            "cost": 45.00,
-            "supplier": "PowerTrans Supply",
-            "status": "Out of Stock",
-            "compatible_assets": ["Production Line A", "Conveyor System"],
-            "monthly_usage": 1,
-            "ai_recommendation": "🚨 Critical - Order immediately! Predicted need in 12 days",
-        },
-        {
-            "id": 4,
-            "part_number": "BRG-6205",
-            "name": "Deep Groove Ball Bearing 6205",
-            "category": "Bearings",
-            "quantity": 8,
-            "reorder_point": 4,
-            "cost": 15.75,
-            "supplier": "Bearing Depot",
-            "status": "In Stock",
-            "compatible_assets": ["Production Line A", "Forklift FL-001"],
-            "monthly_usage": 1,
-            "ai_recommendation": "Stock level optimal for 8 months",
-        },
-    ]
+    """Demo intelligent parts/inventory page with real Firestore data"""
+    from app.core.firestore_db import get_firestore_manager
 
-    return templates.TemplateResponse(
-        "parts_catalog.html",
-        {
-            "request": request,
-            "parts": demo_parts,
-            "low_stock_count": len(
-                [p for p in demo_parts if p["quantity"] <= p["reorder_point"]]
-            ),
-            "total_value": sum(p["quantity"] * p["cost"] for p in demo_parts),
-            "is_demo": True,
-        },
-    )
+    try:
+        fm = get_firestore_manager()
+        parts_docs = list(fm.db.collection("parts").limit(100).stream())
+        parts = [{"id": p.id, **p.to_dict()} for p in parts_docs]
+
+        # Calculate stats from real data
+        low_stock_count = len([p for p in parts if p.get("quantity", 0) <= p.get("reorder_point", 5)])
+        total_value = sum((p.get("quantity", 0) * p.get("cost", 0)) for p in parts)
+
+        return templates.TemplateResponse(
+            "parts_catalog.html",
+            {
+                "request": request,
+                "parts": parts,
+                "low_stock_count": low_stock_count,
+                "total_value": total_value,
+                "is_demo": True,
+                "demo_mode": True,
+                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.error(f"Error loading demo inventory: {e}")
+        # Fallback to mock data
+        demo_parts = [
+            {"id": 1, "part_number": "FLT-001", "name": "HVAC Air Filter", "quantity": 15, "reorder_point": 10, "cost": 12.50, "status": "In Stock"},
+            {"id": 2, "part_number": "OIL-COMP", "name": "Compressor Oil 5W-30", "quantity": 3, "reorder_point": 5, "cost": 85.00, "status": "Low Stock"},
+        ]
+        return templates.TemplateResponse(
+            "parts_catalog.html",
+            {
+                "request": request,
+                "parts": demo_parts,
+                "low_stock_count": 1,
+                "total_value": 442.50,
+                "is_demo": True,
+            },
+        )
 
 
 @router.get("/demo/reports", response_class=HTMLResponse)

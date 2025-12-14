@@ -631,7 +631,7 @@ async def onboarding_module(request: Request, module_id: str, role: str = None):
         return RedirectResponse(f"/onboarding/role/{role}")
 
     # Generate AI-powered content if needed
-    if "content" not in module and gemini_service.model:
+    if "content" not in module and gemini_service.is_available():
         module["content"] = await generate_module_content(module, role)
 
     return templates.TemplateResponse(

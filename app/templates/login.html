@@ -41,6 +41,7 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+            box-sizing: border-box;
         }
         .form-group input:focus {
             outline: none;
@@ -61,11 +62,37 @@
         .btn-login:hover {
             transform: translateY(-2px);
         }
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
         .error-message {
             color: #e74c3c;
             text-align: center;
             margin-top: 15px;
+            padding: 10px;
+            background: #fdeaea;
+            border-radius: 5px;
             display: none;
+        }
+        .success-message {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f8f0;
+            border-radius: 5px;
+            display: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .loading::after {
+            content: "Signing in...";
+            color: #667eea;
         }
     </style>
 </head>
@@ -73,18 +100,20 @@
     <div class="login-container">
         <div class="login-box">
             <h1>🔧 ChatterFix CMMS</h1>
-            <form action="/auth/login" method="POST" id="loginForm">
+            <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" required autofocus>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required autofocus placeholder="Enter your email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
                 </div>
-                <button type="submit" class="btn-login">Login</button>
+                <button type="submit" class="btn-login" id="loginBtn">Login</button>
+                <div class="loading" id="loading"></div>
                 <div class="error-message" id="errorMessage"></div>
-                
+                <div class="success-message" id="successMessage"></div>
+
                 <!-- Marketing Link for New Visitors -->
                 <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
                     <small style="color: #666;">
@@ -92,14 +121,124 @@
                     </small>
                 </div>
             </form>
+
+            <!-- Demo Credentials -->
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; font-size: 12px;">
+                <strong>Demo Credentials:</strong><br>
+                <code>manager@williams.com</code> / <code>password123</code>
+            </div>
         </div>
     </div>
-    
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <script>
-        // Handle form submission
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            const errorMsg = document.getElementById('errorMessage');
+        let firebaseInitialized = false;
+
+        // Initialize Firebase from server config
+        async function initFirebase() {
+            if (firebaseInitialized) return true;
+            try {
+                const response = await fetch('/auth/config');
+                const config = await response.json();
+                if (config.firebase_config && config.firebase_config.apiKey) {
+                    firebase.initializeApp(config.firebase_config);
+                    firebaseInitialized = true;
+                    return true;
+                }
+                console.error('Firebase config not available from server');
+                return false;
+            } catch (error) {
+                console.error('Failed to fetch Firebase config:', error);
+                return false;
+            }
+        }
+
+        // Initialize on page load
+        initFirebase();
+
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loading = document.getElementById('loading');
+        const errorMsg = document.getElementById('errorMessage');
+        const successMsg = document.getElementById('successMessage');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Reset messages
             errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            loading.style.display = 'block';
+            loginBtn.disabled = true;
+
+            try {
+                // Ensure Firebase is initialized
+                if (!firebaseInitialized) {
+                    const initialized = await initFirebase();
+                    if (!initialized) {
+                        throw new Error('Firebase authentication not configured. Please contact support.');
+                    }
+                }
+
+                // Sign in with Firebase
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Get the ID token
+                const idToken = await user.getIdToken();
+
+                successMsg.textContent = 'Login successful! Redirecting...';
+                successMsg.style.display = 'block';
+
+                // Send token to server to create session
+                const response = await fetch('/auth/firebase-signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        idToken: idToken,
+                        email: user.email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard';
+                } else {
+                    throw new Error(data.message || 'Server authentication failed');
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                loading.style.display = 'none';
+                loginBtn.disabled = false;
+
+                // Handle Firebase auth errors
+                let message = 'Login failed. Please try again.';
+                if (error.code === 'auth/user-not-found') {
+                    message = 'No account found with this email.';
+                } else if (error.code === 'auth/wrong-password') {
+                    message = 'Incorrect password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    message = 'Invalid email address.';
+                } else if (error.code === 'auth/too-many-requests') {
+                    message = 'Too many failed attempts. Please try again later.';
+                } else if (error.message) {
+                    message = error.message;
+                }
+
+                errorMsg.textContent = message;
+                errorMsg.style.display = 'block';
+            }
         });
     </script>
 </body>

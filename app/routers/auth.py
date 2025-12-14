@@ -336,16 +336,22 @@ async def firebase_signin(response: Response, request: Request):
 
 @router.get("/config")
 async def get_auth_config():
-    """Get authentication configuration for frontend (without sensitive keys)"""
+    """Get authentication configuration for frontend
+
+    Note: Firebase API keys are designed to be public - they are protected
+    by Firebase Security Rules, not by keeping them secret. This is how
+    Firebase web authentication is designed to work.
+    """
     use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
 
     config = {"use_firebase": use_firebase, "firebase_config": None}
 
     if use_firebase:
-        # Only return non-sensitive configuration
-        # API key removed for security - should be loaded client-side from environment
         project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms")
+        # Firebase API key from environment - safe to expose to client
+        api_key = os.getenv("FIREBASE_API_KEY", "")
         config["firebase_config"] = {
+            "apiKey": api_key,
             "authDomain": f"{project_id}.firebaseapp.com",
             "projectId": project_id,
             "storageBucket": f"{project_id}.appspot.com",

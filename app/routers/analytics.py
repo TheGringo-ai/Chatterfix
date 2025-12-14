@@ -645,7 +645,7 @@ async def analytics_dashboard(request: Request, current_user: User = Depends(get
     """Render the advanced analytics dashboard"""
     # Get KPI summary for initial render
     try:
-        kpi_data = analytics_service.get_kpi_summary(30)
+        kpi_data = await analytics_service.get_kpi_summary(30)
     except Exception:
         kpi_data = {}
 
@@ -658,7 +658,7 @@ async def analytics_dashboard(request: Request, current_user: User = Depends(get
 async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get comprehensive KPI summary"""
     try:
-        data = analytics_service.get_kpi_summary(days)
+        data = await analytics_service.get_kpi_summary(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -668,7 +668,7 @@ async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: Use
 async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get Mean Time To Repair (MTTR) metrics"""
     try:
-        data = analytics_service.calculate_mttr(days)
+        data = await analytics_service.calculate_mttr(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -678,7 +678,7 @@ async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: User = Dep
 async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get Mean Time Between Failures (MTBF) metrics"""
     try:
-        data = analytics_service.calculate_mtbf(days)
+        data = await analytics_service.calculate_mtbf(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -688,7 +688,7 @@ async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: User = Dep
 async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get asset utilization metrics"""
     try:
-        data = analytics_service.calculate_asset_utilization(days)
+        data = await analytics_service.calculate_asset_utilization(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -698,7 +698,7 @@ async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_use
 async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost tracking metrics"""
     try:
-        data = analytics_service.get_cost_tracking(days)
+        data = await analytics_service.get_cost_tracking(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -708,7 +708,7 @@ async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: U
 async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order metrics"""
     try:
-        data = analytics_service.get_work_order_metrics(days)
+        data = await analytics_service.get_work_order_metrics(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -718,7 +718,7 @@ async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_us
 async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get compliance and PM adherence metrics"""
     try:
-        data = analytics_service.get_compliance_metrics(days)
+        data = await analytics_service.get_compliance_metrics(days)
         return JSONResponse(content=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -742,7 +742,7 @@ async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), curre
         )
 
     try:
-        data = analytics_service.get_trend_data(metric, days)
+        data = await analytics_service.get_trend_data(metric, days)
         return JSONResponse(
             content={"metric": metric, "period_days": days, "data": data}
         )
@@ -858,7 +858,7 @@ async def export_assets_quick(format: str, current_user: User = Depends(get_curr
 async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order status distribution for pie/doughnut chart"""
     try:
-        data = analytics_service.get_work_order_metrics(days)
+        data = await analytics_service.get_work_order_metrics(days)
         status_breakdown = data.get("status_breakdown", {})
 
         return JSONResponse(
@@ -882,7 +882,7 @@ async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), curre
 async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order priority distribution for chart"""
     try:
-        data = analytics_service.get_work_order_metrics(days)
+        data = await analytics_service.get_work_order_metrics(days)
         priority_breakdown = data.get("priority_breakdown", {})
 
         return JSONResponse(
@@ -905,7 +905,7 @@ async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), c
 async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost trend for line chart"""
     try:
-        data = analytics_service.get_cost_tracking(days)
+        data = await analytics_service.get_cost_tracking(days)
         daily_trend = data.get("daily_trend", [])
 
         return JSONResponse(
@@ -923,7 +923,7 @@ async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user
 async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order completion trend for line chart"""
     try:
-        data = analytics_service.get_work_order_metrics(days)
+        data = await analytics_service.get_work_order_metrics(days)
         daily_trend = data.get("daily_trend", [])
 
         return JSONResponse(
@@ -953,7 +953,7 @@ async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), curren
 async def get_asset_health_chart(current_user: User = Depends(get_current_active_user)):
     """Get asset health distribution for chart"""
     try:
-        data = analytics_service.calculate_asset_utilization(30)
+        data = await analytics_service.calculate_asset_utilization(30)
         status_breakdown = data.get("status_breakdown", {})
 
         return JSONResponse(
@@ -976,7 +976,7 @@ async def get_asset_health_chart(current_user: User = Depends(get_current_active
 async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost breakdown by maintenance type for chart"""
     try:
-        data = analytics_service.get_cost_tracking(days)
+        data = await analytics_service.get_cost_tracking(days)
         costs_by_type = data.get("costs_by_type", {})
 
         return JSONResponse(

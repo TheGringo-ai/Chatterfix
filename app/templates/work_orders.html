@@ -21,8 +21,13 @@
 </div>
 
 <div class="cmms-card">
-    <h2>Create New Work Order</h2>
-    <form id="create-wo-form" action="/work-orders" method="post" enctype="multipart/form-data">
+    <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleCreateWOForm()">
+        <h2 style="margin: 0;">Create New Work Order</h2>
+        <button type="button" class="cmms-btn" id="toggleCreateWOBtn">
+            <i class="fas fa-plus" id="toggleCreateWOIcon"></i> <span id="toggleCreateWOText">Show Form</span>
+        </button>
+    </div>
+    <form id="create-wo-form" action="/work-orders" method="post" enctype="multipart/form-data" style="display: none; margin-top: 1rem;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
                 <label style="display: block; margin-bottom: 0.5rem;">Title</label>
@@ -573,6 +578,25 @@
 </div>
 
 <script>
+    // Toggle Create Work Order Form
+    function toggleCreateWOForm() {
+        const form = document.getElementById('create-wo-form');
+        const icon = document.getElementById('toggleCreateWOIcon');
+        const text = document.getElementById('toggleCreateWOText');
+
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            icon.classList.remove('fa-plus');
+            icon.classList.add('fa-minus');
+            text.textContent = 'Hide Form';
+        } else {
+            form.style.display = 'none';
+            icon.classList.remove('fa-minus');
+            icon.classList.add('fa-plus');
+            text.textContent = 'Show Form';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         setupUnifiedFiltering('wo-list', {
             itemSelector: '.item-card',

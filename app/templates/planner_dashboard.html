@@ -17,17 +17,12 @@
 {% endif %}
 
 <style>
-    :root {
-        --card-bg: #1e1e2f;
-        --border-color: rgba(255, 255, 255, 0.1);
-        --text-primary: #ffffff;
-        --text-secondary: rgba(255, 255, 255, 0.7);
-    }
-
+    /* Use main theme variables - don't override root */
     .planner-dashboard {
         padding: 2rem;
         max-width: 1400px;
         margin: 0 auto;
+        color: var(--text-primary);
     }
 
     .planner-header {
@@ -40,11 +35,16 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        color: var(--text-primary);
     }
 
     .planner-header h1::before {
         content: "📅";
         font-size: 2.5rem;
+    }
+
+    .planner-header p {
+        color: var(--text-secondary);
     }
 
     .quick-stats {
@@ -89,10 +89,12 @@
     }
 
     .planner-widget {
-        background: var(--card-bg);
+        background: var(--bg-card);
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-glass);
+        color: var(--text-primary);
     }
 
     .widget-header {
@@ -101,7 +103,7 @@
         align-items: center;
         margin-bottom: 1rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border-glass);
     }
 
     .widget-title {
@@ -110,6 +112,7 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        color: var(--text-primary);
     }
 
     .widget-content {
@@ -126,11 +129,12 @@
         justify-content: space-between;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
+        color: var(--text-primary);
     }
 
     .capacity-progress {
         height: 24px;
-        background: var(--border-color);
+        background: var(--border-glass);
         border-radius: 12px;
         overflow: hidden;
         position: relative;
@@ -154,22 +158,27 @@
 
     .backlog-item {
         padding: 1rem;
-        background: var(--bg-secondary);
+        background: var(--bg-glass);
         border-radius: 8px;
         margin-bottom: 0.75rem;
-        border-left: 4px solid var(--primary-color);
+        border-left: 4px solid var(--accent-color);
+        color: var(--text-primary);
     }
 
-    .backlog-item.urgent {
+    .backlog-item.urgent, .backlog-item.Critical {
         border-left-color: #f5576c;
     }
 
-    .backlog-item.high {
+    .backlog-item.high, .backlog-item.High {
         border-left-color: #f093fb;
     }
 
-    .backlog-item.medium {
+    .backlog-item.medium, .backlog-item.Medium {
         border-left-color: #4facfe;
+    }
+
+    .backlog-item.low, .backlog-item.Low {
+        border-left-color: #6c757d;
     }
 
     .backlog-header {
@@ -182,6 +191,7 @@
     .backlog-title {
         font-weight: 600;
         font-size: 1rem;
+        color: var(--text-primary);
     }
 
     .priority-badge {
@@ -192,24 +202,24 @@
         text-transform: uppercase;
     }
 
-    .priority-badge.urgent {
+    .priority-badge.urgent, .priority-badge.Critical {
         background: #f5576c;
         color: white;
     }
 
-    .priority-badge.high {
+    .priority-badge.high, .priority-badge.High {
         background: #f093fb;
         color: white;
     }
 
-    .priority-badge.medium {
+    .priority-badge.medium, .priority-badge.Medium {
         background: #4facfe;
         color: white;
     }
 
-    .priority-badge.low {
-        background: var(--border-color);
-        color: var(--text-primary);
+    .priority-badge.low, .priority-badge.Low {
+        background: #6c757d;
+        color: white;
     }
 
     .backlog-meta {
@@ -221,12 +231,13 @@
 
     .asset-pm-item {
         padding: 0.75rem;
-        background: var(--bg-secondary);
+        background: var(--bg-glass);
         border-radius: 8px;
         margin-bottom: 0.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        color: var(--text-primary);
     }
 
     .pm-status {
@@ -273,8 +284,9 @@
     .compliance-stat {
         text-align: center;
         padding: 1rem;
-        background: var(--bg-secondary);
+        background: var(--bg-glass);
         border-radius: 8px;
+        color: var(--text-primary);
     }
 
     .compliance-number {
@@ -308,7 +320,7 @@
 
     .refresh-btn {
         padding: 0.5rem 1rem;
-        background: var(--primary-color);
+        background: var(--accent-gradient);
         color: white;
         border: none;
         border-radius: 8px;
@@ -320,6 +332,37 @@
     .refresh-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    /* Modal form styling - ensure readability */
+    .planner-dashboard .modal-content {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-glass);
+    }
+
+    .planner-dashboard .modal-header,
+    .planner-dashboard .modal-footer {
+        border-color: var(--border-glass);
+    }
+
+    .planner-dashboard .form-label {
+        color: var(--text-primary);
+    }
+
+    .planner-dashboard .form-control,
+    .planner-dashboard .form-select {
+        background-color: var(--bg-glass);
+        color: var(--text-primary);
+        border-color: var(--border-glass);
+    }
+
+    .planner-dashboard .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .planner-dashboard .text-muted {
+        color: var(--text-secondary) !important;
     }
     
     /* FullCalendar Customizations - Modern Glass Morphism Design */

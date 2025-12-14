@@ -27,41 +27,35 @@
             <i class="fas fa-plus" id="toggleCreateWOIcon"></i> <span id="toggleCreateWOText">Show Form</span>
         </button>
     </div>
-    <form id="create-wo-form" action="/work-orders" method="post" enctype="multipart/form-data" style="display: none; margin-top: 1rem;">
+    <form id="create-wo-form" class="form-light" action="/work-orders" method="post" enctype="multipart/form-data" style="display: none; margin-top: 1rem;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Title</label>
-                <input type="text" name="title" required
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="wo-title" class="form-label">Title</label>
+                <input type="text" name="title" id="wo-title" class="form-control" required>
             </div>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Priority</label>
-                <select name="priority"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
-                    <option value="Low" style="color: black;">Low</option>
-                    <option value="Medium" selected style="color: black;">Medium</option>
-                    <option value="High" style="color: black;">High</option>
-                    <option value="Critical" style="color: black;">Critical</option>
+                <label for="wo-priority" class="form-label">Priority</label>
+                <select name="priority" id="wo-priority" class="form-control">
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
                 </select>
             </div>
-            
+
             <!-- Asset Selection -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-cogs"></i> Asset</label>
-                <select name="asset_id" id="assetSelect"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="assetSelect" class="form-label"><i class="fas fa-cogs"></i> Asset</label>
+                <select name="asset_id" id="assetSelect" class="form-control">
                     <option value="">Select Asset...</option>
                 </select>
-                <small style="color: #6c757d; display: block; margin-top: 0.3rem;">
-                    Choose the asset this work order relates to
-                </small>
+                <small class="form-text">Choose the asset this work order relates to</small>
             </div>
-            
+
             <!-- Work Order Type -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Work Order Type</label>
-                <select name="work_order_type"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="wo-type" class="form-label">Work Order Type</label>
+                <select name="work_order_type" id="wo-type" class="form-control">
                     <option value="Corrective">Corrective Maintenance</option>
                     <option value="Preventive">Preventive Maintenance</option>
                     <option value="Emergency">Emergency Repair</option>
@@ -71,94 +65,83 @@
             </div>
 
             <div style="grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Description</label>
-                <textarea name="description" rows="3"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                <label for="wo-description" class="form-label">Description</label>
+                <textarea name="description" id="wo-description" rows="3" class="form-control"></textarea>
             </div>
-            
+
             <!-- Scheduling Section -->
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-calendar"></i> Due Date</label>
-                <input type="date" name="due_date"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="wo-due-date" class="form-label"><i class="fas fa-calendar"></i> Due Date</label>
+                <input type="date" name="due_date" id="wo-due-date" class="form-control">
             </div>
-            
+
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-clock"></i> Scheduled Time</label>
-                <input type="datetime-local" name="scheduled_time"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="wo-scheduled-time" class="form-label"><i class="fas fa-clock"></i> Scheduled Time</label>
+                <input type="datetime-local" name="scheduled_time" id="wo-scheduled-time" class="form-control">
             </div>
-            
+
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-user"></i> Assigned To</label>
-                <select name="assigned_to" id="technicianSelect"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="technicianSelect" class="form-label"><i class="fas fa-user"></i> Assigned To</label>
+                <select name="assigned_to" id="technicianSelect" class="form-control">
                     <option value="">Select Technician...</option>
                 </select>
             </div>
-            
+
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Estimated Hours</label>
-                <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="2.5"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <label for="wo-estimated-hours" class="form-label">Estimated Hours</label>
+                <input type="number" name="estimated_hours" id="wo-estimated-hours" min="0" step="0.5" placeholder="2.5" class="form-control">
             </div>
             <div style="grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">📎 Attachments</label>
-                <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx,.txt"
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
-                <small style="color: #6c757d; display: block; margin-top: 0.3rem;">
-                    Upload photos, documents, or files related to this work order. Multiple files supported.
-                </small>
+                <label for="wo-files" class="form-label">📎 Attachments</label>
+                <input type="file" name="files" id="wo-files" multiple accept="image/*,.pdf,.doc,.docx,.txt" class="form-control">
+                <small class="form-text">Upload photos, documents, or files related to this work order. Multiple files supported.</small>
             </div>
         </div>
 
         <!-- Parts Checkout Section -->
-        <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-            <h3 style="margin-bottom: 1rem; color: #495057;"><i class="fas fa-tools"></i> Parts & Materials Checkout</h3>
+        <div class="parts-section">
+            <h3><i class="fas fa-tools"></i> Parts & Materials Checkout</h3>
             <div id="partsContainer">
                 <div class="parts-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Part/Material</label>
-                        <select name="parts[0][part_id]" class="part-select"
-                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <label for="part-select-0" class="form-label">Part/Material</label>
+                        <select name="parts[0][part_id]" id="part-select-0" class="part-select form-control">
                             <option value="">Select Part...</option>
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Quantity</label>
-                        <input type="number" name="parts[0][quantity]" min="1" placeholder="1"
-                            style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <label for="part-qty-0" class="form-label">Quantity</label>
+                        <input type="number" name="parts[0][quantity]" id="part-qty-0" min="1" placeholder="1" class="form-control">
                     </div>
                     <div>
-                        <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Available Stock</label>
-                        <span class="stock-display" style="display: block; padding: 0.8rem; background: #e9ecef; border-radius: 8px; color: #495057;">-</span>
+                        <label class="form-label">Available Stock</label>
+                        <span class="stock-display">-</span>
                     </div>
                     <div>
-                        <button type="button" class="remove-part-btn" onclick="removePart(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <button type="button" class="cmms-btn-danger" onclick="removePart(this)">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
                 <button type="button" onclick="addPart()" class="cmms-btn-secondary">
                     <i class="fas fa-plus"></i> Add Another Part
                 </button>
-                <div style="font-size: 0.9em; color: #6c757d;">
+                <small class="form-text">
                     <i class="fas fa-info-circle"></i> Parts will be automatically deducted from inventory when work order is created
-                </div>
+                </small>
             </div>
         </div>
 
         <!-- Work Instructions Section -->
-        <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeaa7;">
-            <h3 style="margin-bottom: 1rem; color: #856404;"><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
+        <div class="instructions-section">
+            <h3><i class="fas fa-clipboard-list"></i> Work Instructions & Safety Notes</h3>
             <div>
-                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Detailed Instructions for Technician</label>
-                <textarea name="work_instructions" rows="4" placeholder="Enter step-by-step instructions, safety requirements, special tools needed, etc."
-                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
-                <small style="color: #856404; display: block; margin-top: 0.3rem;">
+                <label for="wo-instructions" class="form-label">Detailed Instructions for Technician</label>
+                <textarea name="work_instructions" id="wo-instructions" rows="4" placeholder="Enter step-by-step instructions, safety requirements, special tools needed, etc." class="form-control"></textarea>
+                <small class="form-text text-warning">
                     <i class="fas fa-exclamation-triangle"></i> Include safety precautions, required PPE, and any special procedures
                 </small>
             </div>
@@ -207,7 +190,7 @@
                 </div>
                 {% endif %}
                 <div>
-                    <h3 style="margin: 0 0 0.5rem 0;">#{{ wo.id }} {{ wo.title }}</h3>
+                    <h3 style="margin: 0 0 0.5rem 0;">{{ wo.title }}</h3>
                     <p style="opacity: 0.8; margin: 0 0 1rem 0;">{{ wo.description }}</p>
                     <div style="display: flex; gap: 1rem; font-size: 0.9rem; opacity: 0.7;">
                         <span>👤 {{ wo.assigned_to or 'Unassigned' }}</span>
@@ -240,12 +223,12 @@
 </div>
 
 <!-- AI Assistant Modal -->
-<div id="aiAssistantModal" class="modal"
+<div id="aiAssistantModal" class="modal modal-light"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 5% auto; width: 500px; padding: 30px; background: #ffffff; color: #212529;">
+    <div class="modal-content form-light" style="margin: 5% auto; width: 500px; padding: 30px;">
         <h2 style="color: #212529;"><i class="fas fa-robot"></i> AI Assistant</h2>
         <div id="chatHistory"
-            style="height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px;">
+            style="height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; background: #ffffff;">
             <div class="message ai">Hello! I'm your maintenance assistant. How can I help you today?</div>
         </div>
         <div style="display:flex; gap:10px;">
@@ -259,11 +242,11 @@
 </div>
 
 <!-- Edit Work Order Modal -->
-<div id="editWOModal" class="modal"
+<div id="editWOModal" class="modal modal-light"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px; background: #ffffff; color: #212529;">
+    <div class="modal-content form-light" style="margin: 2% auto; width: 90%; max-width: 800px; padding: 30px;">
         <h2 style="color: #212529;">✏️ Edit Work Order</h2>
-        <form id="edit-wo-form" method="post">
+        <form id="edit-wo-form" class="form-light" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div>
                     <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Title</label>
@@ -389,15 +372,15 @@
 </div>
 
 <!-- Work Order Completion Modal -->
-<div id="completionModal" class="modal"
+<div id="completionModal" class="modal modal-light"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 700px; padding: 30px; background: #ffffff; color: #212529;">
+    <div class="modal-content form-light" style="margin: 2% auto; width: 90%; max-width: 700px; padding: 30px;">
         <h2 style="color: #28a745;"><i class="fas fa-check-circle"></i> Complete Work Order</h2>
         <div id="completion-wo-title" style="margin-bottom: 2rem; padding: 1rem; background: rgba(40, 167, 69, 0.1); border-radius: 8px; border-left: 4px solid #28a745;">
             <h3 style="margin: 0; color: #155724;">Work Order Title</h3>
         </div>
 
-        <form id="completion-form" method="post">
+        <form id="completion-form" class="form-light" method="post">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
                 <div>
                     <label style="display: block; margin-bottom: 0.5rem; color: #212529;"><i class="fas fa-clock"></i> Actual Hours Worked</label>
@@ -522,9 +505,9 @@
 </div>
 
 <!-- Work Order Barcode Scanner Modal -->
-<div id="workOrderBarcodeScanModal" class="modal"
+<div id="workOrderBarcodeScanModal" class="modal modal-light"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px; background: #ffffff; color: #212529;">
+    <div class="modal-content form-light" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
         <h2 style="color: #212529;"><i class="fas fa-qrcode"></i> Scan Asset for Work Orders</h2>
         <p style="color: #495057;">Scan an asset's barcode to quickly view its work orders and create new ones.</p>
 
@@ -550,13 +533,13 @@
         <!-- File Upload Option -->
         <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
             <h4>Or Upload Barcode Image</h4>
-            <form id="woBarcodeUploadForm" enctype="multipart/form-data">
+            <form id="woBarcodeUploadForm" class="form-light" enctype="multipart/form-data">
                 <input type="file" id="woBarcodeFile" name="file" accept="image/*" class="form-control" onchange="uploadWOBarcode()">
             </form>
         </div>
 
         <!-- Manual Entry Option -->
-        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
+        <div class="form-light" style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
             <h4>Or Enter Asset Tag Manually</h4>
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="woManualAssetTag" class="form-control" placeholder="Enter asset tag or barcode...">
@@ -987,33 +970,37 @@
         partRow.remove();
     }
 
+    // Helper function to set stock display styling using CSS classes
+    function setStockDisplayClass(stockDisplay, stock) {
+        // Remove all stock classes first
+        stockDisplay.classList.remove('stock-ok', 'stock-low', 'stock-out');
+
+        if (stock === 0) {
+            stockDisplay.classList.add('stock-out');
+        } else if (stock <= 5) {
+            stockDisplay.classList.add('stock-low');
+        } else {
+            stockDisplay.classList.add('stock-ok');
+        }
+    }
+
     function updatePartStock(select) {
         const selectedOption = select.options[select.selectedIndex];
         const stockDisplay = select.closest('.parts-row').querySelector('.stock-display');
-        
+
         if (selectedOption && selectedOption.dataset.stock !== undefined) {
             const stock = parseInt(selectedOption.dataset.stock);
             stockDisplay.textContent = stock;
-            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
-            
+
             // Update quantity validation
             const quantityInput = select.closest('.parts-row').querySelector('input[type="number"]');
             quantityInput.max = stock;
-            
-            if (stock === 0) {
-                stockDisplay.style.background = '#f8d7da';
-                stockDisplay.style.color = '#721c24';
-            } else if (stock <= 5) {
-                stockDisplay.style.background = '#fff3cd';
-                stockDisplay.style.color = '#856404';
-            } else {
-                stockDisplay.style.background = '#d4edda';
-                stockDisplay.style.color = '#155724';
-            }
+
+            // Use CSS classes instead of inline styles
+            setStockDisplayClass(stockDisplay, stock);
         } else {
             stockDisplay.textContent = '-';
-            stockDisplay.style.background = '#e9ecef';
-            stockDisplay.style.color = '#495057';
+            stockDisplay.classList.remove('stock-ok', 'stock-low', 'stock-out');
         }
     }
 
@@ -1103,29 +1090,19 @@
     function updateEditPartStock(select) {
         const selectedOption = select.options[select.selectedIndex];
         const stockDisplay = select.closest('.parts-row').querySelector('.stock-display');
-        
+
         if (selectedOption && selectedOption.dataset.stock !== undefined) {
             const stock = parseInt(selectedOption.dataset.stock);
             stockDisplay.textContent = stock;
-            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
-            
+
             const quantityInput = select.closest('.parts-row').querySelector('input[type="number"]');
             quantityInput.max = stock;
-            
-            if (stock === 0) {
-                stockDisplay.style.background = '#f8d7da';
-                stockDisplay.style.color = '#721c24';
-            } else if (stock <= 5) {
-                stockDisplay.style.background = '#fff3cd';
-                stockDisplay.style.color = '#856404';
-            } else {
-                stockDisplay.style.background = '#d4edda';
-                stockDisplay.style.color = '#155724';
-            }
+
+            // Use CSS classes instead of inline styles
+            setStockDisplayClass(stockDisplay, stock);
         } else {
             stockDisplay.textContent = '-';
-            stockDisplay.style.background = '#e9ecef';
-            stockDisplay.style.color = '#495057';
+            stockDisplay.classList.remove('stock-ok', 'stock-low', 'stock-out');
         }
     }
 
@@ -1257,29 +1234,19 @@
     function updateCompletionPartStock(select) {
         const selectedOption = select.options[select.selectedIndex];
         const stockDisplay = select.closest('.completion-parts-row').querySelector('.stock-display');
-        
+
         if (selectedOption && selectedOption.dataset.stock !== undefined) {
             const stock = parseInt(selectedOption.dataset.stock);
             stockDisplay.textContent = stock;
-            stockDisplay.style.color = stock > 0 ? '#28a745' : '#dc3545';
-            
+
             const quantityInput = select.closest('.completion-parts-row').querySelector('input[type="number"]');
             quantityInput.max = stock;
-            
-            if (stock === 0) {
-                stockDisplay.style.background = '#f8d7da';
-                stockDisplay.style.color = '#721c24';
-            } else if (stock <= 5) {
-                stockDisplay.style.background = '#fff3cd';
-                stockDisplay.style.color = '#856404';
-            } else {
-                stockDisplay.style.background = '#d4edda';
-                stockDisplay.style.color = '#155724';
-            }
+
+            // Use CSS classes instead of inline styles
+            setStockDisplayClass(stockDisplay, stock);
         } else {
             stockDisplay.textContent = '-';
-            stockDisplay.style.background = '#e9ecef';
-            stockDisplay.style.color = '#495057';
+            stockDisplay.classList.remove('stock-ok', 'stock-low', 'stock-out');
         }
     }
 

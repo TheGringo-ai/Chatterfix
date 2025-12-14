@@ -172,8 +172,8 @@ Instructions:
 
 Use all available AI models for best results.""",
                 "context": "Autonomous ChatterFix Builder activated",
-                "required_agents": ["claude", "chatgpt", "gemini", "grok"],
-                "max_iterations": 5,
+                "models": ["gpt4-analyst", "chatgpt-coder", "grok-coder", "grok-reasoner"],
+                "task_type": "build",
                 "project_context": "ChatterFix Autonomous Build"
             }
 

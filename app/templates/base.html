@@ -2688,6 +2688,9 @@
     <!-- Voice Feedback System for Hands-Free Operation -->
     <script src="{{ url_for('static', path='js/voice-feedback.js') }}"></script>
     <div id="voice-feedback-container" data-voice-feedback-auto data-auto-start="false" data-use-server="true"></div>
+
+    <!-- AI Assistant Widget with Microphone and Camera -->
+    {% include 'ai_assistant_widget.html' %}
 </body>
 
 </html>

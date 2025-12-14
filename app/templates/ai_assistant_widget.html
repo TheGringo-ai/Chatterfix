@@ -1,0 +1,495 @@
+<!-- AI Assistant Widget with Microphone and Camera -->
+<div class="ai-assistant-widget fixed bottom-4 right-4 z-50">
+    <!-- Main AI Widget Button -->
+    <div id="ai-widget-toggle" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-16 h-16 flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 hover:scale-110">
+        <i class="fas fa-robot text-xl"></i>
+    </div>
+
+    <!-- Expanded AI Widget Panel -->
+    <div id="ai-widget-panel" class="hidden absolute bottom-20 right-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-2rem)] overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-brain text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">AI Assistant</h3>
+                        <p class="text-sm opacity-90">Voice & Vision Commands</p>
+                    </div>
+                </div>
+                <button id="ai-widget-close" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-4 max-h-96 overflow-y-auto">
+            <!-- Voice Commands Section -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-microphone text-blue-500 mr-2"></i>
+                    Voice Commands
+                </h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="voice-record-btn" class="voice-btn bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
+                        <i class="fas fa-circle text-xs mr-2"></i>
+                        <span id="voice-status">Start Recording</span>
+                    </button>
+                    <button id="voice-stop-btn" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors hidden">
+                        <i class="fas fa-stop text-xs mr-2"></i>
+                        Stop
+                    </button>
+                </div>
+                <div id="voice-transcript" class="mt-2 p-2 bg-gray-50 rounded-lg text-sm text-gray-700 min-h-[40px] hidden"></div>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-camera text-green-500 mr-2"></i>
+                    Image Recognition
+                </h4>
+                <div class="space-y-2">
+                    <button id="camera-capture-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors w-full flex items-center justify-center">
+                        <i class="fas fa-camera text-xs mr-2"></i>
+                        <span id="camera-status">Take Photo</span>
+                    </button>
+                    <video id="camera-preview" class="w-full rounded-lg hidden" autoplay playsinline></video>
+                    <canvas id="camera-canvas" class="hidden"></canvas>
+                    <div id="image-analysis" class="p-2 bg-green-50 rounded-lg text-sm text-green-700 min-h-[40px] hidden"></div>
+                </div>
+            </div>
+
+            <!-- AI Response Area -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-robot text-purple-500 mr-2"></i>
+                    AI Response
+                </h4>
+                <div id="ai-response" class="p-3 bg-purple-50 rounded-lg text-sm text-purple-700 min-h-[60px] flex items-center justify-center text-gray-500">
+                    <span>AI assistant ready to help...</span>
+                </div>
+            </div>
+
+            <!-- Quick Commands -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3">Quick Commands</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="quick-cmd bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-command="Show me the analytics dashboard">
+                        📊 Analytics
+                    </button>
+                    <button class="quick-cmd bg-green-100 hover:bg-green-200 text-green-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-command="Create a new work order">
+                        📝 New Work Order
+                    </button>
+                    <button class="quick-cmd bg-yellow-100 hover:bg-yellow-200 text-yellow-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-command="Check equipment status">
+                        ⚙️ Equipment Status
+                    </button>
+                    <button class="quick-cmd bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-command="Report an issue">
+                        🚨 Report Issue
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="bg-gray-50 px-4 py-2 border-t border-gray-200">
+            <div class="flex items-center justify-between text-xs text-gray-600">
+                <div class="flex items-center space-x-4">
+                    <span id="mic-status" class="flex items-center">
+                        <i class="fas fa-microphone text-gray-400 mr-1"></i>
+                        Ready
+                    </span>
+                    <span id="camera-status-widget" class="flex items-center">
+                        <i class="fas fa-camera text-gray-400 mr-1"></i>
+                        Ready
+                    </span>
+                </div>
+                <span id="ai-status" class="flex items-center">
+                    <i class="fas fa-circle text-green-500 mr-1"></i>
+                    Online
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Assistant Widget JavaScript -->
+<script>
+class AIAssistantWidget {
+    constructor() {
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.stream = null;
+        this.cameraStream = null;
+        this.recognition = null;
+
+        this.init();
+    }
+
+    init() {
+        // Initialize speech recognition
+        this.initSpeechRecognition();
+
+        // Bind event listeners
+        this.bindEvents();
+
+        console.log('🤖 AI Assistant Widget initialized');
+    }
+
+    initSpeechRecognition() {
+        // Check for browser support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            this.recognition = new SpeechRecognition();
+            this.recognition.continuous = false;
+            this.recognition.interimResults = false;
+            this.recognition.lang = 'en-US';
+
+            this.recognition.onstart = () => {
+                this.updateVoiceStatus('listening', '🎤 Listening...');
+                this.showTranscript('Listening for your command...');
+            };
+
+            this.recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                this.showTranscript(`"${transcript}"`);
+                this.processVoiceCommand(transcript);
+            };
+
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                this.updateVoiceStatus('error', 'Error');
+                this.showTranscript('Speech recognition error. Please try again.');
+            };
+
+            this.recognition.onend = () => {
+                this.updateVoiceStatus('ready', 'Start Recording');
+                if (!this.isRecording) {
+                    this.hideTranscript();
+                }
+            };
+        } else {
+            console.warn('Speech recognition not supported in this browser');
+            this.showTranscript('Speech recognition not supported in this browser');
+        }
+    }
+
+    bindEvents() {
+        // Widget toggle
+        document.getElementById('ai-widget-toggle').addEventListener('click', () => {
+            this.toggleWidget();
+        });
+
+        // Close button
+        document.getElementById('ai-widget-close').addEventListener('click', () => {
+            this.closeWidget();
+        });
+
+        // Voice recording buttons
+        document.getElementById('voice-record-btn').addEventListener('click', () => {
+            this.startVoiceRecording();
+        });
+
+        document.getElementById('voice-stop-btn').addEventListener('click', () => {
+            this.stopVoiceRecording();
+        });
+
+        // Camera button
+        document.getElementById('camera-capture-btn').addEventListener('click', () => {
+            this.captureImage();
+        });
+
+        // Quick commands
+        document.querySelectorAll('.quick-cmd').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const command = e.target.dataset.command;
+                this.processVoiceCommand(command);
+            });
+        });
+
+        // Click outside to close
+        document.addEventListener('click', (e) => {
+            const widget = document.querySelector('.ai-assistant-widget');
+            const panel = document.getElementById('ai-widget-panel');
+            const toggle = document.getElementById('ai-widget-toggle');
+
+            if (!widget.contains(e.target) && panel.classList.contains('block')) {
+                this.closeWidget();
+            }
+        });
+    }
+
+    toggleWidget() {
+        const panel = document.getElementById('ai-widget-panel');
+        const toggle = document.getElementById('ai-widget-toggle');
+
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            panel.classList.add('block');
+            toggle.innerHTML = '<i class="fas fa-times text-xl"></i>';
+        } else {
+            this.closeWidget();
+        }
+    }
+
+    closeWidget() {
+        const panel = document.getElementById('ai-widget-panel');
+        const toggle = document.getElementById('ai-widget-toggle');
+
+        panel.classList.add('hidden');
+        panel.classList.remove('block');
+        toggle.innerHTML = '<i class="fas fa-robot text-xl"></i>';
+    }
+
+    updateVoiceStatus(status, text) {
+        const statusEl = document.getElementById('mic-status');
+        const btnText = document.getElementById('voice-status');
+
+        if (status === 'listening') {
+            statusEl.innerHTML = '<i class="fas fa-microphone text-red-500 mr-1 animate-pulse"></i>Listening';
+            btnText.textContent = 'Listening...';
+        } else if (status === 'processing') {
+            statusEl.innerHTML = '<i class="fas fa-cog text-blue-500 mr-1 animate-spin"></i>Processing';
+            btnText.textContent = 'Processing...';
+        } else if (status === 'error') {
+            statusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i>Error';
+            btnText.textContent = 'Error';
+        } else {
+            statusEl.innerHTML = '<i class="fas fa-microphone text-gray-400 mr-1"></i>Ready';
+            btnText.textContent = 'Start Recording';
+        }
+    }
+
+    showTranscript(text) {
+        const transcriptEl = document.getElementById('voice-transcript');
+        transcriptEl.textContent = text;
+        transcriptEl.classList.remove('hidden');
+    }
+
+    hideTranscript() {
+        const transcriptEl = document.getElementById('voice-transcript');
+        transcriptEl.classList.add('hidden');
+    }
+
+    startVoiceRecording() {
+        if (this.recognition) {
+            this.isRecording = true;
+            document.getElementById('voice-record-btn').classList.add('hidden');
+            document.getElementById('voice-stop-btn').classList.remove('hidden');
+
+            try {
+                this.recognition.start();
+            } catch (error) {
+                console.error('Error starting speech recognition:', error);
+                this.showTranscript('Error starting voice recognition');
+                this.resetVoiceButtons();
+            }
+        } else {
+            this.showTranscript('Speech recognition not supported');
+        }
+    }
+
+    stopVoiceRecording() {
+        if (this.recognition && this.isRecording) {
+            this.recognition.stop();
+            this.isRecording = false;
+            this.resetVoiceButtons();
+        }
+    }
+
+    resetVoiceButtons() {
+        document.getElementById('voice-record-btn').classList.remove('hidden');
+        document.getElementById('voice-stop-btn').classList.add('hidden');
+        this.updateVoiceStatus('ready', 'Start Recording');
+    }
+
+    async captureImage() {
+        const video = document.getElementById('camera-preview');
+        const canvas = document.getElementById('camera-canvas');
+        const analysisEl = document.getElementById('image-analysis');
+        const cameraBtn = document.getElementById('camera-capture-btn');
+        const cameraStatus = document.getElementById('camera-status');
+
+        try {
+            // Request camera access
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+
+            video.srcObject = this.cameraStream;
+            video.classList.remove('hidden');
+            cameraStatus.textContent = 'Camera Active';
+
+            // Wait for video to load
+            await new Promise(resolve => {
+                video.onloadedmetadata = resolve;
+            });
+
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw current frame to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Stop camera stream
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            video.classList.add('hidden');
+            cameraStatus.textContent = 'Processing...';
+
+            // Convert to base64 for analysis
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Analyze image
+            await this.analyzeImage(imageData);
+
+        } catch (error) {
+            console.error('Camera error:', error);
+            analysisEl.textContent = 'Camera access denied or not available';
+            analysisEl.classList.remove('hidden');
+            cameraStatus.textContent = 'Camera Error';
+        }
+    }
+
+    async analyzeImage(imageData) {
+        const analysisEl = document.getElementById('image-analysis');
+        const cameraStatus = document.getElementById('camera-status');
+
+        try {
+            cameraStatus.textContent = 'Analyzing...';
+
+            // Send to AI for analysis
+            const response = await fetch('/ai/analyze-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: imageData,
+                    context: 'equipment_inspection'
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                analysisEl.textContent = result.analysis || 'Image analyzed successfully';
+            } else {
+                analysisEl.textContent = 'Analysis failed - please try again';
+            }
+
+        } catch (error) {
+            console.error('Image analysis error:', error);
+            analysisEl.textContent = 'Error analyzing image';
+        }
+
+        analysisEl.classList.remove('hidden');
+        cameraStatus.textContent = 'Take Photo';
+    }
+
+    async processVoiceCommand(command) {
+        console.log('🎤 Processing voice command:', command);
+
+        this.updateVoiceStatus('processing', 'Processing...');
+
+        const responseEl = document.getElementById('ai-response');
+        responseEl.innerHTML = '<div class="flex items-center"><i class="fas fa-cog animate-spin mr-2"></i>Processing your request...</div>';
+
+        try {
+            // Send command to AI assistant
+            const response = await fetch('/ai/process-command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: command,
+                    source: 'voice_widget',
+                    context: window.location.pathname
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                // Display AI response
+                responseEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="font-medium text-purple-800">AI Response:</div>
+                        <div class="text-sm">${result.response || 'Command processed successfully'}</div>
+                        ${result.action ? `<div class="text-xs text-gray-600 mt-1">Action: ${result.action}</div>` : ''}
+                    </div>
+                `;
+
+                // Execute any suggested actions
+                if (result.action === 'navigate') {
+                    if (result.target) {
+                        window.location.href = result.target;
+                    }
+                } else if (result.action === 'modal') {
+                    // Could trigger modal opening here
+                    console.log('Modal action requested:', result.modal);
+                }
+
+            } else {
+                responseEl.innerHTML = '<div class="text-red-600">❌ Error processing command</div>';
+            }
+
+        } catch (error) {
+            console.error('Voice command processing error:', error);
+            responseEl.innerHTML = '<div class="text-red-600">❌ Network error - please try again</div>';
+        }
+
+        this.updateVoiceStatus('ready', 'Start Recording');
+    }
+}
+
+// Initialize widget when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.aiAssistantWidget = new AIAssistantWidget();
+});
+
+// Export for global access
+window.AIAssistantWidget = AIAssistantWidget;
+</script>
+
+<style>
+/* Additional styles for the AI widget */
+.ai-assistant-widget {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.voice-btn.recording {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.quick-cmd {
+    transition: all 0.2s ease;
+}
+
+.quick-cmd:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .ai-assistant-widget .fixed.bottom-4.right-4 > div:last-child {
+        right: 1rem;
+        left: 1rem;
+        width: auto;
+        max-width: none;
+    }
+}
+</style>

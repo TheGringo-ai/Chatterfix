@@ -727,7 +727,7 @@ async def startup_event():
         client = await get_ai_team_client()
         # Test connectivity
         health = await client.health_check()
-        if health.get("healthy", False):
+        if health.get("status") == "healthy" or health.get("healthy", False):
             logger.info("✅ AI Team HTTP client connected successfully")
         else:
             logger.warning(f"⚠️ AI Team service not available: {health.get('status', 'unknown')}")

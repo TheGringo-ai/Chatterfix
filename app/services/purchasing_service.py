@@ -350,6 +350,254 @@ class PurchasingService:
 
         return success
 
+    # =========================================================================
+    # PURCHASER DASHBOARD SERVICE METHODS
+    # =========================================================================
+
+    async def get_kpi_summary(self) -> Dict:
+        """Get KPI summary for purchaser dashboard"""
+        # Mock data - will integrate with Firestore
+        return {
+            "mtd_spend": 47250.00,
+            "mtd_spend_change": 12.5,
+            "open_pos": 23,
+            "open_pos_change": -8.0,
+            "alerts": 7,
+            "alerts_change": 3,
+            "avg_vendor_rating": 4.2,
+            "avg_vendor_rating_change": 0.3,
+            "budget_total": 75000.00,
+            "budget_remaining": 27750.00,
+            "on_time_delivery_rate": 94.5,
+            "cost_savings_ytd": 15230.00,
+        }
+
+    async def get_po_pipeline_counts(self) -> Dict:
+        """Get PO counts by pipeline stage"""
+        # Mock data - will integrate with Firestore
+        return {
+            "draft": 5,
+            "pending": 8,
+            "approved": 6,
+            "shipped": 3,
+            "received": 12,
+            "total": 34,
+        }
+
+    async def get_pending_actions(self) -> List[Dict]:
+        """Get list of pending actions for purchaser"""
+        # Mock data - will integrate with Firestore
+        return [
+            {
+                "id": "action_001",
+                "type": "approval",
+                "title": "PO #2024-0847 requires approval",
+                "description": "Industrial Bearing Set - Qty: 10",
+                "priority": "high",
+                "created_at": (datetime.now() - timedelta(hours=2)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "due_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+                "amount": 1250.00,
+            },
+            {
+                "id": "action_002",
+                "type": "reorder",
+                "title": "Low Stock Alert: Hydraulic Seals",
+                "description": "Current: 3, Min: 10 - Reorder suggested",
+                "priority": "medium",
+                "created_at": (datetime.now() - timedelta(hours=5)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "due_date": (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d"),
+                "amount": 450.00,
+            },
+            {
+                "id": "action_003",
+                "type": "invoice",
+                "title": "Invoice #INV-9823 pending review",
+                "description": "Vendor: ABC Industrial - Amount: $3,450",
+                "priority": "medium",
+                "created_at": (datetime.now() - timedelta(days=1)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "due_date": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
+                "amount": 3450.00,
+            },
+            {
+                "id": "action_004",
+                "type": "contract",
+                "title": "Contract renewal due: XYZ Supplies",
+                "description": "Annual contract expires in 15 days",
+                "priority": "low",
+                "created_at": (datetime.now() - timedelta(days=3)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "due_date": (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d"),
+                "amount": 25000.00,
+            },
+        ]
+
+    async def get_top_vendors(self, limit: int = 5) -> List[Dict]:
+        """Get top performing vendors with metrics"""
+        # Mock data - will integrate with Firestore
+        vendors = [
+            {
+                "id": "vendor_001",
+                "name": "ABC Industrial Supply",
+                "rating": 4.8,
+                "on_time_rate": 98.5,
+                "quality_score": 96,
+                "total_orders": 145,
+                "total_spend": 125000.00,
+                "avg_lead_time": 3.2,
+                "categories": ["Bearings", "Seals", "Motors"],
+            },
+            {
+                "id": "vendor_002",
+                "name": "FastParts Inc",
+                "rating": 4.5,
+                "on_time_rate": 95.0,
+                "quality_score": 94,
+                "total_orders": 98,
+                "total_spend": 87500.00,
+                "avg_lead_time": 2.8,
+                "categories": ["Electronics", "Sensors", "Controls"],
+            },
+            {
+                "id": "vendor_003",
+                "name": "Premium Hydraulics",
+                "rating": 4.6,
+                "on_time_rate": 97.2,
+                "quality_score": 98,
+                "total_orders": 67,
+                "total_spend": 54200.00,
+                "avg_lead_time": 4.1,
+                "categories": ["Hydraulics", "Pumps", "Valves"],
+            },
+            {
+                "id": "vendor_004",
+                "name": "Industrial Tools Co",
+                "rating": 4.3,
+                "on_time_rate": 92.0,
+                "quality_score": 91,
+                "total_orders": 52,
+                "total_spend": 38900.00,
+                "avg_lead_time": 3.5,
+                "categories": ["Tools", "Safety Equipment"],
+            },
+            {
+                "id": "vendor_005",
+                "name": "Global Parts Network",
+                "rating": 4.1,
+                "on_time_rate": 89.5,
+                "quality_score": 88,
+                "total_orders": 34,
+                "total_spend": 29100.00,
+                "avg_lead_time": 5.2,
+                "categories": ["General Parts", "Fasteners"],
+            },
+        ]
+        return vendors[:limit]
+
+    async def get_recent_activity(self, limit: int = 20) -> List[Dict]:
+        """Get recent purchasing activity feed"""
+        # Mock data - will integrate with Firestore
+        activities = [
+            {
+                "id": "act_001",
+                "type": "po_created",
+                "icon": "bi-file-earmark-plus",
+                "color": "primary",
+                "title": "PO #2024-0851 created",
+                "description": "10x Industrial Bearings from ABC Industrial",
+                "user": "John Smith",
+                "timestamp": (datetime.now() - timedelta(minutes=15)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": 1250.00,
+            },
+            {
+                "id": "act_002",
+                "type": "po_approved",
+                "icon": "bi-check-circle",
+                "color": "success",
+                "title": "PO #2024-0848 approved",
+                "description": "Approved by Manager - Ready to ship",
+                "user": "Sarah Chen",
+                "timestamp": (datetime.now() - timedelta(hours=1)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": 3450.00,
+            },
+            {
+                "id": "act_003",
+                "type": "shipment_received",
+                "icon": "bi-box-seam",
+                "color": "info",
+                "title": "Shipment received",
+                "description": "PO #2024-0842 - 25 items received and verified",
+                "user": "Mike Johnson",
+                "timestamp": (datetime.now() - timedelta(hours=3)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": 2890.00,
+            },
+            {
+                "id": "act_004",
+                "type": "invoice_paid",
+                "icon": "bi-credit-card",
+                "color": "success",
+                "title": "Invoice #INV-9820 paid",
+                "description": "Payment processed to FastParts Inc",
+                "user": "System",
+                "timestamp": (datetime.now() - timedelta(hours=5)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": 5670.00,
+            },
+            {
+                "id": "act_005",
+                "type": "vendor_added",
+                "icon": "bi-building-add",
+                "color": "primary",
+                "title": "New vendor added",
+                "description": "Precision Motors LLC added to approved vendors",
+                "user": "John Smith",
+                "timestamp": (datetime.now() - timedelta(hours=8)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": None,
+            },
+            {
+                "id": "act_006",
+                "type": "alert",
+                "icon": "bi-exclamation-triangle",
+                "color": "warning",
+                "title": "Low stock alert triggered",
+                "description": "Hydraulic Seals below minimum threshold",
+                "user": "System",
+                "timestamp": (datetime.now() - timedelta(hours=12)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": None,
+            },
+            {
+                "id": "act_007",
+                "type": "po_shipped",
+                "icon": "bi-truck",
+                "color": "info",
+                "title": "PO #2024-0845 shipped",
+                "description": "Tracking #: 1Z999AA10123456784",
+                "user": "ABC Industrial",
+                "timestamp": (datetime.now() - timedelta(days=1)).strftime(
+                    "%Y-%m-%d %H:%M"
+                ),
+                "amount": 4200.00,
+            },
+        ]
+        return activities[:limit]
+
 
 # Global instance
 purchasing_service = PurchasingService()

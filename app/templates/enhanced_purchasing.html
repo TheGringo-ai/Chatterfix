@@ -270,7 +270,12 @@
 {% block content %}
 <div class="purchasing-dashboard">
     <div class="dashboard-header">
-        <h1>💰 Enhanced Purchasing Dashboard</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <a href="/purchasing" style="color: #667eea; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        <h1>🛠️ Purchasing Tools</h1>
         <div class="action-buttons">
             <button class="btn-primary" onclick="openCamera()">
                 📸 Take Photo
@@ -713,10 +718,27 @@ function generatePartBarcode() {
     }
 }
 
-// Auto-generate PO number
+// Auto-generate PO number and handle hash navigation
 document.addEventListener('DOMContentLoaded', function() {
     const poNumber = 'PO-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6);
     document.querySelector('input[name="po_number"]').value = poNumber;
+
+    // Handle hash navigation from dashboard
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+        const tabMap = {
+            'po-creation': 0,
+            'parts-management': 1,
+            'document-scanner': 2,
+            'barcode-tools': 3
+        };
+        if (tabMap[hash] !== undefined) {
+            const tabs = document.querySelectorAll('.tab');
+            if (tabs[tabMap[hash]]) {
+                tabs[tabMap[hash]].click();
+            }
+        }
+    }
 });
 </script>
 {% endblock %}

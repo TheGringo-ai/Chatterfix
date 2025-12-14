@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+
+{% block title %}Purchaser Command Center - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    /* Purchaser Dashboard Styles */
+    .purchaser-dashboard {
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+
+    .dashboard-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .dashboard-header p {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: var(--bg-card, #ffffff);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .kpi-icon.primary { background: rgba(102, 126, 234, 0.15); color: #667eea; }
+    .kpi-icon.success { background: rgba(72, 187, 120, 0.15); color: #48bb78; }
+    .kpi-icon.warning { background: rgba(237, 137, 54, 0.15); color: #ed8936; }
+    .kpi-icon.info { background: rgba(66, 153, 225, 0.15); color: #4299e1; }
+
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary, #1a202c);
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-label {
+        font-size: 0.875rem;
+        color: var(--text-muted, #718096);
+    }
+
+    /* Pipeline Section */
+    .pipeline-section {
+        background: var(--bg-card, #ffffff);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary, #1a202c);
+        margin: 0 0 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-title i {
+        color: #667eea;
+    }
+
+    .pipeline-stages {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+    .pipeline-stage {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+        position: relative;
+    }
+
+    .pipeline-stage::after {
+        content: '';
+        position: absolute;
+        top: 30px;
+        right: 0;
+        width: 50%;
+        height: 4px;
+        background: #e2e8f0;
+    }
+
+    .pipeline-stage::before {
+        content: '';
+        position: absolute;
+        top: 30px;
+        left: 0;
+        width: 50%;
+        height: 4px;
+        background: #e2e8f0;
+    }
+
+    .pipeline-stage:first-child::before,
+    .pipeline-stage:last-child::after {
+        display: none;
+    }
+
+    .stage-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stage-circle.draft { background: #a0aec0; }
+    .stage-circle.pending { background: #ed8936; }
+    .stage-circle.approved { background: #4299e1; }
+    .stage-circle.shipped { background: #9f7aea; }
+    .stage-circle.received { background: #48bb78; }
+
+    .stage-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary, #1a202c);
+    }
+
+    .stage-count {
+        font-size: 0.75rem;
+        color: var(--text-muted, #718096);
+    }
+
+    /* Two Column Layout */
+    .dashboard-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+        .dashboard-columns {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Pending Actions */
+    .pending-actions-card {
+        background: var(--bg-card, #ffffff);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .action-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.02);
+        margin-bottom: 0.75rem;
+        transition: background 0.2s ease;
+    }
+
+    .action-item:hover {
+        background: rgba(102, 126, 234, 0.08);
+    }
+
+    .action-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .action-icon.urgent { background: rgba(245, 101, 101, 0.15); color: #f56565; }
+    .action-icon.high { background: rgba(237, 137, 54, 0.15); color: #ed8936; }
+    .action-icon.medium { background: rgba(66, 153, 225, 0.15); color: #4299e1; }
+
+    .action-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .action-title {
+        font-weight: 600;
+        color: var(--text-primary, #1a202c);
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .action-description {
+        font-size: 0.875rem;
+        color: var(--text-muted, #718096);
+    }
+
+    .action-amount {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1rem;
+    }
+
+    /* Top Vendors */
+    .vendors-card {
+        background: var(--bg-card, #ffffff);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .vendor-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .vendor-item:last-child {
+        border-bottom: none;
+    }
+
+    .vendor-rank {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+
+    .vendor-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .vendor-name {
+        font-weight: 600;
+        color: var(--text-primary, #1a202c);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .vendor-stats {
+        font-size: 0.75rem;
+        color: var(--text-muted, #718096);
+    }
+
+    .vendor-spend {
+        font-weight: 700;
+        color: #48bb78;
+    }
+
+    /* Recent Activity */
+    .activity-section {
+        background: var(--bg-card, #ffffff);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .activity-item {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-top: 0.375rem;
+        flex-shrink: 0;
+    }
+
+    .activity-dot.created { background: #4299e1; }
+    .activity-dot.approved { background: #48bb78; }
+    .activity-dot.shipped { background: #9f7aea; }
+    .activity-dot.received { background: #38a169; }
+    .activity-dot.invoice { background: #ed8936; }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        color: var(--text-primary, #1a202c);
+        font-size: 0.875rem;
+    }
+
+    .activity-description {
+        font-size: 0.75rem;
+        color: var(--text-muted, #718096);
+        margin-top: 0.25rem;
+    }
+
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--text-muted, #718096);
+        white-space: nowrap;
+    }
+
+    /* Loading State */
+    .loading-placeholder {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 8px;
+        height: 20px;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="purchaser-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1><i class="fas fa-shopping-cart"></i> Purchaser Command Center</h1>
+                <p>Real-time purchasing analytics, vendor management, and order tracking</p>
+            </div>
+            <div class="quick-actions" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <a href="/purchasing/tools" class="action-btn" style="background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 1.25rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-plus-circle"></i> Create PO
+                </a>
+                <a href="/purchasing/tools#parts-management" class="action-btn" style="background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 1.25rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-cogs"></i> Add Part
+                </a>
+                <a href="/purchasing/tools#document-scanner" class="action-btn" style="background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 1.25rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-camera"></i> Scan Document
+                </a>
+                <a href="/purchasing/tools#barcode-tools" class="action-btn" style="background: rgba(255,255,255,0.2); color: white; padding: 0.75rem 1.25rem; border-radius: 10px; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-barcode"></i> Barcode
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="kpi-value" id="mtdSpend">$0</div>
+            <div class="kpi-label">MTD Spend</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon info">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <div class="kpi-value" id="openPOs">0</div>
+            <div class="kpi-label">Open POs</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="kpi-value" id="alertCount">0</div>
+            <div class="kpi-label">Alerts</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="kpi-value" id="avgVendorRating">0.0</div>
+            <div class="kpi-label">Avg Vendor Rating</div>
+        </div>
+    </div>
+
+    <!-- PO Pipeline -->
+    <div class="pipeline-section">
+        <h2 class="section-title">
+            <i class="fas fa-tasks"></i> PO Pipeline
+        </h2>
+        <div class="pipeline-stages" id="pipelineStages">
+            <div class="pipeline-stage">
+                <div class="stage-circle draft" id="draftCount">0</div>
+                <div class="stage-label">Draft</div>
+            </div>
+            <div class="pipeline-stage">
+                <div class="stage-circle pending" id="pendingCount">0</div>
+                <div class="stage-label">Pending</div>
+            </div>
+            <div class="pipeline-stage">
+                <div class="stage-circle approved" id="approvedCount">0</div>
+                <div class="stage-label">Approved</div>
+            </div>
+            <div class="pipeline-stage">
+                <div class="stage-circle shipped" id="shippedCount">0</div>
+                <div class="stage-label">Shipped</div>
+            </div>
+            <div class="pipeline-stage">
+                <div class="stage-circle received" id="receivedCount">0</div>
+                <div class="stage-label">Received</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="dashboard-columns">
+        <!-- Pending Actions -->
+        <div class="pending-actions-card">
+            <h2 class="section-title">
+                <i class="fas fa-bell"></i> Pending Actions
+            </h2>
+            <div id="pendingActionsList">
+                <div class="action-item">
+                    <div class="loading-placeholder" style="width: 100%; height: 60px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Vendors -->
+        <div class="vendors-card">
+            <h2 class="section-title">
+                <i class="fas fa-building"></i> Top Vendors
+            </h2>
+            <div id="topVendorsList">
+                <div class="vendor-item">
+                    <div class="loading-placeholder" style="width: 100%; height: 40px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+        <h2 class="section-title">
+            <i class="fas fa-history"></i> Recent Activity
+        </h2>
+        <div id="recentActivityList">
+            <div class="activity-item">
+                <div class="loading-placeholder" style="width: 100%; height: 40px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Purchaser Dashboard Data Loading
+document.addEventListener('DOMContentLoaded', async () => {
+    await Promise.all([
+        loadKPIs(),
+        loadPipeline(),
+        loadPendingActions(),
+        loadTopVendors(),
+        loadRecentActivity()
+    ]);
+});
+
+async function loadKPIs() {
+    try {
+        const response = await fetch('/purchasing/kpi-summary');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('mtdSpend').textContent = '$' + (data.mtd_spend || 0).toLocaleString();
+            document.getElementById('openPOs').textContent = data.open_pos || 0;
+            document.getElementById('alertCount').textContent = data.alerts || 0;
+            document.getElementById('avgVendorRating').textContent = (data.avg_vendor_rating || 0).toFixed(1);
+        }
+    } catch (e) {
+        console.log('Using demo KPI data');
+        document.getElementById('mtdSpend').textContent = '$32,500';
+        document.getElementById('openPOs').textContent = '28';
+        document.getElementById('alertCount').textContent = '7';
+        document.getElementById('avgVendorRating').textContent = '4.5';
+    }
+}
+
+async function loadPipeline() {
+    try {
+        const response = await fetch('/purchasing/po-pipeline');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('draftCount').textContent = data.draft || 0;
+            document.getElementById('pendingCount').textContent = data.pending || 0;
+            document.getElementById('approvedCount').textContent = data.approved || 0;
+            document.getElementById('shippedCount').textContent = data.shipped || 0;
+            document.getElementById('receivedCount').textContent = data.received || 0;
+        }
+    } catch (e) {
+        console.log('Using demo pipeline data');
+        document.getElementById('draftCount').textContent = '3';
+        document.getElementById('pendingCount').textContent = '5';
+        document.getElementById('approvedCount').textContent = '8';
+        document.getElementById('shippedCount').textContent = '12';
+        document.getElementById('receivedCount').textContent = '45';
+    }
+}
+
+async function loadPendingActions() {
+    try {
+        const response = await fetch('/purchasing/pending-actions');
+        if (response.ok) {
+            const data = await response.json();
+            renderPendingActions(data.actions || []);
+        } else {
+            renderPendingActions(getDemoPendingActions());
+        }
+    } catch (e) {
+        renderPendingActions(getDemoPendingActions());
+    }
+}
+
+function getDemoPendingActions() {
+    return [
+        { type: 'po_approval', title: 'PO-2024-1234 - Hydraulic Parts', description: 'Waiting for manager approval', priority: 'high', amount: 4500 },
+        { type: 'invoice_review', title: 'Invoice #INV-5678 - ABC Industrial', description: 'Invoice needs verification', priority: 'medium', amount: 3200 },
+        { type: 'contract_expiring', title: 'XYZ Parts Agreement', description: 'Contract expires in 30 days', priority: 'medium', amount: 89000 },
+        { type: 'po_approval', title: 'PO-2024-1235 - Motor Bearings', description: 'Urgent parts request', priority: 'urgent', amount: 1200 }
+    ];
+}
+
+function renderPendingActions(actions) {
+    const container = document.getElementById('pendingActionsList');
+    const iconMap = {
+        'approval': 'file-signature',
+        'po_approval': 'file-signature',
+        'reorder': 'boxes',
+        'invoice': 'file-invoice-dollar',
+        'invoice_review': 'file-invoice-dollar',
+        'contract': 'calendar-alt',
+        'contract_expiring': 'calendar-alt'
+    };
+    container.innerHTML = actions.map(action => `
+        <div class="action-item">
+            <div class="action-icon ${action.priority || 'medium'}">
+                <i class="fas fa-${iconMap[action.type] || 'bell'}"></i>
+            </div>
+            <div class="action-content">
+                <div class="action-title">${action.title}</div>
+                <div class="action-description">${action.description}</div>
+            </div>
+            <div class="action-amount">${action.amount ? '$' + action.amount.toLocaleString() : ''}</div>
+        </div>
+    `).join('');
+}
+
+async function loadTopVendors() {
+    try {
+        const response = await fetch('/purchasing/top-vendors');
+        if (response.ok) {
+            const data = await response.json();
+            renderTopVendors(data.vendors || []);
+        } else {
+            renderTopVendors(getDemoVendors());
+        }
+    } catch (e) {
+        renderTopVendors(getDemoVendors());
+    }
+}
+
+function getDemoVendors() {
+    return [
+        { name: 'ABC Industrial Supply', total_spend: 125000, on_time_percentage: 92, quality_score: 4.5 },
+        { name: 'Global Equipment Co', total_spend: 98500, on_time_percentage: 95, quality_score: 4.8 },
+        { name: 'XYZ Parts Supplier', total_spend: 87300, on_time_percentage: 88, quality_score: 4.2 },
+        { name: 'Reliable Components', total_spend: 76200, on_time_percentage: 90, quality_score: 4.6 },
+        { name: 'Premier Industrial', total_spend: 64800, on_time_percentage: 87, quality_score: 4.3 }
+    ];
+}
+
+function renderTopVendors(vendors) {
+    const container = document.getElementById('topVendorsList');
+    container.innerHTML = vendors.map((vendor, idx) => `
+        <div class="vendor-item">
+            <div class="vendor-rank">${idx + 1}</div>
+            <div class="vendor-info">
+                <div class="vendor-name">${vendor.name}</div>
+                <div class="vendor-stats">${vendor.on_time_rate || vendor.on_time_percentage || 0}% On-Time | ${vendor.rating || vendor.quality_score || 0} Rating</div>
+            </div>
+            <div class="vendor-spend">$${(vendor.total_spend || 0).toLocaleString()}</div>
+        </div>
+    `).join('');
+}
+
+async function loadRecentActivity() {
+    try {
+        const response = await fetch('/purchasing/recent-activity');
+        if (response.ok) {
+            const data = await response.json();
+            renderRecentActivity(data.activity || []);
+        } else {
+            renderRecentActivity(getDemoActivity());
+        }
+    } catch (e) {
+        renderRecentActivity(getDemoActivity());
+    }
+}
+
+function getDemoActivity() {
+    return [
+        { type: 'po_created', title: 'PO-2024-1240 created', description: 'Hydraulic Seals - John Smith', timestamp: '15 min ago' },
+        { type: 'po_approved', title: 'PO-2024-1239 approved', description: 'Approved by Sarah Johnson', timestamp: '2 hours ago' },
+        { type: 'invoice_received', title: 'Invoice INV-5680 received', description: 'ABC Industrial Supply', timestamp: '4 hours ago' },
+        { type: 'po_shipped', title: 'PO-2024-1235 shipped', description: 'Global Equipment Co', timestamp: '1 day ago' },
+        { type: 'po_received', title: 'PO-2024-1230 received', description: 'Verified by warehouse', timestamp: '2 days ago' }
+    ];
+}
+
+function renderRecentActivity(activities) {
+    const container = document.getElementById('recentActivityList');
+    const typeClasses = {
+        'po_created': 'created',
+        'po_approved': 'approved',
+        'po_shipped': 'shipped',
+        'po_received': 'received',
+        'invoice_received': 'invoice'
+    };
+
+    container.innerHTML = activities.slice(0, 8).map(activity => `
+        <div class="activity-item">
+            <div class="activity-dot ${typeClasses[activity.type] || 'created'}"></div>
+            <div class="activity-content">
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-description">${activity.description}</div>
+            </div>
+            <div class="activity-time">${activity.timestamp}</div>
+        </div>
+    `).join('');
+}
+</script>
+{% endblock %}

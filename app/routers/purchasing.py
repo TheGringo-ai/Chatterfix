@@ -30,8 +30,14 @@ class ApprovalRequest(BaseModel):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def purchasing_dashboard(request: Request):
-    """Enhanced purchasing dashboard with media and barcode capabilities"""
+async def purchasing_main(request: Request):
+    """Main purchaser command center - landing page"""
+    return templates.TemplateResponse("purchaser_dashboard.html", {"request": request})
+
+
+@router.get("/tools", response_class=HTMLResponse)
+async def purchasing_tools(request: Request):
+    """Purchasing tools - PO creation, parts, document scanner, barcodes"""
     return templates.TemplateResponse("enhanced_purchasing.html", {"request": request})
 
 
@@ -487,3 +493,43 @@ async def get_low_stock_items():
     )
 
     return JSONResponse({"low_stock_items": low_stock_items})
+
+
+# =============================================================================
+# PURCHASER DASHBOARD API ENDPOINTS
+# =============================================================================
+
+
+@router.get("/kpi-summary")
+async def get_kpi_summary():
+    """Get KPI summary for purchaser dashboard"""
+    kpis = await purchasing_service.get_kpi_summary()
+    return JSONResponse(content=kpis)
+
+
+@router.get("/po-pipeline")
+async def get_po_pipeline():
+    """Get PO pipeline counts by status"""
+    pipeline = await purchasing_service.get_po_pipeline_counts()
+    return JSONResponse(content=pipeline)
+
+
+@router.get("/pending-actions")
+async def get_pending_actions():
+    """Get list of pending actions requiring attention"""
+    actions = await purchasing_service.get_pending_actions()
+    return JSONResponse(content={"actions": actions})
+
+
+@router.get("/top-vendors")
+async def get_top_vendors(limit: int = 5):
+    """Get top performing vendors"""
+    vendors = await purchasing_service.get_top_vendors(limit)
+    return JSONResponse(content={"vendors": vendors})
+
+
+@router.get("/recent-activity")
+async def get_recent_activity(limit: int = 20):
+    """Get recent purchasing activity feed"""
+    activity = await purchasing_service.get_recent_activity(limit)
+    return JSONResponse(content={"activity": activity})

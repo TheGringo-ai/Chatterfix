@@ -1,0 +1,311 @@
+<!-- Vendor Scorecard Component -->
+<!-- Include this component with: {% include 'components/vendor_scorecard.html' %} -->
+
+<style>
+.vendor-scorecard {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.vendor-scorecard:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.vendor-scorecard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.vendor-scorecard-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.vendor-scorecard-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: #212529;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.vendor-scorecard-rating i {
+    color: #212529;
+}
+
+.vendor-scorecard-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.vendor-metric {
+    text-align: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.vendor-metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0d6efd;
+    display: block;
+}
+
+.vendor-metric-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vendor-metric.success .vendor-metric-value {
+    color: #198754;
+}
+
+.vendor-metric.warning .vendor-metric-value {
+    color: #ffc107;
+}
+
+.vendor-metric.info .vendor-metric-value {
+    color: #0dcaf0;
+}
+
+.vendor-scorecard-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.vendor-category-badge {
+    background: #e7f1ff;
+    color: #0d6efd;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.vendor-scorecard-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.vendor-spend {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.vendor-spend strong {
+    color: #212529;
+    font-size: 1rem;
+}
+
+.vendor-scorecard-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vendor-action-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vendor-action-btn.primary {
+    background: #0d6efd;
+    color: white;
+}
+
+.vendor-action-btn.primary:hover {
+    background: #0b5ed7;
+}
+
+.vendor-action-btn.outline {
+    background: transparent;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.vendor-action-btn.outline:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+/* Compact variant */
+.vendor-scorecard.compact {
+    padding: 1rem;
+}
+
+.vendor-scorecard.compact .vendor-scorecard-metrics {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.vendor-scorecard.compact .vendor-metric {
+    padding: 0.5rem;
+}
+
+.vendor-scorecard.compact .vendor-metric-value {
+    font-size: 1rem;
+}
+
+/* List variant */
+.vendor-scorecard.list-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.vendor-scorecard.list-item .vendor-scorecard-header {
+    flex: 0 0 200px;
+    margin-bottom: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.vendor-scorecard.list-item .vendor-scorecard-metrics {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.vendor-scorecard.list-item .vendor-scorecard-footer {
+    flex: 0 0 auto;
+    padding-top: 0;
+    border-top: none;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Performance indicator bar */
+.performance-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.performance-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.performance-bar-fill.excellent {
+    background: linear-gradient(90deg, #198754, #20c997);
+}
+
+.performance-bar-fill.good {
+    background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+}
+
+.performance-bar-fill.average {
+    background: linear-gradient(90deg, #ffc107, #fd7e14);
+}
+
+.performance-bar-fill.poor {
+    background: linear-gradient(90deg, #dc3545, #fd7e14);
+}
+</style>
+
+<script>
+// Vendor Scorecard Component Functions
+function renderVendorScorecard(vendor, variant = 'default') {
+    const ratingClass = vendor.rating >= 4.5 ? 'excellent' :
+                        vendor.rating >= 4.0 ? 'good' :
+                        vendor.rating >= 3.0 ? 'average' : 'poor';
+
+    const categoriesHtml = vendor.categories ?
+        vendor.categories.map(cat => `<span class="vendor-category-badge">${cat}</span>`).join('') : '';
+
+    return `
+        <div class="vendor-scorecard ${variant}">
+            <div class="vendor-scorecard-header">
+                <div>
+                    <h6 class="vendor-scorecard-name">${vendor.name}</h6>
+                    <div class="performance-bar">
+                        <div class="performance-bar-fill ${ratingClass}" style="width: ${(vendor.rating / 5) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="vendor-scorecard-rating">
+                    <i class="bi bi-star-fill"></i>
+                    ${vendor.rating.toFixed(1)}
+                </div>
+            </div>
+
+            <div class="vendor-scorecard-metrics">
+                <div class="vendor-metric success">
+                    <span class="vendor-metric-value">${vendor.on_time_rate}%</span>
+                    <span class="vendor-metric-label">On-Time</span>
+                </div>
+                <div class="vendor-metric info">
+                    <span class="vendor-metric-value">${vendor.quality_score}%</span>
+                    <span class="vendor-metric-label">Quality</span>
+                </div>
+                <div class="vendor-metric">
+                    <span class="vendor-metric-value">${vendor.avg_lead_time}d</span>
+                    <span class="vendor-metric-label">Lead Time</span>
+                </div>
+            </div>
+
+            ${categoriesHtml ? `<div class="vendor-scorecard-categories">${categoriesHtml}</div>` : ''}
+
+            <div class="vendor-scorecard-footer">
+                <div class="vendor-spend">
+                    Total Spend: <strong>$${vendor.total_spend.toLocaleString()}</strong>
+                    <br>
+                    <small>${vendor.total_orders} orders</small>
+                </div>
+                <div class="vendor-scorecard-actions">
+                    <button class="vendor-action-btn outline" onclick="viewVendorDetails('${vendor.id}')">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                    <button class="vendor-action-btn primary" onclick="createPOForVendor('${vendor.id}')">
+                        <i class="bi bi-plus"></i> New PO
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Render vendor list with scorecards
+function renderVendorList(vendors, containerId, variant = 'default') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = vendors.map(v => renderVendorScorecard(v, variant)).join('');
+}
+
+// Vendor actions
+function viewVendorDetails(vendorId) {
+    window.location.href = `/purchasing/vendors/${vendorId}`;
+}
+
+function createPOForVendor(vendorId) {
+    window.location.href = `/purchasing/pos?vendor=${vendorId}`;
+}
+</script>

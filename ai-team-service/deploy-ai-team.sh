@@ -53,7 +53,7 @@ gcloud run deploy $SERVICE_NAME \
     --concurrency 50 \
     --min-instances 0 \
     --max-instances 10 \
-    --set-env-vars "INTERNAL_API_KEY=chatterfix-ai-team-2025-secure-key" \
+    --set-env-vars "INTERNAL_API_KEY=${INTERNAL_API_KEY:-chatterfix-ai-team-b40131fce3ab953cc27d7fe4e7b1838a}" \
     --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID}" \
     --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
     --set-env-vars "GEMINI_API_KEY=${GEMINI_API_KEY}" \

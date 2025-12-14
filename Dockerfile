@@ -24,8 +24,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get clean \
     && pip install uv --quiet
 
-# Copy production requirements
-COPY requirements.txt requirements.txt
+# Copy core requirements (fast builds, heavy ML deps in separate services)
+COPY requirements-core.txt requirements.txt
 
 # Install Python dependencies with UV (10-100x faster than pip)
 # UV uses parallel downloads and smart caching

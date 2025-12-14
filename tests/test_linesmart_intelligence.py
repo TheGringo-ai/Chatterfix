@@ -105,8 +105,8 @@ async def create_test_work_orders():
         return []
 
 
-async def test_intelligence_analysis(work_order_ids):
-    """Test LineSmart intelligence analysis on completed work orders"""
+async def run_intelligence_analysis(work_order_ids):
+    """Run LineSmart intelligence analysis on completed work orders (manual test)"""
     print("\n🧠 Testing LineSmart Intelligence Analysis...")
     
     analyses = []
@@ -149,8 +149,8 @@ async def test_intelligence_analysis(work_order_ids):
     return analyses
 
 
-async def test_performance_analytics():
-    """Test performance improvement metrics"""
+async def run_performance_analytics():
+    """Run performance improvement metrics (manual test)"""
     print("\n📈 Testing Performance Analytics...")
     
     # Test Jake Thompson (ID: 4)
@@ -180,8 +180,8 @@ async def test_performance_analytics():
     return {"jake": jake_metrics, "anna": anna_metrics}
 
 
-async def test_skill_gap_analytics():
-    """Test skill gap analytics across workforce"""
+async def run_skill_gap_analytics():
+    """Run skill gap analytics across workforce (manual test)"""
     print("\n🎯 Testing Skill Gap Analytics...")
     
     analytics = await linesmart_intelligence.get_skill_gap_analytics(timeframe_days=90)
@@ -214,8 +214,8 @@ async def test_skill_gap_analytics():
     return analytics
 
 
-async def test_dashboard_integration():
-    """Test workforce intelligence dashboard"""
+async def run_dashboard_integration():
+    """Run workforce intelligence dashboard (manual test)"""
     print("\n📊 Testing Workforce Intelligence Dashboard...")
     
     dashboard_data = await get_workforce_intelligence_dashboard(90)
@@ -305,16 +305,16 @@ async def main():
             return
             
         # 2. Test intelligence analysis
-        analyses = await test_intelligence_analysis(work_order_ids)
+        analyses = await run_intelligence_analysis(work_order_ids)
         
-        # 3. Test performance analytics  
-        performance_data = await test_performance_analytics()
-        
+        # 3. Test performance analytics
+        performance_data = await run_performance_analytics()
+
         # 4. Test skill gap analytics
-        analytics = await test_skill_gap_analytics()
-        
+        analytics = await run_skill_gap_analytics()
+
         # 5. Test dashboard integration
-        dashboard = await test_dashboard_integration()
+        dashboard = await run_dashboard_integration()
         
         # 6. Print comprehensive summary
         print_test_summary(analyses, performance_data, analytics, dashboard)

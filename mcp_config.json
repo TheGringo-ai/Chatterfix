@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "chatterfix-cmms": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "env": {
+        "PYTHONPATH": "."
+      }
+    }
+  },
+  "global": {
+    "environment": {
+      "CHATTERFIX_ENV": "mcp_validation"
+    }
+  }
+}

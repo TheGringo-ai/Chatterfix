@@ -1,0 +1,50 @@
+{
+  "task_id": "chatterfix_enhancement_001",
+  "title": "ChatterFix AI Team Collaboration Demo",
+  "objective": "Demonstrate full AI team capabilities by creating a new feature for ChatterFix",
+  "context": "ChatterFix CMMS system needs enhanced predictive maintenance capabilities",
+  "requirements": {
+    "gpt4_analyst": {
+      "role": "Lead Analyst",
+      "task": "Analyze current system architecture and identify optimal integration points for predictive maintenance",
+      "deliverables": ["Architecture analysis", "Integration strategy", "Technical requirements"]
+    },
+    "chatgpt_coder": {
+      "role": "Senior Developer", 
+      "task": "Design and implement the core predictive maintenance algorithms",
+      "deliverables": ["Python implementation", "API endpoints", "Database schema"]
+    },
+    "gemini_creative": {
+      "role": "Creative Director",
+      "task": "Design user interface and experience for predictive maintenance dashboard",
+      "deliverables": ["UI mockups", "UX flow", "Interactive elements"]
+    },
+    "gemini_analyst": {
+      "role": "AI Specialist",
+      "task": "Research and recommend machine learning models for predictive analytics",
+      "deliverables": ["ML model recommendations", "Training strategy", "Performance metrics"]
+    },
+    "grok_coder": {
+      "role": "Speed Coder",
+      "task": "Rapidly prototype and optimize performance-critical components",
+      "deliverables": ["Optimized algorithms", "Performance benchmarks", "Code optimization"]
+    },
+    "grok_reasoner": {
+      "role": "Strategic Thinker",
+      "task": "Evaluate business impact and create implementation roadmap",
+      "deliverables": ["Business analysis", "ROI projections", "Implementation phases"]
+    }
+  },
+  "collaboration_flow": [
+    "Phase 1: Analysis (gpt4-analyst + gemini-analyst)",
+    "Phase 2: Design (gemini-creative + grok-reasoner)", 
+    "Phase 3: Development (chatgpt-coder + grok-coder)",
+    "Phase 4: Integration and Review (All agents collaborate)"
+  ],
+  "success_criteria": [
+    "All 6 agents contribute meaningfully",
+    "Cross-agent collaboration occurs",
+    "Final deliverable is production-ready",
+    "Memory system captures learnings"
+  ]
+}

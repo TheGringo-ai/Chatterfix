@@ -1,0 +1,68 @@
+{
+  "name": "ChatterFix CMMS Development",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "chatterfix",
+  "workspaceFolder": "/app",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/google-cloud-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest"
+    }
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "github.copilot",
+        "github.copilot-chat",
+        "continue.continue",
+        "googlecloudtools.cloudcode",
+        "eamodio.gitlens",
+        "snyk-security.snyk-vulnerability-scanner"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/chatterfix/.local/bin/python",
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "docker.enableCommands": true
+      }
+    }
+  },
+  
+  "forwardPorts": [8080, 6379, 5678],
+  "portsAttributes": {
+    "8080": {
+      "label": "ChatterFix CMMS",
+      "protocol": "http"
+    },
+    "6379": {
+      "label": "Redis",
+      "protocol": "tcp"
+    },
+    "5678": {
+      "label": "Python Debug",
+      "protocol": "tcp"
+    }
+  },
+  
+  "postCreateCommand": "pip install debugpy safety black flake8",
+  "postStartCommand": "python -c 'print(\"🎯 ChatterFix CMMS Development Environment Ready!\")'",
+  
+  "remoteUser": "chatterfix",
+  "containerUser": "chatterfix",
+  
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/chatterfix/.ssh,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/chatterfix/.gitconfig,type=bind,consistency=cached"
+  ],
+  
+  "shutdownAction": "stopCompose"
+}

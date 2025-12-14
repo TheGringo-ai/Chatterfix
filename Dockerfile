@@ -1,40 +1,36 @@
 # ULTRA-OPTIMIZED Production Dockerfile for ChatterFix CMMS
-# AI Team Enhanced - Fast Build, Small Size, Enhanced Security
+# AI Team Enhanced - UV for 10-100x faster builds
 FROM python:3.12-slim AS python-base
 
 # Optimized environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PROGRESS_BAR=off \
     PYTHONPATH=/app \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    UV_SYSTEM_PYTHON=1 \
+    UV_COMPILE_BYTECODE=1
 
-# Builder stage for dependencies - OPTIMIZED FOR SPEED
+# Builder stage for dependencies - UV POWERED (10-100x faster)
 FROM python-base AS builder
 WORKDIR /app
 
-# Use BuildKit for faster builds with cache mounting
-# Install ALL build dependencies in one layer
+# Install UV package manager (blazingly fast) and build deps in one layer
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libc6-dev curl build-essential \
     libssl-dev libffi-dev libxml2-dev libxslt1-dev \
     zlib1g-dev libjpeg-dev libpng-dev \
-    && apt-get clean
+    && apt-get clean \
+    && pip install uv --quiet
 
-# Pre-install wheel and setuptools for faster pip installs
-RUN pip install --user --no-deps wheel setuptools packaging
-
-# Copy requirements and install with optimizations
+# Copy requirements
 COPY requirements-full.txt requirements.txt
 
-# Install Python dependencies with cache mounting
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --user --no-warn-script-location \
-    --find-links /root/.local/lib/python3.12/site-packages \
+# Install Python dependencies with UV (10-100x faster than pip)
+# UV uses parallel downloads and smart caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system \
     -r requirements.txt
 
 # Production stage - MINIMAL SIZE
@@ -54,8 +50,9 @@ RUN useradd -m -u 1001 -s /bin/bash appuser \
     && mkdir -p /app/logs \
     && chown -R appuser:appuser /app
 
-# Copy essential Python packages and set ownership for appuser
-COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+# Copy Python packages from builder (UV installs to system)
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code efficiently
 COPY --chown=1001:1001 main.py .
@@ -65,7 +62,7 @@ COPY --chown=1001:1001 app/ app/
 USER appuser
 
 # Optimized environment variables for production
-ENV PATH=/home/appuser/.local/bin:$PATH \
+ENV PATH=/usr/local/bin:$PATH \
     PORT=8080 \
     ENVIRONMENT=production \
     WORKERS=1 \

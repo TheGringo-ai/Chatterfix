@@ -1,6 +1,13 @@
 # Version Control
 .git
 .gitignore
+.github/
+
+# Node.js (MASSIVE - often 500MB+)
+node_modules/
+package-lock.json
+yarn.lock
+bower_components/
 
 # Virtual Environments
 venv/
@@ -126,5 +133,23 @@ mobile/
 # Deployment directory
 deployment/
 
-# Scripts directory  
+# Scripts directory
 scripts/
+
+# AI Team service (separate container)
+ai-team-service/
+
+# More large directories
+*.tar
+*.tar.gz
+*.zip
+.mypy_cache/
+.ruff_cache/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Jupyter notebooks (development only)
+*.ipynb
+.ipynb_checkpoints/

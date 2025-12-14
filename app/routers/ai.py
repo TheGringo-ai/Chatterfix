@@ -8,7 +8,8 @@ from pydantic import BaseModel
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
-from app.routers.auth import get_current_user
+from app.auth import get_current_active_user
+from app.models.user import User
 from app.services.ai_assistant import chatterfix_ai
 from app.services.computer_vision import analyze_asset_condition, recognize_part, extract_text_from_image, detect_equipment_issues
 from app.services.voice_commands import (
@@ -216,7 +217,7 @@ async def reset_circuit_breaker():
 async def analyze_image(
     image: UploadFile = File(...),
     prompt: str = Form("Describe this image for maintenance purposes."),
-    current_user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Analyze an uploaded image"""
     if not chatterfix_ai.gemini:
@@ -229,7 +230,7 @@ async def analyze_image(
 
     try:
         response = await chatterfix_ai.gemini.analyze_image(
-            temp_path, prompt, user_id=current_user["id"]
+            temp_path, prompt, user_id=current_user.uid
         )
     finally:
         if os.path.exists(temp_path):
@@ -239,12 +240,12 @@ async def analyze_image(
 
 
 @router.post("/kpi-report")
-async def kpi_report(current_user: dict = Depends(get_current_user)):
+async def kpi_report(current_user: User = Depends(get_current_active_user)):
     """Generate KPI Report"""
     if not chatterfix_ai.gemini:
         return JSONResponse({"response": "AI features unavailable."})
 
-    # Gather data
+    # This still uses the fake connection. This needs to be refactored.
     conn = get_db_connection()
     work_orders = conn.execute("SELECT * FROM work_orders").fetchall()
     parts = conn.execute("SELECT * FROM parts").fetchall()
@@ -263,7 +264,7 @@ async def kpi_report(current_user: dict = Depends(get_current_user)):
     }
 
     report = await chatterfix_ai.gemini.generate_kpi_report(
-        data, user_id=current_user["id"]
+        data, user_id=current_user.uid
     )
     return JSONResponse({"response": report})
 
@@ -272,14 +273,14 @@ async def kpi_report(current_user: dict = Depends(get_current_user)):
 async def troubleshoot(
     asset: str = Form(...),
     issue: str = Form(...),
-    current_user: dict = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get troubleshooting advice"""
     if not chatterfix_ai.gemini:
         return JSONResponse({"response": "AI features unavailable."})
 
     advice = await chatterfix_ai.gemini.get_troubleshooting_advice(
-        asset, issue, user_id=current_user["id"]
+        asset, issue, user_id=current_user.uid
     )
     return JSONResponse({"response": advice})
 

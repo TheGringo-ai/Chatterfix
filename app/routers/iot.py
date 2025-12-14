@@ -27,7 +27,8 @@ try:
 except ImportError:
     IOT_AVAILABLE = False
 
-from app.routers.auth import get_current_user
+from app.auth import get_current_active_user
+from app.models.user import User
 
 router = APIRouter(prefix="/iot", tags=["IoT Advanced Module"])
 
@@ -45,7 +46,7 @@ class SensorConfigRequest(BaseModel):
 
 # Premium Feature Check Endpoint
 @router.get("/license-status")
-async def check_license_status(current_user: dict = Depends(get_current_user)):
+async def check_license_status(current_user: User = Depends(get_current_active_user)):
     """Check IoT Advanced Module license status"""
     if not IOT_AVAILABLE:
         return JSONResponse({
@@ -55,7 +56,7 @@ async def check_license_status(current_user: dict = Depends(get_current_user)):
             "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced"
         })
     
-    customer_id = current_user.get("customer_id", "demo_customer_1") 
+    customer_id = getattr(current_user, "customer_id", "demo_customer_1")
     license_info = await get_license_status(customer_id)
     return JSONResponse(license_info)
 
@@ -63,7 +64,7 @@ async def check_license_status(current_user: dict = Depends(get_current_user)):
 @router.post("/sensors")
 async def add_sensor(
     config: SensorConfigRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """Add a new IoT sensor to monitoring system"""
     if not IOT_AVAILABLE:
@@ -78,7 +79,7 @@ async def add_sensor(
             }
         })
     
-    customer_id = current_user.get("customer_id", "demo_customer_1")
+    customer_id = getattr(current_user, "customer_id", "demo_customer_1")
     
     try:
         # Convert request to sensor config
@@ -105,7 +106,7 @@ async def add_sensor(
         })
 
 @router.get("/sensors")
-async def list_sensors(current_user: dict = Depends(get_current_user)):
+async def list_sensors(current_user: User = Depends(get_current_active_user)):
     """List all configured IoT sensors"""
     if not IOT_AVAILABLE:
         return JSONResponse({
@@ -115,7 +116,7 @@ async def list_sensors(current_user: dict = Depends(get_current_user)):
             "upgrade_required": True
         })
     
-    customer_id = current_user.get("customer_id", "demo_customer_1")
+    customer_id = getattr(current_user, "customer_id", "demo_customer_1")
     
     # Apply IoT license check
     @require_iot_license
@@ -126,7 +127,7 @@ async def list_sensors(current_user: dict = Depends(get_current_user)):
     return JSONResponse(result)
 
 @router.get("/dashboard/overview")
-async def get_dashboard_overview(current_user: dict = Depends(get_current_user)):
+async def get_dashboard_overview(current_user: User = Depends(get_current_active_user)):
     """Get IoT dashboard overview with key metrics"""
     if not IOT_AVAILABLE:
         return JSONResponse({
@@ -141,7 +142,7 @@ async def get_dashboard_overview(current_user: dict = Depends(get_current_user))
             "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced"
         })
     
-    customer_id = current_user.get("customer_id", "demo_customer_1")
+    customer_id = getattr(current_user, "customer_id", "demo_customer_1")
     
     @require_iot_license
     async def _get_overview():
@@ -181,7 +182,7 @@ async def get_dashboard_overview(current_user: dict = Depends(get_current_user))
 @router.post("/voice-sensor-query")
 async def process_voice_sensor_query(
     voice_text: str = Form(...),
-    current_user: dict = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """Process voice queries about sensor data"""
     if not IOT_AVAILABLE:
@@ -192,7 +193,7 @@ async def process_voice_sensor_query(
             "upgrade_required": True
         })
     
-    customer_id = current_user.get("customer_id", "demo_customer_1")
+    customer_id = getattr(current_user, "customer_id", "demo_customer_1")
     voice_lower = voice_text.lower()
     
     @require_iot_license 
@@ -301,10 +302,10 @@ async def get_sensor_config_templates():
 
 # Upgrade Information
 @router.get("/upgrade-info")
-async def get_iot_upgrade_info(current_user: dict = Depends(get_current_user)):
+async def get_iot_upgrade_info(current_user: User = Depends(get_current_active_user)):
     """Get IoT Advanced Module upgrade information"""
     if IOT_AVAILABLE:
-        customer_id = current_user.get("customer_id", "demo_customer_1")
+        customer_id = getattr(current_user, "customer_id", "demo_customer_1")
         license_info = await get_license_status(customer_id)
         current_tier = license_info.get("tier", "core")
     else:

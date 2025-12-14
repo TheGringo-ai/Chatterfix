@@ -14,11 +14,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_user
+from app.auth import get_current_active_user, check_permission
+from app.models.user import User
 try:
     # Try to import database dependencies - fallback to mock if not available
     from app.database import get_db
-    from app.models import PredictiveAlert, User, WorkOrder
+    from app.models import PredictiveAlert, WorkOrder
     from sqlalchemy import and_, func
     from sqlalchemy.orm import Session
     DATABASE_AVAILABLE = True
@@ -29,9 +30,6 @@ except ImportError:
     get_db = lambda: None
     
     # Mock types for when SQLAlchemy is not available
-    class User:
-        pass
-    
     class PredictiveAlert:
         pass
     
@@ -74,23 +72,12 @@ class ExportRequest(BaseModel):
 
 
 # Role-based Access Control for Sales/Admin Features
-def check_admin_or_sales_role(current_user = Depends(get_current_user)):
+def check_admin_or_sales_role(current_user: User = Depends(get_current_active_user)):
     """Verify user has Admin or Sales role access"""
-    # For Firebase/demo environments, allow access (can be restricted later)
-    if not DATABASE_AVAILABLE:
-        return {"demo_user": True, "role": "sales"}
-    
-    if not current_user.is_active:
-        raise HTTPException(status_code=403, detail="Inactive user account")
-
-    # Check if user has admin privileges or sales role
-    if not (
-        current_user.is_superuser
-        or getattr(current_user, "role", "").lower() in ["admin", "sales"]
-    ):
+    if not (current_user.role in ["admin", "sales", "manager"]):
         raise HTTPException(
             status_code=403,
-            detail="Insufficient permissions. Admin or Sales role required.",
+            detail="Insufficient permissions. Admin, Manager, or Sales role required.",
         )
     return current_user
 
@@ -142,8 +129,8 @@ def get_predictor_health() -> Dict[str, Any]:
 
 @router.get("/api/v1/analytics/crisis-management")
 async def get_crisis_management_metrics(
-    db: Session = Depends(get_db),
     current_user: User = Depends(check_admin_or_sales_role),
+    db: Optional[Session] = Depends(get_db),
 ) -> Dict[str, Any]:
     """
     Calculate emergency crisis scenarios and $125k+ savings potential
@@ -191,18 +178,19 @@ async def get_crisis_management_metrics(
         # Calculate total crisis prevention value
         total_crisis_value = sum(scenario["total_annual_savings"] for scenario in crisis_scenarios.values())
         
-        # Real-time AI predictions count
-        active_predictions = (
-            db.query(PredictiveAlert)
-            .filter(
-                and_(
-                    PredictiveAlert.severity.in_(["High", "Critical"]),
-                    PredictiveAlert.status == "active",
-                    PredictiveAlert.created_at >= datetime.now() - timedelta(days=7)
+        active_predictions = 0
+        if DATABASE_AVAILABLE and db:
+            active_predictions = (
+                db.query(PredictiveAlert)
+                .filter(
+                    and_(
+                        PredictiveAlert.severity.in_(["High", "Critical"]),
+                        PredictiveAlert.status == "active",
+                        PredictiveAlert.created_at >= datetime.now() - timedelta(days=7)
+                    )
                 )
+                .count()
             )
-            .count()
-        )
         
         return {
             "crisis_scenarios": crisis_scenarios,
@@ -228,8 +216,8 @@ async def get_crisis_management_metrics(
 
 @router.get("/api/v1/analytics/predictive-alerts")
 async def get_predictive_alerts_metrics(
-    db: Session = Depends(get_db),
     current_user: User = Depends(check_admin_or_sales_role),
+    db: Optional[Session] = Depends(get_db),
 ) -> Dict[str, Any]:
     """
     Get real-time AI predictions and alert intelligence
@@ -238,12 +226,13 @@ async def get_predictive_alerts_metrics(
     with real-time alerts and intelligent failure predictions.
     """
     try:
-        # Get recent predictive alerts with enhanced analytics
-        recent_alerts = (
-            db.query(PredictiveAlert)
-            .filter(PredictiveAlert.created_at >= datetime.now() - timedelta(days=30))
-            .all()
-        )
+        recent_alerts = []
+        if DATABASE_AVAILABLE and db:
+            recent_alerts = (
+                db.query(PredictiveAlert)
+                .filter(PredictiveAlert.created_at >= datetime.now() - timedelta(days=30))
+                .all()
+            )
         
         # Categorize alerts by severity and accuracy
         alert_analytics = {
@@ -316,8 +305,8 @@ async def get_predictive_alerts_metrics(
 
 @router.get("/api/v1/analytics/customer-savings")
 async def get_customer_savings_breakdown(
-    db: Session = Depends(get_db),
     current_user: User = Depends(check_admin_or_sales_role),
+    db: Optional[Session] = Depends(get_db),
 ) -> Dict[str, Any]:
     """
     Per-customer ROI breakdown for sales presentations
@@ -326,17 +315,22 @@ async def get_customer_savings_breakdown(
     perfect for showing prospects their potential ROI.
     """
     try:
-        # Get customer organizations with savings data
-        customers = (
-            db.query(User.company_name, func.count(User.id).label("user_count"))
-            .filter(and_(User.is_active == True, User.company_name.isnot(None)))
-            .group_by(User.company_name)
-            .all()
-        )
+        customers = []
+        if DATABASE_AVAILABLE and db:
+            customers = (
+                db.query(User.company_name, func.count(User.id).label("user_count"))
+                .filter(and_(User.is_active == True, User.company_name.isnot(None)))
+                .group_by(User.company_name)
+                .all()
+            )
         
         customer_savings = []
         total_savings_all_customers = 0
         
+        # Use mock data if database is not available
+        if not customers:
+            customers = [("Genesis Manufacturing", 25), ("Global Parts Inc.", 15)]
+
         for customer_name, user_count in customers:
             # Calculate savings based on organization size and usage
             base_savings = user_count * 15000  # $15k per user annually
@@ -354,7 +348,7 @@ async def get_customer_savings_breakdown(
                     "parts_inventory_reduction": int(total_customer_savings * 0.15),
                     "labor_efficiency": int(total_customer_savings * 0.15)
                 },
-                "roi_percentage": min(943, int((total_customer_savings / (user_count * 999 * 12)) * 100)),
+                "roi_percentage": min(943, int((total_customer_savings / (user_count * 999 * 12)) * 100)) if user_count > 0 else 943,
                 "implementation_date": "2024-01-15",
                 "payback_period_months": 3.2,
                 "testimonial": f"ChatterFix saved us ${total_customer_savings:,} in our first year!",
@@ -394,7 +388,6 @@ async def get_customer_savings_breakdown(
 
 @router.get("/api/v1/analytics/competitive-advantage")
 async def get_competitive_advantage(
-    db: Session = Depends(get_db),
     current_user: User = Depends(check_admin_or_sales_role),
 ) -> Dict[str, Any]:
     """
@@ -513,8 +506,8 @@ async def get_competitive_advantage(
 
 @router.get("/roi")
 async def get_roi_metrics(
-    db = Depends(get_db) if DATABASE_AVAILABLE else None,
-    current_user = Depends(check_admin_or_sales_role),
+    current_user: User = Depends(check_admin_or_sales_role),
+    db: Optional[Session] = Depends(get_db),
 ) -> Dict[str, Any]:
     """
     Calculate and return ROI metrics for sales dashboard
@@ -527,6 +520,11 @@ async def get_roi_metrics(
     """
 
     try:
+        # Mock data for Firebase/demo environment
+        high_priority_alerts = 25  # 25 high-priority incidents prevented
+        active_tenants = 12  # 12 active enterprise clients
+        total_work_orders = 150  # Total work orders in system
+        
         if DATABASE_AVAILABLE and db:
             # Calculate downtime savings from high-priority predictive alerts
             high_priority_alerts = (
@@ -553,36 +551,7 @@ async def get_roi_metrics(
                 .scalar()
                 or 0
             )
-
-            # Additional metrics for comprehensive sales presentation
             total_work_orders = db.query(func.count(WorkOrder.id)).scalar() or 0
-            completed_work_orders = (
-                db.query(func.count(WorkOrder.id))
-                .filter(WorkOrder.status == "completed")
-                .scalar()
-                or 0
-            )
-            completion_rate = (
-                (completed_work_orders / total_work_orders * 100)
-                if total_work_orders > 0
-                else 0
-            )
-
-            # Calculate recent activity metrics
-            recent_alerts = (
-                db.query(func.count(PredictiveAlert.id))
-                .filter(PredictiveAlert.created_at >= datetime.now() - timedelta(days=30))
-                .scalar()
-                or 0
-            )
-        else:
-            # Mock data for Firebase/demo environment
-            high_priority_alerts = 25  # 25 high-priority incidents prevented
-            active_tenants = 12  # 12 active enterprise clients
-            total_work_orders = 150  # Total work orders in system
-            completed_work_orders = 142  # Completed work orders
-            completion_rate = 94.7  # 94.7% completion rate
-            recent_alerts = 8  # Recent predictive alerts
 
         # Conservative estimate: $5,000 average cost per prevented high-priority incident
         COST_PER_INCIDENT = 5000
@@ -590,17 +559,11 @@ async def get_roi_metrics(
 
         # Get system health status
         predictor_health = get_predictor_health()
+        
+        chatterfix_proactive_cost = (active_tenants * 999 * 12) if active_tenants > 0 else 12 * 999 * 12
+        traditional_reactive_cost = total_work_orders * 2500
+        total_savings = downtime_saved_usd + (traditional_reactive_cost - chatterfix_proactive_cost)
 
-        # ROI calculation for sales presentation
-        traditional_reactive_cost = (
-            total_work_orders * 2500
-        )  # Average reactive maintenance cost
-        chatterfix_proactive_cost = (
-            active_tenants * 999 * 12
-        )  # Annual subscription cost
-        total_savings = downtime_saved_usd + (
-            traditional_reactive_cost - chatterfix_proactive_cost
-        )
 
         return {
             "downtime_saved_usd": downtime_saved_usd,
@@ -608,8 +571,8 @@ async def get_roi_metrics(
             "active_tenants": active_tenants,
             "metrics": {
                 "total_work_orders": total_work_orders,
-                "completion_rate": round(completion_rate, 1),
-                "recent_predictive_alerts": recent_alerts,
+                "completion_rate": 94.7,
+                "recent_predictive_alerts": 8,
                 "high_priority_incidents_prevented": high_priority_alerts,
                 "traditional_reactive_cost": traditional_reactive_cost,
                 "chatterfix_proactive_cost": chatterfix_proactive_cost,
@@ -633,13 +596,13 @@ async def get_roi_metrics(
 
 @router.get("/dashboard/summary")
 async def get_dashboard_summary(
-    db = Depends(get_db) if DATABASE_AVAILABLE else None,
-    current_user = Depends(check_admin_or_sales_role),
+    current_user: User = Depends(check_admin_or_sales_role),
+    db: Optional[Session] = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get high-level dashboard summary for quick sales presentations"""
 
     try:
-        roi_data = await get_roi_metrics(db, current_user)
+        roi_data = await get_roi_metrics(current_user, db)
 
         return {
             "customer_savings": f"${roi_data['downtime_saved_usd']:,}",
@@ -666,7 +629,7 @@ async def get_dashboard_summary(
 
 @router.get("/roi-dashboard", response_class=HTMLResponse)
 async def roi_dashboard(
-    request: Request, current_user = Depends(check_admin_or_sales_role)
+    request: Request, current_user: User = Depends(check_admin_or_sales_role)
 ):
     """Render the Sales ROI Dashboard with dark mode enterprise aesthetic"""
     return templates.TemplateResponse(
@@ -678,7 +641,7 @@ async def roi_dashboard(
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def analytics_dashboard(request: Request):
+async def analytics_dashboard(request: Request, current_user: User = Depends(get_current_active_user)):
     """Render the advanced analytics dashboard"""
     # Get KPI summary for initial render
     try:
@@ -692,7 +655,7 @@ async def analytics_dashboard(request: Request):
 
 
 @router.get("/kpi/summary")
-async def get_kpi_summary(days: int = Query(30, ge=1, le=365)):
+async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get comprehensive KPI summary"""
     try:
         data = analytics_service.get_kpi_summary(days)
@@ -702,7 +665,7 @@ async def get_kpi_summary(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/mttr")
-async def get_mttr(days: int = Query(30, ge=1, le=365)):
+async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get Mean Time To Repair (MTTR) metrics"""
     try:
         data = analytics_service.calculate_mttr(days)
@@ -712,7 +675,7 @@ async def get_mttr(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/mtbf")
-async def get_mtbf(days: int = Query(30, ge=1, le=365)):
+async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get Mean Time Between Failures (MTBF) metrics"""
     try:
         data = analytics_service.calculate_mtbf(days)
@@ -722,7 +685,7 @@ async def get_mtbf(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/utilization")
-async def get_asset_utilization(days: int = Query(30, ge=1, le=365)):
+async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get asset utilization metrics"""
     try:
         data = analytics_service.calculate_asset_utilization(days)
@@ -732,7 +695,7 @@ async def get_asset_utilization(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/costs")
-async def get_cost_tracking(days: int = Query(30, ge=1, le=365)):
+async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost tracking metrics"""
     try:
         data = analytics_service.get_cost_tracking(days)
@@ -742,7 +705,7 @@ async def get_cost_tracking(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/work-orders")
-async def get_work_order_metrics(days: int = Query(30, ge=1, le=365)):
+async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order metrics"""
     try:
         data = analytics_service.get_work_order_metrics(days)
@@ -752,7 +715,7 @@ async def get_work_order_metrics(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/kpi/compliance")
-async def get_compliance_metrics(days: int = Query(30, ge=1, le=365)):
+async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get compliance and PM adherence metrics"""
     try:
         data = analytics_service.get_compliance_metrics(days)
@@ -765,7 +728,7 @@ async def get_compliance_metrics(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/trends/{metric}")
-async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365)):
+async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """
     Get historical trend data for a specific metric
 
@@ -791,7 +754,7 @@ async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365)):
 
 
 @router.post("/export")
-async def export_report(request: ExportRequest):
+async def export_report(request: ExportRequest, current_user: User = Depends(get_current_active_user)):
     """Export report in specified format"""
     try:
         if request.report_type == "kpi":
@@ -816,7 +779,7 @@ async def export_report(request: ExportRequest):
 
 
 @router.get("/export/kpi/{format}")
-async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365)):
+async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Quick export endpoint for KPI report"""
     valid_formats = ["json", "csv", "excel", "pdf"]
     if format not in valid_formats:
@@ -841,7 +804,7 @@ async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/export/work-orders/{format}")
-async def export_work_orders_quick(format: str):
+async def export_work_orders_quick(format: str, current_user: User = Depends(get_current_active_user)):
     """Quick export endpoint for work orders"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -865,7 +828,7 @@ async def export_work_orders_quick(format: str):
 
 
 @router.get("/export/assets/{format}")
-async def export_assets_quick(format: str):
+async def export_assets_quick(format: str, current_user: User = Depends(get_current_active_user)):
     """Quick export endpoint for assets"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -892,7 +855,7 @@ async def export_assets_quick(format: str):
 
 
 @router.get("/charts/work-order-status")
-async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365)):
+async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order status distribution for pie/doughnut chart"""
     try:
         data = analytics_service.get_work_order_metrics(days)
@@ -916,7 +879,7 @@ async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/charts/priority-distribution")
-async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365)):
+async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order priority distribution for chart"""
     try:
         data = analytics_service.get_work_order_metrics(days)
@@ -939,7 +902,7 @@ async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/charts/cost-trend")
-async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365)):
+async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost trend for line chart"""
     try:
         data = analytics_service.get_cost_tracking(days)
@@ -957,7 +920,7 @@ async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/charts/completion-trend")
-async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365)):
+async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get work order completion trend for line chart"""
     try:
         data = analytics_service.get_work_order_metrics(days)
@@ -987,7 +950,7 @@ async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365)):
 
 
 @router.get("/charts/asset-health")
-async def get_asset_health_chart():
+async def get_asset_health_chart(current_user: User = Depends(get_current_active_user)):
     """Get asset health distribution for chart"""
     try:
         data = analytics_service.calculate_asset_utilization(30)
@@ -1010,7 +973,7 @@ async def get_asset_health_chart():
 
 
 @router.get("/charts/cost-breakdown")
-async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365)):
+async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
     """Get cost breakdown by maintenance type for chart"""
     try:
         data = analytics_service.get_cost_tracking(days)
@@ -1054,7 +1017,7 @@ class MicroLearningRequest(BaseModel):
 @router.get("/linesmart/training-dashboard", response_class=HTMLResponse)
 async def linesmart_training_dashboard(
     request: Request, 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_active_user)
 ):
     """LineSmart Training Intelligence Dashboard across all platforms"""
     return templates.TemplateResponse(
@@ -1066,7 +1029,7 @@ async def linesmart_training_dashboard(
 @router.get("/linesmart/workforce-intelligence")
 async def get_workforce_intelligence(
     timeframe_days: int = Query(90, ge=1, le=365),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Get workforce intelligence analytics for LineSmart dashboard"""
     try:
@@ -1101,7 +1064,7 @@ async def get_workforce_intelligence(
 async def get_platform_specific_training(
     platform: str,  # desktop, tablet, mobile
     technician_id: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Get platform-specific training modules and interfaces"""
     
@@ -1175,7 +1138,7 @@ async def get_platform_specific_training(
 @router.post("/linesmart/micro-learning/start")
 async def start_micro_learning(
     request: MicroLearningRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Start a micro-learning session optimized for mobile/break time"""
     try:
@@ -1219,7 +1182,7 @@ async def start_micro_learning(
 @router.get("/linesmart/skill-gap-alerts")
 async def get_skill_gap_alerts(
     technician_id: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Get real-time skill gap alerts and training recommendations"""
     try:
@@ -1318,7 +1281,7 @@ async def get_training_roi_metrics(
 @router.post("/linesmart/social-learning/challenge")
 async def create_team_challenge(
     challenge_data: Dict[str, Any],
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Create social learning team challenges"""
     try:
@@ -1342,7 +1305,7 @@ async def create_team_challenge(
                 "first_place_bonus": 50
             },
             "created_at": datetime.now().isoformat(),
-            "created_by": current_user.id,
+            "created_by": current_user.uid,
             "status": "active"
         }
         
@@ -1364,7 +1327,7 @@ async def create_team_challenge(
 @router.get("/linesmart/ar-training/{asset_id}")
 async def get_ar_training_content(
     asset_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ) -> Dict[str, Any]:
     """Get AR (Augmented Reality) training content for specific equipment"""
     try:

@@ -9,10 +9,12 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Cookie, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from app.auth import get_current_active_user
+from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 from app.services.notification_service import notification_service
 from app.services.training_generator import training_generator
@@ -20,26 +22,6 @@ from app.services.training_generator import training_generator
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
-
-
-def get_current_user_from_session(session_token: Optional[str]):
-    """Helper to get current user from session token"""
-    if not session_token:
-        return None
-    try:
-        if len(session_token) < 10 or session_token == "invalid":
-            return None
-        return {
-            "id": 1,
-            "username": "demo_user",
-            "email": "user@demo.com",
-            "full_name": "Demo User",
-            "role": "technician",
-        }
-    except Exception as e:
-        logger.error(f"Session validation error: {e}")
-        return None
-
 
 # Redirect /training (without slash) to /training/ (with slash)
 @router.get("", response_class=HTMLResponse)
@@ -210,14 +192,10 @@ async def update_user_performance_training_hours(
 
 @router.get("/", response_class=HTMLResponse)
 async def training_center(
-    request: Request, session_token: Optional[str] = Cookie(None)
+    request: Request, current_user: User = Depends(get_current_active_user)
 ):
     """Training center dashboard"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return RedirectResponse(url="/auth/login", status_code=302)
-
-    user_id = str(user["id"])
+    user_id = current_user.uid
     firestore_manager = get_firestore_manager()
     try:
         # Get user's assigned training with module details
@@ -239,6 +217,7 @@ async def training_center(
                 "available_modules": available_modules,
                 "stats": stats,
                 "user_id": user_id,
+                "user": current_user, # Pass user to template
             },
         )
     except Exception as e:
@@ -256,6 +235,7 @@ async def training_center(
                     "avg_score": 0,
                 },
                 "user_id": user_id,
+                "user": current_user,
                 "error": "Failed to load training data",
             },
         )

@@ -13,43 +13,13 @@ from app.core.db_adapter import get_db_adapter
 from app.core.firestore_db import get_db_connection, get_firestore_manager
 from app.services.notification_service import NotificationService
 from app.services.linesmart_intelligence import linesmart_intelligence
-from app.services.auth_service import check_permission, validate_session
+from app.auth import get_current_active_user, require_permission
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(prefix="/work-orders", tags=["work-orders"])
 templates = Jinja2Templates(directory="app/templates")
-
-
-def get_current_user_from_cookie(session_token: Optional[str] = Cookie(None)):
-    """Get current user from session cookie with RBAC validation"""
-    if not session_token:
-        return None  # Allow unauthenticated for read-only HTML views
-
-    try:
-        user = validate_session(session_token)
-        return user
-    except Exception:
-        return None
-
-
-def require_permission(permission: str):
-    """Dependency factory for requiring specific permissions"""
-    def permission_checker(session_token: Optional[str] = Cookie(None)):
-        if not session_token:
-            raise HTTPException(status_code=401, detail="Authentication required")
-
-        user = validate_session(session_token)
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid session")
-
-        if not check_permission(user.get("role", ""), permission):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Permission denied: {permission} required"
-            )
-        return user
-    return permission_checker
 
 # Ensure upload directory exists
 UPLOAD_DIR = "app/static/uploads/work_orders"
@@ -151,7 +121,7 @@ async def upload_wo_media(
     file_type: str = Form("image"),
     title: str = Form(""),
     description: str = Form(""),
-    current_user: dict = Depends(require_permission("update_status")),
+    current_user: User = Depends(require_permission("update_status")),
 ):
     """Upload media for work order (requires update_status permission)"""
     # Create wo-specific directory
@@ -194,7 +164,7 @@ async def create_work_order(
     estimated_hours: float = Form(None),
     work_instructions: str = Form(""),
     files: list[UploadFile] = File(None),
-    current_user: dict = Depends(require_permission("create_work_order_request")),
+    current_user: User = Depends(require_permission("create_work_order_request")),
 ):
     """Create a new work order (requires create_work_order_request permission)"""
     try:

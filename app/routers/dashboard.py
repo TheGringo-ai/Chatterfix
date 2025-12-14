@@ -4,11 +4,13 @@ import logging
 import time
 from typing import List, Optional
 
-from fastapi import APIRouter, Cookie, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from app.auth import get_current_active_user, get_optional_current_user
+from app.models.user import User
 from app.core.db_adapter import get_db_adapter
 from app.services.dashboard_service import dashboard_service
 from app.services.real_time_feed_service import real_time_feed
@@ -17,31 +19,6 @@ from app.services.websocket_manager import websocket_manager
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
-
-
-def get_current_user_from_session(session_token: Optional[str]):
-    """Helper to get current user from session token with auth_service"""
-    if not session_token:
-        return None
-    try:
-        # Note: auth_service.validate_session will fail with SQLite issues
-        # For now, use a fallback validation method
-        if len(session_token) < 10 or session_token == "invalid":
-            return None
-
-        # Temporary: Return a mock user structure for valid-looking tokens
-        # In production, this should call auth_service.validate_session()
-        # after converting auth_service to use Firestore
-        return {
-            "id": 1,
-            "username": "demo_user",
-            "email": "user@demo.com",
-            "full_name": "Demo User",
-            "role": "manager",
-        }
-    except Exception as e:
-        logger.error(f"Session validation error: {e}")
-        return None
 
 
 # Pydantic models
@@ -57,48 +34,31 @@ class DashboardLayoutUpdate(BaseModel):
 
 
 @router.get("/app", response_class=HTMLResponse)
-async def root_dashboard(request: Request, session_token: Optional[str] = Cookie(None)):
+async def root_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """App route - show landing page or dashboard based on authentication"""
-    # Validate user session
-    user = get_current_user_from_session(session_token)
-
-    if not user:
-        # Show landing page with demo access instead of redirect to login
+    if not current_user:
         return RedirectResponse(url="/landing", status_code=302)
 
     # User is authenticated, show dashboard
-    return await dashboard(request, user_id=user["id"], current_user=user)
+    return await dashboard(request, current_user=current_user)
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
-    session_token: Optional[str] = Cookie(None),
-    user_id: int = None,
-    current_user: dict = None,
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Render the ChatterFix Workforce Intelligence Homepage"""
-    # For the beautiful homepage, we'll show it for both authenticated and non-authenticated users
-    # This showcases the platform capabilities and Genesis project data
-    
-    # Try to get user if authenticated, but don't require it for homepage
-    if current_user is None and session_token:
-        current_user = get_current_user_from_session(session_token)
-    
-    # Use demo user data for showcase if not authenticated
-    if not current_user:
-        current_user = {
-            "id": "demo",
-            "username": "Demo User",
-            "email": "demo@chatterfix.com",
-            "full_name": "Demo User",
-            "role": "viewer",
-        }
+    user_id = "demo"
+    is_demo = True
+    if current_user:
+        user_id = current_user.uid
+        is_demo = False
 
     # Get real-time stats from Firestore via db_adapter (with fallback for demo)
     try:
         db_adapter = get_db_adapter()
-        dashboard_data = await db_adapter.get_dashboard_data(str(current_user["id"]))
+        dashboard_data = await db_adapter.get_dashboard_data(user_id)
 
         # Extract data for template
         work_orders = dashboard_data.get("work_orders", [])
@@ -131,7 +91,7 @@ async def dashboard(
             "work_orders": work_orders,
             "assets": assets,
             "ai_interactions": ai_interactions,
-            "is_demo": current_user["id"] == "demo",
+            "is_demo": is_demo,
         },
     )
 
@@ -139,17 +99,13 @@ async def dashboard(
 @router.get("/classic", response_class=HTMLResponse)
 async def classic_dashboard(
     request: Request,
-    session_token: Optional[str] = Cookie(None),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Render the original AI Command Center dashboard"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return RedirectResponse(url="/auth/login", status_code=302)
-
     # Get real-time stats from Firestore via db_adapter
     try:
         db_adapter = get_db_adapter()
-        dashboard_data = await db_adapter.get_dashboard_data(str(user["id"]))
+        dashboard_data = await db_adapter.get_dashboard_data(current_user.uid)
 
         # Extract data for template
         work_orders = dashboard_data.get("work_orders", [])
@@ -229,7 +185,7 @@ async def classic_dashboard(
         "dashboard.html",
         {
             "request": request,
-            "current_user": user,
+            "current_user": current_user,
             "workload": workload,
             "performance": performance,
             "notifications": notifications,
@@ -239,27 +195,19 @@ async def classic_dashboard(
 
 
 @router.get("/config")
-async def get_dashboard_config(session_token: Optional[str] = Cookie(None)):
+async def get_dashboard_config(current_user: User = Depends(get_current_active_user)):
     """Get user's dashboard configuration"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    config = dashboard_service.get_user_dashboard_config(user["id"])
+    config = dashboard_service.get_user_dashboard_config(current_user.uid)
     return JSONResponse(content=config)
 
 
 @router.post("/config")
 async def save_dashboard_config(
-    layout: DashboardLayoutUpdate, session_token: Optional[str] = Cookie(None)
+    layout: DashboardLayoutUpdate, current_user: User = Depends(get_current_active_user)
 ):
     """Save user's dashboard layout"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
     widgets = [w.dict() for w in layout.widgets]
-    success = dashboard_service.save_dashboard_layout(user["id"], widgets)
+    success = dashboard_service.save_dashboard_layout(current_user.uid, widgets)
 
     return JSONResponse(
         content={
@@ -270,14 +218,10 @@ async def save_dashboard_config(
 
 
 @router.get("/widgets")
-async def get_available_widgets(session_token: Optional[str] = Cookie(None)):
+async def get_available_widgets(current_user: User = Depends(get_current_active_user)):
     """Get available widgets for user's role"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
     # Return static widget configuration for dashboard
-    # In production, this would be role-based from Firestore based on user["role"]
+    # In production, this would be role-based from Firestore based on user.role
     default_widgets = [
         {
             "id": 1,
@@ -321,27 +265,19 @@ async def get_available_widgets(session_token: Optional[str] = Cookie(None)):
 
 @router.get("/widget/{widget_type}/data")
 async def get_widget_data(
-    widget_type: str, session_token: Optional[str] = Cookie(None)
+    widget_type: str, current_user: User = Depends(get_current_active_user)
 ):
     """Get data for a specific widget"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    data = dashboard_service.get_widget_data(widget_type, user["id"])
+    data = dashboard_service.get_widget_data(widget_type, current_user.uid)
     return JSONResponse(content=data)
 
 
 @router.post("/widget/{widget_id}/config")
 async def update_widget_config(
-    widget_id: int, config: dict, session_token: Optional[str] = Cookie(None)
+    widget_id: int, config: dict, current_user: User = Depends(get_current_active_user)
 ):
     """Update widget configuration"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    success = dashboard_service.update_widget_config(user["id"], widget_id, config)
+    success = dashboard_service.update_widget_config(current_user.uid, widget_id, config)
 
     return JSONResponse(
         content={
@@ -352,19 +288,15 @@ async def update_widget_config(
 
 
 @router.post("/reset")
-async def reset_dashboard(session_token: Optional[str] = Cookie(None)):
+async def reset_dashboard(current_user: User = Depends(get_current_active_user)):
     """Reset dashboard to default layout"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
     try:
         # Reset to default dashboard configuration
         # In production, this would clear user's custom config from Firestore
         # For now, just return success
         success = True
     except Exception as e:
-        logger.error(f"Error resetting dashboard for user {user['id']}: {e}")
+        logger.error(f"Error resetting dashboard for user {current_user.uid}: {e}")
         success = False
 
     return JSONResponse(
@@ -381,9 +313,9 @@ async def reset_dashboard(session_token: Optional[str] = Cookie(None)):
 
 # Real-time data endpoints
 @router.websocket("/stream")
-async def dashboard_stream(websocket: WebSocket, user_id: int = 1):
+async def dashboard_stream(websocket: WebSocket, user: User = Depends(get_current_active_user)):
     """WebSocket endpoint for real-time dashboard updates"""
-    await websocket_manager.connect(websocket, user_id)
+    await websocket_manager.connect(websocket, user.uid)
 
     try:
         while True:
@@ -394,16 +326,16 @@ async def dashboard_stream(websocket: WebSocket, user_id: int = 1):
 
                 if message.get("type") == "subscribe":
                     widget_types = message.get("widgets", [])
-                    await real_time_feed.subscribe(user_id, widget_types)
+                    await real_time_feed.subscribe(user.uid, widget_types)
 
                 elif message.get("type") == "unsubscribe":
                     widget_types = message.get("widgets", [])
-                    await real_time_feed.unsubscribe(user_id, widget_types)
+                    await real_time_feed.unsubscribe(user.uid, widget_types)
 
                 elif message.get("type") == "refresh":
                     widget_type = message.get("widget")
                     if widget_type:
-                        await real_time_feed.send_widget_updates(user_id, [widget_type])
+                        await real_time_feed.send_widget_updates(user.uid, [widget_type])
 
             except asyncio.TimeoutError:
                 # Send keepalive ping to maintain connection
@@ -411,61 +343,45 @@ async def dashboard_stream(websocket: WebSocket, user_id: int = 1):
             except json.JSONDecodeError:
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})
             except Exception as e:
-                logging.error(f"WebSocket error for user {user_id}: {e}")
+                logging.error(f"WebSocket error for user {user.uid}: {e}")
                 await websocket.send_json(
                     {"type": "error", "message": "Internal error"}
                 )
                 break
 
     except WebSocketDisconnect:
-        websocket_manager.disconnect(user_id)
-        await real_time_feed.unsubscribe(user_id)
+        websocket_manager.disconnect(user.uid)
+        await real_time_feed.unsubscribe(user.uid)
 
 
 # Specific widget data endpoints for quick access
 @router.get("/workload")
-async def get_workload(session_token: Optional[str] = Cookie(None)):
+async def get_workload(current_user: User = Depends(get_current_active_user)):
     """Get detailed workload data"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    data = dashboard_service.get_workload_data(user["id"], {})
+    data = dashboard_service.get_workload_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/parts-status")
-async def get_parts_status(session_token: Optional[str] = Cookie(None)):
+async def get_parts_status(current_user: User = Depends(get_current_active_user)):
     """Get parts status"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    data = dashboard_service.get_parts_data(user["id"], {})
+    data = dashboard_service.get_parts_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/team-status")
-async def get_team_status(session_token: Optional[str] = Cookie(None)):
+async def get_team_status(current_user: User = Depends(get_current_active_user)):
     """Get team availability"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    data = dashboard_service.get_team_data(user["id"], {})
+    data = dashboard_service.get_team_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/quick-stats")
-async def get_quick_stats(session_token: Optional[str] = Cookie(None)):
+async def get_quick_stats(current_user: User = Depends(get_current_active_user)):
     """Get summary metrics for quick overview"""
-    user = get_current_user_from_session(session_token)
-    if not user:
-        return JSONResponse({"error": "Authentication required"}, status_code=401)
-
-    workload = dashboard_service.get_workload_data(user["id"], {})
-    performance = dashboard_service.get_performance_data(user["id"], {})
-    notifications = dashboard_service.get_notifications_data(user["id"], {})
+    workload = dashboard_service.get_workload_data(current_user.uid, {})
+    performance = dashboard_service.get_performance_data(current_user.uid, {})
+    notifications = dashboard_service.get_notifications_data(current_user.uid, {})
 
     return JSONResponse(
         content={

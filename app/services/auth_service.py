@@ -1,272 +1,111 @@
 """
 Authentication Service
-Handles user authentication, password hashing, and session management
+Integrates with Firebase Authentication for token verification and retrieves user permissions from Firestore.
 """
 
-import os
-import secrets
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+import logging
+from typing import Optional
 
-from passlib.context import CryptContext
+import firebase_admin
+from firebase_admin import auth, credentials
 
-from app.core.firestore_db import get_db_connection
+from app.core.firestore_db import get_firestore_manager
+from app.models.user import User
 
-# # from app.core.database import get_db_connection
+logger = logging.getLogger(__name__)
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# --- Firebase Initialization ---
 
-DATABASE_PATH = os.getenv("CMMS_DB_PATH", "./data/cmms.db")
-SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
-SESSION_EXPIRE_HOURS = 24
-
-
-def hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def create_session_token() -> str:
-    """Generate a secure session token"""
-    return secrets.token_urlsafe(32)
-
-
-def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
+def initialize_firebase_app():
     """
-    Authenticate a user with username and password
+    Initializes the Firebase Admin SDK.
+    It's safe to call this multiple times; it will only initialize once.
+    """
+    # Check if the app is already initialized
+    if not firebase_admin._apps:
+        try:
+            # The SDK will automatically use the GOOGLE_APPLICATION_CREDENTIALS env var
+            # if it's set and valid.
+            cred = credentials.ApplicationDefault()
+            firebase_admin.initialize_app(cred)
+            logger.info("✅ Firebase Admin SDK initialized successfully.")
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize Firebase Admin SDK: {e}")
+            logger.error(
+                "Please ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable is set "
+                "correctly to a valid service account JSON file."
+            )
+
+# Call initialization on module load
+initialize_firebase_app()
+
+
+# --- Core Authentication Functions ---
+
+async def verify_id_token_and_get_user(token: str) -> Optional[User]:
+    """
+    Verifies a Firebase ID token, then fetches the user's profile and permissions from Firestore.
+
+    Args:
+        token: The Firebase ID token (JWT) from the client.
 
     Returns:
-        User dict if successful, None if failed
+        A User model instance if the token is valid and the user exists in Firestore, otherwise None.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Get user
-    cursor.execute(
-        """
-        SELECT * FROM users
-        WHERE username = ? AND is_active = 1
-    """,
-        (username,),
-    )
-
-    user = cursor.fetchone()
-
-    if not user:
-        conn.close()
+    if not firebase_admin._apps:
+        logger.error("Firebase not initialized. Cannot verify token.")
         return None
-
-    # Check if account is locked
-    if user["locked_until"]:
-        locked_until = datetime.fromisoformat(user["locked_until"])
-        if datetime.now() < locked_until:
-            conn.close()
-            return None
-
-    # Verify password
-    if not user["password_hash"] or not verify_password(
-        password, user["password_hash"]
-    ):
-        # Increment failed attempts
-        cursor.execute(
-            """
-            UPDATE users
-            SET failed_login_attempts = failed_login_attempts + 1,
-                locked_until = CASE
-                    WHEN failed_login_attempts >= 4
-                    THEN datetime('now', '+30 minutes')
-                    ELSE NULL
-                END
-            WHERE id = ?
-        """,
-            (user["id"],),
-        )
-        conn.commit()
-        conn.close()
-        return None
-
-    # Reset failed attempts on successful login
-    cursor.execute(
-        """
-        UPDATE users
-        SET failed_login_attempts = 0,
-            locked_until = NULL,
-            last_seen = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """,
-        (user["id"],),
-    )
-
-    conn.commit()
-    conn.close()
-
-    return dict(user)
-
-
-def create_session(user_id: int, ip_address: str = None, user_agent: str = None) -> str:
-    """
-    Create a new session for a user
-
-    Returns:
-        Session token
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    session_id = secrets.token_urlsafe(16)
-    token = create_session_token()
-    expires_at = datetime.now() + timedelta(hours=SESSION_EXPIRE_HOURS)
-
-    cursor.execute(
-        """
-        INSERT INTO user_sessions (id, user_id, token, expires_at, ip_address, user_agent)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """,
-        (session_id, user_id, token, expires_at.isoformat(), ip_address, user_agent),
-    )
-
-    conn.commit()
-    conn.close()
-
-    return token
-
-
-def validate_session(token: str) -> Optional[Dict[str, Any]]:
-    """
-    Validate a session token and return user info
-
-    Returns:
-        User dict if valid, None if invalid/expired
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT s.*, u.*
-        FROM user_sessions s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.token = ?
-        AND s.is_active = 1
-        AND datetime(s.expires_at) > datetime('now')
-        AND u.is_active = 1
-    """,
-        (token,),
-    )
-
-    result = cursor.fetchone()
-    conn.close()
-
-    if not result:
-        return None
-
-    return dict(result)
-
-
-def invalidate_session(token: str) -> bool:
-    """Invalidate a session (logout)"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        UPDATE user_sessions
-        SET is_active = 0
-        WHERE token = ?
-    """,
-        (token,),
-    )
-
-    conn.commit()
-    affected = cursor.rowcount
-    conn.close()
-
-    return affected > 0
-
-
-def create_user(
-    username: str,
-    email: str,
-    password: str,
-    full_name: str = None,
-    role: str = "technician",
-) -> Optional[int]:
-    """
-    Create a new user
-
-    Returns:
-        User ID if successful, None if failed
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    password_hash = hash_password(password)
 
     try:
-        cursor.execute(
-            """
-            INSERT INTO users (username, email, password_hash, full_name, role, last_password_change)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        """,
-            (username, email, password_hash, full_name, role),
+        # Verify the token against the Firebase Auth service
+        decoded_token = auth.verify_id_token(token)
+        uid = decoded_token['uid']
+        email = decoded_token.get('email')
+
+        # Fetch user profile from Firestore to get roles and permissions
+        firestore_manager = get_firestore_manager()
+        user_doc = await firestore_manager.get_document('users', uid)
+
+        if not user_doc:
+            logger.warning(f"User with UID '{uid}' authenticated but not found in Firestore.")
+            # Optionally, you could create a user profile here on first login.
+            # For now, we'll deny access if they don't have a profile.
+            return None
+        
+        # Get permissions based on the user's role
+        role = user_doc.get("role", "technician")
+        permissions = get_permissions_for_role(role)
+
+        # Create a user model
+        user = User(
+            uid=uid,
+            email=email,
+            role=role,
+            full_name=user_doc.get("full_name"),
+            disabled=user_doc.get("disabled", False),
+            permissions=permissions
         )
 
-        user_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-        return user_id
-    except Exception:
-        conn.close()
+        if user.disabled:
+            logger.warning(f"Authentication attempt for disabled user '{uid}'.")
+            return None
+
+        return user
+
+    except auth.InvalidIdTokenError:
+        logger.warning("Invalid Firebase ID token provided.")
+        return None
+    except Exception as e:
+        logger.error(f"An error occurred during token verification: {e}")
         return None
 
 
-def change_password(user_id: int, old_password: str, new_password: str) -> bool:
-    """Change a user's password"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
+# --- Permission Management ---
 
-    # Verify old password
-    cursor.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,))
-    user = cursor.fetchone()
-
-    if not user or not verify_password(old_password, user["password_hash"]):
-        conn.close()
-        return False
-
-    # Update password
-    new_hash = hash_password(new_password)
-    cursor.execute(
-        """
-        UPDATE users
-        SET password_hash = ?,
-            last_password_change = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """,
-        (new_hash, user_id),
-    )
-
-    conn.commit()
-    conn.close()
-    return True
-
-
-def check_permission(user_role: str, required_permission: str) -> bool:
+def get_permissions_for_role(role: str) -> list[str]:
     """
-    Check if a user role has a specific permission
-
-    Permission hierarchy:
-    - manager: all permissions
-    - supervisor: team management, work order approval
-    - planner: work order scheduling, resource allocation
-    - parts_manager: inventory management, vendor management
-    - technician: work order completion, parts usage
-    - requestor: work order creation only
+    Retrieves the list of permissions for a given user role.
+    This defines the role-based access control (RBAC) for the application.
     """
     role_permissions = {
         "manager": ["all"],
@@ -302,11 +141,25 @@ def check_permission(user_role: str, required_permission: str) -> bool:
         ],
         "requestor": ["create_work_order_request", "view_own_requests"],
     }
+    return role_permissions.get(role, [])
 
-    permissions = role_permissions.get(user_role, [])
 
-    # Manager has all permissions
-    if "all" in permissions:
+def check_permission(user: User, required_permission: str) -> bool:
+    """
+    Check if a user has a specific permission.
+
+    Args:
+        user: The User object.
+        required_permission: The permission string to check for.
+
+    Returns:
+        True if the user has the permission, False otherwise.
+    """
+    if not user:
+        return False
+    
+    # "manager" role has all permissions
+    if "all" in user.permissions:
         return True
-
-    return required_permission in permissions
+    
+    return required_permission in user.permissions

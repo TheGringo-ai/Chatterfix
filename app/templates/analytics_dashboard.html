@@ -3,22 +3,70 @@
 {% block title %}Advanced Analytics - ChatterFix CMMS{% endblock %}
 
 {% block head %}
+<!-- Force light mode immediately -->
+<script>
+    document.documentElement.classList.remove('dark-mode');
+    document.body && document.body.classList.remove('dark-mode');
+</script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
+    /* Force light mode styling for analytics dashboard - Override CSS variables */
+    .analytics-container {
+        --text-primary: #212529 !important;
+        --text-secondary: #495057 !important;
+        --text-muted: #6c757d !important;
+        --bg-primary: #ffffff !important;
+        --bg-card: #ffffff !important;
+        --bg-glass: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .analytics-container,
+    .analytics-container * {
+        color: #212529 !important;
+    }
+
+    .analytics-container .kpi-value,
+    .analytics-container .kpi-label,
+    .analytics-container .chart-title,
+    .analytics-container h1,
+    .analytics-container h2,
+    .analytics-container h3,
+    .analytics-container p,
+    .analytics-container span:not(.kpi-trend),
+    .analytics-container div:not(.kpi-trend) {
+        color: #212529 !important;
+    }
+
+    /* Ensure trends keep their colors */
+    .analytics-container .trend-up {
+        color: #27ae60 !important;
+    }
+    .analytics-container .trend-down {
+        color: #e74c3c !important;
+    }
+    .analytics-container .trend-stable {
+        color: #3498db !important;
+    }
+
     .analytics-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
         border: 2px solid #dee2e6;
         border-radius: 20px;
         padding: 2rem;
         margin-bottom: 2rem;
         text-align: center;
-        color: #212529;
+        color: #212529 !important;
     }
 
     .analytics-header h1 {
         font-size: 2rem;
         margin-bottom: 0.5rem;
+        color: #212529 !important;
+    }
+
+    .analytics-header p {
+        color: #495057 !important;
     }
 
     .kpi-grid {
@@ -29,13 +77,25 @@
     }
 
     .kpi-card {
-        background: #ffffff;
+        background: #ffffff !important;
         border-radius: 15px;
         padding: 1.5rem;
         border: 1px solid #dee2e6;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
-        color: #212529;
+        color: #212529 !important;
+    }
+
+    .kpi-card .kpi-icon {
+        color: inherit !important;
+    }
+
+    .kpi-card .kpi-value {
+        color: #212529 !important;
+    }
+
+    .kpi-card .kpi-label {
+        color: #495057 !important;
     }
 
     .kpi-card:hover {
@@ -106,12 +166,12 @@
     }
 
     .chart-card {
-        background: #ffffff;
+        background: #ffffff !important;
         border-radius: 15px;
         padding: 1.5rem;
         border: 1px solid #dee2e6;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        color: #212529;
+        color: #212529 !important;
     }
 
     .chart-title {
@@ -121,6 +181,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        color: #212529 !important;
     }
 
     .chart-container {
@@ -129,13 +190,18 @@
     }
 
     .export-section {
-        background: #ffffff;
+        background: #ffffff !important;
         border-radius: 15px;
         padding: 1.5rem;
         margin-bottom: 2rem;
         border: 1px solid #dee2e6;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        color: #212529;
+        color: #212529 !important;
+    }
+
+    .export-section h3,
+    .export-section p {
+        color: #212529 !important;
     }
 
     .export-buttons {
@@ -155,17 +221,17 @@
         padding: 0.5rem 1rem;
         border: 1px solid #dee2e6;
         border-radius: 8px;
-        background: #ffffff;
-        color: #212529;
+        background: #ffffff !important;
+        color: #212529 !important;
         cursor: pointer;
         transition: all 0.3s ease;
     }
 
     .period-btn:hover,
     .period-btn.active {
-        background: #007bff;
+        background: #007bff !important;
         border-color: #007bff;
-        color: white;
+        color: white !important;
     }
 
     .compliance-grid {
@@ -178,15 +244,20 @@
     .compliance-item {
         text-align: center;
         padding: 1rem;
-        background: #f8f9fa;
+        background: #f8f9fa !important;
         border: 1px solid #dee2e6;
         border-radius: 10px;
-        color: #212529;
+        color: #212529 !important;
     }
 
     .compliance-value {
         font-size: 2rem;
         font-weight: bold;
+        color: #212529 !important;
+    }
+
+    .compliance-label {
+        color: #495057 !important;
     }
 
     .loading-spinner {
@@ -200,7 +271,7 @@
         content: "";
         width: 40px;
         height: 40px;
-        border: 4px solid rgba(255, 255, 255, 0.1);
+        border: 4px solid rgba(0, 0, 0, 0.1);
         border-top-color: #3498db;
         border-radius: 50%;
         animation: spin 1s linear infinite;
@@ -225,6 +296,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="analytics-container">
 <div class="analytics-header">
     <h1>📊 Advanced Analytics Dashboard</h1>
     <p>Real-time KPIs, trends, and insights for your maintenance operations</p>
@@ -397,16 +469,29 @@
         </button>
     </div>
 </div>
+</div><!-- End analytics-container -->
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // Force light mode for analytics dashboard
+    (function() {
+        document.documentElement.classList.remove('dark-mode');
+        document.body.classList.remove('dark-mode');
+        // Store original theme to restore later if needed
+        window.analyticsOriginalTheme = localStorage.getItem('theme');
+    })();
+
     // Global variables
     let currentPeriod = 30;
     let charts = {};
 
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function () {
+        // Ensure light mode is applied
+        document.documentElement.classList.remove('dark-mode');
+        document.body.classList.remove('dark-mode');
+
         loadKPIData();
         loadCharts();
 

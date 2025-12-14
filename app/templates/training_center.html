@@ -2,7 +2,125 @@
 
 {% block title %}Technician Training & SOPs - ChatterFix{% endblock %}
 
+{% block head %}
+<!-- Force light mode immediately -->
+<script>
+    document.documentElement.classList.remove('dark-mode');
+    document.body && document.body.classList.remove('dark-mode');
+</script>
+<style>
+    /* Force light mode for training center */
+    .training-container {
+        --text-primary: #212529 !important;
+        --text-secondary: #495057 !important;
+        --bg-primary: #ffffff !important;
+    }
+
+    .training-container,
+    .training-container .card,
+    .training-container .card-body,
+    .training-container .table,
+    .training-container th,
+    .training-container td,
+    .training-container h1,
+    .training-container h2,
+    .training-container h3,
+    .training-container h4,
+    .training-container h5,
+    .training-container p,
+    .training-container strong,
+    .training-container small {
+        color: #212529 !important;
+    }
+
+    /* Only apply white background to cards WITHOUT color classes */
+    .training-container .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger) {
+        background: #ffffff !important;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    .training-container .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger) .card-body {
+        background: #ffffff !important;
+    }
+
+    /* Ensure colored stat cards have proper backgrounds and text */
+    .training-container .card.bg-primary,
+    .training-container .card.bg-primary .card-body {
+        background: #0d6efd !important;
+        color: #ffffff !important;
+    }
+    .training-container .card.bg-primary h3,
+    .training-container .card.bg-primary p {
+        color: #ffffff !important;
+    }
+
+    .training-container .card.bg-success,
+    .training-container .card.bg-success .card-body {
+        background: #198754 !important;
+        color: #ffffff !important;
+    }
+    .training-container .card.bg-success h3,
+    .training-container .card.bg-success p {
+        color: #ffffff !important;
+    }
+
+    .training-container .card.bg-warning,
+    .training-container .card.bg-warning .card-body {
+        background: #ffc107 !important;
+        color: #212529 !important;
+    }
+    .training-container .card.bg-warning h3,
+    .training-container .card.bg-warning p {
+        color: #212529 !important;
+    }
+
+    .training-container .card.bg-info,
+    .training-container .card.bg-info .card-body {
+        background: #0dcaf0 !important;
+        color: #ffffff !important;
+    }
+    .training-container .card.bg-info h3,
+    .training-container .card.bg-info p {
+        color: #ffffff !important;
+    }
+
+    .training-container .table {
+        background: #ffffff !important;
+    }
+
+    .training-container .table thead th {
+        background: #f8f9fa !important;
+        color: #212529 !important;
+        border-color: #dee2e6 !important;
+    }
+
+    .training-container .table tbody td {
+        background: #ffffff !important;
+        color: #212529 !important;
+        border-color: #dee2e6 !important;
+    }
+
+    .training-container .table-hover tbody tr:hover td {
+        background: #f8f9fa !important;
+    }
+
+    .training-container .text-muted {
+        color: #6c757d !important;
+    }
+
+    .training-container .card-header.bg-primary {
+        background: #0d6efd !important;
+        color: #ffffff !important;
+    }
+
+    .training-container .card-header.bg-primary h5 {
+        color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="training-container">
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
@@ -232,6 +350,7 @@
         </div>
     </div>
 </div>
+</div><!-- End training-container -->
 
 <script>
     // Generate training from manual

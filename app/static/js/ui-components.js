@@ -268,8 +268,15 @@ document.addEventListener('alpine:init', () => {
         async updateMetrics() {
             try {
                 const response = await fetch('/quick-stats');
+
+                // Check if response is OK before parsing
+                if (!response.ok) {
+                    console.log('📊 Quick stats not available (requires auth)');
+                    return; // Silently fail - use default metrics
+                }
+
                 const data = await response.json();
-                
+
                 // Animate metric changes with GSAP
                 if (data.workload?.active !== undefined) {
                     gsap.to(this.metrics, {
@@ -278,7 +285,7 @@ document.addEventListener('alpine:init', () => {
                         ease: "power2.out"
                     });
                 }
-                
+
                 if (data.performance?.completion_rate !== undefined) {
                     gsap.to(this.metrics, {
                         efficiency: Math.round(data.performance.completion_rate),
@@ -286,10 +293,11 @@ document.addEventListener('alpine:init', () => {
                         ease: "power2.out"
                     });
                 }
-                
+
                 console.log('✅ Metrics updated with animation');
             } catch (error) {
-                console.error('❌ Failed to update metrics:', error);
+                // Silently handle errors - use default metrics
+                console.log('📊 Using default metrics');
             }
         }
     });
@@ -633,15 +641,24 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             try {
                 const response = await fetch('/api/work-orders');
+
+                // Check if response is OK before parsing
+                if (!response.ok) {
+                    console.log('📋 Work orders API not available');
+                    this.items = []; // Use empty array as fallback
+                    return;
+                }
+
                 this.items = await response.json();
-                
+
                 // Animate list appearance
-                gsap.fromTo('.work-order-item', 
+                gsap.fromTo('.work-order-item',
                     { opacity: 0, y: 20 },
                     { opacity: 1, y: 0, duration: 0.3, stagger: 0.1 }
                 );
             } catch (error) {
-                console.error('Failed to fetch work orders:', error);
+                console.log('📋 Using default work orders data');
+                this.items = []; // Use empty array as fallback
             } finally {
                 this.loading = false;
             }
@@ -1966,14 +1983,29 @@ function handleBreakpointChange(breakpoint) {
 }
 
 // Enhanced error boundary for UI components
+// Track errors to avoid spamming notifications
+const uiErrorsShown = new Set();
+
 window.addEventListener('error', (event) => {
     if (event.filename && event.filename.includes('ui-components')) {
-        console.error('🚨 UI Components Error:', event.error);
-        ModernComponents.showNotification(
-            'UI component encountered an error. Some features may be limited.',
-            'warning',
-            5000
+        // Create a unique error key
+        const errorKey = `${event.message}-${event.lineno}`;
+
+        // Log to console for debugging (always)
+        console.error('🚨 UI Components Error:', event.error || event.message);
+
+        // Only show notification once per unique error, and only for critical errors
+        const isCriticalError = event.message && (
+            event.message.includes('is not defined') ||
+            event.message.includes('Cannot read') ||
+            event.message.includes('TypeError')
         );
+
+        if (isCriticalError && !uiErrorsShown.has(errorKey)) {
+            uiErrorsShown.add(errorKey);
+            // Don't show intrusive notifications - just log to console
+            console.warn('⚠️ A UI component error occurred. Check console for details.');
+        }
     }
 });
 

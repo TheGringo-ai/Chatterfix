@@ -1892,7 +1892,12 @@
         function updateNavigationBadges() {
             // Simulate API call for urgent work order count
             fetch('/api/work-orders/urgent-count')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('API not available');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     const badge = document.getElementById('urgentWOCount');
                     const mobileBadge = document.querySelector('.mobile-badge');
@@ -1906,7 +1911,7 @@
                     }
                 })
                 .catch(() => {
-                    // Fallback to demo data
+                    // Fallback to demo data - silently use defaults
                     const badge = document.getElementById('urgentWOCount');
                     const mobileBadge = document.querySelector('.mobile-badge');
                     if (badge) badge.textContent = '3';

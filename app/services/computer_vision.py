@@ -392,7 +392,7 @@ async def detect_equipment_issues(image_data: bytes) -> Dict[str, Any]:
         if VOICE_MEMORY_AVAILABLE:
             try:
                 import hashlib
-                image_hash = hashlib.md5(image_data[:1000]).hexdigest()[:16]
+                image_hash = hashlib.md5(image_data[:1000], usedforsecurity=False).hexdigest()[:16]
                 voice_memory = get_voice_vision_memory()
                 await voice_memory.capture_vision_analysis(
                     technician_id="system",

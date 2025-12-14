@@ -473,8 +473,6 @@ async def demo_team(request: Request):
 @router.get("/demo/planner", response_class=HTMLResponse)
 async def demo_planner(request: Request):
     """Demo planner page - comprehensive enterprise scheduler interface"""
-    # Return the planner dashboard but mark it as advanced mode for the frontend
-    print("🔧 DEBUG: Serving planner with advanced_mode=True")
     return templates.TemplateResponse(
         "planner_dashboard.html",
         {

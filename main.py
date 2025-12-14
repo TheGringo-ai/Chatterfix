@@ -85,7 +85,7 @@ try:
 
     CORE_ROUTERS_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Could not import core routers: {e}")
+    logging.warning(f"Could not import core routers: {e}")
     CORE_ROUTERS_AVAILABLE = False
 
 # Import additional routers - ROBUST APPROACH FOR PRODUCTION
@@ -164,8 +164,8 @@ for router_name in all_extended_routers:
 critical_routers_loaded = all(router in extended_routers for router in critical_routers)
 EXTENDED_ROUTERS_AVAILABLE = len(extended_routers) > 0
 
-print(f"📊 Extended routers status: {len(extended_routers)}/{len(all_extended_routers)} loaded")
-print(f"🎯 Critical routers status: {critical_routers_loaded}")
+logging.info(f"Extended routers status: {len(extended_routers)}/{len(all_extended_routers)} loaded")
+logging.info(f"Critical routers status: {critical_routers_loaded}")
 
 # Special handling for simple planner
 SIMPLE_PLANNER_AVAILABLE = 'planner_simple' in extended_routers
@@ -195,8 +195,6 @@ def load_version():
     # Fallback to hardcoded version if file not found
     return "2.1.0-enterprise-planner", "Enhanced Demo Planner with Advanced Scheduler"
 
-
-print(f"DEBUG: main.py loaded. Version: {APP_VERSION}")
 
 from contextlib import asynccontextmanager
 
@@ -373,9 +371,9 @@ if len(extended_routers) == 0:
     try:
         from app.routers import planner_simple
         app.include_router(planner_simple.router)
-        print("✅ Fallback: Included simple planner router")
+        logging.info("Fallback: Included simple planner router")
     except ImportError as e:
-        print(f"❌ Fallback failed: Could not import simple planner: {e}")
+        logging.error(f"Fallback failed: Could not import simple planner: {e}")
 
 
 # Helper function to check if user is authenticated

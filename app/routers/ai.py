@@ -129,6 +129,81 @@ async def get_ai_team_status():
         })
 
 
+@router.get("/router/stats")
+async def get_router_stats():
+    """
+    Get AI Router statistics and performance metrics
+
+    Returns:
+    - Cache statistics (hits, misses, hit rate)
+    - Circuit breaker status
+    - Routing analytics (request counts, response times, model usage)
+    - AI team availability
+    """
+    try:
+        from app.services.ai_router import ai_router
+
+        stats = ai_router.get_router_stats()
+        return JSONResponse({
+            "success": True,
+            **stats
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.post("/router/clear-cache")
+async def clear_router_cache():
+    """
+    Clear the AI response cache
+
+    Useful for testing or when you want fresh responses.
+    """
+    try:
+        from app.services.ai_router import ai_router
+
+        # Clear cache by creating a new one
+        ai_router.cache = type(ai_router.cache)(
+            max_size=ai_router.cache.max_size,
+            ttl=ai_router.cache.ttl
+        )
+        return JSONResponse({
+            "success": True,
+            "message": "Cache cleared successfully"
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.post("/router/reset-circuit-breaker")
+async def reset_circuit_breaker():
+    """
+    Reset the circuit breaker to closed state
+
+    Useful after fixing issues with the AI team service.
+    """
+    try:
+        from app.services.ai_router import ai_router
+
+        ai_router.circuit_breaker.failure_count = 0
+        ai_router.circuit_breaker.state = "closed"
+        return JSONResponse({
+            "success": True,
+            "message": "Circuit breaker reset to closed state"
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
 @router.post("/analyze-image")
 async def analyze_image(
     image: UploadFile = File(...),

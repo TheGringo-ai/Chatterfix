@@ -37,20 +37,96 @@ class ChatRequest(BaseModel):
     message: str
     context: str = ""
     user_id: int = 1
+    context_type: str = "general"  # general, equipment_diagnosis, troubleshooting, etc.
+    force_team: bool = False  # Force full AI team collaboration
 
 
 @router.post("/chat")
 async def chat(request: ChatRequest):
-    """General AI Chat"""
+    """
+    General AI Chat - Smart routing to best AI model(s)
+
+    Simple queries: Fast Gemini response (< 2 seconds)
+    Complex tasks: Full AI team collaboration (6 models)
+
+    Set force_team=true to always use the full AI team.
+    """
     try:
+        # Use smart routing via updated process_message
         response = await chatterfix_ai.process_message(
-            request.message, request.context, user_id=request.user_id
+            message=request.message,
+            context=request.context,
+            user_id=request.user_id,
+            context_type=request.context_type,
+            force_team=request.force_team
         )
         return JSONResponse({"response": response})
     except Exception as e:
         return JSONResponse(
             {"response": f"I encountered an error: {str(e)}"}, status_code=500
         )
+
+
+@router.post("/chat/team")
+async def chat_with_team(request: ChatRequest):
+    """
+    AI Chat with FULL AI Team - Always uses all 6 AI models
+
+    Returns detailed response with model info, complexity analysis, etc.
+    Use this for complex diagnostics, troubleshooting, and analysis tasks.
+    """
+    try:
+        result = await chatterfix_ai.process_with_team(
+            message=request.message,
+            context=request.context,
+            user_id=request.user_id,
+            context_type=request.context_type
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "response": f"Error: {str(e)}", "model_used": "error"},
+            status_code=500
+        )
+
+
+@router.get("/team/status")
+async def get_ai_team_status():
+    """
+    Get AI Team service status and available models
+
+    Returns health status, available models, and capabilities.
+    """
+    try:
+        from app.services.ai_team_http_client import get_ai_team_client
+
+        client = await get_ai_team_client()
+
+        # Get health and models in parallel
+        health = await client.health_check()
+        models = await client.get_available_models()
+
+        return JSONResponse({
+            "success": True,
+            "team_available": health.get("status") == "healthy",
+            "health": health,
+            "models": models.get("models", []),
+            "total_models": models.get("total", 0),
+            "capabilities": [
+                "analysis", "reasoning", "planning",
+                "coding", "debugging", "architecture",
+                "creativity", "design", "innovation",
+                "fast-coding", "optimization", "strategy"
+            ]
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "team_available": False,
+            "error": str(e),
+            "models": [],
+            "total_models": 0
+        })
 
 
 @router.post("/analyze-image")

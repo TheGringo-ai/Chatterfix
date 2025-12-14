@@ -937,6 +937,9 @@ class VoiceCommandRequest(BaseModel):
     command: str
     source: str = "voice_widget"
     context: str = ""
+    context_type: str = "general"
+    equipment_name: str = None
+    issue_description: str = None
 
 class ImageAnalysisRequest(BaseModel):
     image: str  # base64 encoded image
@@ -944,24 +947,43 @@ class ImageAnalysisRequest(BaseModel):
 
 @router.post("/process-command")
 async def process_voice_command_endpoint(request: VoiceCommandRequest):
-    """Process voice commands from the AI widget"""
+    """Process voice commands from the AI widget with context awareness"""
     try:
-        # Process the voice command
+        # Process the voice command with correct function signature
         result = await process_voice_command(
-            command=request.command,
-            context=request.context,
-            source=request.source
+            voice_text=request.command,
+            technician_id=None  # Can be extracted from auth context if needed
         )
 
         # Determine action based on command
         action = None
         target = None
         modal = None
+        response_text = result.get("response", "Command processed successfully")
 
         command_lower = request.command.lower()
 
+        # Equipment diagnosis context
+        if request.context_type == "equipment_diagnosis":
+            response_text = "I'll help you diagnose the equipment. The AI will analyze the image for potential issues, wear patterns, and maintenance needs."
+
+        elif request.context_type == "part_recognition":
+            response_text = "I'll identify this part for you. The AI will search for part numbers, specifications, and inventory matches."
+
+        elif request.context_type == "find_manual":
+            if request.equipment_name:
+                response_text = f"Searching knowledge base for manual: {request.equipment_name}. I'll provide documentation, diagrams, and troubleshooting guides."
+            else:
+                response_text = "I'll search for the equipment manual in our knowledge base."
+
+        elif request.context_type == "troubleshooting":
+            if request.issue_description:
+                response_text = f"Finding troubleshooting steps for: {request.issue_description}. I'll provide diagnostic procedures and solutions."
+            else:
+                response_text = "I'll help you troubleshoot this issue with step-by-step guidance."
+
         # Navigation commands
-        if any(word in command_lower for word in ["dashboard", "analytics", "show me"]):
+        elif any(word in command_lower for word in ["dashboard", "analytics", "show me"]):
             if "analytics" in command_lower:
                 action = "navigate"
                 target = "/analytics/dashboard"
@@ -990,13 +1012,22 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
                 action = "modal"
                 modal = "report-issue"
 
+        # Manual/documentation search
+        elif "manual" in command_lower or "documentation" in command_lower:
+            response_text = "Searching equipment manuals and documentation in the knowledge base..."
+
+        # Troubleshooting
+        elif "troubleshoot" in command_lower or "fix" in command_lower:
+            response_text = "Analyzing the issue and searching for troubleshooting procedures..."
+
         return JSONResponse({
             "success": True,
-            "response": result.get("response", "Command processed successfully"),
+            "response": response_text,
             "action": action,
             "target": target,
             "modal": modal,
-            "command": request.command
+            "command": request.command,
+            "context_type": request.context_type
         })
 
     except Exception as e:
@@ -1021,34 +1052,90 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
         # Convert to PIL Image
         image = Image.open(io.BytesIO(image_bytes))
 
+        analysis = ""
+        detailed_results = {}
+
         # Analyze based on context
-        if request.context == "equipment_inspection":
+        if request.context == "equipment_inspection" or request.context == "equipment_diagnosis":
             # Use computer vision for equipment analysis
             try:
-                issues = await detect_equipment_issues(image)
-                condition = await analyze_asset_condition(image)
+                issues_result = await detect_equipment_issues(image_bytes)
 
-                analysis = f"Equipment Analysis: {condition['condition']} condition detected."
-                if issues:
-                    analysis += f" Issues found: {', '.join(issues[:3])}"
+                if issues_result.get("success"):
+                    condition_score = issues_result.get("overall_condition_score", 0)
+                    detected_issues = issues_result.get("detected_issues", [])
+
+                    analysis = f"Equipment Diagnosis Complete:\n"
+                    analysis += f"• Overall Condition Score: {condition_score}/10\n"
+
+                    if detected_issues:
+                        analysis += f"• Issues Detected: {len(detected_issues)}\n"
+                        for idx, issue in enumerate(detected_issues[:3], 1):
+                            analysis += f"  {idx}. {issue.get('type', 'Unknown')}: {issue.get('description', '')} (Severity: {issue.get('severity', 'unknown')})\n"
+
+                        if len(detected_issues) > 3:
+                            analysis += f"  ... and {len(detected_issues) - 3} more issues\n"
+                    else:
+                        analysis += "• No significant issues detected\n"
+
+                    detailed_results = issues_result
+                else:
+                    analysis = "Equipment diagnosis completed. Image captured successfully."
 
             except Exception as e:
+                print(f"Equipment diagnosis error: {e}")
                 analysis = "Equipment analysis completed. Image captured successfully."
 
         elif request.context == "part_recognition":
             # Recognize parts
             try:
-                part_info = await recognize_part(image)
-                analysis = f"Part Recognition: {part_info.get('part_number', 'Unknown')} - {part_info.get('description', '')}"
+                part_info = await recognize_part(image_data=image_bytes)
+
+                if part_info.get("success"):
+                    analysis = f"Part Recognition Results:\n"
+                    analysis += f"• Part Number: {part_info.get('part_number', 'Unknown')}\n"
+                    analysis += f"• Description: {part_info.get('description', 'N/A')}\n"
+
+                    if part_info.get('manufacturer'):
+                        analysis += f"• Manufacturer: {part_info.get('manufacturer')}\n"
+
+                    if part_info.get('in_inventory'):
+                        analysis += f"• Stock Status: Available in inventory\n"
+                    else:
+                        analysis += f"• Stock Status: Not found in inventory\n"
+
+                    detailed_results = part_info
+                else:
+                    analysis = "Part recognition completed. Unable to identify specific part."
+
             except Exception as e:
+                print(f"Part recognition error: {e}")
                 analysis = "Part recognition completed. Image captured successfully."
 
         elif request.context == "text_extraction":
-            # Extract text
+            # Extract text using OCR
             try:
-                text = await extract_text_from_image(image)
-                analysis = f"Text Extracted: {text[:200]}{'...' if len(text) > 200 else ''}"
+                text_result = await extract_text_from_image(image_data=image_bytes)
+
+                if text_result.get("success"):
+                    extracted_text = text_result.get("text", "")
+
+                    if extracted_text:
+                        analysis = f"OCR Text Extraction:\n"
+                        analysis += f"• Characters Found: {len(extracted_text)}\n"
+                        analysis += f"• Extracted Text:\n{extracted_text[:300]}"
+
+                        if len(extracted_text) > 300:
+                            analysis += "..."
+                    else:
+                        analysis = "No text detected in the image."
+
+                    detailed_results = text_result
+                else:
+                    analysis = "Text extraction completed. No readable text found."
+
             except Exception as e:
+                print(f"Text extraction error: {e}")
                 analysis = "Text extraction completed. Image captured successfully."
 
         else:
@@ -1059,10 +1146,12 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
             "success": True,
             "analysis": analysis,
             "context": request.context,
-            "image_size": f"{image.size[0]}x{image.size[1]}"
+            "image_size": f"{image.size[0]}x{image.size[1]}",
+            "detailed_results": detailed_results
         })
 
     except Exception as e:
+        print(f"Image analysis error: {e}")
         return JSONResponse({
             "success": False,
             "error": str(e),

@@ -120,6 +120,28 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Equipment Diagnosis Quick Actions -->
+            <div class="mb-4">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-wrench text-orange-500 mr-2"></i>
+                    Equipment Diagnosis
+                </h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="diagnosis-cmd bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-action="diagnose-equipment">
+                        🔍 Diagnose Equipment
+                    </button>
+                    <button class="diagnosis-cmd bg-purple-100 hover:bg-purple-200 text-purple-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-action="identify-part">
+                        🔧 Identify Part
+                    </button>
+                    <button class="diagnosis-cmd bg-teal-100 hover:bg-teal-200 text-teal-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-action="read-label">
+                        📄 Read Label (OCR)
+                    </button>
+                    <button class="diagnosis-cmd bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-2 px-3 rounded-lg text-xs font-medium transition-colors" data-action="find-manual">
+                        📚 Find Manual
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Status Bar -->
@@ -242,6 +264,14 @@ class AIAssistantWidget {
             btn.addEventListener('click', (e) => {
                 const command = e.target.dataset.command;
                 this.processVoiceCommand(command);
+            });
+        });
+
+        // Equipment diagnosis commands
+        document.querySelectorAll('.diagnosis-cmd').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.dataset.action;
+                this.handleDiagnosisAction(action);
             });
         });
 
@@ -391,12 +421,14 @@ class AIAssistantWidget {
         }
     }
 
-    async analyzeImage(imageData) {
+    async analyzeImage(imageData, context = 'equipment_inspection') {
         const analysisEl = document.getElementById('image-analysis');
         const cameraStatus = document.getElementById('camera-status');
+        const responseEl = document.getElementById('ai-response');
 
         try {
             cameraStatus.textContent = 'Analyzing...';
+            responseEl.innerHTML = '<div class="flex items-center"><i class="fas fa-cog animate-spin mr-2"></i>Analyzing image...</div>';
 
             // Send to AI for analysis
             const response = await fetch('/ai/analyze-image', {
@@ -406,27 +438,43 @@ class AIAssistantWidget {
                 },
                 body: JSON.stringify({
                     image: imageData,
-                    context: 'equipment_inspection'
+                    context: context
                 })
             });
 
             if (response.ok) {
                 const result = await response.json();
-                analysisEl.textContent = result.analysis || 'Image analyzed successfully';
+                const analysis = result.analysis || 'Image analyzed successfully';
+
+                analysisEl.textContent = analysis;
+
+                // Also show in AI response area with more details
+                responseEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="font-medium text-purple-800">Image Analysis Complete:</div>
+                        <div class="text-sm">${analysis}</div>
+                        ${result.image_size ? `<div class="text-xs text-gray-600 mt-1">Image: ${result.image_size}</div>` : ''}
+                        ${result.context ? `<div class="text-xs text-gray-600">Context: ${result.context}</div>` : ''}
+                    </div>
+                `;
             } else {
-                analysisEl.textContent = 'Analysis failed - please try again';
+                const errorMsg = 'Analysis failed - please try again';
+                analysisEl.textContent = errorMsg;
+                responseEl.innerHTML = `<div class="text-red-600">❌ ${errorMsg}</div>`;
             }
 
         } catch (error) {
             console.error('Image analysis error:', error);
-            analysisEl.textContent = 'Error analyzing image';
+            const errorMsg = 'Error analyzing image';
+            analysisEl.textContent = errorMsg;
+            responseEl.innerHTML = `<div class="text-red-600">❌ ${errorMsg}</div>`;
         }
 
         analysisEl.classList.remove('hidden');
         cameraStatus.textContent = 'Take Photo';
     }
 
-    async processVoiceCommand(command) {
+    async processVoiceCommand(command, additionalContext = {}) {
         // Skip empty commands
         if (!command || !command.trim()) {
             return;
@@ -446,6 +494,20 @@ class AIAssistantWidget {
         responseEl.innerHTML = '<div class="flex items-center"><i class="fas fa-cog animate-spin mr-2"></i>Processing your request...</div>';
 
         try {
+            // Detect if command is equipment-related for better context
+            const commandLower = command.toLowerCase();
+            let contextType = 'general';
+
+            if (commandLower.includes('diagnose') || commandLower.includes('equipment') || commandLower.includes('issue')) {
+                contextType = 'equipment_diagnosis';
+            } else if (commandLower.includes('part') || commandLower.includes('component')) {
+                contextType = 'part_recognition';
+            } else if (commandLower.includes('manual') || commandLower.includes('documentation')) {
+                contextType = 'find_manual';
+            } else if (commandLower.includes('troubleshoot') || commandLower.includes('fix')) {
+                contextType = 'troubleshooting';
+            }
+
             // Send command to AI assistant
             const response = await fetch('/ai/process-command', {
                 method: 'POST',
@@ -455,7 +517,9 @@ class AIAssistantWidget {
                 body: JSON.stringify({
                     command: command,
                     source: 'voice_widget',
-                    context: window.location.pathname
+                    context: window.location.pathname,
+                    context_type: contextType,
+                    ...additionalContext
                 })
             });
 
@@ -522,6 +586,174 @@ class AIAssistantWidget {
             cameraStatus.textContent = 'Upload Photo';
         }
     }
+
+    async handleDiagnosisAction(action) {
+        console.log('🔧 Diagnosis action:', action);
+
+        const responseEl = document.getElementById('ai-response');
+
+        switch(action) {
+            case 'diagnose-equipment':
+                await this.diagnoseEquipment();
+                break;
+            case 'identify-part':
+                await this.identifyPart();
+                break;
+            case 'read-label':
+                await this.readLabel();
+                break;
+            case 'find-manual':
+                await this.findManual();
+                break;
+            default:
+                responseEl.innerHTML = '<div class="text-gray-600">Unknown action</div>';
+        }
+    }
+
+    async diagnoseEquipment() {
+        const responseEl = document.getElementById('ai-response');
+        responseEl.innerHTML = '<div class="text-blue-600">📷 Please take a photo of the equipment to diagnose...</div>';
+
+        // Trigger camera with equipment diagnosis context
+        try {
+            const video = document.getElementById('camera-preview');
+            const canvas = document.getElementById('camera-canvas');
+            const cameraStatus = document.getElementById('camera-status');
+
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+
+            video.srcObject = this.cameraStream;
+            video.classList.remove('hidden');
+            cameraStatus.textContent = 'Camera Active';
+
+            await new Promise(resolve => {
+                video.onloadedmetadata = resolve;
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            video.classList.add('hidden');
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            await this.analyzeImage(imageData, 'equipment_diagnosis');
+
+        } catch (error) {
+            console.error('Equipment diagnosis error:', error);
+            responseEl.innerHTML = '<div class="text-red-600">❌ Camera access denied or error occurred</div>';
+        }
+    }
+
+    async identifyPart() {
+        const responseEl = document.getElementById('ai-response');
+        responseEl.innerHTML = '<div class="text-blue-600">📷 Please take a photo of the part to identify...</div>';
+
+        try {
+            const video = document.getElementById('camera-preview');
+            const canvas = document.getElementById('camera-canvas');
+            const cameraStatus = document.getElementById('camera-status');
+
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+
+            video.srcObject = this.cameraStream;
+            video.classList.remove('hidden');
+            cameraStatus.textContent = 'Camera Active';
+
+            await new Promise(resolve => {
+                video.onloadedmetadata = resolve;
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            video.classList.add('hidden');
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            await this.analyzeImage(imageData, 'part_recognition');
+
+        } catch (error) {
+            console.error('Part identification error:', error);
+            responseEl.innerHTML = '<div class="text-red-600">❌ Camera access denied or error occurred</div>';
+        }
+    }
+
+    async readLabel() {
+        const responseEl = document.getElementById('ai-response');
+        responseEl.innerHTML = '<div class="text-blue-600">📷 Please take a photo of the label to read...</div>';
+
+        try {
+            const video = document.getElementById('camera-preview');
+            const canvas = document.getElementById('camera-canvas');
+            const cameraStatus = document.getElementById('camera-status');
+
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+
+            video.srcObject = this.cameraStream;
+            video.classList.remove('hidden');
+            cameraStatus.textContent = 'Camera Active';
+
+            await new Promise(resolve => {
+                video.onloadedmetadata = resolve;
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            video.classList.add('hidden');
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            await this.analyzeImage(imageData, 'text_extraction');
+
+        } catch (error) {
+            console.error('Label reading error:', error);
+            responseEl.innerHTML = '<div class="text-red-600">❌ Camera access denied or error occurred</div>';
+        }
+    }
+
+    async findManual() {
+        const responseEl = document.getElementById('ai-response');
+
+        const equipmentName = prompt('Enter equipment name or model number:');
+
+        if (!equipmentName) {
+            responseEl.innerHTML = '<div class="text-gray-600">Manual search cancelled</div>';
+            return;
+        }
+
+        responseEl.innerHTML = '<div class="flex items-center"><i class="fas fa-search animate-spin mr-2"></i>Searching for manual...</div>';
+
+        await this.processVoiceCommand(`Find manual for ${equipmentName}`, {
+            context_type: 'find_manual',
+            equipment_name: equipmentName
+        });
+    }
 }
 
 // Initialize widget when DOM is loaded
@@ -534,10 +766,170 @@ window.AIAssistantWidget = AIAssistantWidget;
 </script>
 
 <style>
-/* Additional styles for the AI widget */
+/* ============================================
+   AI ASSISTANT WIDGET - HIGH CONTRAST STYLES
+   ============================================ */
+
+/* Base widget styling */
 .ai-assistant-widget {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* Force white background with dark text for widget panel */
+#ai-widget-panel {
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+}
+
+/* Ensure all headings are dark and visible */
+#ai-widget-panel h4 {
+    color: #1f2937 !important;
+    font-weight: 600 !important;
+}
+
+/* Make sure text inputs are readable */
+#ai-chat-input {
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+#ai-chat-input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* Voice transcript area - high contrast */
+#voice-transcript {
+    background-color: #f3f4f6 !important;
+    color: #1f2937 !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+/* Image analysis area - high contrast */
+#image-analysis {
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #6ee7b7 !important;
+}
+
+/* AI Response area - high contrast purple */
+#ai-response {
+    background-color: #faf5ff !important;
+    color: #6b21a8 !important;
+    border: 1px solid #e9d5ff !important;
+}
+
+#ai-response span {
+    color: #6b21a8 !important;
+}
+
+#ai-response .text-purple-800 {
+    color: #581c87 !important;
+}
+
+#ai-response .text-sm {
+    color: #6b21a8 !important;
+}
+
+#ai-response .text-gray-600 {
+    color: #4b5563 !important;
+}
+
+/* Make all icons in headings visible */
+#ai-widget-panel h4 i {
+    opacity: 1 !important;
+}
+
+/* Status bar - high contrast */
+#ai-widget-panel > div:last-child {
+    background-color: #f9fafb !important;
+    color: #4b5563 !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+#mic-status, #camera-status-widget, #ai-status {
+    color: #4b5563 !important;
+}
+
+/* Button text visibility */
+#voice-record-btn, #voice-stop-btn, #camera-capture-btn, #ai-send-btn {
+    color: #ffffff !important;
+}
+
+#voice-status {
+    color: #ffffff !important;
+}
+
+/* Make sure all button text is white on colored backgrounds */
+button.bg-red-500, button.bg-gray-500, button.bg-green-500, button.bg-blue-500 {
+    color: #ffffff !important;
+}
+
+label.bg-blue-500 {
+    color: #ffffff !important;
+}
+
+/* Ensure quick command text colors are strong and readable */
+.quick-cmd.bg-blue-100 {
+    background-color: #dbeafe !important;
+}
+.quick-cmd.text-blue-700 {
+    color: #1e40af !important;
+}
+
+.quick-cmd.bg-green-100 {
+    background-color: #dcfce7 !important;
+}
+.quick-cmd.text-green-700 {
+    color: #15803d !important;
+}
+
+.quick-cmd.bg-yellow-100 {
+    background-color: #fef3c7 !important;
+}
+.quick-cmd.text-yellow-700 {
+    color: #a16207 !important;
+}
+
+.quick-cmd.bg-red-100 {
+    background-color: #fee2e2 !important;
+}
+.quick-cmd.text-red-700 {
+    color: #b91c1c !important;
+}
+
+/* Ensure diagnosis command text colors are strong and readable */
+.diagnosis-cmd.bg-orange-100 {
+    background-color: #ffedd5 !important;
+}
+.diagnosis-cmd.text-orange-700 {
+    color: #c2410c !important;
+}
+
+.diagnosis-cmd.bg-purple-100 {
+    background-color: #f3e8ff !important;
+}
+.diagnosis-cmd.text-purple-700 {
+    color: #7e22ce !important;
+}
+
+.diagnosis-cmd.bg-teal-100 {
+    background-color: #ccfbf1 !important;
+}
+.diagnosis-cmd.text-teal-700 {
+    color: #0f766e !important;
+}
+
+.diagnosis-cmd.bg-indigo-100 {
+    background-color: #e0e7ff !important;
+}
+.diagnosis-cmd.text-indigo-700 {
+    color: #4338ca !important;
+}
+
+/* ============================================
+   ANIMATIONS AND INTERACTIONS
+   ============================================ */
 
 .voice-btn.recording {
     animation: pulse 1.5s infinite;
@@ -553,6 +945,15 @@ window.AIAssistantWidget = AIAssistantWidget;
 }
 
 .quick-cmd:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.diagnosis-cmd {
+    transition: all 0.2s ease;
+}
+
+.diagnosis-cmd:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }

@@ -24,16 +24,43 @@ archive/
 uploads/
 customer-data/
 
-# Secrets and credentials - ENHANCED SECURITY
+# Secrets and credentials - COMPREHENSIVE SECURITY
 secrets/
 credentials/
+**/secrets/
+**/credentials/
+
+# Service account and key files
 service-account-*.json
 firebase-adminsdk-*.json
+*-sa-key.json
+*_sa_key.json
+GCP_SA_KEY.json
+*-credentials.json
+*-key.json
+fredfix-*.json
+
+# Certificate files
 *.p12
 *.jks
-.env.local
-.env.production
-.env.staging
+*.pfx
+*.cer
+
+# Environment files (all variations)
+.env
+.env.*
+!.env.template
+!.env.example
+*.env
+
+# API key files
+api-keys.json
+api_keys.json
+apikeys.json
+
+# IDE settings that might contain secrets
+.idea/
+*.iml
 
 # IDE - Keep VS Code config but protect sensitive settings
 .vscode/settings.json
@@ -59,5 +86,7 @@ bundle-analysis.html
 
 # Antigravity artifacts
 .gemini/
-secrets/*.json
-*.json
+
+# Test files with secrets
+test_upload.txt
+"Attached HTML and CSS Context"

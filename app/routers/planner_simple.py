@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.services.planner_service import planner_service
 
-router = APIRouter(prefix="/planner-test", tags=["planner-test"])
+router = APIRouter(prefix="/planner", tags=["planner"])
 templates = Jinja2Templates(directory="app/templates")
 
 

@@ -16,6 +16,13 @@ from app.services.voice_commands import (
     process_voice_command,
 )
 
+# Server-side Speech-to-Text
+try:
+    from app.services.speech_to_text_service import get_speech_service, AudioEncoding
+    SPEECH_SERVICE_AVAILABLE = True
+except ImportError:
+    SPEECH_SERVICE_AVAILABLE = False
+
 # Import AI Memory Service
 try:
     from app.services.ai_memory_integration import get_ai_memory_service
@@ -474,3 +481,315 @@ async def search_memory(query: str = Form(...)):
         })
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ============ SERVER-SIDE SPEECH-TO-TEXT ENDPOINTS ============
+# These endpoints provide reliable speech recognition independent of browser
+# Optimized for factory floor environments with noise handling
+
+@router.post("/speech/transcribe")
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    language_code: str = Form("en-US"),
+    sample_rate: int = Form(16000),
+    encoding: str = Form("LINEAR16"),
+):
+    """
+    Server-side speech-to-text transcription
+
+    Accepts audio file and returns transcription with confidence scores.
+    Optimized for manufacturing environments with custom vocabulary.
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Speech-to-Text service not available",
+            "message": "Install google-cloud-speech and configure credentials"
+        }, status_code=503)
+
+    try:
+        speech_service = get_speech_service()
+
+        # Read audio data
+        audio_data = await audio.read()
+
+        # Get encoding enum
+        try:
+            audio_encoding = AudioEncoding(encoding)
+        except ValueError:
+            audio_encoding = AudioEncoding.LINEAR16
+
+        # Perform transcription
+        result = await speech_service.transcribe_audio(
+            audio_data=audio_data,
+            encoding=audio_encoding,
+            sample_rate_hertz=sample_rate,
+            language_code=language_code,
+        )
+
+        return JSONResponse({
+            "success": True,
+            "transcript": result.transcript,
+            "confidence": result.confidence,
+            "language": result.language_code,
+            "is_final": result.is_final,
+            "alternatives": result.alternatives,
+            "words": result.words,
+            "processing_time_ms": result.processing_time_ms,
+            "audio_duration_ms": result.audio_duration_ms,
+            "noise_level": result.noise_level,
+            "timestamp": result.timestamp,
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.post("/speech/transcribe-base64")
+async def transcribe_audio_base64(
+    audio_base64: str = Form(...),
+    language_code: str = Form("en-US"),
+    sample_rate: int = Form(16000),
+    encoding: str = Form("LINEAR16"),
+):
+    """
+    Transcribe base64-encoded audio data
+
+    Useful for mobile apps and web applications that capture audio as base64.
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Speech-to-Text service not available"
+        }, status_code=503)
+
+    try:
+        speech_service = get_speech_service()
+
+        # Get encoding enum
+        try:
+            audio_encoding = AudioEncoding(encoding)
+        except ValueError:
+            audio_encoding = AudioEncoding.LINEAR16
+
+        # Perform transcription (service handles base64 decoding)
+        result = await speech_service.transcribe_audio(
+            audio_data=audio_base64,
+            encoding=audio_encoding,
+            sample_rate_hertz=sample_rate,
+            language_code=language_code,
+        )
+
+        return JSONResponse({
+            "success": True,
+            "transcript": result.transcript,
+            "confidence": result.confidence,
+            "language": result.language_code,
+            "is_final": result.is_final,
+            "alternatives": result.alternatives,
+            "words": result.words,
+            "processing_time_ms": result.processing_time_ms,
+            "noise_level": result.noise_level,
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.post("/speech/transcribe-and-execute")
+async def transcribe_and_execute_command(
+    audio: UploadFile = File(...),
+    technician_id: int = Form(None),
+    language_code: str = Form("en-US"),
+    sample_rate: int = Form(16000),
+):
+    """
+    Full hands-free workflow: Transcribe audio -> Detect command -> Execute
+
+    This endpoint handles the complete voice command pipeline:
+    1. Server-side speech-to-text transcription
+    2. Wake word detection
+    3. Command type identification
+    4. Command execution (work orders, inventory, etc.)
+
+    Perfect for technicians on the factory floor with dirty hands.
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Speech-to-Text service not available"
+        }, status_code=503)
+
+    try:
+        speech_service = get_speech_service()
+
+        # Read and transcribe audio
+        audio_data = await audio.read()
+        transcription_result = await speech_service.transcribe_with_commands(
+            audio_data=audio_data,
+            language_code=language_code,
+            sample_rate_hertz=sample_rate,
+        )
+
+        # If we got a valid command, execute it
+        command = transcription_result.get("command", "")
+        command_type = transcription_result.get("command_type", "general")
+
+        execution_result = None
+        if command and transcription_result["transcription"]["confidence"] > 0.7:
+            # Execute the voice command
+            execution_result = await process_voice_command(command, technician_id)
+
+        return JSONResponse({
+            "success": True,
+            "transcription": transcription_result["transcription"],
+            "has_wake_word": transcription_result["has_wake_word"],
+            "command": command,
+            "command_type": command_type,
+            "execution_result": execution_result,
+            "voice_feedback": _generate_voice_feedback(
+                transcription_result,
+                execution_result
+            )
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "voice_feedback": f"Sorry, I couldn't process that command. Error: {str(e)}"
+        }, status_code=500)
+
+
+@router.post("/speech/detect-wake-word")
+async def detect_wake_word(
+    audio: UploadFile = File(...),
+    language_code: str = Form("en-US"),
+):
+    """
+    Check if audio contains a wake word (e.g., "Hey ChatterFix")
+
+    Returns whether wake word was detected and the confidence level.
+    Useful for implementing always-listening mode.
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "detected": False,
+            "error": "Speech-to-Text service not available"
+        }, status_code=503)
+
+    try:
+        speech_service = get_speech_service()
+        audio_data = await audio.read()
+
+        detected, wake_word, confidence = await speech_service.detect_wake_word(audio_data)
+
+        return JSONResponse({
+            "success": True,
+            "detected": detected,
+            "wake_word": wake_word,
+            "confidence": confidence,
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "detected": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/speech/status")
+async def get_speech_service_status():
+    """
+    Get Speech-to-Text service status and configuration
+
+    Returns service availability, supported encodings, languages, etc.
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "available": False,
+            "error": "Speech-to-Text service module not installed",
+            "install_command": "pip install google-cloud-speech"
+        })
+
+    try:
+        speech_service = get_speech_service()
+        status = speech_service.get_service_status()
+        status["supported_languages"] = speech_service.get_supported_languages()
+
+        return JSONResponse({
+            "success": True,
+            **status
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "available": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/speech/languages")
+async def get_supported_languages():
+    """
+    Get list of supported languages for speech recognition
+    """
+    if not SPEECH_SERVICE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Speech-to-Text service not available"
+        })
+
+    try:
+        speech_service = get_speech_service()
+        languages = speech_service.get_supported_languages()
+
+        return JSONResponse({
+            "success": True,
+            "languages": languages
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+def _generate_voice_feedback(transcription_result: dict, execution_result: dict) -> str:
+    """Generate voice feedback message for the technician"""
+    confidence = transcription_result["transcription"]["confidence"]
+    command_type = transcription_result.get("command_type", "general")
+
+    if confidence < 0.5:
+        return "I'm sorry, I didn't catch that clearly. Could you please repeat?"
+
+    if confidence < 0.7:
+        return f"I heard: {transcription_result['command']}. Is that correct?"
+
+    if not execution_result:
+        return f"Command received: {transcription_result['command']}"
+
+    # Generate feedback based on command type
+    if command_type == "work_order":
+        wo_id = execution_result.get("work_order_id", "")
+        return f"Work order {wo_id} has been created successfully."
+
+    if command_type == "inventory":
+        return "Inventory action completed."
+
+    if command_type == "emergency":
+        return "EMERGENCY PROTOCOL ACTIVATED. Supervisor has been notified."
+
+    if command_type == "inspection":
+        return "Equipment inspection logged."
+
+    return f"Command processed: {transcription_result['command']}"

@@ -19,6 +19,9 @@ google-cloud-firestore>=2.13.1
 firebase-admin>=6.4.0
 pyrebase4>=4.7.1
 
+# Speech-to-Text for hands-free operation
+google-cloud-speech>=2.23.0
+
 # Database - SQLite (Fallback only)
 aiosqlite>=0.19.0
 sqlalchemy>=2.0.0

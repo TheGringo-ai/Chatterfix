@@ -485,6 +485,9 @@
     // Global variables
     let currentPeriod = 30;
     let charts = {};
+    // Check if we're in demo mode
+    const isDemo = {{ is_demo|default(false)|tojson }};
+    const apiPrefix = isDemo ? '/demo' : '';
 
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function () {
@@ -515,7 +518,7 @@
     // Load KPI data
     async function loadKPIData() {
         try {
-            const response = await fetch(`/analytics/kpi/summary?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/kpi/summary?days=${currentPeriod}`);
             const data = await response.json();
 
             // Update MTTR
@@ -594,7 +597,7 @@
     // Work Order Status Chart
     async function loadWorkOrderStatusChart() {
         try {
-            const response = await fetch(`/analytics/charts/work-order-status?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/charts/work-order-status?days=${currentPeriod}`);
             const data = await response.json();
 
             const ctx = document.getElementById('workOrderStatusChart').getContext('2d');
@@ -638,7 +641,7 @@
     // Cost Trend Chart
     async function loadCostTrendChart() {
         try {
-            const response = await fetch(`/analytics/charts/cost-trend?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/charts/cost-trend?days=${currentPeriod}`);
             const data = await response.json();
 
             const ctx = document.getElementById('costTrendChart').getContext('2d');
@@ -688,7 +691,7 @@
     // Completion Trend Chart
     async function loadCompletionTrendChart() {
         try {
-            const response = await fetch(`/analytics/charts/completion-trend?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/charts/completion-trend?days=${currentPeriod}`);
             const data = await response.json();
 
             const ctx = document.getElementById('completionTrendChart').getContext('2d');
@@ -734,7 +737,7 @@
     // Asset Health Chart
     async function loadAssetHealthChart() {
         try {
-            const response = await fetch('/analytics/charts/asset-health');
+            const response = await fetch(`${apiPrefix}/analytics/charts/asset-health`);
             const data = await response.json();
 
             const ctx = document.getElementById('assetHealthChart').getContext('2d');
@@ -778,7 +781,7 @@
     // Cost Breakdown Chart
     async function loadCostBreakdownChart() {
         try {
-            const response = await fetch(`/analytics/charts/cost-breakdown?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/charts/cost-breakdown?days=${currentPeriod}`);
             const data = await response.json();
 
             const ctx = document.getElementById('costBreakdownChart').getContext('2d');
@@ -831,7 +834,7 @@
     // Priority Chart
     async function loadPriorityChart() {
         try {
-            const response = await fetch(`/analytics/charts/priority-distribution?days=${currentPeriod}`);
+            const response = await fetch(`${apiPrefix}/analytics/charts/priority-distribution?days=${currentPeriod}`);
             const data = await response.json();
 
             const ctx = document.getElementById('priorityChart').getContext('2d');

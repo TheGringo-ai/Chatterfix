@@ -1232,3 +1232,213 @@ async def demo_manager_inventory(request: Request):
             "auto_play": True,
         },
     )
+
+
+# =============================================================================
+# DEMO ANALYTICS API ENDPOINTS (No Authentication Required)
+# =============================================================================
+
+@router.get("/analytics/kpi/summary")
+async def demo_analytics_kpi_summary(days: int = 30):
+    """Demo KPI summary data for analytics dashboard"""
+    return {
+        "mttr": {
+            "value": 2.4,
+            "unit": "hours",
+            "total_repairs": 47,
+            "total_repair_time": 112.8,
+            "min_repair_time": 0.5,
+            "max_repair_time": 8.0,
+            "trend": "improving",
+            "status": "good"
+        },
+        "mtbf": {
+            "value": 168.5,
+            "unit": "hours",
+            "failure_count": 12,
+            "total_operating_hours": 2022,
+            "total_downtime": 28.8,
+            "trend": "stable",
+            "status": "good"
+        },
+        "asset_utilization": {
+            "average_utilization": 87.3,
+            "unit": "percent",
+            "total_assets": 24,
+            "active_assets": 21,
+            "status_breakdown": {
+                "Active": 21,
+                "Maintenance": 2,
+                "Inactive": 1
+            },
+            "trend": "improving",
+            "status": "good"
+        },
+        "cost_tracking": {
+            "total_cost": 24750,
+            "labor_cost": 15250,
+            "parts_cost": 9500,
+            "maintenance_count": 47,
+            "avg_cost_per_event": 526.60,
+            "costs_by_type": {
+                "Preventive": 8500,
+                "Corrective": 12250,
+                "Emergency": 4000
+            },
+            "trend": "stable",
+            "currency": "USD"
+        },
+        "work_order_metrics": {
+            "total_created": 156,
+            "completion_rate": 89.7,
+            "overdue_count": 8,
+            "status_breakdown": {
+                "Open": 12,
+                "In Progress": 18,
+                "Completed": 140,
+                "On Hold": 4
+            },
+            "priority_breakdown": {
+                "Low": 45,
+                "Medium": 68,
+                "High": 32,
+                "Critical": 11
+            },
+            "trend": "improving",
+            "status": "good"
+        },
+        "compliance_metrics": {
+            "pm_compliance_rate": 92.5,
+            "total_pm_work_orders": 40,
+            "on_time_completions": 37,
+            "training_compliance_rate": 88.0,
+            "total_training_assigned": 25,
+            "training_completed": 22,
+            "certification_status": {
+                "total": 18,
+                "valid": 16,
+                "expired": 2
+            },
+            "overall_compliance": 90.25,
+            "status": "good"
+        },
+        "generated_at": datetime.now().isoformat(),
+        "period_days": days
+    }
+
+
+@router.get("/analytics/charts/work-order-status")
+async def demo_analytics_work_order_status(days: int = 30):
+    """Demo work order status chart data"""
+    return {
+        "labels": ["Open", "In Progress", "Completed", "On Hold"],
+        "data": [12, 18, 140, 4],
+        "colors": {
+            "Open": "#f39c12",
+            "In Progress": "#3498db",
+            "Completed": "#27ae60",
+            "On Hold": "#e74c3c"
+        }
+    }
+
+
+@router.get("/analytics/charts/priority-distribution")
+async def demo_analytics_priority_distribution(days: int = 30):
+    """Demo priority distribution chart data"""
+    return {
+        "labels": ["Low", "Medium", "High", "Critical"],
+        "data": [45, 68, 32, 11],
+        "colors": {
+            "Low": "#27ae60",
+            "Medium": "#3498db",
+            "High": "#f39c12",
+            "Critical": "#e74c3c"
+        }
+    }
+
+
+@router.get("/analytics/charts/cost-trend")
+async def demo_analytics_cost_trend(days: int = 30):
+    """Demo cost trend chart data"""
+    today = datetime.now()
+    labels = []
+    data = []
+
+    # Generate realistic cost data
+    import random
+    random.seed(42)  # Consistent demo data
+    for i in range(min(days, 30)):
+        date = today - timedelta(days=29-i)
+        labels.append(date.strftime("%Y-%m-%d"))
+        # Realistic daily cost between $200-$1500
+        data.append(random.randint(200, 1500))
+
+    return {
+        "labels": labels,
+        "data": data,
+        "label": "Daily Maintenance Cost ($)"
+    }
+
+
+@router.get("/analytics/charts/completion-trend")
+async def demo_analytics_completion_trend(days: int = 30):
+    """Demo completion trend chart data"""
+    today = datetime.now()
+    labels = []
+    created = []
+    completed = []
+
+    import random
+    random.seed(42)
+    for i in range(min(days, 30)):
+        date = today - timedelta(days=29-i)
+        labels.append(date.strftime("%Y-%m-%d"))
+        c = random.randint(3, 8)
+        created.append(c)
+        completed.append(max(0, c - random.randint(0, 2)))
+
+    return {
+        "labels": labels,
+        "datasets": [
+            {
+                "label": "Created",
+                "data": created,
+                "borderColor": "#3498db",
+                "fill": False
+            },
+            {
+                "label": "Completed",
+                "data": completed,
+                "borderColor": "#27ae60",
+                "fill": False
+            }
+        ]
+    }
+
+
+@router.get("/analytics/charts/asset-health")
+async def demo_analytics_asset_health():
+    """Demo asset health chart data"""
+    return {
+        "labels": ["Active", "Maintenance", "Inactive"],
+        "data": [21, 2, 1],
+        "colors": {
+            "Active": "#27ae60",
+            "Maintenance": "#f39c12",
+            "Inactive": "#95a5a6"
+        }
+    }
+
+
+@router.get("/analytics/charts/cost-breakdown")
+async def demo_analytics_cost_breakdown(days: int = 30):
+    """Demo cost breakdown chart data"""
+    return {
+        "labels": ["Preventive", "Corrective", "Emergency"],
+        "data": [8500, 12250, 4000],
+        "colors": {
+            "Preventive": "#27ae60",
+            "Corrective": "#f39c12",
+            "Emergency": "#e74c3c"
+        }
+    }

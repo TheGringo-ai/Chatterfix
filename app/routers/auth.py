@@ -3,30 +3,39 @@ Authentication Routes
 Login, logout, and user authentication endpoints
 """
 
+import logging
 import os
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.services import auth_service
 from app.services.firebase_auth import (
     firebase_auth_service,
 )
 
+logger = logging.getLogger(__name__)
+
+# Rate limiter for auth endpoints
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")
 
 
 @router.post("/login")
+@limiter.limit("5/minute")  # Rate limit: 5 login attempts per minute per IP
 async def login(
+    request: Request,
     response: Response,
     username: str = Form(...),
     password: str = Form(...),
-    request: Request = None,
 ):
-    """User login endpoint"""
+    """User login endpoint with rate limiting"""
     # Try Firebase authentication first
     if firebase_auth_service.is_available:
         try:
@@ -145,12 +154,14 @@ async def get_current_user(session_token: Optional[str] = Cookie(None)):
 
 
 @router.post("/change-password")
+@limiter.limit("3/minute")  # Rate limit password changes
 async def change_password(
+    request: Request,
     old_password: str = Form(...),
     new_password: str = Form(...),
     session_token: Optional[str] = Cookie(None),
 ):
-    """Change user password"""
+    """Change user password with rate limiting"""
     if not session_token:
         return JSONResponse(
             {"success": False, "message": "Not authenticated"}, status_code=401
@@ -178,7 +189,8 @@ async def change_password(
 
 
 @router.post("/firebase/verify")
-async def verify_firebase_token(token: str = Form(...), request: Request = None):
+@limiter.limit("10/minute")  # Rate limit token verification
+async def verify_firebase_token(request: Request, token: str = Form(...)):
     """Verify Firebase ID token and create session"""
     try:
         # Verify the Firebase token
@@ -293,13 +305,15 @@ async def firebase_signin(response: Response, request: Request):
                 user_data["uid"], ip_address, user_agent
             )
 
-        # Set session cookie
+        # Set session cookie with secure settings
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
         response.set_cookie(
             key="session_token",
             value=session_token,
             httponly=True,
-            max_age=86400,  # 24 hours
-            samesite="lax",
+            secure=is_production,  # HTTPS only in production
+            max_age=3600,  # 1 hour (reduced from 24 hours)
+            samesite="strict",  # Strict CSRF protection
         )
 
         return JSONResponse(
@@ -322,19 +336,19 @@ async def firebase_signin(response: Response, request: Request):
 
 @router.get("/config")
 async def get_auth_config():
-    """Get authentication configuration for frontend"""
+    """Get authentication configuration for frontend (without sensitive keys)"""
     use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
 
     config = {"use_firebase": use_firebase, "firebase_config": None}
 
     if use_firebase:
+        # Only return non-sensitive configuration
+        # API key removed for security - should be loaded client-side from environment
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms")
         config["firebase_config"] = {
-            "apiKey": os.getenv("FIREBASE_API_KEY", ""),
-            "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
-            "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
-            "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
-            "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
-            "appId": os.getenv("FIREBASE_APP_ID", ""),
+            "authDomain": f"{project_id}.firebaseapp.com",
+            "projectId": project_id,
+            "storageBucket": f"{project_id}.appspot.com",
         }
 
     return JSONResponse(config)

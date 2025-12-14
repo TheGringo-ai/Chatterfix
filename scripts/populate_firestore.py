@@ -247,9 +247,10 @@ async def populate_firestore():
                         "assigned_date": fake.date_this_year().isoformat(),
                     }
                     if status in ["in_progress", "completed"]:
-                        training_assignment_data["started_date"] = (fake.date_this_year() + timedelta(days=random.randint(1, 10))).isoformat()
+                        started_date = fake.date_this_year() + timedelta(days=random.randint(1, 10))
+                        training_assignment_data["started_date"] = started_date.isoformat()
                     if status == "completed":
-                        training_assignment_data["completed_date"] = (training_assignment_data["started_date"] + timedelta(days=random.randint(1, 5))).isoformat()
+                        training_assignment_data["completed_date"] = (started_date + timedelta(days=random.randint(1, 5))).isoformat()
                         training_assignment_data["score"] = random.randint(70, 100)
                     
                     try:

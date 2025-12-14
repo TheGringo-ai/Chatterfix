@@ -62,6 +62,12 @@ class VoiceFeedbackSystem {
     }
 
     createUI() {
+        // Check if AI widget exists - if so, don't create voice feedback UI to avoid conflicts
+        if (document.querySelector('.ai-assistant-widget')) {
+            console.log('🤖 AI widget detected, disabling voice feedback system to avoid conflicts');
+            return;
+        }
+
         // Check if container exists, create if not
         let container = document.getElementById(this.options.containerId);
         if (!container) {

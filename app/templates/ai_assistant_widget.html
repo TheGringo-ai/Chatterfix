@@ -1,12 +1,12 @@
 <!-- AI Assistant Widget with Microphone and Camera -->
-<div class="ai-assistant-widget fixed bottom-4 right-4 z-50">
+<div class="ai-assistant-widget fixed bottom-6 right-6 z-[9999]">
     <!-- Main AI Widget Button -->
-    <div id="ai-widget-toggle" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-16 h-16 flex items-center justify-center cursor-pointer shadow-lg transition-all duration-300 hover:scale-110">
+    <div id="ai-widget-toggle" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-16 h-16 flex items-center justify-center cursor-pointer shadow-xl transition-all duration-300 hover:scale-110 border-4 border-white">
         <i class="fas fa-robot text-xl"></i>
     </div>
 
     <!-- Expanded AI Widget Panel -->
-    <div id="ai-widget-panel" class="hidden absolute bottom-20 right-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-2rem)] overflow-hidden">
+    <div id="ai-widget-panel" class="hidden absolute bottom-20 right-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-3rem)] overflow-hidden z-[10000]">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
             <div class="flex items-center justify-between">
@@ -53,10 +53,17 @@
                     Image Recognition
                 </h4>
                 <div class="space-y-2">
-                    <button id="camera-capture-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors w-full flex items-center justify-center">
-                        <i class="fas fa-camera text-xs mr-2"></i>
-                        <span id="camera-status">Take Photo</span>
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="camera-capture-btn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
+                            <i class="fas fa-camera text-xs mr-2"></i>
+                            <span id="camera-status">Take Photo</span>
+                        </button>
+                        <label for="photo-upload" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center cursor-pointer">
+                            <i class="fas fa-upload text-xs mr-2"></i>
+                            Upload Photo
+                        </label>
+                        <input type="file" id="photo-upload" accept="image/*" class="hidden">
+                    </div>
                     <video id="camera-preview" class="w-full rounded-lg hidden" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas>
                     <div id="image-analysis" class="p-2 bg-green-50 rounded-lg text-sm text-green-700 min-h-[40px] hidden"></div>
@@ -202,6 +209,11 @@ class AIAssistantWidget {
         // Camera button
         document.getElementById('camera-capture-btn').addEventListener('click', () => {
             this.captureImage();
+        });
+
+        // Photo upload
+        document.getElementById('photo-upload').addEventListener('change', (e) => {
+            this.handlePhotoUpload(e);
         });
 
         // Quick commands
@@ -448,6 +460,36 @@ class AIAssistantWidget {
 
         this.updateVoiceStatus('ready', 'Start Recording');
     }
+
+    async handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const analysisEl = document.getElementById('image-analysis');
+        const cameraStatus = document.getElementById('camera-status');
+
+        try {
+            cameraStatus.textContent = 'Processing...';
+            analysisEl.textContent = 'Reading uploaded image...';
+            analysisEl.classList.remove('hidden');
+
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const imageData = e.target.result;
+
+                // Analyze image
+                await this.analyzeImage(imageData);
+            };
+            reader.readAsDataURL(file);
+
+        } catch (error) {
+            console.error('Photo upload error:', error);
+            analysisEl.textContent = 'Error processing uploaded photo';
+            analysisEl.classList.remove('hidden');
+            cameraStatus.textContent = 'Upload Photo';
+        }
+    }
 }
 
 // Initialize widget when DOM is loaded
@@ -485,11 +527,22 @@ window.AIAssistantWidget = AIAssistantWidget;
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
-    .ai-assistant-widget .fixed.bottom-4.right-4 > div:last-child {
+    .ai-assistant-widget {
+        bottom: 1rem !important;
+        right: 1rem !important;
+    }
+
+    .ai-assistant-widget .fixed.bottom-6.right-6 > div:last-child {
         right: 1rem;
         left: 1rem;
         width: auto;
         max-width: none;
+        bottom: 5rem;
+    }
+
+    .ai-assistant-widget #ai-widget-panel {
+        width: calc(100vw - 2rem) !important;
+        max-width: none !important;
     }
 }
 </style>

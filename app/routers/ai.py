@@ -1106,78 +1106,89 @@ class ImageAnalysisRequest(BaseModel):
 
 @router.post("/process-command")
 async def process_voice_command_endpoint(request: VoiceCommandRequest):
-    """Process voice commands from the AI widget with context awareness"""
-    try:
-        # Process the voice command with correct function signature
-        result = await process_voice_command(
-            voice_text=request.command,
-            technician_id=None  # Can be extracted from auth context if needed
-        )
+    """
+    Process voice/text commands from the AI widget with REAL AI responses.
 
-        # Determine action based on command
+    This endpoint handles:
+    - Troubleshooting questions → AI provides step-by-step guidance
+    - Equipment diagnosis → AI analyzes and provides recommendations
+    - Work order creation → Creates work orders via voice
+    - Part/manual lookups → Searches knowledge base
+    - Navigation commands → Navigates the application
+    - General questions → AI assistant responds helpfully
+    """
+    try:
+        command_lower = request.command.lower()
         action = None
         target = None
         modal = None
-        response_text = result.get("response", "Command processed successfully")
+        response_text = None
 
-        command_lower = request.command.lower()
-
-        # Equipment diagnosis context
-        if request.context_type == "equipment_diagnosis":
-            response_text = "I'll help you diagnose the equipment. The AI will analyze the image for potential issues, wear patterns, and maintenance needs."
-
-        elif request.context_type == "part_recognition":
-            response_text = "I'll identify this part for you. The AI will search for part numbers, specifications, and inventory matches."
-
-        elif request.context_type == "find_manual":
-            if request.equipment_name:
-                response_text = f"Searching knowledge base for manual: {request.equipment_name}. I'll provide documentation, diagrams, and troubleshooting guides."
-            else:
-                response_text = "I'll search for the equipment manual in our knowledge base."
-
-        elif request.context_type == "troubleshooting":
-            if request.issue_description:
-                response_text = f"Finding troubleshooting steps for: {request.issue_description}. I'll provide diagnostic procedures and solutions."
-            else:
-                response_text = "I'll help you troubleshoot this issue with step-by-step guidance."
-
-        # Navigation commands
-        elif any(word in command_lower for word in ["dashboard", "analytics", "show me"]):
-            if "analytics" in command_lower:
+        # === NAVIGATION COMMANDS (no AI needed) ===
+        if any(word in command_lower for word in ["go to", "show me", "open", "navigate"]):
+            if "analytics" in command_lower or "dashboard" in command_lower:
                 action = "navigate"
                 target = "/analytics/dashboard"
-            elif "work order" in command_lower and "new" in command_lower:
-                action = "navigate"
-                target = "/work-orders/new"
-            elif "equipment" in command_lower:
+                response_text = "Opening the analytics dashboard for you."
+            elif "work order" in command_lower:
+                if "new" in command_lower or "create" in command_lower:
+                    action = "navigate"
+                    target = "/work-orders/new"
+                    response_text = "Opening the new work order form."
+                else:
+                    action = "navigate"
+                    target = "/work-orders"
+                    response_text = "Opening work orders."
+            elif "equipment" in command_lower or "asset" in command_lower:
                 action = "navigate"
                 target = "/assets"
-            elif "inventory" in command_lower:
+                response_text = "Opening assets and equipment."
+            elif "inventory" in command_lower or "parts" in command_lower:
                 action = "navigate"
                 target = "/inventory"
-
-        # Modal commands
-        elif any(word in command_lower for word in ["create", "add", "new"]):
-            if "work order" in command_lower:
-                action = "modal"
-                modal = "create-work-order"
-
-        # Status/action commands
-        elif any(word in command_lower for word in ["status", "check", "report"]):
-            if "equipment" in command_lower:
+                response_text = "Opening inventory."
+            elif "purchasing" in command_lower:
                 action = "navigate"
-                target = "/iot/dashboard"
-            elif "issue" in command_lower:
-                action = "modal"
-                modal = "report-issue"
+                target = "/purchasing"
+                response_text = "Opening the purchasing dashboard."
 
-        # Manual/documentation search
-        elif "manual" in command_lower or "documentation" in command_lower:
-            response_text = "Searching equipment manuals and documentation in the knowledge base..."
+        # === WORK ORDER CREATION ===
+        elif any(phrase in command_lower for phrase in ["create work order", "new work order", "make work order"]):
+            action = "modal"
+            modal = "create-work-order"
+            response_text = "I'll help you create a new work order. Opening the form now."
 
-        # Troubleshooting
-        elif "troubleshoot" in command_lower or "fix" in command_lower:
-            response_text = "Analyzing the issue and searching for troubleshooting procedures..."
+        # === AI-POWERED RESPONSES (call the real AI) ===
+        else:
+            # Build context for the AI
+            context_parts = []
+            if request.context:
+                context_parts.append(request.context)
+            if request.equipment_name:
+                context_parts.append(f"Equipment: {request.equipment_name}")
+            if request.issue_description:
+                context_parts.append(f"Issue: {request.issue_description}")
+
+            context = "\n".join(context_parts) if context_parts else ""
+
+            # Determine the best context type for routing
+            ai_context_type = request.context_type
+            if "troubleshoot" in command_lower or "fix" in command_lower or "repair" in command_lower:
+                ai_context_type = "troubleshooting"
+            elif "diagnose" in command_lower or "what's wrong" in command_lower:
+                ai_context_type = "equipment_diagnosis"
+            elif "manual" in command_lower or "documentation" in command_lower:
+                ai_context_type = "documentation"
+            elif "part" in command_lower and ("find" in command_lower or "where" in command_lower):
+                ai_context_type = "inventory"
+
+            # Call the REAL AI assistant for intelligent response
+            response_text = await chatterfix_ai.process_message(
+                message=request.command,
+                context=context,
+                context_type=ai_context_type,
+                fast_mode=True  # Use fast mode for widget responsiveness
+            )
 
         return JSONResponse({
             "success": True,
@@ -1190,10 +1201,12 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
         })
 
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"AI command processing error: {e}")
         return JSONResponse({
             "success": False,
             "error": str(e),
-            "response": "Sorry, I couldn't process that command. Please try again."
+            "response": "I encountered an issue processing your request. Please try again or rephrase your question."
         }, status_code=500)
 
 @router.post("/analyze-image")

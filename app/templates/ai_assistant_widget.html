@@ -1,5 +1,5 @@
 <!-- AI Assistant Widget with Microphone and Camera -->
-<div class="ai-assistant-widget fixed bottom-8 right-8 z-[2147483647]">
+<div class="ai-assistant-widget fixed bottom-8 right-8 z-[999999]">
     <!-- Main AI Widget Button -->
     <div id="ai-widget-toggle" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-full w-20 h-20 flex items-center justify-center cursor-pointer shadow-2xl transition-all duration-300 hover:scale-110 border-4 border-white relative animate-bounce">
         <i class="fas fa-robot text-2xl"></i>
@@ -8,7 +8,7 @@
     </div>
 
     <!-- Expanded AI Widget Panel -->
-    <div id="ai-widget-panel" class="hidden absolute bottom-24 right-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-4rem)] overflow-hidden z-[2147483647]">
+    <div id="ai-widget-panel" class="hidden absolute bottom-24 right-0 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 max-w-[calc(100vw-4rem)] overflow-hidden z-[1000000]">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
             <div class="flex items-center justify-between">
@@ -550,7 +550,7 @@ window.AIAssistantWidget = AIAssistantWidget;
 
 /* Ensure AI widget is always on top */
 .ai-assistant-widget {
-    z-index: 2147483647 !important;
+    z-index: 999999 !important;
 }
 
 .ai-assistant-widget * {

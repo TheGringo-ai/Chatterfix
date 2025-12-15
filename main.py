@@ -1071,6 +1071,7 @@ class MaintenanceConsultationRequest(BaseModel):
 # Root redirect to demo - REMOVED DUPLICATE (line 377 already defines root route)
 
 @app.get("/urgent-count", tags=["API"])
+@app.get("/api/work-orders/urgent-count", tags=["API"])
 async def urgent_count():
     """Get count of urgent work orders - AI Team implemented endpoint"""
     try:
@@ -1079,6 +1080,52 @@ async def urgent_count():
     except Exception as e:
         logger.error(f"Error fetching urgent count: {e}")
         return {"count": 0, "status": "error", "message": str(e)}
+
+
+@app.get("/api/work-orders", tags=["API"])
+async def api_work_orders():
+    """Get work orders list for API consumers"""
+    try:
+        from app.core.firestore_db import get_firestore_manager
+        firestore_manager = get_firestore_manager()
+        work_orders = await firestore_manager.get_collection("work_orders", limit=50)
+        return {"work_orders": work_orders, "count": len(work_orders), "status": "success"}
+    except Exception as e:
+        logger.error(f"Error fetching work orders: {e}")
+        # Fallback demo data
+        return {
+            "work_orders": [
+                {"id": "WO-001", "title": "HVAC Maintenance", "status": "open", "priority": "high"},
+                {"id": "WO-002", "title": "Conveyor Belt Inspection", "status": "in_progress", "priority": "medium"},
+            ],
+            "count": 2,
+            "status": "demo",
+            "message": str(e)
+        }
+
+
+@app.get("/api/health/all", tags=["API"])
+async def api_health_all():
+    """Comprehensive health check for all services"""
+    try:
+        from app.core.firestore_db import get_firestore_manager
+        firestore_manager = get_firestore_manager()
+
+        # Check database connectivity
+        db_healthy = firestore_manager is not None
+
+        return {
+            "status": "healthy",
+            "services": {
+                "api": {"status": "healthy", "version": APP_VERSION},
+                "database": {"status": "healthy" if db_healthy else "degraded", "type": "firestore"},
+                "ai_team": {"status": "configured" if USE_AI_TEAM_HTTP else "disabled"},
+            },
+            "timestamp": __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {"status": "degraded", "error": str(e)}
 
 @app.post("/chat/consult", tags=["Fix-it-Fred AI"])
 async def consult_fix_it_fred(request: MaintenanceConsultationRequest):

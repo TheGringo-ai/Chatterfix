@@ -185,7 +185,7 @@
     <div class="modal-content glass-panel" style="margin: 10% auto; width: 400px; padding: 30px;">
         <h2>📱 Barcode Scanner</h2>
         <div style="margin-bottom: 1rem;">
-            <input type="text" id="barcode-input" placeholder="Scan or enter barcode/part number" 
+            <input type="text" id="barcode-input" placeholder="Scan or enter barcode/part number"
                 style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
         </div>
         <div style="display: flex; gap: 1rem;">
@@ -193,6 +193,119 @@
             <button onclick="document.getElementById('barcodeModal').style.display='none'" class="cmms-btn" style="background: #e74c3c;">Close</button>
         </div>
         <div id="barcode-result" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<!-- Add Vendor Modal -->
+<div id="addVendorModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 5% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2 style="color: #212529; margin-bottom: 1.5rem;"><i class="fas fa-building"></i> Add New Vendor</h2>
+        <form id="add-vendor-form">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="grid-column: 1 / -1;">
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Vendor Name *</label>
+                    <input type="text" name="name" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Contact Name</label>
+                    <input type="text" name="contact_name" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Email</label>
+                    <input type="email" name="email" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Phone</label>
+                    <input type="tel" name="phone" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Payment Terms</label>
+                    <select name="payment_terms" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="Net 30">Net 30</option>
+                        <option value="Net 15">Net 15</option>
+                        <option value="Net 60">Net 60</option>
+                        <option value="Due on Receipt">Due on Receipt</option>
+                    </select>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Address</label>
+                    <textarea name="address" rows="2" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Tax ID</label>
+                    <input type="text" name="tax_id" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Documents</label>
+                    <input type="file" name="files" multiple accept=".pdf,.doc,.docx" style="width: 100%; padding: 0.5rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" onclick="closeVendorModal()" class="cmms-btn" style="background: #6c757d;">Cancel</button>
+                <button type="submit" class="cmms-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Add Vendor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Low Stock Modal -->
+<div id="lowStockModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 5% auto; width: 90%; max-width: 800px; padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #212529; margin: 0;"><i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Low Stock Items</h2>
+            <button onclick="closeLowStockModal()" class="cmms-btn" style="background: #6c757d; padding: 0.5rem 1rem;">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+        <div id="low-stock-list" style="max-height: 60vh; overflow-y: auto;">
+            <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Loading low stock items...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Invoice Modal -->
+<div id="uploadInvoiceModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 5% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2 style="color: #212529; margin-bottom: 1.5rem;"><i class="fas fa-file-invoice"></i> Upload Invoice</h2>
+        <form id="upload-invoice-form" enctype="multipart/form-data">
+            <div style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Related Purchase Order *</label>
+                    <select name="po_id" id="invoice-po-select" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="">Select PO...</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Invoice Number *</label>
+                        <input type="text" name="invoice_number" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    </div>
+                    <div>
+                        <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Invoice Amount *</label>
+                        <input type="number" step="0.01" name="invoice_amount" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    </div>
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Invoice Date *</label>
+                    <input type="date" name="invoice_date" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <label style="color: #495057; font-weight: 600; display: block; margin-bottom: 0.5rem;">Invoice Document(s) *</label>
+                    <div style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 2rem; text-align: center; background: #f8f9fa;">
+                        <i class="fas fa-cloud-upload-alt fa-2x" style="color: #6c757d; margin-bottom: 0.5rem;"></i>
+                        <p style="color: #6c757d; margin-bottom: 0.5rem;">Drag & drop invoice files here or click to browse</p>
+                        <input type="file" name="files" multiple required accept=".pdf,.jpg,.jpeg,.png" style="width: 100%;">
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="button" onclick="closeInvoiceModal()" class="cmms-btn" style="background: #6c757d;">Cancel</button>
+                <button type="submit" class="cmms-btn" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">Upload Invoice</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -422,6 +535,183 @@ document.getElementById('barcode-input').addEventListener('keypress', function(e
 // Load initial data
 document.addEventListener('DOMContentLoaded', function() {
     searchParts(); // Load all parts initially
+    loadLowStockCount(); // Load low stock count for stats
 });
+
+// ============================================
+// QUICK ACTION FUNCTIONS
+// ============================================
+
+// Show Add Vendor Modal
+function showAddVendor() {
+    document.getElementById('addVendorModal').style.display = 'block';
+}
+
+function closeVendorModal() {
+    document.getElementById('addVendorModal').style.display = 'none';
+}
+
+// Add Vendor Form Submit
+document.getElementById('add-vendor-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch('/purchasing/vendors/create', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('✅ Vendor added successfully!');
+            closeVendorModal();
+            this.reset();
+            location.reload(); // Refresh to show new vendor in dropdown
+        } else {
+            alert('❌ Error adding vendor: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error adding vendor');
+    }
+});
+
+// Show Low Stock Modal
+async function showLowStock() {
+    document.getElementById('lowStockModal').style.display = 'block';
+    await loadLowStockItems();
+}
+
+function closeLowStockModal() {
+    document.getElementById('lowStockModal').style.display = 'none';
+}
+
+async function loadLowStockItems() {
+    const listDiv = document.getElementById('low-stock-list');
+
+    try {
+        const response = await fetch('/purchasing/inventory/low-stock');
+        const data = await response.json();
+
+        if (data.low_stock_items && data.low_stock_items.length > 0) {
+            listDiv.innerHTML = data.low_stock_items.map(item => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 0.75rem; background: #fff;">
+                    <div>
+                        <strong style="color: #212529;">${item.name}</strong>
+                        <div style="font-size: 0.85rem; color: #6c757d;">
+                            Part #: ${item.part_number || 'N/A'} | Location: ${item.location || 'N/A'}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: #e74c3c; font-weight: bold;">
+                            Stock: ${item.current_stock || 0} / Min: ${item.minimum_stock || 0}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #6c757d;">
+                            Vendor: ${item.vendor_name || 'N/A'}
+                        </div>
+                    </div>
+                    <button onclick="addToCart('${item.id}', '${item.name}', ${item.unit_cost || 0}, '${item.part_number || ''}')"
+                        class="cmms-btn" style="margin-left: 1rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-cart-plus"></i> Add to PO
+                    </button>
+                </div>
+            `).join('');
+        } else {
+            listDiv.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: #28a745;">
+                    <i class="fas fa-check-circle fa-3x" style="margin-bottom: 1rem;"></i>
+                    <h4>All Stock Levels Good!</h4>
+                    <p>No items are currently below minimum stock levels.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading low stock:', error);
+        listDiv.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #dc3545;">
+                <i class="fas fa-exclamation-circle fa-2x"></i>
+                <p>Error loading low stock items</p>
+            </div>
+        `;
+    }
+}
+
+async function loadLowStockCount() {
+    try {
+        const response = await fetch('/purchasing/inventory/low-stock');
+        const data = await response.json();
+        const count = data.low_stock_items ? data.low_stock_items.length : 0;
+        document.getElementById('low-stock-count').textContent = count;
+    } catch (error) {
+        console.error('Error loading low stock count:', error);
+    }
+}
+
+// Show Upload Invoice Modal
+async function showInvoices() {
+    document.getElementById('uploadInvoiceModal').style.display = 'block';
+    await loadPurchaseOrdersForInvoice();
+}
+
+function closeInvoiceModal() {
+    document.getElementById('uploadInvoiceModal').style.display = 'none';
+}
+
+async function loadPurchaseOrdersForInvoice() {
+    const select = document.getElementById('invoice-po-select');
+
+    try {
+        const response = await fetch('/purchasing/purchase-orders');
+        const data = await response.json();
+
+        select.innerHTML = '<option value="">Select PO...</option>';
+
+        if (data.purchase_orders && data.purchase_orders.length > 0) {
+            data.purchase_orders.forEach(po => {
+                const option = document.createElement('option');
+                option.value = po.id;
+                option.textContent = `${po.po_number} - $${(po.total_amount || 0).toFixed(2)} (${po.status || 'Unknown'})`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading POs:', error);
+    }
+}
+
+// Upload Invoice Form Submit
+document.getElementById('upload-invoice-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch('/purchasing/invoices/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('✅ Invoice uploaded successfully!');
+            closeInvoiceModal();
+            this.reset();
+        } else {
+            alert('❌ Error uploading invoice: ' + (result.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error uploading invoice');
+    }
+});
+
+// Quick Add Part modal (already exists as showAddPart)
+function showQuickAdd() {
+    showAddPart();
+}
 </script>
 {% endblock %}

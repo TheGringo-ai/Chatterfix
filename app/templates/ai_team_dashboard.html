@@ -1,0 +1,658 @@
+{% extends "base.html" %}
+
+{% block title %}AI Team Dashboard - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<style>
+    .ai-team-container {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .model-card {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 8px;
+        background: var(--bg-secondary, #f8f9fa);
+    }
+
+    .response-box {
+        background: var(--bg-secondary, #f8f9fa);
+        border-left: 4px solid var(--accent-color, #667eea);
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .streaming-output {
+        background: #1a1a2e;
+        color: #00ff00;
+        font-family: 'Courier New', monospace;
+        padding: 15px;
+        height: 400px;
+        overflow-y: auto;
+        border-radius: 8px;
+    }
+
+    .ai-card {
+        background: var(--bg-primary, #ffffff);
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .ai-card-header {
+        background: linear-gradient(135deg, var(--accent-color, #667eea) 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+
+    .ai-card-body {
+        padding: 1.5rem;
+    }
+
+    .memory-alert {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border: 1px solid var(--accent-color, #667eea);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .memory-alert h6 {
+        color: var(--accent-color, #667eea);
+        margin-bottom: 0.5rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .status-healthy {
+        background: rgba(39, 174, 96, 0.1);
+        color: #27ae60;
+    }
+
+    .status-unhealthy {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+
+    .ai-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .ai-btn-primary {
+        background: linear-gradient(135deg, var(--accent-color, #667eea) 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .ai-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .ai-btn-secondary {
+        background: var(--bg-secondary, #f8f9fa);
+        color: var(--text-primary, #212529);
+        border: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .ai-btn-success {
+        background: #27ae60;
+        color: white;
+    }
+
+    .ai-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 8px;
+        background: var(--bg-primary, #ffffff);
+        color: var(--text-primary, #212529);
+        margin-bottom: 1rem;
+    }
+
+    .ai-input:focus {
+        outline: none;
+        border-color: var(--accent-color, #667eea);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea.ai-input {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .dark-mode .response-box {
+        background: var(--bg-secondary, #1e1e2e);
+    }
+
+    .dark-mode .model-card {
+        background: var(--bg-secondary, #1e1e2e);
+    }
+
+    .btn-group-ai {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary, #212529);
+    }
+
+    .page-header .lead {
+        color: var(--text-muted, #6c757d);
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-results-item {
+        background: var(--bg-secondary, #f8f9fa);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .analytics-card {
+        background: var(--bg-secondary, #f8f9fa);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .analytics-card h3 {
+        font-size: 2rem;
+        color: var(--accent-color, #667eea);
+        margin-bottom: 0.25rem;
+    }
+
+    .analytics-card p {
+        color: var(--text-muted, #6c757d);
+        margin: 0;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-team-container">
+    <div class="page-header">
+        <h1><i class="fas fa-brain"></i> AI Team Collaboration Dashboard</h1>
+        <p class="lead">Multi-Model AI Team with Advanced Memory System - Never Repeat Mistakes</p>
+    </div>
+
+    <!-- Memory System Status -->
+    <div class="memory-alert">
+        <h6><i class="fas fa-memory"></i> ADVANCED MEMORY SYSTEM ACTIVE</h6>
+        <p>Every conversation, mistake, and solution is captured and indexed. The AI team learns from every interaction to prevent repeating mistakes and improve performance over time.</p>
+    </div>
+
+    <!-- AI Team Status -->
+    <div class="grid-2">
+        <div class="ai-card">
+            <div class="ai-card-header">
+                <i class="fas fa-heartbeat"></i> AI Team Status
+            </div>
+            <div class="ai-card-body">
+                <div id="team-status">
+                    <div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+        <div class="ai-card">
+            <div class="ai-card-header">
+                <i class="fas fa-robot"></i> Available Models
+            </div>
+            <div class="ai-card-body">
+                <div id="available-models">
+                    <div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collaboration Interface -->
+    <div class="ai-card">
+        <div class="ai-card-header">
+            <i class="fas fa-comments"></i> AI Team Collaboration
+        </div>
+        <div class="ai-card-body">
+            <label for="prompt">Prompt for AI Team:</label>
+            <textarea class="ai-input" id="prompt" placeholder="Enter your question or task for the AI team to collaborate on..."></textarea>
+
+            <label for="context">Context (optional):</label>
+            <textarea class="ai-input" id="context" placeholder="Additional context or background information..." style="min-height: 60px;"></textarea>
+
+            <div class="btn-group-ai">
+                <button class="ai-btn ai-btn-primary" onclick="executeTask()">
+                    <i class="fas fa-play"></i> Execute Collaboration
+                </button>
+                <button class="ai-btn ai-btn-success" onclick="streamCollaboration()">
+                    <i class="fas fa-stream"></i> Stream Live
+                </button>
+                <button class="ai-btn ai-btn-secondary" onclick="clearOutput()">
+                    <i class="fas fa-eraser"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Search -->
+    <div class="ai-card">
+        <div class="ai-card-header">
+            <i class="fas fa-search"></i> Knowledge Search
+        </div>
+        <div class="ai-card-body">
+            <input type="text" class="ai-input" id="search-query" placeholder="Search conversations, mistakes, solutions, code changes...">
+
+            <div class="grid-2">
+                <div>
+                    <label for="content-filter">Content Type:</label>
+                    <select class="ai-input" id="content-filter">
+                        <option value="">All Types</option>
+                        <option value="conversation">Conversations</option>
+                        <option value="mistake">Mistake Patterns</option>
+                        <option value="solution">Solution Patterns</option>
+                        <option value="code_change">Code Changes</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="search-limit">Results Limit:</label>
+                    <select class="ai-input" id="search-limit">
+                        <option value="10">10 Results</option>
+                        <option value="20" selected>20 Results</option>
+                        <option value="50">50 Results</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-group-ai">
+                <button class="ai-btn ai-btn-primary" onclick="searchKnowledge()">
+                    <i class="fas fa-search"></i> Search Knowledge
+                </button>
+                <button class="ai-btn ai-btn-secondary" onclick="rebuildIndex()">
+                    <i class="fas fa-sync"></i> Rebuild Index
+                </button>
+            </div>
+
+            <div id="search-results" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <!-- AI Team Analytics -->
+    <div class="ai-card">
+        <div class="ai-card-header">
+            <i class="fas fa-chart-bar"></i> AI Team Analytics
+        </div>
+        <div class="ai-card-body">
+            <button class="ai-btn ai-btn-primary" onclick="loadAnalytics()">
+                <i class="fas fa-chart-line"></i> Load Comprehensive Analytics
+            </button>
+            <div id="analytics-output" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="ai-card">
+        <div class="ai-card-header">
+            <i class="fas fa-clipboard-list"></i> AI Team Results
+        </div>
+        <div class="ai-card-body">
+            <div id="results-output"></div>
+            <div id="streaming-output" class="streaming-output" style="display: none;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load team status on page load
+    async function loadTeamStatus() {
+        try {
+            const response = await fetch('/ai-team/health');
+            const status = await response.json();
+
+            document.getElementById('team-status').innerHTML = `
+                <div class="status-badge ${status.healthy ? 'status-healthy' : 'status-unhealthy'}">
+                    <i class="fas ${status.healthy ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                    ${status.healthy ? 'Healthy' : 'Unhealthy'}
+                </div>
+                <p style="margin-top: 1rem; margin-bottom: 0;">
+                    <strong>Status:</strong> ${status.status || 'Unknown'}<br>
+                    <small style="color: var(--text-muted);">
+                        Active Models: ${status.active_models ? status.active_models.length : 0} |
+                        Pending Tasks: ${status.pending_tasks || 0}
+                    </small>
+                </p>
+            `;
+        } catch (error) {
+            document.getElementById('team-status').innerHTML =
+                '<span style="color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Failed to load status</span>';
+        }
+    }
+
+    async function loadAvailableModels() {
+        try {
+            const response = await fetch('/ai-team/models');
+            const data = await response.json();
+
+            if (data.models && data.models.length > 0) {
+                const modelsHtml = data.models.map(model => `
+                    <div class="model-card">
+                        <strong>${model.name}</strong>
+                        <span class="status-badge ${model.available ? 'status-healthy' : ''}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                            ${model.provider}
+                        </span>
+                        <br>
+                        <small style="color: var(--text-muted);">Score: ${model.performance_score} | ${model.capabilities.join(', ')}</small>
+                    </div>
+                `).join('');
+                document.getElementById('available-models').innerHTML = modelsHtml;
+            } else {
+                document.getElementById('available-models').innerHTML = '<p style="color: var(--text-muted);">No models available</p>';
+            }
+        } catch (error) {
+            document.getElementById('available-models').innerHTML =
+                '<span style="color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Failed to load models</span>';
+        }
+    }
+
+    async function executeTask() {
+        const prompt = document.getElementById('prompt').value;
+        const context = document.getElementById('context').value;
+
+        if (!prompt.trim()) {
+            alert('Please enter a prompt');
+            return;
+        }
+
+        const resultsDiv = document.getElementById('results-output');
+        resultsDiv.innerHTML = '<div style="text-align: center;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>AI Team is collaborating...</p></div>';
+
+        try {
+            const response = await fetch('/ai-team/execute', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt, context })
+            });
+
+            const result = await response.json();
+
+            let resultHtml = `
+                <div class="response-box" style="border-left-color: ${result.success ? '#27ae60' : '#e74c3c'};">
+                    <h6><i class="fas ${result.success ? 'fa-check-circle' : 'fa-times-circle'}"></i> Task ${result.success ? 'Completed' : 'Failed'}</h6>
+                    <strong>Confidence Score:</strong> ${(result.confidence_score * 100).toFixed(1)}%
+                </div>
+
+                <div class="response-box">
+                    <h6>Final Result:</h6>
+                    <p>${result.final_result}</p>
+                </div>
+            `;
+
+            if (result.model_responses && result.model_responses.length > 0) {
+                resultHtml += '<h6 style="margin-top: 1.5rem;">Individual Model Responses:</h6>';
+                result.model_responses.forEach(resp => {
+                    resultHtml += `
+                        <div class="response-box">
+                            <strong>${resp.model_name}:</strong>
+                            <p>${resp.response}</p>
+                            <small style="color: var(--text-muted);">Confidence: ${(resp.confidence * 100).toFixed(1)}%</small>
+                        </div>
+                    `;
+                });
+            }
+
+            resultHtml += `
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                    <small style="color: var(--text-muted);">
+                        <strong>Collaboration Summary:</strong> ${result.collaboration_summary}
+                    </small>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = resultHtml;
+
+        } catch (error) {
+            resultsDiv.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Error: ${error.message}</div>`;
+        }
+    }
+
+    async function streamCollaboration() {
+        const prompt = document.getElementById('prompt').value;
+        const context = document.getElementById('context').value;
+
+        if (!prompt.trim()) {
+            alert('Please enter a prompt');
+            return;
+        }
+
+        const streamingDiv = document.getElementById('streaming-output');
+        const resultsDiv = document.getElementById('results-output');
+
+        resultsDiv.innerHTML = '';
+        streamingDiv.style.display = 'block';
+        streamingDiv.innerHTML = '> Starting AI Team collaboration...\n';
+
+        try {
+            const response = await fetch('/ai-team/stream', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt, context })
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'agent_thinking') {
+                                streamingDiv.innerHTML += `> ${data.message}\n`;
+                            } else if (data.type === 'agent_response') {
+                                streamingDiv.innerHTML += `\n[${data.model}] ${data.response}\n\n`;
+                            } else if (data.type === 'complete') {
+                                streamingDiv.innerHTML += `\n> COLLABORATION COMPLETE\n`;
+                                streamingDiv.innerHTML += `\nFINAL ANSWER: ${data.final_answer}\n`;
+                            }
+
+                            streamingDiv.scrollTop = streamingDiv.scrollHeight;
+
+                        } catch (e) {
+                            // Ignore parsing errors for incomplete chunks
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            streamingDiv.innerHTML += `\n> ERROR: ${error.message}\n`;
+        }
+    }
+
+    function clearOutput() {
+        document.getElementById('results-output').innerHTML = '';
+        document.getElementById('streaming-output').innerHTML = '';
+        document.getElementById('streaming-output').style.display = 'none';
+    }
+
+    async function searchKnowledge() {
+        const query = document.getElementById('search-query').value;
+        const contentType = document.getElementById('content-filter').value;
+        const limit = document.getElementById('search-limit').value;
+
+        if (!query.trim()) {
+            alert('Please enter a search query');
+            return;
+        }
+
+        const searchResults = document.getElementById('search-results');
+        searchResults.innerHTML = '<div style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Searching knowledge base...</div>';
+
+        try {
+            const params = new URLSearchParams({ q: query, limit: limit });
+            if (contentType) params.append('content_types', contentType);
+
+            const response = await fetch(`/ai-team/memory/search?${params}`);
+            const results = await response.json();
+
+            if (results.error) {
+                searchResults.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Error: ${results.error}</div>`;
+                return;
+            }
+
+            let resultsHtml = `<h6><i class="fas fa-search"></i> Search Results (${results.total_results || 0} found)</h6>`;
+
+            if (results.results && results.results.length > 0) {
+                results.results.forEach(result => {
+                    const typeIcon = {
+                        'conversation': 'fa-comments',
+                        'mistake': 'fa-bug',
+                        'solution': 'fa-lightbulb',
+                        'code_change': 'fa-code'
+                    }[result.type] || 'fa-file';
+
+                    resultsHtml += `
+                        <div class="search-results-item">
+                            <strong><i class="fas ${typeIcon}"></i> ${result.type.replace('_', ' ').toUpperCase()}</strong>
+                            <span class="status-badge" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; background: var(--accent-color); color: white;">
+                                ${(result.relevance * 100).toFixed(0)}% match
+                            </span>
+                            <p style="margin: 0.5rem 0;">${result.preview}</p>
+                            <small style="color: var(--text-muted);">ID: ${result.item_id}</small>
+                        </div>
+                    `;
+                });
+            } else {
+                resultsHtml += '<p style="color: var(--text-muted);">No results found.</p>';
+            }
+
+            searchResults.innerHTML = resultsHtml;
+
+        } catch (error) {
+            searchResults.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Search failed: ${error.message}</div>`;
+        }
+    }
+
+    async function rebuildIndex() {
+        const searchResults = document.getElementById('search-results');
+        searchResults.innerHTML = '<div style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Rebuilding knowledge index...</div>';
+
+        try {
+            const response = await fetch('/ai-team/memory/index/rebuild', { method: 'POST' });
+            const result = await response.json();
+
+            if (result.error) {
+                searchResults.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Error: ${result.error}</div>`;
+                return;
+            }
+
+            searchResults.innerHTML = `
+                <div class="response-box" style="border-left-color: #27ae60;">
+                    <h6><i class="fas fa-check-circle"></i> Index Rebuild Complete</h6>
+                    <p>${result.message}</p>
+                </div>
+            `;
+
+        } catch (error) {
+            searchResults.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Index rebuild failed: ${error.message}</div>`;
+        }
+    }
+
+    async function loadAnalytics() {
+        const analyticsOutput = document.getElementById('analytics-output');
+        analyticsOutput.innerHTML = '<div style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading analytics...</div>';
+
+        try {
+            const response = await fetch('/ai-team/analytics');
+            const analytics = await response.json();
+
+            if (analytics.error) {
+                analyticsOutput.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Error: ${analytics.error}</div>`;
+                return;
+            }
+
+            analyticsOutput.innerHTML = `
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>${analytics.learning_metrics?.total_conversations_captured || 0}</h3>
+                        <p>Conversations</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>${analytics.learning_metrics?.total_mistakes_identified || 0}</h3>
+                        <p>Mistakes Identified</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>${analytics.learning_metrics?.total_solutions_captured || 0}</h3>
+                        <p>Solutions Captured</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>${((analytics.learning_metrics?.mistake_prevention_rate || 0) * 100).toFixed(0)}%</h3>
+                        <p>Prevention Rate</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>${((analytics.overall_health_score || 0) * 100).toFixed(0)}%</h3>
+                        <p>Health Score</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>${analytics.recent_activity?.conversations_this_week || 0}</h3>
+                        <p>This Week</p>
+                    </div>
+                </div>
+            `;
+
+        } catch (error) {
+            analyticsOutput.innerHTML = `<div class="response-box" style="border-left-color: #e74c3c;">Analytics failed: ${error.message}</div>`;
+        }
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTeamStatus();
+        loadAvailableModels();
+    });
+</script>
+{% endblock %}

@@ -12,8 +12,9 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 # Use HTTP client instead of gRPC
@@ -22,6 +23,7 @@ from app.services.ai_team_http_client import get_ai_team_client
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai-team", tags=["AI Team Collaboration"])
+templates = Jinja2Templates(directory="app/templates")
 
 
 # Request/Response models
@@ -166,14 +168,23 @@ async def rebuild_knowledge_index():
         return {"error": str(e)}
 
 
-@router.get("/dashboard")
-async def ai_team_dashboard():
+@router.get("/dashboard", response_class=HTMLResponse)
+async def ai_team_dashboard(request: Request):
     """Enhanced AI team collaboration dashboard with memory system"""
+    return templates.TemplateResponse(
+        "ai_team_dashboard.html",
+        {"request": request}
+    )
+
+
+# Keep old inline HTML as backup reference (commented out)
+def _old_ai_team_dashboard_inline():
+    """Old inline HTML dashboard - replaced with template"""
     return """
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AI Team Collaboration Dashboard</title>
+        <title>AI Team Collaboration Dashboard - OLD</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">

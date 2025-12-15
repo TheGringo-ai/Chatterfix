@@ -14,8 +14,21 @@ from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-# Import AI team client for collaborative fixing
-from ai_team.grpc_client import get_ai_team_client
+# Import AI team client for collaborative fixing - with graceful fallback
+AI_TEAM_AVAILABLE = False
+try:
+    from ai_team.grpc_client import get_ai_team_client
+    AI_TEAM_AVAILABLE = True
+except ImportError:
+    # AI team not available - use fallback mock client
+    def get_ai_team_client():
+        """Fallback mock client when AI team is not available"""
+        class MockAITeamClient:
+            async def health_check(self):
+                return {"healthy": False, "message": "AI Team service not configured"}
+            async def execute_fix(self, *args, **kwargs):
+                return {"success": False, "message": "AI Team service not available"}
+        return MockAITeamClient()
 
 logger = logging.getLogger(__name__)
 

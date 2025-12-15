@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
-from app.auth import get_current_active_user
+from app.auth import get_current_active_user, get_optional_current_user
 from app.models.user import User
+from typing import Optional
 from app.services.ai_assistant import chatterfix_ai
 from app.services.computer_vision import analyze_asset_condition, recognize_part, extract_text_from_image, detect_equipment_issues
 from app.services.voice_commands import (

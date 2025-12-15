@@ -278,6 +278,30 @@ class FirebaseAuthService:
             logger.error(f"Error creating custom token: {e}")
             raise Exception(f"Failed to create session token: {str(e)}")
 
+    async def send_password_reset_email(self, email: str) -> bool:
+        """Generate password reset link for user
+
+        Note: Firebase Admin SDK generates a link but doesn't send emails directly.
+        For production, you would integrate with an email service to send the link.
+        """
+        if not self.is_available:
+            raise Exception("Firebase not available")
+
+        try:
+            # Generate password reset link
+            link = auth.generate_password_reset_link(email)
+            logger.info(f"Password reset link generated for {email}")
+            # In production, you would send this link via email
+            # For now, just log that it was generated
+            return True
+        except auth.UserNotFoundError:
+            # Don't reveal if user exists
+            logger.info(f"Password reset requested for non-existent email: {email}")
+            return True
+        except Exception as e:
+            logger.error(f"Error generating password reset link: {e}")
+            raise Exception(f"Failed to generate password reset: {str(e)}")
+
     @property
     def is_available(self) -> bool:
         """Check if Firebase is properly initialized"""

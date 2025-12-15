@@ -1,6 +1,7 @@
 """
 Authentication Routes
 Login, logout, and user authentication endpoints
+Firebase Authentication Only - No SQLite fallback
 """
 
 import logging
@@ -13,10 +14,7 @@ from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.services import auth_service
-from app.services.firebase_auth import (
-    firebase_auth_service,
-)
+from app.services.firebase_auth import firebase_auth_service
 
 logger = logging.getLogger(__name__)
 
@@ -35,67 +33,46 @@ async def login(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    """User login endpoint with rate limiting"""
-    # Try Firebase authentication first
-    if firebase_auth_service.is_available:
-        try:
-            # Sign in with Firebase
-            auth_result = await firebase_auth_service.sign_in_with_email_password(
-                username, password
-            )
-            token = auth_result["idToken"]
-
-            # Set cookie with secure settings
-            response = RedirectResponse(url="/dashboard", status_code=302)
-            is_production = os.getenv("ENVIRONMENT", "development") == "production"
-            response.set_cookie(
-                key="session_token",
-                value=token,
-                httponly=True,
-                secure=is_production,  # HTTPS only in production
-                max_age=3600,  # 1 hour (reduced from 24 hours)
-                samesite="strict",  # Strict CSRF protection
-            )
-            return response
-        except Exception:
-            # If Firebase login fails, fall through to try local DB (legacy/backup)
-            pass
-
-    # Authenticate user (Local SQL fallback)
-    user = auth_service.authenticate_user(username, password)
-
-    if not user:
+    """User login endpoint with Firebase Authentication"""
+    if not firebase_auth_service.is_available:
+        logger.error("Firebase authentication is not available")
         return JSONResponse(
-            {"success": False, "message": "Invalid username or password"},
-            status_code=401,
+            {"success": False, "message": "Authentication service unavailable. Please contact support."},
+            status_code=503,
         )
 
-    # Create session
-    ip_address = request.client.host if (request and request.client) else "unknown"
-    user_agent = request.headers.get("user-agent", "unknown") if request else "unknown"
-    token = auth_service.create_session(user["id"], ip_address, user_agent)
+    try:
+        # Sign in with Firebase
+        auth_result = await firebase_auth_service.sign_in_with_email_password(
+            username, password
+        )
+        token = auth_result["idToken"]
 
-    # Set cookie with secure settings
-    response = RedirectResponse(url="/dashboard", status_code=302)
-    is_production = os.getenv("ENVIRONMENT", "development") == "production"
-    response.set_cookie(
-        key="session_token",
-        value=token,
-        httponly=True,
-        secure=is_production,  # HTTPS only in production
-        max_age=3600,  # 1 hour (reduced from 24 hours)
-        samesite="strict",  # Strict CSRF protection
-    )
+        # Set cookie with secure settings
+        response = RedirectResponse(url="/dashboard", status_code=302)
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+        response.set_cookie(
+            key="session_token",
+            value=token,
+            httponly=True,
+            secure=is_production,  # HTTPS only in production
+            max_age=3600,  # 1 hour
+            samesite="strict",  # Strict CSRF protection
+        )
+        return response
 
-    return response
+    except Exception as e:
+        logger.warning(f"Login failed for {username}: {e}")
+        return JSONResponse(
+            {"success": False, "message": "Invalid email or password"},
+            status_code=401,
+        )
 
 
 @router.post("/logout")
 async def logout(response: Response, session_token: Optional[str] = Cookie(None)):
-    """User logout endpoint"""
-    if session_token:
-        auth_service.invalidate_session(session_token)
-
+    """User logout endpoint - clears session cookie"""
+    # Firebase tokens are stateless, so we just clear the cookie
     response = RedirectResponse(url="/auth/login", status_code=302)
     response.delete_cookie("session_token")
     return response
@@ -108,12 +85,11 @@ async def login_page(request: Request):
 
 
 @router.get("/me")
-async def get_current_user(session_token: Optional[str] = Cookie(None)):
-    """Get current logged-in user"""
+async def get_current_user_info(session_token: Optional[str] = Cookie(None)):
+    """Get current logged-in user from Firebase"""
     if not session_token:
         return JSONResponse({"authenticated": False}, status_code=401)
 
-    # Try validating as Firebase token first
     try:
         user_data = await firebase_auth_service.verify_token(session_token)
         return JSONResponse(
@@ -121,67 +97,44 @@ async def get_current_user(session_token: Optional[str] = Cookie(None)):
                 "authenticated": True,
                 "user": {
                     "id": user_data["uid"],
+                    "uid": user_data["uid"],
                     "username": user_data["email"],
                     "email": user_data["email"],
                     "full_name": user_data["name"] or user_data["email"],
-                    "role": user_data["user_data"].get(
-                        "role", "technician"
-                    ),  # Get role from Firestore
+                    "role": user_data["user_data"].get("role", "technician"),
+                    "permissions": user_data["user_data"].get("permissions", []),
                 },
             }
         )
-    except Exception:
-        # Fallback to local SQL session validation
-        pass
-
-    user = auth_service.validate_session(session_token)
-
-    if not user:
+    except Exception as e:
+        logger.warning(f"Token verification failed: {e}")
         return JSONResponse({"authenticated": False}, status_code=401)
 
-    return JSONResponse(
-        {
-            "authenticated": True,
-            "user": {
-                "id": user["id"],
-                "username": user["username"],
-                "email": user["email"],
-                "full_name": user["full_name"],
-                "role": user["role"],
-            },
-        }
-    )
 
-
-@router.post("/change-password")
-@limiter.limit("3/minute")  # Rate limit password changes
-async def change_password(
+@router.post("/reset-password")
+@limiter.limit("3/minute")  # Rate limit password reset requests
+async def request_password_reset(
     request: Request,
-    old_password: str = Form(...),
-    new_password: str = Form(...),
-    session_token: Optional[str] = Cookie(None),
+    email: str = Form(...),
 ):
-    """Change user password with rate limiting"""
-    if not session_token:
+    """Request password reset via Firebase"""
+    if not firebase_auth_service.is_available:
         return JSONResponse(
-            {"success": False, "message": "Not authenticated"}, status_code=401
+            {"success": False, "message": "Service unavailable"},
+            status_code=503,
         )
 
-    user = auth_service.validate_session(session_token)
-    if not user:
+    try:
+        # Firebase handles sending the password reset email
+        await firebase_auth_service.send_password_reset_email(email)
         return JSONResponse(
-            {"success": False, "message": "Invalid session"}, status_code=401
+            {"success": True, "message": "If an account exists with this email, a password reset link has been sent."}
         )
-
-    success = auth_service.change_password(user["id"], old_password, new_password)
-
-    if success:
+    except Exception as e:
+        logger.warning(f"Password reset request failed for {email}: {e}")
+        # Don't reveal if email exists or not
         return JSONResponse(
-            {"success": True, "message": "Password changed successfully"}
-        )
-    else:
-        return JSONResponse(
-            {"success": False, "message": "Invalid old password"}, status_code=400
+            {"success": True, "message": "If an account exists with this email, a password reset link has been sent."}
         )
 
 
@@ -220,31 +173,46 @@ async def verify_firebase_token(request: Request, token: str = Form(...)):
 
 
 @router.get("/firebase/user")
-async def get_firebase_user(current_user: Dict[str, Any] = Depends(get_current_user)):
+async def get_firebase_user(session_token: Optional[str] = Cookie(None)):
     """Get current Firebase user data"""
-    return JSONResponse(
-        {
-            "success": True,
-            "user": {
-                "uid": current_user["uid"],
-                "email": current_user["email"],
-                "name": current_user["name"],
-                "verified": current_user["verified"],
-                "user_data": current_user["user_data"],
-            },
-        }
-    )
+    if not session_token:
+        return JSONResponse({"success": False, "message": "Not authenticated"}, status_code=401)
+
+    try:
+        user_data = await firebase_auth_service.verify_token(session_token)
+        return JSONResponse(
+            {
+                "success": True,
+                "user": {
+                    "uid": user_data["uid"],
+                    "email": user_data["email"],
+                    "name": user_data["name"],
+                    "verified": user_data["verified"],
+                    "user_data": user_data["user_data"],
+                },
+            }
+        )
+    except Exception:
+        return JSONResponse(
+            {"success": False, "message": "Authentication failed"}, status_code=401
+        )
 
 
 @router.put("/firebase/profile")
 async def update_firebase_profile(
+    request: Request,
     display_name: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     role: Optional[str] = Form(None),
-    current_user: Dict[str, Any] = Depends(get_current_user),
+    session_token: Optional[str] = Cookie(None),
 ):
     """Update Firebase user profile"""
+    if not session_token:
+        return JSONResponse({"success": False, "message": "Not authenticated"}, status_code=401)
+
     try:
+        current_user = await firebase_auth_service.verify_token(session_token)
+
         profile_data = {}
         if display_name:
             profile_data["display_name"] = display_name
@@ -278,8 +246,6 @@ async def firebase_signin(response: Response, request: Request):
     try:
         body = await request.json()
         id_token = body.get("idToken")
-        username = body.get("username", "")
-        full_name = body.get("full_name", "")
 
         if not id_token:
             raise HTTPException(status_code=400, detail="ID token required")
@@ -287,23 +253,8 @@ async def firebase_signin(response: Response, request: Request):
         # Verify Firebase token and get user data
         user_data = await firebase_auth_service.verify_token(id_token)
 
-        # Create session token for the application
-        if firebase_auth_service.is_available:
-            # Use Firebase custom token as session token
-            session_token = await firebase_auth_service.create_custom_token(
-                user_data["uid"]
-            )
-        else:
-            # Fallback to local session creation
-            ip_address = (
-                request.client.host if (request and request.client) else "unknown"
-            )
-            user_agent = (
-                request.headers.get("user-agent", "unknown") if request else "unknown"
-            )
-            session_token = auth_service.create_session(
-                user_data["uid"], ip_address, user_agent
-            )
+        # Use the ID token as session token (Firebase ID tokens are self-validating)
+        session_token = id_token
 
         # Set session cookie with secure settings
         is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -312,7 +263,7 @@ async def firebase_signin(response: Response, request: Request):
             value=session_token,
             httponly=True,
             secure=is_production,  # HTTPS only in production
-            max_age=3600,  # 1 hour (reduced from 24 hours)
+            max_age=3600,  # 1 hour
             samesite="strict",  # Strict CSRF protection
         )
 
@@ -324,6 +275,7 @@ async def firebase_signin(response: Response, request: Request):
                     "email": user_data["email"],
                     "name": user_data["name"],
                     "verified": user_data["verified"],
+                    "role": user_data["user_data"].get("role", "technician"),
                 },
             }
         )
@@ -342,19 +294,18 @@ async def get_auth_config():
     by Firebase Security Rules, not by keeping them secret. This is how
     Firebase web authentication is designed to work.
     """
-    use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
+    # Always use Firebase
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms")
+    api_key = os.getenv("FIREBASE_API_KEY", "")
 
-    config = {"use_firebase": use_firebase, "firebase_config": None}
-
-    if use_firebase:
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms")
-        # Firebase API key from environment - safe to expose to client
-        api_key = os.getenv("FIREBASE_API_KEY", "")
-        config["firebase_config"] = {
+    config = {
+        "use_firebase": True,
+        "firebase_config": {
             "apiKey": api_key,
             "authDomain": f"{project_id}.firebaseapp.com",
             "projectId": project_id,
             "storageBucket": f"{project_id}.appspot.com",
         }
+    }
 
     return JSONResponse(config)

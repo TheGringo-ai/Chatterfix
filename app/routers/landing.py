@@ -13,6 +13,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from app.core.db_adapter import get_db_adapter
+from app.services.organization_service import get_organization_service
+from app.services.firebase_auth import firebase_auth_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -115,13 +117,19 @@ async def signup_page(request: Request):
 async def handle_landing_signup(
     signup_data: LandingSignupRequest, background_tasks: BackgroundTasks
 ):
-    """Handle landing page signup form submission"""
+    """
+    Handle landing page signup form submission.
+    Creates:
+    1. Firebase Auth user
+    2. Firestore user profile
+    3. Organization for the company
+    """
     try:
         # Generate secure password
         password = generate_password()
 
-        # Create user in database
         db = get_db_adapter()
+        org_service = get_organization_service()
 
         # Check if user already exists
         existing_user = await db.get_user_by_email(signup_data.email)
@@ -131,25 +139,89 @@ async def handle_landing_signup(
                 detail="An account with this email already exists. Please use the login page.",
             )
 
-        # Create user data with company info (NoSQL structure)
-        user_data = {
-            "username": signup_data.email,
-            "email": signup_data.email,
-            "password_hash": password,  # In production, hash this!
-            "full_name": signup_data.fullName,
-            "phone": signup_data.phone,
-            "role": "manager",
-            "is_active": True,
-            "created_date": datetime.now().isoformat(),
-            "company": {
-                "name": signup_data.company,
-                "industry": signup_data.industry,
-                "size": signup_data.company_size,
-                "created_date": datetime.now().isoformat(),
-            },
-        }
+        user_id = None
+        org_id = None
 
-        user_id = await db.create_user(user_data)
+        # Try Firebase Authentication first (production)
+        if firebase_auth_service.is_available:
+            try:
+                # Create Firebase Auth user
+                user_record = await firebase_auth_service.create_user_with_email_password(
+                    email=signup_data.email,
+                    password=password,
+                    display_name=signup_data.fullName
+                )
+                user_id = user_record.uid
+
+                # Create organization for this company
+                org_data = await org_service.create_organization(
+                    name=signup_data.company,
+                    owner_user_id=user_id,
+                    owner_email=signup_data.email,
+                    industry=signup_data.industry,
+                    size=signup_data.company_size,
+                    phone=signup_data.phone,
+                )
+                org_id = org_data.get("id")
+
+                # Update user profile in Firestore with full details
+                if firebase_auth_service.db:
+                    user_ref = firebase_auth_service.db.collection("users").document(user_id)
+                    user_ref.set({
+                        "uid": user_id,
+                        "email": signup_data.email,
+                        "full_name": signup_data.fullName,
+                        "display_name": signup_data.fullName,
+                        "phone": signup_data.phone,
+                        "role": "owner",  # Owner of the organization
+                        "status": "active",
+                        "organization_id": org_id,
+                        "organization_name": signup_data.company,
+                        "organization_role": "owner",
+                        "company": {
+                            "name": signup_data.company,
+                            "industry": signup_data.industry,
+                            "size": signup_data.company_size,
+                        },
+                        "created_at": datetime.now().isoformat(),
+                    }, merge=True)
+
+                logger.info(f"Created Firebase user {user_id} with organization {org_id}")
+
+            except Exception as firebase_error:
+                logger.error(f"Firebase signup failed: {firebase_error}")
+                # Fall back to basic Firestore storage
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Account creation failed: {str(firebase_error)}"
+                )
+        else:
+            # Fallback: Create user in Firestore only (no Firebase Auth)
+            user_data = {
+                "email": signup_data.email,
+                "full_name": signup_data.fullName,
+                "phone": signup_data.phone,
+                "role": "owner",
+                "status": "active",
+                "company": {
+                    "name": signup_data.company,
+                    "industry": signup_data.industry,
+                    "size": signup_data.company_size,
+                },
+                "created_at": datetime.now().isoformat(),
+            }
+            user_id = await db.create_user(user_data)
+
+            # Create organization
+            org_data = await org_service.create_organization(
+                name=signup_data.company,
+                owner_user_id=user_id,
+                owner_email=signup_data.email,
+                industry=signup_data.industry,
+                size=signup_data.company_size,
+                phone=signup_data.phone,
+            )
+            org_id = org_data.get("id")
 
         # Prepare user data for emails
         email_data = {
@@ -166,13 +238,14 @@ async def handle_landing_signup(
         background_tasks.add_task(send_welcome_email, email_data, password)
 
         logger.info(
-            f"New user created: {signup_data.email} for company {signup_data.company}"
+            f"New user created: {signup_data.email} for company {signup_data.company} (org: {org_id})"
         )
 
         return {
             "success": True,
             "message": "Account created successfully! Check your email for login credentials.",
             "user_id": user_id,
+            "organization_id": org_id,
         }
 
     except HTTPException:

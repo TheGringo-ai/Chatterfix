@@ -1,9 +1,11 @@
 """
 Signup Routes
 User registration and account creation
+Creates user + organization for multi-tenant support
 """
 
 import os
+from datetime import datetime
 
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -11,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.services import auth_service
 from app.services.firebase_auth import firebase_auth_service
+from app.services.organization_service import get_organization_service
 
 router = APIRouter(prefix="/signup", tags=["signup"])
 templates = Jinja2Templates(directory="app/templates")
@@ -27,9 +30,13 @@ async def signup(
     email: str = Form(...),
     password: str = Form(...),
     full_name: str = Form(""),
+    company_name: str = Form(""),  # Optional company name
     request: Request = None,
 ):
-    """Create new user account"""
+    """
+    Create new user account with organization.
+    Creates both the user and their personal/company organization.
+    """
 
     # Validate password length
     if len(password) < 8:
@@ -37,6 +44,11 @@ async def signup(
             "signup.html",
             {"request": request, "error": "Password must be at least 8 characters"},
         )
+
+    org_service = get_organization_service()
+
+    # Use company name or generate from username/email
+    org_name = company_name.strip() if company_name else f"{full_name or username}'s Workspace"
 
     # Check if we're using Firebase (production) or SQLite (local)
     use_firebase = os.getenv("USE_FIRESTORE", "false").lower() == "true"
@@ -49,9 +61,32 @@ async def signup(
                 email=email, password=password, display_name=full_name or username
             )
 
-            # Get or create user in Firestore
-            user_data = await firebase_auth_service.get_or_create_user(user_record)
-            user_id = user_data.get("uid")
+            user_id = user_record.uid
+
+            # Create organization for this user
+            org_data = await org_service.create_organization(
+                name=org_name,
+                owner_user_id=user_id,
+                owner_email=email,
+            )
+            org_id = org_data.get("id")
+
+            # Update user profile with organization info
+            if firebase_auth_service.db:
+                user_ref = firebase_auth_service.db.collection("users").document(user_id)
+                user_ref.set({
+                    "uid": user_id,
+                    "email": email,
+                    "username": username,
+                    "full_name": full_name or username,
+                    "display_name": full_name or username,
+                    "role": "owner",
+                    "status": "active",
+                    "organization_id": org_id,
+                    "organization_name": org_name,
+                    "organization_role": "owner",
+                    "created_at": datetime.now().isoformat(),
+                }, merge=True)
 
             # Create Firebase session token
             token = await firebase_auth_service.create_custom_token(user_record.uid)
@@ -68,7 +103,7 @@ async def signup(
             email=email,
             password=password,
             full_name=full_name,
-            role="technician",  # Default role for new signups
+            role="owner",  # Owner of their own workspace
         )
 
         if not user_id:
@@ -76,6 +111,17 @@ async def signup(
                 "signup.html",
                 {"request": request, "error": "Username or email already exists"},
             )
+
+        # Create organization for local user too
+        try:
+            org_data = await org_service.create_organization(
+                name=org_name,
+                owner_user_id=str(user_id),
+                owner_email=email,
+            )
+        except Exception as org_error:
+            # Log but don't fail - org creation is enhancement
+            print(f"Organization creation failed (non-critical): {org_error}")
 
         # Auto-login: create session
         ip_address = request.client.host if (request and request.client) else "unknown"

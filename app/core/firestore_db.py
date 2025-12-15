@@ -218,6 +218,163 @@ class FirestoreManager:
             logger.error(f"Error getting collection {collection}: {e}")
             raise
 
+    # ==========================================
+    # ORGANIZATION-SCOPED METHODS (Multi-Tenant)
+    # ==========================================
+
+    async def create_org_document(
+        self, collection: str, data: Dict[str, Any], organization_id: str, doc_id: Optional[str] = None
+    ) -> str:
+        """Create a document scoped to an organization"""
+        data["organization_id"] = organization_id
+        return await self.create_document(collection, data, doc_id)
+
+    async def get_org_collection(
+        self,
+        collection: str,
+        organization_id: str,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
+        additional_filters: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get documents from a collection filtered by organization_id"""
+        filters = [{"field": "organization_id", "operator": "==", "value": organization_id}]
+        if additional_filters:
+            filters.extend(additional_filters)
+        return await self.get_collection(collection, limit=limit, order_by=order_by, filters=filters)
+
+    async def get_org_document(
+        self, collection: str, doc_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get a document and verify it belongs to the organization"""
+        doc = await self.get_document(collection, doc_id)
+        if doc and doc.get("organization_id") == organization_id:
+            return doc
+        return None
+
+    async def update_org_document(
+        self, collection: str, doc_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update a document only if it belongs to the organization"""
+        # Verify ownership first
+        doc = await self.get_document(collection, doc_id)
+        if not doc or doc.get("organization_id") != organization_id:
+            logger.warning(f"Attempted to update doc {doc_id} not belonging to org {organization_id}")
+            return False
+        return await self.update_document(collection, doc_id, data)
+
+    async def delete_org_document(
+        self, collection: str, doc_id: str, organization_id: str
+    ) -> bool:
+        """Delete a document only if it belongs to the organization"""
+        # Verify ownership first
+        doc = await self.get_document(collection, doc_id)
+        if not doc or doc.get("organization_id") != organization_id:
+            logger.warning(f"Attempted to delete doc {doc_id} not belonging to org {organization_id}")
+            return False
+        return await self.delete_document(collection, doc_id)
+
+    # ==========================================
+    # CMMS-SPECIFIC ORGANIZATION-SCOPED METHODS
+    # ==========================================
+
+    async def create_org_work_order(self, work_order_data: Dict[str, Any], organization_id: str) -> str:
+        """Create a work order for an organization"""
+        return await self.create_org_document("work_orders", work_order_data, organization_id)
+
+    async def get_org_work_orders(
+        self,
+        organization_id: str,
+        status: Optional[str] = None,
+        assigned_to: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get work orders for an organization"""
+        additional_filters = []
+        if status:
+            additional_filters.append({"field": "status", "operator": "==", "value": status})
+        if assigned_to:
+            additional_filters.append({"field": "assigned_to", "operator": "==", "value": assigned_to})
+        return await self.get_org_collection(
+            "work_orders", organization_id, limit=limit, additional_filters=additional_filters if additional_filters else None
+        )
+
+    async def create_org_asset(self, asset_data: Dict[str, Any], organization_id: str) -> str:
+        """Create an asset for an organization"""
+        return await self.create_org_document("assets", asset_data, organization_id)
+
+    async def get_org_assets(
+        self,
+        organization_id: str,
+        status: Optional[str] = None,
+        location: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get assets for an organization"""
+        additional_filters = []
+        if status:
+            additional_filters.append({"field": "status", "operator": "==", "value": status})
+        if location:
+            additional_filters.append({"field": "location", "operator": "==", "value": location})
+        return await self.get_org_collection(
+            "assets", organization_id, order_by="name", limit=limit,
+            additional_filters=additional_filters if additional_filters else None
+        )
+
+    async def create_org_part(self, part_data: Dict[str, Any], organization_id: str) -> str:
+        """Create a part/inventory item for an organization"""
+        return await self.create_org_document("parts", part_data, organization_id)
+
+    async def get_org_parts(
+        self,
+        organization_id: str,
+        category: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get parts for an organization"""
+        additional_filters = []
+        if category:
+            additional_filters.append({"field": "category", "operator": "==", "value": category})
+        return await self.get_org_collection(
+            "parts", organization_id, order_by="name", limit=limit,
+            additional_filters=additional_filters if additional_filters else None
+        )
+
+    async def create_org_vendor(self, vendor_data: Dict[str, Any], organization_id: str) -> str:
+        """Create a vendor for an organization"""
+        return await self.create_org_document("vendors", vendor_data, organization_id)
+
+    async def get_org_vendors(self, organization_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Get vendors for an organization"""
+        return await self.get_org_collection("vendors", organization_id, order_by="name", limit=limit)
+
+    async def get_org_dashboard_data(self, organization_id: str, user_id: str) -> Dict[str, Any]:
+        """Get dashboard data for an organization"""
+        try:
+            # Get recent work orders for this organization
+            work_orders = await self.get_org_work_orders(organization_id, limit=10)
+
+            # Get active assets for this organization
+            assets = await self.get_org_assets(organization_id, status="Active", limit=5)
+
+            # Get recent AI interactions
+            ai_interactions = await self.get_collection(
+                "ai_interactions", limit=5, order_by="-timestamp"
+            )
+
+            return {
+                "work_orders": work_orders,
+                "assets": assets,
+                "ai_interactions": ai_interactions,
+            }
+        except Exception as e:
+            logger.error(f"Error getting org dashboard data: {e}")
+            return {"work_orders": [], "assets": [], "ai_interactions": []}
+
+    # ==========================================
+    # LEGACY CMMS METHODS (For backward compatibility)
+    # ==========================================
+
     # CMMS-specific methods
     async def create_work_order(self, work_order_data: Dict[str, Any]) -> str:
         """Create a new work order"""

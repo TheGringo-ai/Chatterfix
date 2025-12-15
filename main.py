@@ -85,6 +85,7 @@ try:
         dashboard,
         health,
         landing,
+        organization,
         settings,
         signup,
     )
@@ -341,6 +342,7 @@ if CORE_ROUTERS_AVAILABLE:
     app.include_router(auth.router)  # Authentication
     app.include_router(signup.router)  # User signup
     app.include_router(settings.router)  # Settings
+    app.include_router(organization.router)  # Organization/Team management
 
 # Include extended functionality - ROBUST ROUTER INCLUSION
 router_descriptions = {

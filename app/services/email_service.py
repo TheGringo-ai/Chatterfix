@@ -404,6 +404,78 @@ ChatterFix CMMS Inventory System
             logger.error(f"Failed to send parts notification: {e}")
             return False
 
+    async def send_team_invite_email(
+        self,
+        to_email: str,
+        organization_name: str,
+        inviter_name: str,
+        role: str,
+        invite_code: str,
+    ) -> bool:
+        """Send team invitation email"""
+        try:
+            subject = f"You're invited to join {organization_name} on ChatterFix"
+
+            # Generate invite link
+            invite_url = f"https://chatterfix.com/organization/invite/{invite_code}"
+
+            body_text = f"""
+Hello,
+
+{inviter_name} has invited you to join {organization_name} on ChatterFix CMMS.
+
+You've been invited as a {role.title()}.
+
+To accept this invitation, please visit:
+{invite_url}
+
+If you don't have a ChatterFix account yet, you'll be prompted to create one.
+
+Best regards,
+The ChatterFix Team
+"""
+
+            body_html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="color: #2c3e50;">You're Invited!</h2>
+
+    <p>Hello,</p>
+
+    <p><strong>{inviter_name}</strong> has invited you to join <strong>{organization_name}</strong> on ChatterFix CMMS.</p>
+
+    <div style="background: #e8f5ff; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">You've been invited as a</p>
+        <p style="margin: 0; font-size: 24px; font-weight: bold; color: #2c3e50;">{role.title()}</p>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{invite_url}" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-size: 16px; font-weight: bold;">Accept Invitation</a>
+    </div>
+
+    <p style="font-size: 14px; color: #666;">If you don't have a ChatterFix account yet, you'll be prompted to create one.</p>
+
+    <p style="font-size: 12px; color: #999; margin-top: 30px;">If you didn't expect this invitation, you can safely ignore this email.</p>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 14px; color: #666;">
+        <p>Best regards,<br>The ChatterFix Team</p>
+    </div>
+</div>
+</body>
+</html>
+"""
+
+            return await self.send_email(
+                to_email=to_email,
+                subject=subject,
+                body_text=body_text,
+                body_html=body_html,
+            )
+        except Exception as e:
+            logger.error(f"Failed to send team invite email: {e}")
+            return False
+
 
 # Global email service instance
 email_service = EmailService()

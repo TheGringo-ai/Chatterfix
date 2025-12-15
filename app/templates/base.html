@@ -287,25 +287,82 @@
             font-size: 0.85rem;
         }
 
-        /* Main Tab Container */
+        /* Main Tab Container with Scroll Support */
+        .nav-tabs-wrapper {
+            position: relative;
+            background: var(--bg-secondary, #f8f9fa);
+        }
+
         .nav-tabs-container {
             background: var(--bg-secondary, #f8f9fa);
             overflow-x: auto;
             scrollbar-width: thin;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            padding-left: 30px;
+            padding-right: 30px;
         }
 
         .nav-tabs-container::-webkit-scrollbar {
-            height: 3px;
+            height: 6px;
         }
 
         .nav-tabs-container::-webkit-scrollbar-track {
-            background: transparent;
+            background: var(--bg-tertiary, #e9ecef);
+            border-radius: 3px;
         }
 
         .nav-tabs-container::-webkit-scrollbar-thumb {
-            background: var(--border-color, #dee2e6);
+            background: var(--accent-color, #667eea);
             border-radius: 3px;
+        }
+
+        .nav-tabs-container::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd6;
+        }
+
+        /* Scroll Navigation Arrows */
+        .nav-scroll-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            background: var(--bg-primary, #ffffff);
+            border: 1px solid var(--border-color, #dee2e6);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary, #495057);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+
+        .nav-scroll-btn:hover {
+            background: var(--accent-color, #667eea);
+            color: white;
+            border-color: var(--accent-color, #667eea);
+        }
+
+        .nav-scroll-btn.scroll-left {
+            left: 2px;
+        }
+
+        .nav-scroll-btn.scroll-right {
+            right: 2px;
+        }
+
+        .nav-scroll-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .dark-mode .nav-scroll-btn {
+            background: var(--bg-secondary, #1e1e2e);
+            border-color: var(--border-color, #333);
         }
 
         /* Tab Navigation - Browser Style */
@@ -979,9 +1036,13 @@
             </div>
         </div>
 
-        <!-- Clean Browser-Style Tab Navigation -->
-        <div class="nav-tabs-container">
-            <ul class="nav-tabs">
+        <!-- Clean Browser-Style Tab Navigation with Scroll -->
+        <div class="nav-tabs-wrapper">
+            <button class="nav-scroll-btn scroll-left" onclick="scrollNavTabs(-200)" aria-label="Scroll left">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="nav-tabs-container" id="navTabsContainer">
+                <ul class="nav-tabs">
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
                     <a href="/demo" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-tachometer-alt"></i>
@@ -1082,6 +1143,10 @@
                     </a>
                 </li>
             </ul>
+            </div>
+            <button class="nav-scroll-btn scroll-right" onclick="scrollNavTabs(200)" aria-label="Scroll right">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </nav>
 
@@ -1472,8 +1537,40 @@
     <script src="{{ url_for('static', path='js/ui-components.js') }}?v=5"></script>
 
     <script>
+        // Navigation Tab Scroll Function
+        function scrollNavTabs(amount) {
+            const container = document.getElementById('navTabsContainer');
+            if (container) {
+                container.scrollBy({ left: amount, behavior: 'smooth' });
+                updateScrollButtons();
+            }
+        }
+
+        function updateScrollButtons() {
+            const container = document.getElementById('navTabsContainer');
+            const leftBtn = document.querySelector('.nav-scroll-btn.scroll-left');
+            const rightBtn = document.querySelector('.nav-scroll-btn.scroll-right');
+
+            if (container && leftBtn && rightBtn) {
+                // Show/hide left button based on scroll position
+                leftBtn.classList.toggle('hidden', container.scrollLeft <= 10);
+                // Show/hide right button based on remaining scroll
+                const maxScroll = container.scrollWidth - container.clientWidth;
+                rightBtn.classList.toggle('hidden', container.scrollLeft >= maxScroll - 10);
+            }
+        }
+
         // 🚀 Enhanced Demo and AI Widget Initialization
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize nav scroll buttons
+            updateScrollButtons();
+            const navContainer = document.getElementById('navTabsContainer');
+            if (navContainer) {
+                navContainer.addEventListener('scroll', updateScrollButtons);
+                // Update on resize
+                window.addEventListener('resize', updateScrollButtons);
+            }
+
             // Check if user is in demo mode (URL path check or session)
             if (window.location.pathname.startsWith('/demo')) {
                 // If demo is not active, show the bar
@@ -1483,7 +1580,7 @@
                     if(demoBar) demoBar.style.display = 'block';
                 }
             }
-            
+
             // Initialize AI Widget tour for new users
             setTimeout(() => {
                 const hasSeenAITour = localStorage.getItem('chatterfix_ai_tour_seen');

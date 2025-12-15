@@ -83,30 +83,32 @@
 <!-- Assets Grid -->
 <div id="assets-grid" class="assets-grid">
     {% for asset in assets %}
-    <div class="asset-card {{ asset.criticality|lower }}" data-status="{{ asset.status }}"
-        data-criticality="{{ asset.criticality }}" onclick="window.location.href='/assets/{{ asset.id }}'">
-        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #2c3e50; position: relative; display: flex; align-items: center; justify-content: center;">
+    {% set condition = asset.condition_rating|default(5) %}
+    {% set health_class = 'health-excellent' if condition >= 8 else ('health-good' if condition >= 6 else ('health-caution' if condition >= 4 else ('health-warning' if condition >= 2 else 'health-critical'))) %}
+    <div class="asset-card {{ asset.criticality|lower }} {{ health_class }}" data-status="{{ asset.status }}"
+        data-criticality="{{ asset.criticality }}" data-condition="{{ condition }}" onclick="window.location.href='/assets/{{ asset.id }}'">
+        <div class="asset-card-image" style="height: 160px; overflow: hidden; background: #f8f9fa; position: relative; display: flex; align-items: center; justify-content: center;">
             {% if asset.image_url %}
             <img src="{{ asset.image_url }}" alt="{{ asset.name }}"
                 style="width: 100%; height: 100%; object-fit: cover;">
             {% else %}
-            <div style="text-align: center; color: #ecf0f1;">
+            <div style="text-align: center; color: #6c757d;">
                 {% if asset.category == 'HVAC' or asset.type == 'HVAC System' %}
-                <i class="fas fa-fan" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-fan" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #3498db;"></i>
                 {% elif asset.category == 'Manufacturing Equipment' or asset.type == 'Production' %}
-                <i class="fas fa-industry" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-industry" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #9b59b6;"></i>
                 {% elif asset.category == 'Material Handling' or asset.type == 'Forklift' %}
-                <i class="fas fa-truck" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-truck" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #e67e22;"></i>
                 {% elif asset.category == 'Compressed Air' or asset.type == 'Compressor' %}
-                <i class="fas fa-tachometer-alt" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-tachometer-alt" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #1abc9c;"></i>
                 {% elif asset.type == 'Pump' %}
-                <i class="fas fa-water" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-water" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #3498db;"></i>
                 {% elif asset.type == 'Generator' %}
-                <i class="fas fa-bolt" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-bolt" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #f1c40f;"></i>
                 {% else %}
-                <i class="fas fa-cogs" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                <i class="fas fa-cogs" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: #7f8c8d;"></i>
                 {% endif %}
-                <div style="font-size: 0.8rem; opacity: 0.7;">{{ asset.category or asset.type or 'Equipment' }}</div>
+                <div style="font-size: 0.8rem; color: #6c757d;">{{ asset.category or asset.type or 'Equipment' }}</div>
             </div>
             {% endif %}
             <div style="position: absolute; top: 10px; right: 10px;">
@@ -139,12 +141,12 @@
             <!-- Health Indicator -->
             <div style="margin-top: 1rem;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
-                    <span>Condition</span>
-                    <span>{{ asset.condition_rating or 5 }}/10</span>
+                    <span style="color: #495057;">Condition</span>
+                    <span style="font-weight: 600; color: {% if condition >= 7 %}#27ae60{% elif condition >= 4 %}#f39c12{% else %}#e74c3c{% endif %};">{{ condition }}/10</span>
                 </div>
-                <div style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                <div class="health-bar-bg" style="background: #e9ecef; height: 8px; border-radius: 4px; overflow: hidden;">
                     <div
-                        style="background: {% if asset.condition_rating >= 7 %}#27ae60{% elif asset.condition_rating >= 4 %}#f39c12{% else %}#e74c3c{% endif %}; height: 100%; width: {{ (asset.condition_rating or 5) * 10 }}%;">
+                        style="background: {% if condition >= 7 %}#27ae60{% elif condition >= 4 %}#f39c12{% else %}#e74c3c{% endif %}; height: 100%; width: {{ condition * 10 }}%; transition: width 0.3s ease;">
                     </div>
                 </div>
             </div>
@@ -152,13 +154,13 @@
             <!-- Quick Stats -->
             <div
                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem;">
-                <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; text-align: center;">
-                    <div style="font-weight: bold;">${{ asset.total_maintenance_cost or 0 }}</div>
-                    <div style="opacity: 0.7; font-size: 0.75rem;">Total Cost</div>
+                <div class="stat-box" style="background: #f1f3f5; padding: 0.5rem; border-radius: 4px; text-align: center;">
+                    <div style="font-weight: bold; color: #2c3e50;">${{ asset.total_maintenance_cost or 0 }}</div>
+                    <div style="color: #6c757d; font-size: 0.75rem;">Total Cost</div>
                 </div>
-                <div style="background: rgba(0,0,0,0.2); padding: 0.5rem; border-radius: 4px; text-align: center;">
-                    <div style="font-weight: bold;">{{ asset.total_downtime_hours or 0 }}h</div>
-                    <div style="opacity: 0.7; font-size: 0.75rem;">Downtime</div>
+                <div class="stat-box" style="background: #f1f3f5; padding: 0.5rem; border-radius: 4px; text-align: center;">
+                    <div style="font-weight: bold; color: #2c3e50;">{{ asset.total_downtime_hours or 0 }}h</div>
+                    <div style="color: #6c757d; font-size: 0.75rem;">Downtime</div>
                 </div>
             </div>
         </div>
@@ -323,41 +325,96 @@
         gap: 1.5rem;
     }
 
+    /* Asset Card - Clean white design with health-based borders */
     .asset-card {
-        background: linear-gradient(135deg, rgba(30, 60, 114, 0.8) 0%, rgba(42, 82, 152, 0.8) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #ffffff;
+        border: 3px solid #e0e0e0;
         border-radius: 12px;
         overflow: hidden;
         cursor: pointer;
         transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        color: #333;
     }
 
     .asset-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
     }
 
+    /* Health-based border colors */
+    .asset-card.health-excellent {
+        border-color: #27ae60; /* Green - Healthy */
+    }
+
+    .asset-card.health-good {
+        border-color: #2ecc71; /* Light green - Good */
+    }
+
+    .asset-card.health-caution {
+        border-color: #f39c12; /* Yellow/Orange - Caution */
+    }
+
+    .asset-card.health-warning {
+        border-color: #e67e22; /* Orange - Needs attention */
+    }
+
+    .asset-card.health-critical {
+        border-color: #e74c3c; /* Red - Unhealthy/Critical */
+    }
+
+    .asset-card.health-unknown {
+        border-color: #95a5a6; /* Gray - Unknown */
+    }
+
+    /* Criticality indicators (left accent stripe) */
     .asset-card.critical {
-        border-left: 4px solid #e74c3c;
+        border-left: 5px solid #e74c3c;
     }
 
     .asset-card.high {
-        border-left: 4px solid #f39c12;
+        border-left: 5px solid #f39c12;
     }
 
     .asset-card-header {
         padding: 1rem;
-        background: rgba(0, 0, 0, 0.2);
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .asset-card-header h3 {
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .asset-card-header small {
+        color: #6c757d;
     }
 
     .asset-card-body {
         padding: 1rem;
+        background: #ffffff;
+    }
+
+    .asset-card-body div {
+        color: #495057;
     }
 
     .asset-card-footer {
         padding: 0.75rem 1rem;
-        background: rgba(0, 0, 0, 0.3);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Quick stats boxes */
+    .asset-card-body .stat-box {
+        background: #f1f3f5 !important;
+        color: #495057;
+    }
+
+    /* Health bar background */
+    .asset-card .health-bar-bg {
+        background: #e9ecef !important;
     }
 
     .assets-list .asset-card {
@@ -374,6 +431,48 @@
         border: 2px solid rgba(52, 152, 219, 0.8);
         transform: translateY(-3px);
         box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+    }
+
+    /* Dark mode support */
+    body.dark-mode .asset-card {
+        background: #1e293b;
+        color: #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    body.dark-mode .asset-card-header {
+        background: #0f172a;
+        border-bottom-color: #334155;
+    }
+
+    body.dark-mode .asset-card-header h3 {
+        color: #f1f5f9;
+    }
+
+    body.dark-mode .asset-card-header small {
+        color: #94a3b8;
+    }
+
+    body.dark-mode .asset-card-body {
+        background: #1e293b;
+    }
+
+    body.dark-mode .asset-card-body div {
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .asset-card-footer {
+        background: #0f172a;
+        border-top-color: #334155;
+    }
+
+    body.dark-mode .asset-card .stat-box {
+        background: #334155 !important;
+        color: #cbd5e1;
+    }
+
+    body.dark-mode .asset-card .health-bar-bg {
+        background: #334155 !important;
     }
 </style>
 

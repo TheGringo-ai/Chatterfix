@@ -818,7 +818,21 @@ body {
 
     <!-- 🏭 MAIN DASHBOARD AREA -->
     <main class="main-dashboard">
-        
+
+        {% if error_message %}
+        <!-- Error Alert for Production Users -->
+        <div class="error-alert" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2)); border: 1px solid #e74c3c; border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-exclamation-triangle" style="color: #e74c3c; font-size: 1.5rem;"></i>
+            <div>
+                <strong style="color: #e74c3c;">Data Loading Issue</strong>
+                <p style="margin: 0.25rem 0 0 0; opacity: 0.9;">{{ error_message }}</p>
+            </div>
+            <button onclick="location.reload()" class="cmms-btn" style="margin-left: auto; background: #e74c3c;">
+                <i class="fas fa-sync"></i> Retry
+            </button>
+        </div>
+        {% endif %}
+
         <!-- 📊 ADAPTIVE DASHBOARD CARDS -->
         <div class="adaptive-grid fade-in-up">
             <!-- Work Orders Card -->

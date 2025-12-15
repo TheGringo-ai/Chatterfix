@@ -51,11 +51,13 @@ async def dashboard(
     """Render the ChatterFix Workforce Intelligence Homepage"""
     user_id = "demo"
     is_demo = True
+    error_message = None
+
     if current_user:
         user_id = current_user.uid
         is_demo = False
 
-    # Get real-time stats from Firestore via db_adapter (with fallback for demo)
+    # Get real-time stats from Firestore via db_adapter
     try:
         db_adapter = get_db_adapter()
         dashboard_data = await db_adapter.get_dashboard_data(user_id)
@@ -66,22 +68,30 @@ async def dashboard(
         ai_interactions = dashboard_data.get("ai_interactions", [])
 
     except Exception as e:
-        logger.error(f"Error fetching dashboard data, using demo data: {e}")
-        # Demo data for showcase
-        work_orders = [
-            {"id": "WO-001", "title": "Emergency Generator Check", "status": "active", "priority": "critical"},
-            {"id": "WO-002", "title": "Fire Suppression Maintenance", "status": "pending", "priority": "high"},
-            {"id": "WO-003", "title": "HVAC Filter Replacement", "status": "completed", "priority": "medium"},
-        ]
-        assets = [
-            {"id": "GEN-001", "name": "Emergency Generator", "status": "operational"},
-            {"id": "FIRE-001", "name": "Fire Suppression System", "status": "warning"},
-            {"id": "HVAC-001", "name": "HVAC Unit #1", "status": "operational"},
-        ]
-        ai_interactions = [
-            {"id": "AI-001", "message": "Predicted generator failure prevented", "timestamp": "2024-12-12"},
-            {"id": "AI-002", "message": "Optimized technician scheduling", "timestamp": "2024-12-12"},
-        ]
+        logger.error(f"Error fetching dashboard data: {e}")
+
+        if is_demo:
+            # For demo/unauthenticated users, show demo data
+            work_orders = [
+                {"id": "WO-001", "title": "Emergency Generator Check", "status": "active", "priority": "critical"},
+                {"id": "WO-002", "title": "Fire Suppression Maintenance", "status": "pending", "priority": "high"},
+                {"id": "WO-003", "title": "HVAC Filter Replacement", "status": "completed", "priority": "medium"},
+            ]
+            assets = [
+                {"id": "GEN-001", "name": "Emergency Generator", "status": "operational"},
+                {"id": "FIRE-001", "name": "Fire Suppression System", "status": "warning"},
+                {"id": "HVAC-001", "name": "HVAC Unit #1", "status": "operational"},
+            ]
+            ai_interactions = [
+                {"id": "AI-001", "message": "Predicted generator failure prevented", "timestamp": "2024-12-12"},
+                {"id": "AI-002", "message": "Optimized technician scheduling", "timestamp": "2024-12-12"},
+            ]
+        else:
+            # For authenticated users, show empty data with error message - NEVER show fake data
+            work_orders = []
+            assets = []
+            ai_interactions = []
+            error_message = "Unable to load your data. Please try refreshing the page or contact support if the issue persists."
 
     return templates.TemplateResponse(
         "index.html",
@@ -92,6 +102,7 @@ async def dashboard(
             "assets": assets,
             "ai_interactions": ai_interactions,
             "is_demo": is_demo,
+            "error_message": error_message,
         },
     )
 

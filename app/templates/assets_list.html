@@ -263,11 +263,11 @@
 </div>
 
 <!-- Barcode Scanner Modal -->
-<div id="barcodeScanModal" class="modal"
+<div id="barcodeScanModal" class="modal modal-light"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
-    <div class="modal-content glass-panel" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
-        <h2><i class="fas fa-qrcode"></i> Scan Asset Barcode</h2>
-        <p>Scan a barcode or QR code to quickly find asset information and view work orders.</p>
+    <div class="modal-content form-light" style="margin: 2% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2 style="color: #212529;"><i class="fas fa-qrcode"></i> Scan Asset Barcode</h2>
+        <p style="color: #495057;">Scan a barcode or QR code to quickly find asset information and view work orders.</p>
 
         <!-- Camera Interface -->
         <div id="cameraSection" style="text-align: center; margin: 20px 0;">
@@ -289,16 +289,16 @@
         </div>
 
         <!-- File Upload Option -->
-        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
-            <h4>Or Upload Barcode Image</h4>
+        <div class="form-light" style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 20px;">
+            <h4 style="color: #212529;">Or Upload Barcode Image</h4>
             <form id="barcodeUploadForm" enctype="multipart/form-data">
                 <input type="file" id="barcodeFile" name="file" accept="image/*" class="form-control" onchange="uploadBarcode()">
             </form>
         </div>
 
         <!-- Manual Entry Option -->
-        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; margin-top: 20px;">
-            <h4>Or Enter Asset Tag Manually</h4>
+        <div class="form-light" style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 20px;">
+            <h4 style="color: #212529;">Or Enter Asset Tag Manually</h4>
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="manualAssetTag" class="form-control" placeholder="Enter asset tag or barcode...">
                 <button class="cmms-btn" onclick="lookupByTag()">

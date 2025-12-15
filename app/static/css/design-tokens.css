@@ -56,6 +56,8 @@
   --bg-secondary: #f8f9fa;
   --bg-tertiary: #e9ecef;
   --bg-quaternary: #dee2e6;
+  --bg-card: #ffffff;
+  --card-bg: #ffffff; /* Alias for backward compatibility */
   
   --text-primary: #2c3e50;
   --text-secondary: #495057;
@@ -243,6 +245,8 @@
   --bg-secondary: #1e1e2e;
   --bg-tertiary: #2a2a3e;
   --bg-quaternary: #3a3a4e;
+  --bg-card: #1a202c;
+  --card-bg: #1a202c; /* Alias for backward compatibility */
   
   --text-primary: rgba(255, 255, 255, 0.9);
   --text-secondary: rgba(255, 255, 255, 0.7);

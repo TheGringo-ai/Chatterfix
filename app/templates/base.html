@@ -1656,7 +1656,7 @@
     <script src="{{ url_for('static', path='js/main.js') }}?v=3"></script>
     
     <!-- Enhanced Demo System -->
-    <script src="{{ url_for('static', path='js/demo-system.js') }}?v=3"></script>
+    <script src="{{ url_for('static', path='js/demo-system.js') }}?v=5"></script>
     
     <!-- AI Chat Popup System -->
     
@@ -1779,10 +1779,6 @@
             }
         }
         
-        // Expose dismiss function globally for the clear button
-        window.demoSystem.dismissDemoBar = function() {
-             document.getElementById('demoBar').style.display = 'none';
-        }
     </script>
 
     <script>

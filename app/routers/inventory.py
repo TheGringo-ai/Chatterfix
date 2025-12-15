@@ -1,9 +1,20 @@
+import csv
+import io
 import os
 import shutil
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
+
+# Try to import pandas for Excel support
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    pd = None
+    PANDAS_AVAILABLE = False
 
 from app.auth import get_current_active_user, require_permission
 from app.models.user import User
@@ -231,3 +242,145 @@ async def get_assets_list(current_user: User = Depends(get_current_active_user))
     } for asset in assets]
 
     return JSONResponse({"assets": asset_list})
+
+
+# ==========================================
+# 📦 BULK IMPORT ENDPOINTS FOR PARTS
+# ==========================================
+
+@router.get("/bulk-import", response_class=HTMLResponse)
+async def bulk_import_parts_page(request: Request, current_user: User = Depends(get_current_active_user)):
+    """Render the bulk import page for parts"""
+    return templates.TemplateResponse(
+        "inventory/bulk_import.html",
+        {"request": request, "user": current_user, "pandas_available": PANDAS_AVAILABLE}
+    )
+
+
+@router.get("/api/parts/template")
+async def download_parts_template(format: str = "csv"):
+    """Download a template file for bulk parts import"""
+    # Template headers with example data
+    headers = ["name", "part_number", "category", "description", "current_stock", "minimum_stock", "location", "unit_cost"]
+    example_data = [
+        ["Hydraulic Filter", "HF-1234", "Filters", "Heavy duty hydraulic filter for pump systems", "25", "10", "Warehouse A-12", "45.99"],
+        ["Drive Belt", "DB-5678", "Belts", "Industrial drive belt 48 inch", "15", "5", "Warehouse B-3", "28.50"],
+        ["Bearing Assembly", "BA-9012", "Bearings", "Ball bearing assembly 25mm", "50", "20", "Warehouse A-5", "12.75"],
+    ]
+
+    if format.lower() == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(example_data)
+        output.seek(0)
+
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=parts_import_template.csv"}
+        )
+    elif format.lower() == "xlsx" and PANDAS_AVAILABLE:
+        df = pd.DataFrame(example_data, columns=headers)
+        output = io.BytesIO()
+        df.to_excel(output, index=False, sheet_name="Parts")
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=parts_import_template.xlsx"}
+        )
+    else:
+        return JSONResponse({"error": "Unsupported format. Use csv or xlsx."}, status_code=400)
+
+
+@router.post("/api/parts/bulk-import")
+async def bulk_import_parts(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Bulk import parts from CSV or Excel file"""
+    firestore_manager = get_firestore_manager()
+
+    # Validate file type
+    filename = file.filename.lower()
+    if not (filename.endswith('.csv') or filename.endswith('.xlsx') or filename.endswith('.xls')):
+        return JSONResponse({
+            "success": False,
+            "error": "Invalid file format. Please upload a CSV or Excel file (.csv, .xlsx, .xls)"
+        }, status_code=400)
+
+    try:
+        # Read file content
+        content = await file.read()
+
+        # Parse file based on type
+        if filename.endswith('.csv'):
+            # Parse CSV
+            text_content = content.decode('utf-8')
+            csv_reader = csv.DictReader(io.StringIO(text_content))
+            rows = list(csv_reader)
+        elif PANDAS_AVAILABLE:
+            # Parse Excel with pandas
+            df = pd.read_excel(io.BytesIO(content))
+            rows = df.to_dict('records')
+        else:
+            return JSONResponse({
+                "success": False,
+                "error": "Excel support not available. Please upload a CSV file."
+            }, status_code=400)
+
+        if not rows:
+            return JSONResponse({
+                "success": False,
+                "error": "File is empty or has no valid data rows."
+            }, status_code=400)
+
+        # Process and import parts
+        imported = 0
+        errors = []
+
+        for idx, row in enumerate(rows, start=2):  # Start at 2 (1 for header)
+            try:
+                # Clean and validate required fields
+                name = str(row.get('name', '')).strip()
+                if not name:
+                    errors.append(f"Row {idx}: Missing required field 'name'")
+                    continue
+
+                # Build part data
+                part_data = {
+                    "name": name,
+                    "part_number": str(row.get('part_number', '')).strip(),
+                    "category": str(row.get('category', 'General')).strip(),
+                    "description": str(row.get('description', '')).strip(),
+                    "current_stock": int(float(row.get('current_stock', 0) or 0)),
+                    "minimum_stock": int(float(row.get('minimum_stock', 5) or 5)),
+                    "location": str(row.get('location', '')).strip(),
+                    "unit_cost": float(row.get('unit_cost', 0) or 0),
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                }
+
+                # Create part in Firestore
+                await firestore_manager.create_document("parts", part_data)
+                imported += 1
+
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+
+        return JSONResponse({
+            "success": True,
+            "imported": imported,
+            "total_rows": len(rows),
+            "errors": errors[:20],  # Limit errors to first 20
+            "error_count": len(errors),
+            "message": f"Successfully imported {imported} of {len(rows)} parts."
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": f"Error processing file: {str(e)}"
+        }, status_code=500)

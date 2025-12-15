@@ -1,9 +1,55 @@
 /**
  * 🎨 CHATTERFIX CMMS - ENHANCED UI COMPONENTS LIBRARY
- * 
+ *
  * This file contains Alpine.js components, GSAP animations, and modern UI patterns
  * for creating compelling user experiences with integrated frontend-backend logic.
  */
+
+// 🛡️ Safe Storage Utility (handles Safari private browsing restrictions)
+const SafeStorage = {
+    get(key, defaultValue = null) {
+        try {
+            const value = localStorage.getItem(key);
+            return value !== null ? value : defaultValue;
+        } catch (e) {
+            console.log('Storage access restricted');
+            return defaultValue;
+        }
+    },
+    set(key, value) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (e) {
+            console.log('Storage access restricted');
+            return false;
+        }
+    },
+    remove(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    },
+    getJSON(key, defaultValue = {}) {
+        try {
+            const value = localStorage.getItem(key);
+            return value ? JSON.parse(value) : defaultValue;
+        } catch (e) {
+            return defaultValue;
+        }
+    },
+    setJSON(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+};
 
 // 🚀 Alpine.js Global Data Store
 document.addEventListener('alpine:init', () => {
@@ -225,12 +271,12 @@ document.addEventListener('alpine:init', () => {
     // 🎛️ User Preferences Store
     Alpine.store('userPreferences', {
         // Visual Effects Settings
-        animationsEnabled: localStorage.getItem('animationsEnabled') !== 'false', // Default to true
+        animationsEnabled: SafeStorage.get('animationsEnabled') !== 'false', // Default to true
         showSettings: false, // Settings panel visibility
 
         toggleAnimations() {
             this.animationsEnabled = !this.animationsEnabled;
-            localStorage.setItem('animationsEnabled', this.animationsEnabled);
+            SafeStorage.set('animationsEnabled', this.animationsEnabled);
 
             // Apply setting to GSAP
             if (this.animationsEnabled) {
@@ -1922,19 +1968,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         console.log('✅ Enhanced UI Components Library Ready!');
         console.log('🚀 Phase 2: GSAP animations and Headless UI components - COMPLETED');
-        
-        // Notify user of successful initialization
-        setTimeout(() => {
-            ModernComponents.showToast(
-                '🚀 Enhanced UI system loaded successfully!', 
-                'success', 
-                2000
-            );
-        }, 1000);
-        
+
+        // Only show startup toast on desktop (not mobile) to reduce notification noise
+        const isMobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (!isMobile) {
+            setTimeout(() => {
+                ModernComponents.showToast(
+                    '🚀 Enhanced UI system loaded successfully!',
+                    'success',
+                    2000
+                );
+            }, 1000);
+        }
+
     } catch (error) {
         console.error('❌ UI Components initialization error:', error);
-        // Fallback initialization
+        // Fallback initialization - silent on mobile
         UIAnimations.enhanceCards();
         window.UIAnimations = UIAnimations;
         window.ModernComponents = ModernComponents;
@@ -2397,7 +2446,7 @@ document.addEventListener('alpine:init', () => {
         },
         
         // Voice Feedback
-        voiceEnabled: localStorage.getItem('voiceEnabled') !== 'false',
+        voiceEnabled: SafeStorage.get('voiceEnabled') !== 'false',
         speechSynthesis: window.speechSynthesis,
         
         init() {
@@ -2723,7 +2772,7 @@ document.addEventListener('alpine:init', () => {
         
         toggleVoiceEnabled() {
             this.voiceEnabled = !this.voiceEnabled;
-            localStorage.setItem('voiceEnabled', this.voiceEnabled);
+            SafeStorage.set('voiceEnabled', this.voiceEnabled);
             
             ModernComponents.showNotification(
                 `Voice feedback ${this.voiceEnabled ? 'enabled' : 'disabled'}`,
@@ -2774,7 +2823,7 @@ document.addEventListener('alpine:init', () => {
         
         // Scan Results
         lastScannedCode: '',
-        scanHistory: JSON.parse(localStorage.getItem('qrScanHistory') || '[]'),
+        scanHistory: SafeStorage.getJSON('qrScanHistory', []),
         
         // Asset Data
         currentAsset: null,
@@ -3001,8 +3050,8 @@ document.addEventListener('alpine:init', () => {
             if (this.scanHistory.length > 50) {
                 this.scanHistory = this.scanHistory.slice(0, 50);
             }
-            
-            localStorage.setItem('qrScanHistory', JSON.stringify(this.scanHistory));
+
+            SafeStorage.setJSON('qrScanHistory', this.scanHistory);
         },
         
         async processAssetQR(qrData) {
@@ -3183,7 +3232,7 @@ document.addEventListener('alpine:init', () => {
         
         clearScanHistory() {
             this.scanHistory = [];
-            localStorage.removeItem('qrScanHistory');
+            SafeStorage.remove('qrScanHistory');
             ModernComponents.showNotification('Scan history cleared', 'success');
         }
     });

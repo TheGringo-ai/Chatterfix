@@ -1574,8 +1574,14 @@
             // Check if user is in demo mode (URL path check or session)
             if (window.location.pathname.startsWith('/demo')) {
                 // If demo is not active, show the bar
-                const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
-                if (!demoState.active) {
+                try {
+                    const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
+                    if (!demoState.active) {
+                        const demoBar = document.getElementById('demoBar');
+                        if(demoBar) demoBar.style.display = 'block';
+                    }
+                } catch (e) {
+                    // localStorage may be restricted (Safari private browsing)
                     const demoBar = document.getElementById('demoBar');
                     if(demoBar) demoBar.style.display = 'block';
                 }
@@ -1583,10 +1589,15 @@
 
             // Initialize AI Widget tour for new users
             setTimeout(() => {
-                const hasSeenAITour = localStorage.getItem('chatterfix_ai_tour_seen');
-                if (!hasSeenAITour) {
-                    showAIWidgetIntro();
-                    localStorage.setItem('chatterfix_ai_tour_seen', 'true');
+                try {
+                    const hasSeenAITour = localStorage.getItem('chatterfix_ai_tour_seen');
+                    if (!hasSeenAITour) {
+                        showAIWidgetIntro();
+                        localStorage.setItem('chatterfix_ai_tour_seen', 'true');
+                    }
+                } catch (e) {
+                    // localStorage may be restricted (Safari private browsing)
+                    // Skip the AI tour intro on restricted browsers
                 }
             }, 3000); // Show after 3 seconds
         });

@@ -1003,7 +1003,10 @@
                 <button class="nav-quick-action emergency" onclick="showEmergencyModal()" title="Emergency Work Order (Ctrl+E)">
                     <i class="fas fa-exclamation-triangle"></i> Emergency
                 </button>
-                <input type="search" id="globalSearch" class="nav-search-compact" placeholder="Search..." 
+                <button class="nav-quick-action" onclick="showPartLookupModal()" title="Part Lookup (Ctrl+P)">
+                    <i class="fas fa-search-plus"></i> Parts
+                </button>
+                <input type="search" id="globalSearch" class="nav-search-compact" placeholder="Search..."
                        onkeyup="handleGlobalSearch(event)" aria-label="Global search">
                 
                 <button id="theme-toggle" class="nav-quick-action" title="Toggle Theme">
@@ -1520,6 +1523,76 @@
         </div>
     </div>
 
+    <!-- 🔍 PART LOOKUP MODAL -->
+    <div id="partLookupModal" class="modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1001; overflow-y: auto;">
+        <div class="modal-content glass-panel" style="margin: 5% auto; width: 95%; max-width: 700px; padding: 25px; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: var(--accent-color);">
+                    <i class="fas fa-search-plus"></i> Part Lookup
+                </h2>
+                <button onclick="closePartLookupModal()" class="btn btn-sm text-muted"
+                    style="border: none; background: rgba(0,0,0,0.1); border-radius: 8px; padding: 8px 12px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Search Tabs -->
+            <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <button id="tabSearchPart" onclick="switchPartLookupTab('search')" class="cmms-btn" style="flex: 1;">
+                    <i class="fas fa-search"></i> Search Parts
+                </button>
+                <button id="tabByAsset" onclick="switchPartLookupTab('asset')" class="cmms-btn-secondary" style="flex: 1;">
+                    <i class="fas fa-cogs"></i> By Asset
+                </button>
+            </div>
+
+            <!-- Search Parts Tab -->
+            <div id="partSearchTab" style="display: block;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        <i class="fas fa-barcode"></i> Part Number or Description
+                    </label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="partSearchInput" placeholder="Enter part number, name, or description..."
+                            onkeyup="handlePartSearch(event)"
+                            style="flex: 1; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        <button onclick="searchParts()" class="cmms-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- By Asset Tab -->
+            <div id="assetPartsTab" style="display: none;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        <i class="fas fa-cogs"></i> Select Asset
+                    </label>
+                    <select id="assetSelectForParts" onchange="loadAssetParts()"
+                        style="width: 100%; padding: 0.8rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);">
+                        <option value="">-- Select an Asset --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="partLookupResults" style="margin-top: 1.5rem;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>Search for parts by number, name, or select an asset to view assigned parts.</p>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="partLookupLoading" style="display: none; text-align: center; padding: 2rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                <p style="margin-top: 1rem;">Searching...</p>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Chat Widget removed - using dedicated AI pages instead -->
 
     <!-- Bootstrap Bundle with Popper -->
@@ -1922,7 +1995,202 @@
                 window.location.href = '/demo/work-orders';
             }
         }
-        
+
+        // ==========================================
+        // 🔍 PART LOOKUP FUNCTIONS
+        // ==========================================
+
+        function showPartLookupModal() {
+            const modal = document.getElementById('partLookupModal');
+            if (modal) {
+                modal.style.display = 'block';
+                loadAssetsForPartLookup();
+                // Focus the search input
+                setTimeout(() => {
+                    const searchInput = document.getElementById('partSearchInput');
+                    if (searchInput) searchInput.focus();
+                }, 100);
+            }
+        }
+
+        function closePartLookupModal() {
+            const modal = document.getElementById('partLookupModal');
+            if (modal) {
+                modal.style.display = 'none';
+                // Clear results
+                document.getElementById('partLookupResults').innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p>Search for parts by number, name, or select an asset to view assigned parts.</p>
+                    </div>
+                `;
+                document.getElementById('partSearchInput').value = '';
+            }
+        }
+
+        function switchPartLookupTab(tab) {
+            const searchTab = document.getElementById('partSearchTab');
+            const assetTab = document.getElementById('assetPartsTab');
+            const btnSearch = document.getElementById('tabSearchPart');
+            const btnAsset = document.getElementById('tabByAsset');
+
+            if (tab === 'search') {
+                searchTab.style.display = 'block';
+                assetTab.style.display = 'none';
+                btnSearch.className = 'cmms-btn';
+                btnAsset.className = 'cmms-btn-secondary';
+            } else {
+                searchTab.style.display = 'none';
+                assetTab.style.display = 'block';
+                btnSearch.className = 'cmms-btn-secondary';
+                btnAsset.className = 'cmms-btn';
+            }
+        }
+
+        async function loadAssetsForPartLookup() {
+            try {
+                const response = await fetch('/api/assets/list');
+                const data = await response.json();
+
+                const select = document.getElementById('assetSelectForParts');
+                select.innerHTML = '<option value="">-- Select an Asset --</option>';
+
+                if (data.assets && data.assets.length > 0) {
+                    data.assets.forEach(asset => {
+                        const tag = asset.asset_tag ? ` (${asset.asset_tag})` : '';
+                        const loc = asset.location ? ` - ${asset.location}` : '';
+                        select.innerHTML += `<option value="${asset.id}">${asset.name}${tag}${loc}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading assets:', error);
+            }
+        }
+
+        function handlePartSearch(event) {
+            if (event.key === 'Enter') {
+                searchParts();
+            }
+        }
+
+        async function searchParts() {
+            const query = document.getElementById('partSearchInput').value.trim();
+            if (query.length < 2) {
+                showPartLookupMessage('Enter at least 2 characters to search');
+                return;
+            }
+
+            showPartLookupLoading(true);
+
+            try {
+                const response = await fetch(`/api/parts/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.parts && data.parts.length > 0) {
+                    displayPartResults(data.parts, `Found ${data.total} part(s) matching "${query}"`);
+                } else {
+                    showPartLookupMessage(`No parts found matching "${query}"`);
+                }
+            } catch (error) {
+                console.error('Error searching parts:', error);
+                showPartLookupMessage('Error searching parts. Please try again.');
+            } finally {
+                showPartLookupLoading(false);
+            }
+        }
+
+        async function loadAssetParts() {
+            const assetId = document.getElementById('assetSelectForParts').value;
+            if (!assetId) {
+                showPartLookupMessage('Select an asset to view its parts');
+                return;
+            }
+
+            showPartLookupLoading(true);
+
+            try {
+                const response = await fetch(`/api/parts/by-asset/${assetId}`);
+                const data = await response.json();
+
+                if (data.parts && data.parts.length > 0) {
+                    const assetName = data.asset ? data.asset.name : 'Selected Asset';
+                    displayPartResults(data.parts, `${data.total} part(s) assigned to ${assetName}`);
+                } else {
+                    const assetName = data.asset ? data.asset.name : 'this asset';
+                    showPartLookupMessage(`No parts assigned to ${assetName}`);
+                }
+            } catch (error) {
+                console.error('Error loading asset parts:', error);
+                showPartLookupMessage('Error loading parts. Please try again.');
+            } finally {
+                showPartLookupLoading(false);
+            }
+        }
+
+        function displayPartResults(parts, headerText) {
+            let html = `<p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">${headerText}</p>`;
+            html += '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+            parts.forEach(part => {
+                const stockClass = part.current_stock <= part.minimum_stock ? 'color: #e74c3c;' : 'color: #27ae60;';
+                const stockIcon = part.current_stock <= part.minimum_stock ? 'fa-exclamation-triangle' : 'fa-check-circle';
+
+                html += `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; cursor: pointer;"
+                         onclick="viewPartDetail('${part.id}')">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 5px;">
+                                    ${part.name || 'Unknown Part'}
+                                </div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                    <i class="fas fa-barcode"></i> ${part.part_number || 'N/A'}
+                                    ${part.location ? `<span style="margin-left: 15px;"><i class="fas fa-map-marker-alt"></i> ${part.location}</span>` : ''}
+                                </div>
+                                ${part.description ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">${part.description.substring(0, 100)}${part.description.length > 100 ? '...' : ''}</div>` : ''}
+                            </div>
+                            <div style="text-align: right; min-width: 100px;">
+                                <div style="${stockClass} font-weight: 600;">
+                                    <i class="fas ${stockIcon}"></i> ${part.current_stock || 0} in stock
+                                </div>
+                                ${part.unit_cost ? `<div style="font-size: 0.85rem; color: var(--text-muted);">$${parseFloat(part.unit_cost).toFixed(2)}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('partLookupResults').innerHTML = html;
+        }
+
+        function showPartLookupMessage(message) {
+            document.getElementById('partLookupResults').innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showPartLookupLoading(show) {
+            document.getElementById('partLookupLoading').style.display = show ? 'block' : 'none';
+            document.getElementById('partLookupResults').style.display = show ? 'none' : 'block';
+        }
+
+        function viewPartDetail(partId) {
+            closePartLookupModal();
+            window.location.href = `/inventory/${partId}`;
+        }
+
+        // Keyboard shortcut for Part Lookup (Ctrl+P)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                showPartLookupModal();
+            }
+        });
+
         function toggleSearchFilters() {
             alert('🔍 Search Filters\\n\\n• Work Order Status\\n• Asset Category\\n• Date Range\\n• Technician\\n• Priority Level\\n\\n(Feature coming soon)');
         }

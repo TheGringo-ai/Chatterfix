@@ -146,3 +146,88 @@ async def add_vendor(
     }
     await firestore_manager.create_document("vendors", vendor_data)
     return RedirectResponse(url="/vendors", status_code=303)
+
+
+# ==========================================
+# 🔍 PART LOOKUP API ENDPOINTS
+# ==========================================
+
+@router.get("/api/parts/search", response_class=JSONResponse)
+async def search_parts(q: str = "", current_user: User = Depends(get_current_active_user)):
+    """Search parts by part number, name, or description"""
+    firestore_manager = get_firestore_manager()
+
+    if not q or len(q) < 2:
+        return JSONResponse({"parts": [], "message": "Enter at least 2 characters to search"})
+
+    # Get all parts and filter (Firestore doesn't support full-text search natively)
+    all_parts = await firestore_manager.get_collection("parts", order_by="name")
+
+    search_term = q.lower()
+    matching_parts = []
+
+    for part in all_parts:
+        # Search in part_number, name, and description
+        if (search_term in (part.get("part_number") or "").lower() or
+            search_term in (part.get("name") or "").lower() or
+            search_term in (part.get("description") or "").lower()):
+            matching_parts.append({
+                "id": part.get("id"),
+                "part_number": part.get("part_number", "N/A"),
+                "name": part.get("name", "Unknown"),
+                "description": part.get("description", ""),
+                "current_stock": part.get("current_stock", 0),
+                "minimum_stock": part.get("minimum_stock", 0),
+                "location": part.get("location", "N/A"),
+                "unit_cost": part.get("unit_cost", 0),
+                "image_url": part.get("image_url", ""),
+                "category": part.get("category", ""),
+            })
+
+    return JSONResponse({
+        "parts": matching_parts[:50],  # Limit to 50 results
+        "total": len(matching_parts),
+        "query": q
+    })
+
+
+@router.get("/api/parts/by-asset/{asset_id}", response_class=JSONResponse)
+async def get_parts_by_asset(asset_id: str, current_user: User = Depends(get_current_active_user)):
+    """Get all parts assigned to a specific asset"""
+    firestore_manager = get_firestore_manager()
+
+    # Get asset info
+    asset = await firestore_manager.get_document("assets", asset_id)
+    if not asset:
+        return JSONResponse({"parts": [], "asset": None, "message": "Asset not found"})
+
+    # Get parts for this asset
+    parts = await firestore_manager.get_asset_parts(asset_id)
+
+    return JSONResponse({
+        "parts": parts,
+        "asset": {
+            "id": asset.get("id"),
+            "name": asset.get("name"),
+            "asset_tag": asset.get("asset_tag", ""),
+            "location": asset.get("location", "")
+        },
+        "total": len(parts)
+    })
+
+
+@router.get("/api/assets/list", response_class=JSONResponse)
+async def get_assets_list(current_user: User = Depends(get_current_active_user)):
+    """Get a simple list of all assets for dropdowns"""
+    firestore_manager = get_firestore_manager()
+    assets = await firestore_manager.get_collection("assets", order_by="name")
+
+    asset_list = [{
+        "id": asset.get("id"),
+        "name": asset.get("name", "Unknown"),
+        "asset_tag": asset.get("asset_tag", ""),
+        "location": asset.get("location", ""),
+        "status": asset.get("status", "")
+    } for asset in assets]
+
+    return JSONResponse({"assets": asset_list})

@@ -123,7 +123,7 @@ class FirebaseAuthService:
             self.db = None
 
     async def verify_token(self, token: str) -> Dict[str, Any]:
-        """Verify Firebase ID token and return user data"""
+        """Verify Firebase ID token and return user data with organization info"""
         try:
             if not self.app:
                 raise HTTPException(status_code=500, detail="Firebase not initialized")
@@ -137,12 +137,26 @@ class FirebaseAuthService:
             # Get or create user in Firestore
             user_data = await self.get_or_create_user(user_record)
 
+            # Extract organization info for multi-tenant support
+            organization_id = user_data.get("organization_id")
+            organization_name = None
+            company_data = user_data.get("company", {})
+
+            if company_data:
+                organization_name = company_data.get("name")
+                # Use company name as organization_id if not explicitly set
+                if not organization_id and organization_name:
+                    organization_id = organization_name.lower().replace(" ", "_")
+
             return {
                 "uid": decoded_token["uid"],
                 "email": decoded_token.get("email"),
                 "name": decoded_token.get("name"),
                 "verified": decoded_token.get("email_verified", False),
                 "user_data": user_data,
+                # Multi-tenant fields
+                "organization_id": organization_id,
+                "organization_name": organization_name,
             }
 
         except firebase_admin.auth.InvalidIdTokenError:

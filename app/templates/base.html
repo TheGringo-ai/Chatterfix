@@ -1787,24 +1787,18 @@
         
         function showEmergencyModal() {
             // Open work order modal with emergency priority pre-selected
+            // Uses same modal styling as "Create New Work Order" for consistency
             const modal = document.getElementById('globalWorkOrderModal');
             if (modal) {
                 modal.style.display = 'block';
                 loadWorkOrderFormData();
-                
-                // Pre-set emergency priority
+
+                // Pre-set emergency priority (same modal styling as regular work orders)
                 setTimeout(() => {
                     const prioritySelect = document.getElementById('globalWOPriority');
                     const typeSelect = document.getElementById('globalWOType');
                     if (prioritySelect) prioritySelect.value = 'Critical';
                     if (typeSelect) typeSelect.value = 'Emergency';
-                    
-                    // Add emergency styling
-                    const modalContent = modal.querySelector('.modal-content');
-                    if (modalContent) {
-                        modalContent.style.borderLeft = '5px solid #e74c3c';
-                        modalContent.style.background = 'linear-gradient(135deg, rgba(231, 76, 60, 0.05), rgba(255, 255, 255, 0.95))';
-                    }
                 }, 100);
             } else {
                 // Fallback - navigate to work orders page

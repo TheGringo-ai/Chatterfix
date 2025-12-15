@@ -389,23 +389,23 @@
             <h1>🧠 AI Neural Network <span class="ai-pulse" :class="{ 'pulse-fast': learningMode }"></span></h1>
             <p style="font-size: 1.2rem; opacity: 0.9;" x-text="systemDescription">Orchestrating intelligent maintenance operations across your entire facility</p>
             
-            <!-- Interactive AI Status Display -->
-            <div class="ai-status-grid" style="margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.75rem; max-width: 500px;">
-                <div class="glass-effect p-2 rounded text-center">
-                    <div class="text-accent font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.processed"></div>
-                    <div style="font-size: 0.8rem;">Requests Today</div>
+            <!-- Interactive AI Status Display - Evenly Spaced Across Page -->
+            <div class="ai-status-grid" style="margin: 1.5rem 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; width: 100%;">
+                <div class="glass-effect p-3 rounded text-center">
+                    <div class="text-accent font-weight-bold" style="font-size: 1.75rem;" x-text="metrics.processed"></div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">Today</div>
                 </div>
-                <div class="glass-effect p-2 rounded text-center">
-                    <div class="text-success font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.accuracy + '%'"></div>
-                    <div style="font-size: 0.8rem;">Accuracy</div>
+                <div class="glass-effect p-3 rounded text-center">
+                    <div class="text-success font-weight-bold" style="font-size: 1.75rem;" x-text="metrics.accuracy + '%'"></div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">Accuracy</div>
                 </div>
-                <div class="glass-effect p-2 rounded text-center">
-                    <div class="text-warning font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.suggestions"></div>
-                    <div style="font-size: 0.8rem;">Suggestions</div>
+                <div class="glass-effect p-3 rounded text-center">
+                    <div class="text-warning font-weight-bold" style="font-size: 1.75rem;" x-text="metrics.suggestions"></div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">Suggestions</div>
                 </div>
-                <div class="glass-effect p-2 rounded text-center">
-                    <div class="text-info font-weight-bold" style="font-size: 1.5rem;" x-text="metrics.efficiency + '%'"></div>
-                    <div style="font-size: 0.8rem;">Efficiency</div>
+                <div class="glass-effect p-3 rounded text-center">
+                    <div class="text-info font-weight-bold" style="font-size: 1.75rem;" x-text="metrics.efficiency + '%'"></div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">Efficiency</div>
                 </div>
             </div>
             

@@ -251,6 +251,19 @@
             transform: translateY(-1px);
         }
 
+        /* Fix for user dropdown being hidden behind navigation */
+        .nav-header .dropdown {
+            position: relative;
+            z-index: 1050;
+        }
+
+        .nav-header .dropdown-menu {
+            z-index: 1051;
+            position: absolute;
+            right: 0;
+            top: 100%;
+        }
+
         .nav-quick-action.emergency {
             background: rgba(245, 87, 108, 0.3) !important;
         }

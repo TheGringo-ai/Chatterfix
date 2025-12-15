@@ -14,8 +14,9 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user, check_permission
+from app.auth import get_current_active_user, check_permission, get_optional_current_user
 from app.models.user import User
+from typing import Optional as OptionalType
 try:
     # Try to import database dependencies - fallback to mock if not available
     from app.database import get_db
@@ -72,9 +73,12 @@ class ExportRequest(BaseModel):
 
 
 # Role-based Access Control for Sales/Admin Features
-def check_admin_or_sales_role(current_user: User = Depends(get_current_active_user)):
-    """Verify user has Admin or Sales role access"""
-    if not (current_user.role in ["admin", "sales", "manager"]):
+def check_admin_or_sales_role(current_user: OptionalType[User] = Depends(get_optional_current_user)):
+    """Verify user has Admin or Sales role access - allows demo users for viewing"""
+    # Allow demo/unauthenticated access for viewing dashboards
+    if current_user is None:
+        return None  # Allow viewing but with limited features
+    if current_user.role not in ["admin", "sales", "manager"]:
         raise HTTPException(
             status_code=403,
             detail="Insufficient permissions. Admin, Manager, or Sales role required.",
@@ -641,8 +645,8 @@ async def roi_dashboard(
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def analytics_dashboard(request: Request, current_user: User = Depends(get_current_active_user)):
-    """Render the advanced analytics dashboard"""
+async def analytics_dashboard(request: Request, current_user: OptionalType[User] = Depends(get_optional_current_user)):
+    """Render the advanced analytics dashboard - accessible to all users including demo"""
     # Get KPI summary for initial render
     try:
         kpi_data = await analytics_service.get_kpi_summary(30)
@@ -650,13 +654,13 @@ async def analytics_dashboard(request: Request, current_user: User = Depends(get
         kpi_data = {}
 
     return templates.TemplateResponse(
-        "analytics_dashboard.html", {"request": request, "kpi_data": kpi_data}
+        "analytics_dashboard.html", {"request": request, "kpi_data": kpi_data, "user": current_user}
     )
 
 
 @router.get("/kpi/summary")
-async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
-    """Get comprehensive KPI summary"""
+async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+    """Get comprehensive KPI summary - accessible to demo users"""
     try:
         data = await analytics_service.get_kpi_summary(days)
         return JSONResponse(content=data)
@@ -665,7 +669,7 @@ async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: Use
 
 
 @router.get("/kpi/mttr")
-async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get Mean Time To Repair (MTTR) metrics"""
     try:
         data = await analytics_service.calculate_mttr(days)
@@ -675,7 +679,7 @@ async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: User = Dep
 
 
 @router.get("/kpi/mtbf")
-async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get Mean Time Between Failures (MTBF) metrics"""
     try:
         data = await analytics_service.calculate_mtbf(days)
@@ -685,7 +689,7 @@ async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: User = Dep
 
 
 @router.get("/kpi/utilization")
-async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get asset utilization metrics"""
     try:
         data = await analytics_service.calculate_asset_utilization(days)
@@ -695,7 +699,7 @@ async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_use
 
 
 @router.get("/kpi/costs")
-async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get cost tracking metrics"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -705,7 +709,7 @@ async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: U
 
 
 @router.get("/kpi/work-orders")
-async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get work order metrics"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -715,7 +719,7 @@ async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_us
 
 
 @router.get("/kpi/compliance")
-async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get compliance and PM adherence metrics"""
     try:
         data = await analytics_service.get_compliance_metrics(days)
@@ -728,7 +732,7 @@ async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_us
 
 
 @router.get("/trends/{metric}")
-async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """
     Get historical trend data for a specific metric
 
@@ -754,7 +758,7 @@ async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), curre
 
 
 @router.post("/export")
-async def export_report(request: ExportRequest, current_user: User = Depends(get_current_active_user)):
+async def export_report(request: ExportRequest, current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Export report in specified format"""
     try:
         if request.report_type == "kpi":
@@ -779,7 +783,7 @@ async def export_report(request: ExportRequest, current_user: User = Depends(get
 
 
 @router.get("/export/kpi/{format}")
-async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Quick export endpoint for KPI report"""
     valid_formats = ["json", "csv", "excel", "pdf"]
     if format not in valid_formats:
@@ -804,7 +808,7 @@ async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), cur
 
 
 @router.get("/export/work-orders/{format}")
-async def export_work_orders_quick(format: str, current_user: User = Depends(get_current_active_user)):
+async def export_work_orders_quick(format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Quick export endpoint for work orders"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -828,7 +832,7 @@ async def export_work_orders_quick(format: str, current_user: User = Depends(get
 
 
 @router.get("/export/assets/{format}")
-async def export_assets_quick(format: str, current_user: User = Depends(get_current_active_user)):
+async def export_assets_quick(format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Quick export endpoint for assets"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -855,7 +859,7 @@ async def export_assets_quick(format: str, current_user: User = Depends(get_curr
 
 
 @router.get("/charts/work-order-status")
-async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get work order status distribution for pie/doughnut chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -879,7 +883,7 @@ async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), curre
 
 
 @router.get("/charts/priority-distribution")
-async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get work order priority distribution for chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -902,7 +906,7 @@ async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), c
 
 
 @router.get("/charts/cost-trend")
-async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get cost trend for line chart"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -920,7 +924,7 @@ async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user
 
 
 @router.get("/charts/completion-trend")
-async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get work order completion trend for line chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -950,7 +954,7 @@ async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), curren
 
 
 @router.get("/charts/asset-health")
-async def get_asset_health_chart(current_user: User = Depends(get_current_active_user)):
+async def get_asset_health_chart(current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get asset health distribution for chart"""
     try:
         data = await analytics_service.calculate_asset_utilization(30)
@@ -973,7 +977,7 @@ async def get_asset_health_chart(current_user: User = Depends(get_current_active
 
 
 @router.get("/charts/cost-breakdown")
-async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365), current_user: User = Depends(get_current_active_user)):
+async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
     """Get cost breakdown by maintenance type for chart"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -1017,7 +1021,7 @@ class MicroLearningRequest(BaseModel):
 @router.get("/linesmart/training-dashboard", response_class=HTMLResponse)
 async def linesmart_training_dashboard(
     request: Request,
-    current_user: User = Depends(get_current_active_user)
+    current_user: OptionalType[User] = Depends(get_optional_current_user)
 ):
     """LineSmart Training Intelligence Dashboard across all platforms"""
     return templates.TemplateResponse(
@@ -1029,7 +1033,7 @@ async def linesmart_training_dashboard(
 @router.get("/linesmart/workforce-intelligence")
 async def get_workforce_intelligence(
     timeframe_days: int = Query(90, ge=1, le=365),
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Get workforce intelligence analytics for LineSmart dashboard"""
     try:
@@ -1064,7 +1068,7 @@ async def get_workforce_intelligence(
 async def get_platform_specific_training(
     platform: str,  # desktop, tablet, mobile
     technician_id: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Get platform-specific training modules and interfaces"""
     
@@ -1138,7 +1142,7 @@ async def get_platform_specific_training(
 @router.post("/linesmart/micro-learning/start")
 async def start_micro_learning(
     request: MicroLearningRequest,
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Start a micro-learning session optimized for mobile/break time"""
     try:
@@ -1182,7 +1186,7 @@ async def start_micro_learning(
 @router.get("/linesmart/skill-gap-alerts")
 async def get_skill_gap_alerts(
     technician_id: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Get real-time skill gap alerts and training recommendations"""
     try:
@@ -1281,7 +1285,7 @@ async def get_training_roi_metrics(
 @router.post("/linesmart/social-learning/challenge")
 async def create_team_challenge(
     challenge_data: Dict[str, Any],
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Create social learning team challenges"""
     try:
@@ -1327,7 +1331,7 @@ async def create_team_challenge(
 @router.get("/linesmart/ar-training/{asset_id}")
 async def get_ar_training_content(
     asset_id: str,
-    current_user: User = Depends(get_current_active_user),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Get AR (Augmented Reality) training content for specific equipment"""
     try:

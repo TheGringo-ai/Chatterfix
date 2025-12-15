@@ -1016,12 +1016,12 @@ class MicroLearningRequest(BaseModel):
 
 @router.get("/linesmart/training-dashboard", response_class=HTMLResponse)
 async def linesmart_training_dashboard(
-    request: Request, 
+    request: Request,
     current_user: User = Depends(get_current_active_user)
 ):
     """LineSmart Training Intelligence Dashboard across all platforms"""
     return templates.TemplateResponse(
-        "linesmart_training_dashboard.html", 
+        "linesmart_dashboard.html",
         {"request": request, "user": current_user}
     )
 

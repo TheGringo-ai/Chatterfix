@@ -774,13 +774,27 @@ async function processVoiceCommand() {
         updateVoiceStatus('❌ No voice command to process');
         return;
     }
-    
+
     updateVoiceStatus('🤖 Processing voice command with AI...');
-    
+
     try {
+        // Get current user ID from session
+        let technicianId = 'demo_user';
+        try {
+            const userResponse = await fetch('/auth/me');
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                if (userData.authenticated && userData.user) {
+                    technicianId = userData.user.uid || userData.user.id || 'demo_user';
+                }
+            }
+        } catch (e) {
+            console.warn('Could not fetch user info, using demo_user');
+        }
+
         const formData = new FormData();
         formData.append('voice_text', voiceTranscript);
-        formData.append('technician_id', '1'); // TODO: Get from session
+        formData.append('technician_id', technicianId);
         
         const response = await fetch('/ai/voice-command', {
             method: 'POST',

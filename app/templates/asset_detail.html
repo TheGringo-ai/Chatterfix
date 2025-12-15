@@ -539,6 +539,24 @@
     </div>
 </div>
 
+<!-- Media Viewer Modal -->
+<div class="modal fade" id="mediaViewerModal" tabindex="-1" aria-labelledby="mediaViewerTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(30, 40, 60, 0.95); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+                <h5 class="modal-title" id="mediaViewerTitle">Media Viewer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeMediaViewer()"></button>
+            </div>
+            <div class="modal-body text-center" id="mediaViewerBody" style="padding: 2rem; min-height: 300px;">
+                <!-- Content will be dynamically inserted -->
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeMediaViewer()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Load AI Health Score
     async function refreshHealthScore() {
@@ -613,8 +631,54 @@
 
     // View media in modal
     function viewMedia(path, type) {
-        // TODO: Implement media viewer modal
-        window.open('/' + path, '_blank');
+        const modal = document.getElementById('mediaViewerModal');
+        const modalBody = document.getElementById('mediaViewerBody');
+        const modalTitle = document.getElementById('mediaViewerTitle');
+
+        // Set title
+        modalTitle.textContent = path.split('/').pop() || 'Media Viewer';
+
+        // Generate content based on type
+        let content = '';
+        const fullPath = '/' + path;
+
+        if (type === 'image' || path.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+            content = `<img src="${fullPath}" alt="Asset Media" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px;">`;
+        } else if (type === 'video' || path.match(/\.(mp4|webm|ogg|mov)$/i)) {
+            content = `<video controls autoplay style="max-width: 100%; max-height: 70vh; border-radius: 8px;">
+                <source src="${fullPath}" type="video/${path.split('.').pop()}">
+                Your browser does not support video playback.
+            </video>`;
+        } else if (type === 'pdf' || path.match(/\.pdf$/i)) {
+            content = `<iframe src="${fullPath}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>`;
+        } else {
+            // Unknown type - provide download link
+            content = `<div class="text-center p-5">
+                <i class="fas fa-file fa-4x mb-3" style="opacity: 0.5;"></i>
+                <p>Preview not available for this file type.</p>
+                <a href="${fullPath}" download class="btn btn-primary mt-3">
+                    <i class="fas fa-download me-2"></i>Download File
+                </a>
+            </div>`;
+        }
+
+        modalBody.innerHTML = content;
+
+        // Show modal using Bootstrap
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+
+    // Close media viewer
+    function closeMediaViewer() {
+        const modal = document.getElementById('mediaViewerModal');
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+            bsModal.hide();
+        }
+        // Stop any playing videos
+        const videos = document.querySelectorAll('#mediaViewerBody video');
+        videos.forEach(v => v.pause());
     }
 
     // Auto-load AI features on page load

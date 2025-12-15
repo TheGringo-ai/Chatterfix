@@ -1,11 +1,59 @@
 // Unified CMMS JavaScript Functions
 
+/**
+ * HTML Sanitization Utility
+ * Prevents XSS attacks by escaping HTML special characters
+ */
+function sanitizeHTML(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
+ * Safe innerHTML setter - sanitizes content before insertion
+ * Use this when inserting user-provided or API-response content
+ */
+function safeSetInnerHTML(element, content, allowHTML = false) {
+    if (!element) return;
+    if (allowHTML) {
+        // Use DOMPurify if available, otherwise basic sanitization
+        if (typeof DOMPurify !== 'undefined') {
+            element.innerHTML = DOMPurify.sanitize(content);
+        } else {
+            // Basic sanitization - remove script tags and event handlers
+            const sanitized = content
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+                .replace(/javascript:/gi, '');
+            element.innerHTML = sanitized;
+        }
+    } else {
+        element.textContent = content;
+    }
+}
+
+/**
+ * Create safe HTML from template with escaped values
+ * Usage: safeTemplate`<div>${userInput}</div>`
+ */
+function safeTemplate(strings, ...values) {
+    return strings.reduce((result, string, i) => {
+        const value = values[i] !== undefined ? sanitizeHTML(values[i]) : '';
+        return result + string + value;
+    }, '');
+}
+
 // Global notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `cmms-notification cmms-notification-${type}`;
+    // Sanitize message to prevent XSS
+    const safeMessage = sanitizeHTML(message);
     notification.innerHTML = `
-        <span>${message}</span>
+        <span>${safeMessage}</span>
         <button onclick="this.parentElement.remove()" style="margin-left: 1rem; background: none; border: none; color: inherit; cursor: pointer;">×</button>
     `;
     notification.style.cssText = `
@@ -28,16 +76,18 @@ function showNotification(message, type = 'info') {
 function showModal(title, content, actions = []) {
     const modal = document.createElement('div');
     modal.className = 'cmms-modal';
+    // Sanitize title to prevent XSS, content may contain intentional HTML
+    const safeTitle = sanitizeHTML(title);
     modal.innerHTML = `
         <div class="cmms-modal-backdrop" onclick="closeModal()">
             <div class="cmms-modal-content" onclick="event.stopPropagation()">
                 <div class="cmms-modal-header">
-                    <h3>${title}</h3>
+                    <h3>${safeTitle}</h3>
                     <button onclick="closeModal()" class="cmms-modal-close">×</button>
                 </div>
                 <div class="cmms-modal-body">${content}</div>
                 <div class="cmms-modal-actions">
-                    ${actions.map(action => `<button class="cmms-btn ${action.class || ''}" onclick="${action.onclick}">${action.text}</button>`).join('')}
+                    ${actions.map(action => `<button class="cmms-btn ${action.class || ''}" onclick="${action.onclick}">${sanitizeHTML(action.text)}</button>`).join('')}
                 </div>
             </div>
         </div>

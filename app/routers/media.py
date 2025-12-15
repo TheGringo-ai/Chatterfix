@@ -3,16 +3,32 @@ Media Router
 Handles file uploads, barcode scanning, document processing
 """
 
-from typing import List
+import logging
+from typing import List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Cookie, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.services.media_service import media_service
+from app.services.firebase_auth import firebase_auth_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/media", tags=["media"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+async def get_current_user_id(session_token: Optional[str]) -> str:
+    """Extract user ID from session token, fallback to 'demo_user'"""
+    if not session_token:
+        return "demo_user"
+    try:
+        user_data = await firebase_auth_service.verify_token(session_token)
+        return user_data.get("uid", "demo_user")
+    except Exception as e:
+        logger.warning(f"Could not verify session token: {e}")
+        return "demo_user"
 
 
 @router.post("/upload")
@@ -23,11 +39,14 @@ async def upload_media(
     work_order_id: str = Form(None),
     part_id: str = Form(None),
     asset_id: str = Form(None),
+    session_token: Optional[str] = Cookie(None),
 ):
     """
     Upload multiple files (photos, videos, documents)
     """
     try:
+        # Get current user ID from session
+        uploaded_by = await get_current_user_id(session_token)
         uploaded_files = []
 
         for file in files:
@@ -40,7 +59,7 @@ async def upload_media(
                     "work_order_id": work_order_id,
                     "part_id": part_id,
                     "asset_id": asset_id,
-                    "uploaded_by": "current_user",  # TODO: Get from session
+                    "uploaded_by": uploaded_by,
                     "content_type": file.content_type,
                 }
 

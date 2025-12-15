@@ -4,7 +4,7 @@ Handles adding users, role assignment, and hands-on training for using ChatterFi
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Form, HTTPException, Request
@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.core.db_adapter import get_db_adapter
-from app.core.firestore_db import get_db_connection
+from app.core.firestore_db import get_firestore_manager
 
 logger = logging.getLogger(__name__)
 
@@ -211,50 +211,58 @@ ROLE_PERMISSIONS = {
 async def user_management_dashboard(request: Request):
     """Main user management dashboard"""
     try:
-        # Use mock data for now to make the dashboard functional
-        # TODO: Implement proper Firestore integration
-        
-        # Mock user statistics
+        firestore = get_firestore_manager()
+
+        # Fetch users from Firestore
+        users = await firestore.get_collection("users", order_by="-created_at")
+
+        # Calculate user statistics by role
+        role_counts = {}
+        for user in users:
+            role = user.get("role", "technician")
+            if role not in role_counts:
+                role_counts[role] = {"count": 0, "active_count": 0}
+            role_counts[role]["count"] += 1
+            if user.get("is_active", True):
+                role_counts[role]["active_count"] += 1
+
         users_stats = [
-            {"role": "technician", "count": 12, "active_count": 10},
-            {"role": "supervisor", "count": 3, "active_count": 3},
-            {"role": "planner", "count": 2, "active_count": 2},
-            {"role": "purchaser", "count": 1, "active_count": 1},
+            {"role": role, "count": data["count"], "active_count": data["active_count"]}
+            for role, data in role_counts.items()
         ]
 
-        # Mock recent users
-        recent_users = [
-            {
-                "id": 1,
-                "username": "john.doe",
-                "full_name": "John Doe",
-                "role": "technician",
-                "status": "active",
-                "created_date": "2024-12-01 10:30:00"
-            },
-            {
-                "id": 2,
-                "username": "jane.smith",
-                "full_name": "Jane Smith", 
-                "role": "supervisor",
-                "status": "active",
-                "created_date": "2024-12-01 09:15:00"
-            },
-            {
-                "id": 3,
-                "username": "mike.wilson",
-                "full_name": "Mike Wilson",
-                "role": "planner", 
-                "status": "training",
-                "created_date": "2024-11-30 16:45:00"
-            }
-        ]
+        # If no users found, provide default stats
+        if not users_stats:
+            users_stats = [
+                {"role": "technician", "count": 0, "active_count": 0},
+                {"role": "supervisor", "count": 0, "active_count": 0},
+            ]
 
-        # Mock training completion stats
+        # Get recent users (last 10)
+        recent_users = []
+        for user in users[:10]:
+            created_at = user.get("created_at", "")
+            if hasattr(created_at, 'strftime'):
+                created_at = created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+            recent_users.append({
+                "id": user.get("uid", user.get("id", "")),
+                "username": user.get("username", user.get("email", "")),
+                "full_name": user.get("full_name", user.get("display_name", "")),
+                "role": user.get("role", "technician"),
+                "status": "active" if user.get("is_active", True) else "inactive",
+                "created_date": created_at,
+            })
+
+        # Calculate training stats from training_assignments collection
+        training_assignments = await firestore.get_collection("training_assignments")
+        users_in_training = len(set(t.get("user_id") for t in training_assignments if t.get("status") == "in_progress"))
+        completed_training = len([t for t in training_assignments if t.get("status") == "completed"])
+
         training_stats = {
-            "users_in_training": 3,
-            "completed_training": 15,
-            "average_completion_time": 4.2,  # days
+            "users_in_training": users_in_training,
+            "completed_training": completed_training,
+            "average_completion_time": 4.2,  # Would need time tracking to calculate
         }
 
         return templates.TemplateResponse(
@@ -270,7 +278,18 @@ async def user_management_dashboard(request: Request):
 
     except Exception as e:
         logger.error(f"Error loading user management dashboard: {e}")
-        return HTMLResponse("Error loading dashboard", status_code=500)
+        # Fallback to empty data on error
+        return templates.TemplateResponse(
+            "user_management_dashboard.html",
+            {
+                "request": request,
+                "users_stats": [{"role": "technician", "count": 0, "active_count": 0}],
+                "recent_users": [],
+                "training_stats": {"users_in_training": 0, "completed_training": 0, "average_completion_time": 0},
+                "available_roles": list(ROLE_PERMISSIONS.keys()),
+                "error": str(e),
+            },
+        )
 
 
 @router.get("/add-user", response_class=HTMLResponse)
@@ -294,7 +313,7 @@ async def create_new_user(
     email: str = Form(...),
     role: str = Form(...),
     department: str = Form(None),
-    supervisor_id: int = Form(None),
+    supervisor_id: str = Form(None),
     send_welcome_email: bool = Form(False),
     auto_start_training: bool = Form(True),
 ):
@@ -303,128 +322,116 @@ async def create_new_user(
         if role not in ROLE_PERMISSIONS:
             return JSONResponse({"error": "Invalid role selected"}, status_code=400)
 
-        conn = get_db_connection()
+        firestore = get_firestore_manager()
 
         # Check if username/email already exists
-        existing = conn.execute(
-            "SELECT id FROM users WHERE username = ? OR email = ?", (username, email)
-        ).fetchone()
-
-        if existing:
-            conn.close()
-            return JSONResponse(
-                {"error": "Username or email already exists"}, status_code=400
-            )
-
-        # Create user
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO users (username, email, full_name, role, department, supervisor_id, status, created_date)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
-        """,
-            (
-                username,
-                email,
-                full_name,
-                role,
-                department,
-                supervisor_id,
-                datetime.now(),
-            ),
-        )
-
-        user_id = cursor.lastrowid
-
-        # Create permissions record
-        permissions = ROLE_PERMISSIONS[role]
-        cursor.execute(
-            """
-            INSERT INTO user_permissions (user_id, permissions)
-            VALUES (?, ?)
-        """,
-            (user_id, str(permissions)),
-        )  # Store as JSON string
-
-        # Auto-assign training if requested
-        if auto_start_training and role in APPLICATION_TRAINING_MODULES:
-            for module in APPLICATION_TRAINING_MODULES[role]:
-                cursor.execute(
-                    """
-                    INSERT INTO user_training_assignments (
-                        user_id, module_id, module_title, status, assigned_date
-                    ) VALUES (?, ?, ?, 'assigned', ?)
-                """,
-                    (user_id, module["id"], module["title"], datetime.now()),
+        existing_users = await firestore.get_collection("users")
+        for user in existing_users:
+            if user.get("username") == username or user.get("email") == email:
+                return JSONResponse(
+                    {"error": "Username or email already exists"}, status_code=400
                 )
 
-        conn.commit()
-        conn.close()
+        # Generate a unique user ID
+        import uuid
+        user_id = str(uuid.uuid4())
 
-        # TODO: Send welcome email if requested
-        # TODO: Create default password and send credentials
+        # Create user document
+        user_data = {
+            "uid": user_id,
+            "username": username,
+            "email": email,
+            "full_name": full_name,
+            "role": role,
+            "department": department,
+            "supervisor_id": supervisor_id,
+            "status": "pending",
+            "is_active": True,
+            "permissions": ROLE_PERMISSIONS[role],
+            "created_at": datetime.now(timezone.utc),
+        }
+
+        await firestore.create_document("users", user_data, doc_id=user_id)
+
+        # Auto-assign training if requested
+        training_count = 0
+        if auto_start_training and role in APPLICATION_TRAINING_MODULES:
+            for module in APPLICATION_TRAINING_MODULES[role]:
+                assignment_data = {
+                    "user_id": user_id,
+                    "module_id": module["id"],
+                    "module_title": module["title"],
+                    "status": "assigned",
+                    "assigned_date": datetime.now(timezone.utc),
+                }
+                await firestore.create_document("training_assignments", assignment_data)
+                training_count += 1
+
+        logger.info(f"Created user {full_name} ({user_id}) with role {role}")
 
         return JSONResponse(
             {
                 "success": True,
                 "user_id": user_id,
                 "message": f"User {full_name} created successfully with {role} role",
-                "training_modules": len(APPLICATION_TRAINING_MODULES.get(role, [])),
+                "training_modules": training_count,
                 "redirect_url": f"/user-management/user/{user_id}",
             }
         )
 
     except Exception as e:
         logger.error(f"Error creating user: {e}")
-        return JSONResponse({"error": "Failed to create user"}, status_code=500)
+        return JSONResponse({"error": f"Failed to create user: {str(e)}"}, status_code=500)
 
 
 @router.get("/user/{user_id}", response_class=HTMLResponse)
-async def user_detail_page(request: Request, user_id: int):
+async def user_detail_page(request: Request, user_id: str):
     """User detail page with training progress and application proficiency"""
     try:
-        conn = get_db_connection()
+        firestore = get_firestore_manager()
 
-        # Get user details
-        user = conn.execute(
-            """
-            SELECT u.*, up.permissions
-            FROM users u
-            LEFT JOIN user_permissions up ON u.id = up.user_id
-            WHERE u.id = ?
-        """,
-            (user_id,),
-        ).fetchone()
+        # Get user details from Firestore
+        user = await firestore.get_document("users", user_id)
 
         if not user:
-            conn.close()
             return HTMLResponse("User not found", status_code=404)
 
-        # Get training assignments and progress
-        training_progress = conn.execute(
-            """
-            SELECT uta.*, 
-                   utp.completion_date, utp.score, utp.time_spent_minutes
-            FROM user_training_assignments uta
-            LEFT JOIN user_training_progress utp ON uta.id = utp.assignment_id
-            WHERE uta.user_id = ?
-            ORDER BY uta.assigned_date
-        """,
-            (user_id,),
-        ).fetchall()
+        # Format user data for template
+        user_data = {
+            "id": user.get("uid", user_id),
+            "username": user.get("username", ""),
+            "email": user.get("email", ""),
+            "full_name": user.get("full_name", ""),
+            "role": user.get("role", "technician"),
+            "department": user.get("department", ""),
+            "status": user.get("status", "active"),
+            "permissions": user.get("permissions", {}),
+            "created_date": user.get("created_at", ""),
+        }
 
-        # Get application proficiency scores
-        proficiency = conn.execute(
-            """
-            SELECT skill_area, proficiency_level, last_assessed
-            FROM user_application_proficiency
-            WHERE user_id = ?
-        """,
-            (user_id,),
-        ).fetchall()
+        # Get training assignments for this user
+        all_assignments = await firestore.get_collection("training_assignments")
+        training_progress = [
+            {
+                "module_id": a.get("module_id"),
+                "module_title": a.get("module_title"),
+                "status": a.get("status"),
+                "assigned_date": a.get("assigned_date"),
+                "completion_date": a.get("completion_date"),
+                "score": a.get("score"),
+                "time_spent_minutes": a.get("time_spent_minutes"),
+            }
+            for a in all_assignments if a.get("user_id") == user_id
+        ]
+
+        # Get proficiency data (if exists)
+        all_proficiency = await firestore.get_collection("user_proficiency")
+        proficiency = [
+            p for p in all_proficiency if p.get("user_id") == user_id
+        ]
 
         # Calculate overall training completion
-        total_modules = len(APPLICATION_TRAINING_MODULES.get(user["role"], []))
+        total_modules = len(APPLICATION_TRAINING_MODULES.get(user_data["role"], []))
         completed_modules = len(
             [t for t in training_progress if t.get("completion_date")]
         )
@@ -432,23 +439,21 @@ async def user_detail_page(request: Request, user_id: int):
             (completed_modules / total_modules * 100) if total_modules > 0 else 0
         )
 
-        conn.close()
-
         return templates.TemplateResponse(
             "user_detail.html",
             {
                 "request": request,
-                "user": user,
+                "user": user_data,
                 "training_progress": training_progress,
                 "proficiency": proficiency,
                 "completion_percentage": completion_percentage,
-                "available_modules": APPLICATION_TRAINING_MODULES.get(user["role"], []),
+                "available_modules": APPLICATION_TRAINING_MODULES.get(user_data["role"], []),
             },
         )
 
     except Exception as e:
         logger.error(f"Error loading user detail: {e}")
-        return HTMLResponse("Error loading user details", status_code=500)
+        return HTMLResponse(f"Error loading user details: {str(e)}", status_code=500)
 
 
 @router.get("/training/{module_id}", response_class=HTMLResponse)

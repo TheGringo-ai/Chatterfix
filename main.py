@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 # Load environment variables (override system defaults)
 load_dotenv(override=True)
 
+# Import secret management utility
+from app.utils.security import get_secret_sync
+
 # Production build - debug statements removed for clean deployment
 
 # Define version information immediately to avoid circular import issues
@@ -29,9 +32,12 @@ from app.middleware import ErrorTrackingMiddleware
 from app.services.ai_service import get_maintenance_solution
 
 # AI Team Configuration - MUST BE DEFINED BEFORE LOGGING
-DISABLE_AI_TEAM_GRPC = os.getenv("DISABLE_AI_TEAM_GRPC", "true").lower() == "true"
-USE_AI_TEAM_HTTP = os.getenv("AI_TEAM_SERVICE_URL") is not None
-AI_TEAM_SERVICE_URL = os.getenv("AI_TEAM_SERVICE_URL")
+# Fetch secrets securely
+DISABLE_AI_TEAM_GRPC_STR = get_secret_sync("DISABLE_AI_TEAM_GRPC")
+DISABLE_AI_TEAM_GRPC = DISABLE_AI_TEAM_GRPC_STR is not None and DISABLE_AI_TEAM_GRPC_STR.lower() == "true"
+
+AI_TEAM_SERVICE_URL = get_secret_sync("AI_TEAM_SERVICE_URL")
+USE_AI_TEAM_HTTP = AI_TEAM_SERVICE_URL is not None
 
 # Configure logging (Cloud Run friendly)
 try:
@@ -254,7 +260,7 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 # Add error tracking middleware
 app.add_middleware(
     ErrorTrackingMiddleware,
-    sentry_dsn=os.getenv("SENTRY_DSN"),  # Optional: set SENTRY_DSN env var
+    sentry_dsn=get_secret_sync("SENTRY_DSN"),  # Optional: set SENTRY_DSN env var
     environment=os.getenv("ENVIRONMENT", "development"),
 )
 
@@ -263,8 +269,9 @@ allowed_origins = [
     "https://chatterfix.com",
     "https://www.chatterfix.com",
     "https://chatterfix-cmms-667180410498.us-central1.run.app",
-    os.getenv("FRONTEND_URL", "http://localhost:8080"),
+    get_secret_sync("FRONTEND_URL") or "http://localhost:8080",
 ]
+
 # In development, allow localhost
 if os.getenv("ENVIRONMENT", "development") == "development":
     allowed_origins.extend([
@@ -612,12 +619,17 @@ async def iot_dashboard_direct(request: Request):
 @app.get("/debug/ai-config")
 async def debug_ai_config():
     """Debug endpoint to check AI team configuration"""
+    # Use get_secret_sync for consistency in debug output
+    disable_grpc_debug = get_secret_sync("DISABLE_AI_TEAM_GRPC")
+    ai_team_service_url_debug = get_secret_sync("AI_TEAM_SERVICE_URL")
+    internal_api_key_debug = get_secret_sync("INTERNAL_API_KEY")
+
     return {
         "ai_team_config": {
-            "DISABLE_AI_TEAM_GRPC": os.getenv("DISABLE_AI_TEAM_GRPC"),
-            "AI_TEAM_SERVICE_URL": os.getenv("AI_TEAM_SERVICE_URL"),
-            "INTERNAL_API_KEY": os.getenv("INTERNAL_API_KEY", "not_set")[:10] + "..." if os.getenv("INTERNAL_API_KEY") else None,
-            "USE_AI_TEAM_HTTP": os.getenv("AI_TEAM_SERVICE_URL") is not None,
+            "DISABLE_AI_TEAM_GRPC": disable_grpc_debug,
+            "AI_TEAM_SERVICE_URL": ai_team_service_url_debug,
+            "INTERNAL_API_KEY": internal_api_key_debug[:10] + "..." if internal_api_key_debug else None,
+            "USE_AI_TEAM_HTTP": ai_team_service_url_debug is not None,
         },
         "computed_values": {
             "DISABLE_AI_TEAM_GRPC": DISABLE_AI_TEAM_GRPC,
@@ -629,16 +641,16 @@ async def debug_ai_config():
     }
 
 
-# DIRECT AI TEAM INTEGRATION - BYPASS ROUTER ISSUES  
+# DIRECT AI TEAM INTEGRATION - BYPASS ROUTER ISSUES
 @app.get("/ai-team/health")
 async def ai_team_health_direct():
     """Direct AI team health check - bypasses router loading issues"""
     try:
         import httpx
-        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
+        ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
         if not ai_service_url:
             return {"status": "error", "message": "AI team service URL not configured"}
-        
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(f"{ai_service_url}/health")
             if response.status_code == 200:
@@ -652,7 +664,7 @@ async def ai_team_health_direct():
                 }
             else:
                 return {
-                    "status": "error", 
+                    "status": "error",
                     "message": f"AI team service returned {response.status_code}",
                     "response": response.text[:200]
                 }
@@ -660,7 +672,6 @@ async def ai_team_health_direct():
         return {
             "status": "error",
             "message": f"Failed to connect to AI team service: {str(e)}",
-            "ai_service_url": ai_service_url
         }
 
 
@@ -669,14 +680,14 @@ async def ai_team_models_direct():
     """Direct AI team models endpoint - bypasses router loading issues"""
     try:
         import httpx
-        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
-        api_key = os.getenv("INTERNAL_API_KEY")
-        
+        ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
+        api_key = get_secret_sync("INTERNAL_API_KEY")
+
         if not ai_service_url or not api_key:
             return {"status": "error", "message": "AI team service not configured"}
-        
+
         headers = {"Authorization": f"Bearer {api_key}"}
-        
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(f"{ai_service_url}/api/v1/models", headers=headers)
             if response.status_code == 200:
@@ -694,13 +705,13 @@ async def ai_team_models_direct():
         }
 
 
-@app.post("/ai-team/execute")  
+@app.post("/ai-team/execute")
 async def ai_team_execute_direct(request_data: dict):
     """Direct AI team execution endpoint - bypasses router loading issues"""
     try:
         import httpx
-        ai_service_url = os.getenv("AI_TEAM_SERVICE_URL")
-        api_key = os.getenv("INTERNAL_API_KEY")
+        ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
+        api_key = get_secret_sync("INTERNAL_API_KEY")
         
         if not ai_service_url or not api_key:
             return {"status": "error", "message": "AI team service not configured"}
@@ -726,7 +737,6 @@ async def ai_team_execute_direct(request_data: dict):
             "status": "error", 
             "message": f"Failed to execute AI team task: {str(e)}"
         }
-
 
 @app.post("/unified-ai/process")
 async def unified_ai_process(request_data: dict):

@@ -212,24 +212,38 @@ class ChatterFixDemoSystem {
     }
 
     loadState() {
-        const state = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
-        if (state.active) {
-            this.isActive = true;
-            this.currentModuleIndex = state.moduleIndex || 0;
-            this.currentStepIndex = state.stepIndex || 0;
+        try {
+            const state = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
+            if (state.active) {
+                this.isActive = true;
+                this.currentModuleIndex = state.moduleIndex || 0;
+                this.currentStepIndex = state.stepIndex || 0;
+            }
+        } catch (e) {
+            // localStorage may be restricted (Safari private browsing)
+            console.log('Demo state storage not available');
         }
     }
 
     saveState() {
-        localStorage.setItem('chatterfix_demo_state', JSON.stringify({
-            active: this.isActive,
-            moduleIndex: this.currentModuleIndex,
-            stepIndex: this.currentStepIndex
-        }));
+        try {
+            localStorage.setItem('chatterfix_demo_state', JSON.stringify({
+                active: this.isActive,
+                moduleIndex: this.currentModuleIndex,
+                stepIndex: this.currentStepIndex
+            }));
+        } catch (e) {
+            // localStorage may be restricted (Safari private browsing)
+            console.log('Demo state storage not available');
+        }
     }
 
     clearState() {
-        localStorage.removeItem('chatterfix_demo_state');
+        try {
+            localStorage.removeItem('chatterfix_demo_state');
+        } catch (e) {
+            // localStorage may be restricted (Safari private browsing)
+        }
     }
 
     checkAutoStart() {

@@ -5,7 +5,7 @@
 # Core FastAPI dependencies
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
-pydantic>=2.5.0
+pydantic[email]>=2.5.0
 requests>=2.32.4
 jinja2>=3.1.2
 python-multipart>=0.0.18

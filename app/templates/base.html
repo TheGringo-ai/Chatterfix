@@ -74,11 +74,14 @@
         .demo-bar {
             background: linear-gradient(90deg, #2c3e50, #3498db);
             color: white;
-            padding: 10px 0;
+            padding: 12px 0;
             text-align: center;
-            position: relative;
-            z-index: 999;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10500;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             animation: slideDown 0.5s ease-out;
         }
 
@@ -1700,17 +1703,28 @@
 
             // Check if user is in demo mode (URL path check or session)
             if (window.location.pathname.startsWith('/demo')) {
-                // If demo is not active, show the bar
+                // Show demo bar unless actively in a tour
                 try {
                     const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
-                    if (!demoState.active) {
+                    // Clear stale state if not actively in tour
+                    if (demoState.active && !window.demoSystem?.isActive) {
+                        localStorage.removeItem('chatterfix_demo_state');
+                    }
+                    // Show bar if not actively in tour and not dismissed
+                    if (!demoState.active && !demoState.dismissed) {
                         const demoBar = document.getElementById('demoBar');
-                        if(demoBar) demoBar.style.display = 'block';
+                        if(demoBar) {
+                            demoBar.style.display = 'block';
+                            document.body.style.paddingTop = '50px'; // Space for fixed bar
+                        }
                     }
                 } catch (e) {
                     // localStorage may be restricted (Safari private browsing)
                     const demoBar = document.getElementById('demoBar');
-                    if(demoBar) demoBar.style.display = 'block';
+                    if(demoBar) {
+                        demoBar.style.display = 'block';
+                        document.body.style.paddingTop = '50px';
+                    }
                 }
             }
 

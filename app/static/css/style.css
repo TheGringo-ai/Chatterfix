@@ -559,6 +559,23 @@ body {
   box-shadow: 0 8px 25px rgba(108, 117, 125, 0.5);
 }
 
+/* Light mode styling for secondary buttons - white background with dark text */
+:root:not(.dark-mode) .cmms-btn-secondary {
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  color: #212529 !important;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark-mode) .cmms-btn-secondary:hover {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:root:not(.dark-mode) .cmms-btn-secondary i {
+  color: #495057;
+}
+
 /* Form Sections */
 .parts-section,
 .instructions-section {

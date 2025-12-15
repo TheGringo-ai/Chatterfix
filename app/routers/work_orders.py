@@ -8,8 +8,9 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, require_permission, get_optional_current_user
 from app.models.user import User
+from typing import Optional as OptionalType
 from app.models.work_order import WorkOrder
 from app.services.work_order_service import work_order_service
 from app.services.notification_service import NotificationService
@@ -94,3 +95,62 @@ async def update_work_order(
 
 # Other endpoints like media upload, completion, etc. would also be refactored
 # to use the work_order_service.
+
+
+# ==========================================
+# 📋 MY WORK ORDERS API ENDPOINT
+# ==========================================
+
+@router.get("/api/my-work-orders", response_class=JSONResponse)
+async def get_my_work_orders(
+    status: Optional[str] = None,
+    current_user: OptionalType[User] = Depends(get_optional_current_user)
+):
+    """Get work orders assigned to the current user"""
+    from app.core.firestore_db import get_firestore_manager
+
+    firestore_manager = get_firestore_manager()
+
+    # Get user ID - use demo user if not authenticated
+    user_id = current_user.id if current_user else "demo_user"
+
+    # Get all work orders and filter by assigned_to_uid
+    all_work_orders = await firestore_manager.get_collection("work_orders", order_by="-created_at")
+
+    # Filter work orders assigned to this user
+    my_work_orders = []
+    for wo in all_work_orders:
+        assigned_to = wo.get("assigned_to_uid") or wo.get("assigned_to")
+        if assigned_to == user_id or assigned_to == (current_user.username if current_user else None):
+            # Convert datetime objects to strings
+            for key, value in wo.items():
+                if hasattr(value, 'strftime'):
+                    wo[key] = value.strftime("%Y-%m-%d %H:%M")
+                elif hasattr(value, 'timestamp'):
+                    wo[key] = str(value)
+            my_work_orders.append(wo)
+
+    # Apply status filter if provided
+    if status and status != 'all':
+        status_map = {
+            'open': ['Open', 'Pending', 'New'],
+            'in_progress': ['In Progress', 'Working', 'Started'],
+            'completed': ['Completed', 'Done', 'Closed', 'Resolved']
+        }
+        allowed_statuses = status_map.get(status, [status])
+        my_work_orders = [wo for wo in my_work_orders if wo.get('status') in allowed_statuses]
+
+    # Calculate summary stats
+    summary = {
+        'total': len(my_work_orders),
+        'open': len([wo for wo in my_work_orders if wo.get('status') in ['Open', 'Pending', 'New']]),
+        'in_progress': len([wo for wo in my_work_orders if wo.get('status') in ['In Progress', 'Working', 'Started']]),
+        'completed': len([wo for wo in my_work_orders if wo.get('status') in ['Completed', 'Done', 'Closed', 'Resolved']]),
+        'high_priority': len([wo for wo in my_work_orders if wo.get('priority') in ['High', 'Critical', 'Urgent']])
+    }
+
+    return JSONResponse({
+        "work_orders": my_work_orders,
+        "summary": summary,
+        "user_id": user_id
+    })

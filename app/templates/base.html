@@ -294,6 +294,7 @@
         .nav-tabs-wrapper {
             position: relative;
             background: var(--bg-secondary, #f8f9fa);
+            overflow: visible;
         }
 
         .nav-tabs-container {
@@ -352,10 +353,12 @@
 
         .nav-scroll-btn.scroll-left {
             left: 2px;
-            /* Always visible */
+            /* Always visible - never hide left button */
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
+            z-index: 1000 !important;
+            pointer-events: auto !important;
         }
 
         .nav-scroll-btn.scroll-right {

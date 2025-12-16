@@ -654,8 +654,11 @@ async def analytics_dashboard(request: Request, current_user: OptionalType[User]
     except Exception:
         kpi_data = {}
 
+    # Check if user is accessing via demo mode or is unauthenticated
+    is_demo = current_user is None or request.url.path.startswith('/demo')
+
     return templates.TemplateResponse(
-        "analytics_dashboard.html", {"request": request, "kpi_data": kpi_data, "user": current_user}
+        "analytics_dashboard.html", {"request": request, "kpi_data": kpi_data, "user": current_user, "is_demo": is_demo}
     )
 
 

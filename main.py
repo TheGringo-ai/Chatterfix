@@ -167,6 +167,10 @@ for router_name in all_extended_routers:
         logger.info(f"✅ Successfully imported {router_name} router")
     except ImportError as e:
         logger.warning(f"❌ Warning: Could not import {router_name} router: {e}")
+    except Exception as e:
+        import traceback
+        logger.error(f"❌ Failed to import {router_name} router: {type(e).__name__}: {e}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
 
 # Check if critical routers are available
 critical_routers_loaded = all(router in extended_routers for router in critical_routers)

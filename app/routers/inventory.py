@@ -28,9 +28,13 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/inventory", response_class=HTMLResponse)
 async def inventory_list(request: Request, current_user: User = Depends(get_current_active_user)):
-    """Render the inventory list"""
+    """Render the inventory list (filtered by organization)"""
     firestore_manager = get_firestore_manager()
-    parts = await firestore_manager.get_collection("parts", order_by="name")
+    # Multi-tenant: filter by user's organization
+    if current_user.organization_id:
+        parts = await firestore_manager.get_org_parts(current_user.organization_id)
+    else:
+        parts = await firestore_manager.get_collection("parts", order_by="name")
     return templates.TemplateResponse(
         "inventory/list.html", {"request": request, "parts": parts, "user": current_user}
     )
@@ -39,7 +43,11 @@ async def inventory_list(request: Request, current_user: User = Depends(get_curr
 async def add_part_form(request: Request, current_user: User = Depends(require_permission("manage_inventory"))):
     """Render the add part form"""
     firestore_manager = get_firestore_manager()
-    vendors = await firestore_manager.get_collection("vendors", order_by="name")
+    # Multi-tenant: filter vendors by user's organization
+    if current_user.organization_id:
+        vendors = await firestore_manager.get_org_vendors(current_user.organization_id)
+    else:
+        vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
         "inventory/add.html", {"request": request, "vendors": vendors, "user": current_user}
     )
@@ -66,7 +74,11 @@ async def add_part(
         "minimum_stock": minimum_stock, "location": location,
         "unit_cost": unit_cost, "vendor_id": vendor_id
     }
-    part_id = await firestore_manager.create_document("parts", part_data)
+    # Multi-tenant: associate part with user's organization
+    if current_user.organization_id:
+        part_id = await firestore_manager.create_org_document("parts", part_data, current_user.organization_id)
+    else:
+        part_id = await firestore_manager.create_document("parts", part_data)
 
     if files:
         part_dir = os.path.join(UPLOAD_DIR, str(part_id))
@@ -86,9 +98,13 @@ async def add_part(
 
 @router.get("/inventory/{part_id}", response_class=HTMLResponse)
 async def part_detail(request: Request, part_id: str, current_user: User = Depends(get_current_active_user)):
-    """Render part details"""
+    """Render part details (validates organization ownership)"""
     firestore_manager = get_firestore_manager()
-    part = await firestore_manager.get_document("parts", part_id)
+    # Multi-tenant: validate part belongs to user's organization
+    if current_user.organization_id:
+        part = await firestore_manager.get_org_document("parts", part_id, current_user.organization_id)
+    else:
+        part = await firestore_manager.get_document("parts", part_id)
     if not part:
         return RedirectResponse(url="/inventory")
     
@@ -134,9 +150,13 @@ async def upload_part_media(
 # Vendor Routes
 @router.get("/vendors", response_class=HTMLResponse)
 async def vendor_list(request: Request, current_user: User = Depends(require_permission("manage_vendors"))):
-    """Render vendor list"""
+    """Render vendor list (filtered by organization)"""
     firestore_manager = get_firestore_manager()
-    vendors = await firestore_manager.get_collection("vendors", order_by="name")
+    # Multi-tenant: filter vendors by user's organization
+    if current_user.organization_id:
+        vendors = await firestore_manager.get_org_vendors(current_user.organization_id)
+    else:
+        vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
         "inventory/vendors.html", {"request": request, "vendors": vendors, "user": current_user}
     )
@@ -155,7 +175,11 @@ async def add_vendor(
         "name": name, "contact_name": contact_name,
         "email": email, "phone": phone
     }
-    await firestore_manager.create_document("vendors", vendor_data)
+    # Multi-tenant: associate vendor with user's organization
+    if current_user.organization_id:
+        await firestore_manager.create_org_document("vendors", vendor_data, current_user.organization_id)
+    else:
+        await firestore_manager.create_document("vendors", vendor_data)
     return RedirectResponse(url="/vendors", status_code=303)
 
 

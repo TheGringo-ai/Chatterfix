@@ -76,14 +76,17 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
         role = user_doc.get("role", "technician")
         permissions = get_permissions_for_role(role)
 
-        # Create a user model
+        # Create a user model with multi-tenant organization data
         user = User(
             uid=uid,
             email=email,
             role=role,
-            full_name=user_doc.get("full_name"),
+            full_name=user_doc.get("full_name") or user_doc.get("display_name"),
             disabled=user_doc.get("disabled", False),
-            permissions=permissions
+            permissions=permissions,
+            # Multi-tenant organization fields
+            organization_id=user_doc.get("organization_id"),
+            organization_name=user_doc.get("organization_name"),
         )
 
         if user.disabled:
@@ -108,6 +111,7 @@ def get_permissions_for_role(role: str) -> list[str]:
     This defines the role-based access control (RBAC) for the application.
     """
     role_permissions = {
+        "owner": ["all"],  # Organization owner has full access
         "manager": ["all"],
         "supervisor": [
             "view_all_work_orders",

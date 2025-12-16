@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import shutil
@@ -24,9 +25,13 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/", response_class=HTMLResponse)
 async def assets_list(request: Request, current_user: User = Depends(get_current_active_user)):
-    """Display all assets with filtering"""
+    """Display all assets with filtering (filtered by organization)"""
     firestore_manager = get_firestore_manager()
-    assets = await firestore_manager.get_collection("assets", order_by="name")
+    # Multi-tenant: filter by user's organization
+    if current_user.organization_id:
+        assets = await firestore_manager.get_org_assets(current_user.organization_id)
+    else:
+        assets = await firestore_manager.get_collection("assets", order_by="name")
 
     # The original query joined parent asset names. This is harder in Firestore.
     # For now, we will handle this on the client side if needed, or fetch parents individually.
@@ -53,11 +58,14 @@ async def assets_list(request: Request, current_user: User = Depends(get_current
 
 @router.get("/{asset_id}", response_class=HTMLResponse)
 async def asset_detail(request: Request, asset_id: str, current_user: User = Depends(get_current_active_user)):
-    """Comprehensive asset detail view"""
+    """Comprehensive asset detail view (validates organization ownership)"""
     firestore_manager = get_firestore_manager()
 
-    # Get asset details
-    asset = await firestore_manager.get_document("assets", asset_id)
+    # Multi-tenant: get asset and validate ownership
+    if current_user.organization_id:
+        asset = await firestore_manager.get_org_document("assets", asset_id, current_user.organization_id)
+    else:
+        asset = await firestore_manager.get_document("assets", asset_id)
     if not asset:
         return RedirectResponse("/assets")
 
@@ -130,7 +138,11 @@ async def create_asset(
         "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
     }
 
-    asset_id = await firestore_manager.create_document("assets", asset_data)
+    # Multi-tenant: associate asset with user's organization
+    if current_user.organization_id:
+        asset_id = await firestore_manager.create_org_document("assets", asset_data, current_user.organization_id)
+    else:
+        asset_id = await firestore_manager.create_document("assets", asset_data)
 
     # Handle file uploads
     if files:

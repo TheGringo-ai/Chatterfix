@@ -38,16 +38,22 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("", response_class=HTMLResponse)
 async def work_orders_list(request: Request, current_user: User = Depends(get_current_active_user)):
-    """Render the work orders list"""
-    work_orders = await work_order_service.get_work_orders()
+    """Render the work orders list (filtered by organization)"""
+    # Multi-tenant: filter by user's organization
+    work_orders = await work_order_service.get_work_orders(
+        organization_id=current_user.organization_id
+    )
     return templates.TemplateResponse(
         "work_orders.html", {"request": request, "work_orders": work_orders, "user": current_user}
     )
 
 @router.get("/{wo_id}", response_class=HTMLResponse)
 async def work_order_detail(request: Request, wo_id: str, current_user: User = Depends(get_current_active_user)):
-    """Render work order details"""
-    work_order = await work_order_service.get_work_order(wo_id)
+    """Render work order details (validates organization ownership)"""
+    # Multi-tenant: validate work order belongs to user's organization
+    work_order = await work_order_service.get_work_order(
+        wo_id, organization_id=current_user.organization_id
+    )
     if not work_order:
         return RedirectResponse(url="/work-orders")
     
@@ -75,7 +81,10 @@ async def create_work_order(
         "assigned_to_uid": assigned_to_uid, "asset_id": asset_id, "work_order_type": work_order_type,
         "due_date": due_date
     }
-    wo_id = await work_order_service.create_work_order(work_order_data)
+    # Multi-tenant: associate work order with user's organization
+    wo_id = await work_order_service.create_work_order(
+        work_order_data, organization_id=current_user.organization_id
+    )
     
     # Notification logic would also be in the service layer
     if assigned_to_uid:
@@ -101,7 +110,10 @@ async def update_work_order(
         "title": title, "description": description, "priority": priority,
         "status": status, "assigned_to_uid": assigned_to_uid, "due_date": due_date
     }
-    await work_order_service.update_work_order(wo_id, update_data)
+    # Multi-tenant: validate work order belongs to user's organization
+    await work_order_service.update_work_order(
+        wo_id, update_data, organization_id=current_user.organization_id
+    )
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 
 # Other endpoints like media upload, completion, etc. would also be refactored

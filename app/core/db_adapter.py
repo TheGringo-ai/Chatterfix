@@ -77,6 +77,16 @@ class DatabaseAdapter:
             )
         return {"work_orders": [], "assets": [], "ai_interactions": []}
 
+    async def get_org_dashboard_data(
+        self, organization_id: str, user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get organization-scoped dashboard data (multi-tenant)"""
+        if self.firestore_manager:
+            return await self.firestore_manager.get_org_dashboard_data(
+                organization_id, user_id or "anonymous"
+            )
+        return {"work_orders": [], "assets": [], "ai_interactions": []}
+
     async def get_asset_by_tag(self, asset_tag: str) -> Optional[Dict[str, Any]]:
         """Get asset by asset tag/barcode"""
         if self.firestore_manager:

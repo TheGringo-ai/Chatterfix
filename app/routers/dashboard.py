@@ -60,7 +60,13 @@ async def dashboard(
     # Get real-time stats from Firestore via db_adapter
     try:
         db_adapter = get_db_adapter()
-        dashboard_data = await db_adapter.get_dashboard_data(user_id)
+        # Multi-tenant: use org-scoped data for authenticated users
+        if current_user and current_user.organization_id:
+            dashboard_data = await db_adapter.get_org_dashboard_data(
+                current_user.organization_id, user_id
+            )
+        else:
+            dashboard_data = await db_adapter.get_dashboard_data(user_id)
 
         # Extract data for template
         work_orders = dashboard_data.get("work_orders", [])
@@ -116,7 +122,13 @@ async def classic_dashboard(
     # Get real-time stats from Firestore via db_adapter
     try:
         db_adapter = get_db_adapter()
-        dashboard_data = await db_adapter.get_dashboard_data(current_user.uid)
+        # Multi-tenant: use org-scoped data
+        if current_user.organization_id:
+            dashboard_data = await db_adapter.get_org_dashboard_data(
+                current_user.organization_id, current_user.uid
+            )
+        else:
+            dashboard_data = await db_adapter.get_dashboard_data(current_user.uid)
 
         # Extract data for template
         work_orders = dashboard_data.get("work_orders", [])

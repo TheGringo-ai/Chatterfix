@@ -10,7 +10,8 @@ from app.core.firestore_db import get_db_connection
 # # from app.core.database import get_db_connection
 from app.auth import get_current_active_user, get_optional_current_user
 from app.models.user import User
-from typing import Optional
+from typing import Optional, Union
+import json
 from app.services.ai_assistant import chatterfix_ai
 from app.services.computer_vision import analyze_asset_condition, recognize_part, extract_text_from_image, detect_equipment_issues
 from app.services.voice_commands import (
@@ -37,7 +38,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 class ChatRequest(BaseModel):
     message: str
-    context: str = ""
+    context: Union[str, dict] = ""  # Accept string or object context
     user_id: int = 1
     context_type: str = "general"  # general, equipment_diagnosis, troubleshooting, etc.
     force_team: bool = False  # Force full AI team collaboration
@@ -57,12 +58,51 @@ async def chat(request: ChatRequest):
     - fast_mode=true: Skip AI team refinement for ~50% faster responses
     """
     try:
+        # Handle context - can be string or dict
+        context = request.context
+        context_type = request.context_type
+
+        # If context is a dict, check for special tasks
+        if isinstance(context, dict):
+            task = context.get("task", "")
+
+            # Work Order Creation Task - build enhanced prompt
+            if task == "work_order_creation":
+                current_data = context.get("current_data", {})
+                instructions = context.get("instructions", "")
+                conversation_history = context.get("conversation_history", [])
+
+                # Build context string for AI
+                context_parts = [
+                    "TASK: Help technician create a work order through conversation.",
+                    "",
+                    "INSTRUCTIONS:",
+                    instructions,
+                    "",
+                    "CURRENT WORK ORDER DATA COLLECTED:",
+                    json.dumps(current_data, indent=2),
+                    "",
+                    "CONVERSATION HISTORY:",
+                ]
+
+                for msg in conversation_history[-4:]:
+                    role = msg.get("role", "user").upper()
+                    content = msg.get("content", "")[:200]
+                    context_parts.append(f"{role}: {content}")
+
+                context = "\n".join(context_parts)
+                context_type = "work_order_creation"
+
+            else:
+                # Convert dict to JSON string for other tasks
+                context = json.dumps(context)
+
         # Use smart routing via updated process_message
         response = await chatterfix_ai.process_message(
             message=request.message,
-            context=request.context,
+            context=context,
             user_id=request.user_id,
-            context_type=request.context_type,
+            context_type=context_type,
             force_team=request.force_team,
             fast_mode=request.fast_mode
         )

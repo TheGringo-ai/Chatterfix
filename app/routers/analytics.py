@@ -36,10 +36,11 @@ except ImportError:
     
     class WorkOrder:
         pass
+# Use primary analytics service that queries Firestore
+# Falls back to demo data when no real data exists
 try:
     from app.services.analytics_service import analytics_service
 except ImportError:
-    # Use Firestore-compatible analytics service if SQLAlchemy version fails
     from app.services.analytics_service_firestore import FirestoreAnalyticsService
     analytics_service = FirestoreAnalyticsService()
 from app.services.export_service import export_service

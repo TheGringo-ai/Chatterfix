@@ -359,8 +359,15 @@
         }
 
         .nav-scroll-btn.hidden {
-            opacity: 0;
+            opacity: 0.3;
             pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        /* Add padding to nav container for scroll buttons */
+        .nav-tabs-container {
+            padding-left: 35px;
+            padding-right: 35px;
         }
 
         .dark-mode .nav-scroll-btn {

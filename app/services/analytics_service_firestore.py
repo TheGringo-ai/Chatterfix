@@ -125,6 +125,11 @@ class FirestoreAnalyticsService:
             "critical_assets": 1,
             "uptime_percentage": uptime_data.get("value", 97.3),
             "downtime_hours": 65.2,
+            "status_breakdown": {
+                "Active": 46,
+                "Maintenance": 3,
+                "Inactive": 1
+            },
             "utilization_by_type": {
                 "Production Equipment": 92.1,
                 "HVAC": 95.8,
@@ -141,6 +146,17 @@ class FirestoreAnalyticsService:
         """Get cost tracking data - with rich demo data"""
         demo = self._get_demo_analytics()
         costs = demo.get("costs", {})
+
+        # Generate daily cost trend for charts
+        import random
+        random.seed(42)
+        daily_trend = []
+        for i in range(min(days, 30)):
+            date = datetime.now() - timedelta(days=29-i)
+            daily_trend.append({
+                "date": date.strftime("%Y-%m-%d"),
+                "cost": random.randint(200, 1500)
+            })
 
         return {
             "total_cost": costs.get("total_maintenance_cost", 24750.00),
@@ -159,13 +175,20 @@ class FirestoreAnalyticsService:
                 "Emergency Repairs": 2800.00,
                 "Inspections": 1250.00
             },
+            "costs_by_type": {
+                "Preventive": 8500,
+                "Corrective": 12250,
+                "Emergency": 4000
+            },
+            "daily_trend": daily_trend,
             "cost_trend": [
                 {"month": "Oct", "cost": 22100},
                 {"month": "Nov", "cost": 23800},
                 {"month": "Dec", "cost": 24750}
             ],
             "savings_from_pm": 12500.00,
-            "cost_avoidance": 35000.00
+            "cost_avoidance": 35000.00,
+            "trend": "stable"
         }
 
     async def get_work_order_metrics(self, days: int = 30) -> Dict[str, Any]:
@@ -174,6 +197,20 @@ class FirestoreAnalyticsService:
         overview = demo.get("overview", {})
         kpis = demo.get("kpis", {})
         completion_data = kpis.get("completion_rate", {})
+
+        # Generate daily trend data for charts
+        import random
+        random.seed(42)
+        daily_trend = []
+        for i in range(min(days, 30)):
+            date = datetime.now() - timedelta(days=29-i)
+            created = random.randint(3, 8)
+            completed = max(0, created - random.randint(0, 2))
+            daily_trend.append({
+                "date": date.strftime("%Y-%m-%d"),
+                "created": created,
+                "completed": completed
+            })
 
         return {
             "total_created": overview.get("total_work_orders", 156),
@@ -187,6 +224,18 @@ class FirestoreAnalyticsService:
             "average_age_open": 3.2,
             "backlog_count": 24,
             "overdue_count": 4,
+            "status_breakdown": {
+                "Open": 12,
+                "In Progress": 18,
+                "Completed": 140,
+                "On Hold": 4
+            },
+            "priority_breakdown": {
+                "Low": 45,
+                "Medium": 68,
+                "High": 32,
+                "Critical": 11
+            },
             "by_priority": {
                 "Critical": {"total": 8, "completed": 8, "rate": 100},
                 "High": {"total": 31, "completed": 28, "rate": 90.3},
@@ -199,8 +248,10 @@ class FirestoreAnalyticsService:
                 "Emergency": 18,
                 "Inspection": 18
             },
+            "daily_trend": daily_trend,
             "trend": completion_data.get("trend", "up"),
-            "change_percent": completion_data.get("change_percent", 5.2)
+            "change_percent": completion_data.get("change_percent", 5.2),
+            "status": "good"
         }
 
     async def get_compliance_metrics(self, days: int = 30) -> Dict[str, Any]:

@@ -925,6 +925,13 @@ async def demo_analytics(request: Request):
     )
 
 
+@router.get("/demo/analytics/dashboard")
+async def demo_analytics_dashboard_redirect():
+    """Redirect to demo analytics - for URL consistency"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/demo/analytics", status_code=302)
+
+
 @router.get("/demo/diagnostics", response_class=HTMLResponse)
 async def demo_diagnostics(request: Request):
     """Demo equipment diagnostics tool"""
@@ -1327,7 +1334,7 @@ async def demo_analytics_kpi_summary(days: int = 30):
     }
 
 
-@router.get("/analytics/charts/work-order-status")
+@router.get("/demo/analytics/charts/work-order-status")
 async def demo_analytics_work_order_status(days: int = 30):
     """Demo work order status chart data"""
     return {
@@ -1342,7 +1349,7 @@ async def demo_analytics_work_order_status(days: int = 30):
     }
 
 
-@router.get("/analytics/charts/priority-distribution")
+@router.get("/demo/analytics/charts/priority-distribution")
 async def demo_analytics_priority_distribution(days: int = 30):
     """Demo priority distribution chart data"""
     return {
@@ -1357,7 +1364,7 @@ async def demo_analytics_priority_distribution(days: int = 30):
     }
 
 
-@router.get("/analytics/charts/cost-trend")
+@router.get("/demo/analytics/charts/cost-trend")
 async def demo_analytics_cost_trend(days: int = 30):
     """Demo cost trend chart data"""
     today = datetime.now()
@@ -1380,7 +1387,7 @@ async def demo_analytics_cost_trend(days: int = 30):
     }
 
 
-@router.get("/analytics/charts/completion-trend")
+@router.get("/demo/analytics/charts/completion-trend")
 async def demo_analytics_completion_trend(days: int = 30):
     """Demo completion trend chart data"""
     today = datetime.now()
@@ -1416,7 +1423,7 @@ async def demo_analytics_completion_trend(days: int = 30):
     }
 
 
-@router.get("/analytics/charts/asset-health")
+@router.get("/demo/analytics/charts/asset-health")
 async def demo_analytics_asset_health():
     """Demo asset health chart data"""
     return {

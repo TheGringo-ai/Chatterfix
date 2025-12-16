@@ -1096,8 +1096,8 @@
                     </a>
                 </li>
                 
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/analytics') %}active{% endif %}">
-                    <a href="/analytics/dashboard" class="nav-tab-link">
+                <li class="nav-tab {% if request.url and request.url.path and (request.url.path.startswith('/demo/analytics') or request.url.path.startswith('/analytics')) %}active{% endif %}">
+                    <a href="/demo/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-chart-line"></i>
                         Analytics
                     </a>

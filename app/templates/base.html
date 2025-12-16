@@ -1685,13 +1685,11 @@
 
         function updateScrollButtons() {
             const container = document.getElementById('navTabsContainer');
-            const leftBtn = document.querySelector('.nav-scroll-btn.scroll-left');
             const rightBtn = document.querySelector('.nav-scroll-btn.scroll-right');
 
-            if (container && leftBtn && rightBtn) {
-                // Show/hide left button based on scroll position
-                leftBtn.classList.toggle('hidden', container.scrollLeft <= 10);
-                // Show/hide right button based on remaining scroll
+            if (container && rightBtn) {
+                // Left button always visible and clickable
+                // Only hide right button when scrolled to the end
                 const maxScroll = container.scrollWidth - container.clientWidth;
                 rightBtn.classList.toggle('hidden', container.scrollLeft >= maxScroll - 10);
             }

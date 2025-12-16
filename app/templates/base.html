@@ -352,13 +352,17 @@
 
         .nav-scroll-btn.scroll-left {
             left: 2px;
+            /* Always visible */
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .nav-scroll-btn.scroll-right {
             right: 2px;
         }
 
-        .nav-scroll-btn.hidden {
+        .nav-scroll-btn.scroll-right.hidden {
             opacity: 0.3;
             pointer-events: none;
             cursor: not-allowed;

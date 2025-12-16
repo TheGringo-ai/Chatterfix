@@ -222,24 +222,184 @@
     {% endfor %}
 </div>
 
-<!-- AI Assistant Modal -->
+<!-- AI Assistant Modal - Enhanced for Work Order Creation -->
 <div id="aiAssistantModal" class="modal modal-light"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content form-light" style="margin: 5% auto; width: 500px; padding: 30px;">
-        <h2 style="color: #212529;"><i class="fas fa-robot"></i> AI Assistant</h2>
-        <div id="chatHistory"
-            style="height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; background: #ffffff;">
-            <div class="message ai">Hello! I'm your maintenance assistant. How can I help you today?</div>
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 3% auto; width: 90%; max-width: 700px; padding: 0; border-radius: 16px; overflow: hidden;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-robot" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.3rem;">AI Work Order Assistant</h2>
+                        <p style="margin: 0; opacity: 0.9; font-size: 0.85rem;">I'll help you create a work order step by step</p>
+                    </div>
+                </div>
+                <button onclick="closeAIAssistant()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.8;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
-        <div style="display:flex; gap:10px;">
-            <input type="text" id="userMessage" class="form-control" placeholder="Describe issue or ask for manual..."
-                onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+
+        <!-- Chat History -->
+        <div id="chatHistory" style="height: 350px; overflow-y: auto; padding: 20px; background: #f8f9fa;">
+            <!-- Messages will be added here -->
         </div>
-        <button onclick="document.getElementById('aiAssistantModal').style.display='none'"
-            class="btn btn-sm btn-secondary" style="margin-top:10px;">Close</button>
+
+        <!-- Quick Actions (shown when AI suggests creating work order) -->
+        <div id="aiQuickActions" style="display: none; padding: 15px 20px; background: #e8f5e9; border-top: 1px solid #c8e6c9;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="confirmCreateWorkOrder()" class="cmms-btn" style="background: #28a745;">
+                    <i class="fas fa-check"></i> Create Work Order
+                </button>
+                <button onclick="editWorkOrderDetails()" class="cmms-btn-secondary">
+                    <i class="fas fa-edit"></i> Edit Details
+                </button>
+                <button onclick="resetAIConversation()" class="cmms-btn-secondary" style="background: #6c757d; color: white;">
+                    <i class="fas fa-redo"></i> Start Over
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div style="padding: 20px; background: white; border-top: 1px solid #dee2e6;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="startVoiceInput()" id="voiceInputBtn" class="cmms-btn-secondary" style="padding: 12px 15px;" title="Voice Input">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <input type="text" id="userMessage" class="form-control"
+                    placeholder="Describe the issue or answer my questions..."
+                    style="flex: 1; padding: 12px 15px; border-radius: 25px; border: 2px solid #dee2e6;"
+                    onkeypress="if(event.key==='Enter') sendAIMessage()">
+                <button onclick="sendAIMessage()" class="cmms-btn" style="padding: 12px 20px; border-radius: 25px;">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 0.8rem; color: #6c757d;">Quick prompts:</span>
+                <button onclick="setQuickPrompt('Machine is making unusual noise')" class="quick-prompt-btn">Machine noise</button>
+                <button onclick="setQuickPrompt('Equipment not starting')" class="quick-prompt-btn">Won't start</button>
+                <button onclick="setQuickPrompt('Preventive maintenance needed')" class="quick-prompt-btn">PM needed</button>
+                <button onclick="setQuickPrompt('Safety hazard identified')" class="quick-prompt-btn">Safety issue</button>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+.quick-prompt-btn {
+    background: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 15px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.quick-prompt-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+.ai-message {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s ease;
+}
+.ai-message.user {
+    flex-direction: row-reverse;
+}
+.ai-message .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ai-message.assistant .avatar {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+.ai-message.user .avatar {
+    background: #28a745;
+    color: white;
+}
+.ai-message .bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    line-height: 1.5;
+}
+.ai-message.assistant .bubble {
+    background: white;
+    color: #212529;
+    border: 1px solid #dee2e6;
+    border-top-left-radius: 4px;
+}
+.ai-message.user .bubble {
+    background: #667eea;
+    color: white;
+    border-top-right-radius: 4px;
+}
+.ai-typing {
+    display: flex;
+    gap: 4px;
+    padding: 8px 0;
+}
+.ai-typing span {
+    width: 8px;
+    height: 8px;
+    background: #667eea;
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+.ai-typing span:nth-child(1) { animation-delay: -0.32s; }
+.ai-typing span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.wo-preview-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 10px;
+}
+.wo-preview-card h4 {
+    color: #667eea;
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+}
+.wo-preview-field {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed #dee2e6;
+    font-size: 0.9rem;
+}
+.wo-preview-field:last-child {
+    border-bottom: none;
+}
+.wo-preview-field .label {
+    color: #6c757d;
+}
+.wo-preview-field .value {
+    color: #212529;
+    font-weight: 500;
+}
+</style>
 
 <!-- Edit Work Order Modal -->
 <div id="editWOModal" class="modal modal-light"
@@ -843,6 +1003,8 @@
             if (assetResponse.ok) {
                 const assets = await assetResponse.json();
                 populateAssetDropdown(assets);
+                // Store for AI context
+                availableAssets = assets;
             }
 
             // Load technicians for dropdown
@@ -1284,6 +1446,439 @@
             }
         });
     }
+
+    // ==========================================
+    // AI ASSISTANT FOR WORK ORDER CREATION
+    // ==========================================
+
+    // Conversation state for AI-guided work order creation
+    let aiConversationState = {
+        step: 0,
+        workOrderData: {
+            title: '',
+            description: '',
+            priority: 'Medium',
+            asset_id: '',
+            asset_name: '',
+            work_order_type: 'Corrective',
+            due_date: '',
+            assigned_to: '',
+            work_instructions: ''
+        },
+        conversationHistory: []
+    };
+
+    function openAIAssistant() {
+        const modal = document.getElementById('aiAssistantModal');
+        modal.style.display = 'block';
+        resetAIConversation();
+
+        // Focus on input
+        setTimeout(() => {
+            document.getElementById('userMessage').focus();
+        }, 300);
+    }
+
+    function closeAIAssistant() {
+        document.getElementById('aiAssistantModal').style.display = 'none';
+    }
+
+    function resetAIConversation() {
+        aiConversationState = {
+            step: 0,
+            workOrderData: {
+                title: '',
+                description: '',
+                priority: 'Medium',
+                asset_id: '',
+                asset_name: '',
+                work_order_type: 'Corrective',
+                due_date: '',
+                assigned_to: '',
+                work_instructions: ''
+            },
+            conversationHistory: []
+        };
+
+        document.getElementById('chatHistory').innerHTML = '';
+        document.getElementById('aiQuickActions').style.display = 'none';
+
+        // Start conversation
+        addAIMessage("Hello! I'm your AI assistant for creating work orders. Tell me about the maintenance issue you need to report, and I'll help you create a work order.\n\nYou can describe the problem in your own words - for example:\n• \"The conveyor belt is making a grinding noise\"\n• \"HVAC unit in Building B needs filter replacement\"\n• \"Forklift #3 won't start\"");
+    }
+
+    function addAIMessage(message, isUser = false) {
+        const chatHistory = document.getElementById('chatHistory');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `ai-message ${isUser ? 'user' : 'assistant'}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        avatar.innerHTML = isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.innerHTML = message.replace(/\n/g, '<br>');
+
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(bubble);
+        chatHistory.appendChild(messageDiv);
+
+        // Scroll to bottom
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        // Store in history
+        aiConversationState.conversationHistory.push({
+            role: isUser ? 'user' : 'assistant',
+            content: message
+        });
+    }
+
+    function showTypingIndicator() {
+        const chatHistory = document.getElementById('chatHistory');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'ai-message assistant';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = `
+            <div class="avatar"><i class="fas fa-robot"></i></div>
+            <div class="bubble">
+                <div class="ai-typing">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        chatHistory.appendChild(typingDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
+    }
+
+    async function sendAIMessage() {
+        const input = document.getElementById('userMessage');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        // Add user message
+        addAIMessage(message, true);
+        input.value = '';
+
+        // Show typing indicator
+        showTypingIndicator();
+
+        try {
+            // Call AI endpoint with context about work order creation
+            const response = await fetch('/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: message,
+                    context: {
+                        task: 'work_order_creation',
+                        current_data: aiConversationState.workOrderData,
+                        conversation_history: aiConversationState.conversationHistory.slice(-6),
+                        available_assets: availableAssets || [],
+                        instructions: `You are helping a technician create a work order. Based on their input, extract relevant information and ask follow-up questions if needed.
+
+                        Extract these fields from their description:
+                        - title: A short descriptive title for the work order
+                        - description: Detailed description of the issue
+                        - priority: Critical, High, Medium, or Low
+                        - work_order_type: Corrective, Preventive, Emergency, Inspection, or Installation
+                        - asset_name: The equipment/asset mentioned
+
+                        After gathering enough information, summarize what you'll create and ask for confirmation.
+
+                        IMPORTANT: Include a JSON block at the end of your response with extracted data in this format:
+                        \`\`\`json
+                        {"title": "...", "description": "...", "priority": "...", "work_order_type": "...", "asset_name": "...", "ready_to_create": true/false}
+                        \`\`\`
+
+                        Set ready_to_create to true only when you have enough information for a complete work order.`
+                    }
+                })
+            });
+
+            removeTypingIndicator();
+
+            if (response.ok) {
+                const data = await response.json();
+                let aiResponse = data.response || data.message || "I'm sorry, I couldn't process that. Could you try again?";
+
+                // Try to extract JSON data from response
+                const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                    try {
+                        const extractedData = JSON.parse(jsonMatch[1]);
+
+                        // Update work order data
+                        if (extractedData.title) aiConversationState.workOrderData.title = extractedData.title;
+                        if (extractedData.description) aiConversationState.workOrderData.description = extractedData.description;
+                        if (extractedData.priority) aiConversationState.workOrderData.priority = extractedData.priority;
+                        if (extractedData.work_order_type) aiConversationState.workOrderData.work_order_type = extractedData.work_order_type;
+                        if (extractedData.asset_name) aiConversationState.workOrderData.asset_name = extractedData.asset_name;
+
+                        // Remove JSON from displayed message
+                        aiResponse = aiResponse.replace(/```json[\s\S]*?```/g, '').trim();
+
+                        // Show quick actions if ready to create
+                        if (extractedData.ready_to_create) {
+                            document.getElementById('aiQuickActions').style.display = 'block';
+
+                            // Add work order preview card
+                            aiResponse += generateWorkOrderPreview();
+                        }
+                    } catch (e) {
+                        console.log('Could not parse JSON from AI response');
+                    }
+                }
+
+                addAIMessage(aiResponse);
+            } else {
+                // Fallback to local processing
+                processMessageLocally(message);
+            }
+        } catch (error) {
+            console.error('AI Error:', error);
+            removeTypingIndicator();
+            processMessageLocally(message);
+        }
+    }
+
+    function processMessageLocally(message) {
+        // Local fallback processing
+        const lowerMessage = message.toLowerCase();
+        const data = aiConversationState.workOrderData;
+
+        // Extract information from message
+        if (!data.title && message.length > 5) {
+            // Create title from first sentence
+            const firstSentence = message.split(/[.!?]/)[0].trim();
+            data.title = firstSentence.length > 50 ? firstSentence.substring(0, 50) + '...' : firstSentence;
+            data.description = message;
+        }
+
+        // Detect priority keywords
+        if (lowerMessage.includes('urgent') || lowerMessage.includes('emergency') || lowerMessage.includes('critical') || lowerMessage.includes('dangerous')) {
+            data.priority = 'Critical';
+        } else if (lowerMessage.includes('important') || lowerMessage.includes('asap') || lowerMessage.includes('high')) {
+            data.priority = 'High';
+        } else if (lowerMessage.includes('low') || lowerMessage.includes('when possible') || lowerMessage.includes('minor')) {
+            data.priority = 'Low';
+        }
+
+        // Detect work order type
+        if (lowerMessage.includes('emergency') || lowerMessage.includes('urgent')) {
+            data.work_order_type = 'Emergency';
+        } else if (lowerMessage.includes('inspect') || lowerMessage.includes('check')) {
+            data.work_order_type = 'Inspection';
+        } else if (lowerMessage.includes('install') || lowerMessage.includes('setup')) {
+            data.work_order_type = 'Installation';
+        } else if (lowerMessage.includes('preventive') || lowerMessage.includes('pm') || lowerMessage.includes('scheduled')) {
+            data.work_order_type = 'Preventive';
+        }
+
+        // Generate response
+        let response = '';
+
+        if (aiConversationState.step === 0) {
+            response = `Got it! I understand you're reporting: "${data.title}"\n\n`;
+            response += `I've set this as a **${data.priority} priority ${data.work_order_type} Maintenance** work order.\n\n`;
+            response += `Is there any specific equipment or asset this relates to? (You can also say "no specific asset" to skip)`;
+            aiConversationState.step = 1;
+        } else if (aiConversationState.step === 1) {
+            if (!lowerMessage.includes('no') && !lowerMessage.includes('skip')) {
+                data.asset_name = message;
+                response = `Great, I'll associate this with "${data.asset_name}".\n\n`;
+            } else {
+                response = `Okay, no specific asset selected.\n\n`;
+            }
+            response += `Any additional instructions or safety notes for the technician?`;
+            aiConversationState.step = 2;
+        } else {
+            if (!lowerMessage.includes('no') && !lowerMessage.includes('skip') && message.length > 3) {
+                data.work_instructions = message;
+            }
+
+            response = `Perfect! Here's the work order I'll create:`;
+            response += generateWorkOrderPreview();
+            response += `\n\nClick "Create Work Order" to submit, or "Edit Details" to make changes.`;
+
+            document.getElementById('aiQuickActions').style.display = 'block';
+            aiConversationState.step = 3;
+        }
+
+        addAIMessage(response);
+    }
+
+    function generateWorkOrderPreview() {
+        const data = aiConversationState.workOrderData;
+        return `
+            <div class="wo-preview-card">
+                <h4><i class="fas fa-clipboard-list"></i> Work Order Preview</h4>
+                <div class="wo-preview-field">
+                    <span class="label">Title:</span>
+                    <span class="value">${data.title || 'Not set'}</span>
+                </div>
+                <div class="wo-preview-field">
+                    <span class="label">Type:</span>
+                    <span class="value">${data.work_order_type}</span>
+                </div>
+                <div class="wo-preview-field">
+                    <span class="label">Priority:</span>
+                    <span class="value">${data.priority}</span>
+                </div>
+                <div class="wo-preview-field">
+                    <span class="label">Asset:</span>
+                    <span class="value">${data.asset_name || 'Not specified'}</span>
+                </div>
+                ${data.work_instructions ? `
+                <div class="wo-preview-field">
+                    <span class="label">Instructions:</span>
+                    <span class="value">${data.work_instructions.substring(0, 50)}${data.work_instructions.length > 50 ? '...' : ''}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    async function confirmCreateWorkOrder() {
+        const data = aiConversationState.workOrderData;
+
+        if (!data.title) {
+            addAIMessage("I need at least a title to create the work order. Could you describe the issue?");
+            return;
+        }
+
+        showTypingIndicator();
+
+        try {
+            // Create the work order
+            const formData = new FormData();
+            formData.append('title', data.title);
+            formData.append('description', data.description || data.title);
+            formData.append('priority', data.priority);
+            formData.append('work_order_type', data.work_order_type);
+            formData.append('status', 'Open');
+
+            if (data.work_instructions) {
+                formData.append('work_instructions', data.work_instructions);
+            }
+
+            // Determine correct endpoint based on current URL
+            const isDemo = window.location.pathname.includes('/demo/');
+            const endpoint = isDemo ? '/demo/work-orders/create' : '/work-orders';
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            });
+
+            removeTypingIndicator();
+
+            if (response.ok || response.redirected) {
+                addAIMessage(`<div style="background: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <strong><i class="fas fa-check-circle" style="color: #28a745;"></i> Work Order Created Successfully!</strong><br><br>
+                    Your work order "${data.title}" has been submitted. A technician will be notified shortly.
+                </div>`);
+
+                document.getElementById('aiQuickActions').style.display = 'none';
+
+                // Refresh the page after a delay to show the new work order
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                throw new Error('Failed to create work order');
+            }
+        } catch (error) {
+            removeTypingIndicator();
+            addAIMessage(`<div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                <strong><i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> Error</strong><br>
+                There was a problem creating the work order. Would you like me to try again?
+            </div>`);
+        }
+    }
+
+    function editWorkOrderDetails() {
+        closeAIAssistant();
+
+        // Open the manual form and pre-fill with AI-gathered data
+        const form = document.getElementById('create-wo-form');
+        form.style.display = 'block';
+
+        const data = aiConversationState.workOrderData;
+
+        // Pre-fill form fields
+        const titleField = document.getElementById('wo-title');
+        const descField = document.getElementById('wo-description');
+        const priorityField = document.getElementById('wo-priority');
+        const typeField = document.getElementById('wo-type');
+        const instructionsField = document.getElementById('wo-instructions');
+
+        if (titleField && data.title) titleField.value = data.title;
+        if (descField && data.description) descField.value = data.description;
+        if (priorityField && data.priority) priorityField.value = data.priority;
+        if (typeField && data.work_order_type) typeField.value = data.work_order_type;
+        if (instructionsField && data.work_instructions) instructionsField.value = data.work_instructions;
+
+        // Update toggle button state
+        document.getElementById('toggleCreateWOIcon').classList.remove('fa-plus');
+        document.getElementById('toggleCreateWOIcon').classList.add('fa-minus');
+        document.getElementById('toggleCreateWOText').textContent = 'Hide Form';
+
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function setQuickPrompt(prompt) {
+        document.getElementById('userMessage').value = prompt;
+        document.getElementById('userMessage').focus();
+    }
+
+    function startVoiceInput() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Voice input is not supported in your browser. Please use Chrome or Edge.');
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        voiceBtn.innerHTML = '<i class="fas fa-microphone-slash" style="color: #dc3545;"></i>';
+        voiceBtn.style.background = '#ffe6e6';
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('userMessage').value = transcript;
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            voiceBtn.style.background = '';
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            voiceBtn.style.background = '';
+        };
+
+        recognition.onend = () => {
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            voiceBtn.style.background = '';
+        };
+
+        recognition.start();
+    }
+
+    // Store available assets for AI context
+    let availableAssets = [];
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {

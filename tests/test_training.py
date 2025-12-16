@@ -11,9 +11,26 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routers.training import router
+from app.auth import get_current_active_user, require_permission
+from app.models.user import User
 
 # Create test app
 app = FastAPI()
+
+# Create a mock user for testing
+mock_user = User(
+    uid="test_user_1",
+    email="test@example.com",
+    display_name="Test User",
+    role="manager",
+    organization_id="test_org",
+    permissions=["all"]  # Manager has all permissions
+)
+
+# Override auth dependencies for testing
+app.dependency_overrides[get_current_active_user] = lambda: mock_user
+app.dependency_overrides[require_permission("manager")] = lambda: mock_user
+
 app.include_router(router)
 client = TestClient(app)
 
@@ -165,9 +182,7 @@ class TestTrainingEndpoints:
         mock_get_manager.return_value = mock_firestore_manager
         mock_firestore_manager.get_collection.return_value = []  # No existing training
 
-        response = client.post(
-            "/training/modules/module_1/start", data={"user_id": "1"}
-        )
+        response = client.post("/training/modules/module_1/start")
 
         assert response.status_code == 200
         result = response.json()
@@ -183,15 +198,13 @@ class TestTrainingEndpoints:
         mock_firestore_manager.get_collection.return_value = [
             {
                 "id": "existing_training",
-                "user_id": "1",
+                "user_id": "test_user_1",
                 "training_module_id": "module_1",
                 "status": "assigned",
             }
         ]
 
-        response = client.post(
-            "/training/modules/module_1/start", data={"user_id": "1"}
-        )
+        response = client.post("/training/modules/module_1/start")
 
         assert response.status_code == 200
         result = response.json()
@@ -209,7 +222,7 @@ class TestTrainingEndpoints:
         mock_firestore_manager.get_collection.return_value = [
             {
                 "id": "training_1",
-                "user_id": "1",
+                "user_id": "test_user_1",
                 "training_module_id": "module_1",
                 "status": "in_progress",
             }
@@ -217,7 +230,7 @@ class TestTrainingEndpoints:
 
         response = client.post(
             "/training/modules/module_1/complete",
-            data={"user_id": "1", "score": "85.0"},
+            data={"score": "85.0"},
         )
 
         assert response.status_code == 200
@@ -233,7 +246,7 @@ class TestTrainingEndpoints:
         mock_get_manager.return_value = mock_firestore_manager
 
         response = client.post(
-            "/training/assign", data={"user_id": "2", "module_id": "module_1"}
+            "/training/assign", data={"user_id": "test_user_2", "module_id": "module_1"}
         )
 
         assert response.status_code == 200
@@ -247,8 +260,9 @@ class TestTrainingEndpoints:
     def test_get_my_training(self, mock_get_manager, mock_firestore_manager):
         """Test getting user's training assignments"""
         mock_get_manager.return_value = mock_firestore_manager
+        mock_firestore_manager.get_collection.return_value = []  # Mock empty training list
 
-        response = client.get("/training/my-training?user_id=1")
+        response = client.get("/training/my-training")
 
         assert response.status_code == 200
         training = response.json()

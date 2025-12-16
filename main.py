@@ -127,6 +127,7 @@ all_extended_routers = [
     'planner_simple',
     'public_demo',
     'purchasing',
+    'premium_modules',
     'quality_management',
     'safety_management',
     'team',
@@ -361,9 +362,10 @@ router_descriptions = {
     'user_management': 'User management dashboard with Firebase Auth',
     'analytics': 'Analytics dashboard with KPIs and reporting',
     'planner_simple': 'Simple planner for testing',
-    'quality_management': 'Quality Management System with ISO 9001 compliance and supplier audits',
-    'safety_management': 'Safety Management System with incident tracking and lab results',
-    'iot': 'IoT Advanced Module - Premium sensor monitoring and predictive analytics'
+    'premium_modules': 'Premium Modules API - Licensing for IoT Advanced, QualityFix, SafetyFix',
+    'quality_management': 'QualityFix Premium Module - HACCP, ISO 22000, Food Safety compliance ($99/mo)',
+    'safety_management': 'SafetyFix Premium Module - OSHA compliance and incident tracking ($99/mo)',
+    'iot': 'IoT Advanced Premium Module - Real-time sensor monitoring and predictive analytics ($199/mo)'
 }
 
 # Include each router that was successfully imported

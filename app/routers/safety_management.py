@@ -17,17 +17,117 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from fastapi.templating import Jinja2Templates
 
 logger = logging.getLogger(__name__)
 
+# ===== SAFETYFIX PREMIUM MODULE LICENSING =====
+# SafetyFix: $99/month - OSHA, Incident Tracking, Lab Results, Safety Analytics
+
+try:
+    from app.modules.premium_licensing import (
+        premium_licensing_manager,
+        PremiumModule,
+        require_safety_license,
+        check_safety_access,
+        get_license_status,
+        get_customer_id_from_user,
+        get_current_customer_id,
+        PREMIUM_MODULE_PRICING
+    )
+    SAFETY_LICENSING_AVAILABLE = True
+    logger.info("SafetyFix Premium Module licensing enabled")
+except ImportError:
+    SAFETY_LICENSING_AVAILABLE = False
+    logger.warning("SafetyFix licensing not available - module will run in demo mode")
+
+    # Fallback decorator that allows access in demo mode
+    def require_safety_license(func):
+        return func
+
+    def get_current_customer_id():
+        return "demo_customer_1"
+
+    async def check_safety_access(customer_id: str) -> bool:
+        return True
+
 # Initialize templates
 templates = Jinja2Templates(directory="app/templates")
 
-router = APIRouter(prefix="/safety", tags=["Safety Management"])
+router = APIRouter(prefix="/safety", tags=["SafetyFix Premium Module"])
+
+
+# ===== LICENSE CHECK ENDPOINTS =====
+
+@router.get("/license-status")
+async def safety_license_status():
+    """Check SafetyFix module license status"""
+    customer_id = get_current_customer_id()
+
+    if SAFETY_LICENSING_AVAILABLE:
+        has_access = await check_safety_access(customer_id)
+        license_info = await get_license_status(customer_id)
+
+        return JSONResponse({
+            "module": "safety_fix",
+            "module_name": "SafetyFix",
+            "has_access": has_access,
+            "price": "$99/month",
+            "features": [
+                "Incident tracking & investigation",
+                "Safety violation management",
+                "Lab results & environmental testing",
+                "Safety inspections & audits",
+                "OSHA compliance reporting",
+                "AI-powered safety analysis",
+                "Risk assessment tools"
+            ],
+            "license_info": license_info,
+            "upgrade_url": "https://chatterfix.com/upgrade/safety-fix"
+        })
+    else:
+        return JSONResponse({
+            "module": "safety_fix",
+            "module_name": "SafetyFix",
+            "has_access": True,
+            "mode": "demo",
+            "message": "Running in demo mode - all features available"
+        })
+
+
+@router.get("/upgrade-info")
+async def safety_upgrade_info():
+    """Get SafetyFix upgrade information"""
+    return JSONResponse({
+        "module": "safety_fix",
+        "name": "SafetyFix Premium Module",
+        "price": "$99/month",
+        "description": "Enterprise safety management with OSHA compliance and incident tracking",
+        "features": [
+            "Incident tracking & investigation",
+            "Safety violation management (OSHA 1910.147, etc.)",
+            "Lab results & environmental testing",
+            "Safety inspections & audits",
+            "OSHA compliance reporting",
+            "AI-powered safety analysis & predictions",
+            "Risk assessment tools",
+            "Safety training tracking",
+            "Near-miss reporting",
+            "Cost-benefit safety analytics"
+        ],
+        "compliance_standards": [
+            "OSHA",
+            "EPA",
+            "DOT",
+            "ISO 45001",
+            "NFPA"
+        ],
+        "upgrade_url": "https://chatterfix.com/upgrade/safety-fix",
+        "contact_sales": "sales@chatterfix.com"
+    })
 
 # ===== SAFETY DATA MODELS =====
 

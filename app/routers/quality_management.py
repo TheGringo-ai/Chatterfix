@@ -8,17 +8,117 @@ import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Request, HTTPException, Query, Form
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, HTTPException, Query, Form, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# ===== QUALITYFIX PREMIUM MODULE LICENSING =====
+# QualityFix: $99/month - HACCP, ISO 22000, Food Safety, Batch Traceability
+
+try:
+    from app.modules.premium_licensing import (
+        premium_licensing_manager,
+        PremiumModule,
+        require_quality_license,
+        check_quality_access,
+        get_license_status,
+        get_customer_id_from_user,
+        get_current_customer_id,
+        PREMIUM_MODULE_PRICING
+    )
+    QUALITY_LICENSING_AVAILABLE = True
+    logger.info("QualityFix Premium Module licensing enabled")
+except ImportError:
+    QUALITY_LICENSING_AVAILABLE = False
+    logger.warning("QualityFix licensing not available - module will run in demo mode")
+
+    # Fallback decorator that allows access in demo mode
+    def require_quality_license(func):
+        return func
+
+    def get_current_customer_id():
+        return "demo_customer_1"
+
+    async def check_quality_access(customer_id: str) -> bool:
+        return True
+
 # Initialize router and templates
-router = APIRouter(prefix="/quality", tags=["Food Processing Quality Management"])
+router = APIRouter(prefix="/quality", tags=["QualityFix Premium Module"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+# ===== LICENSE CHECK ENDPOINTS =====
+
+@router.get("/license-status")
+async def quality_license_status():
+    """Check QualityFix module license status"""
+    customer_id = get_current_customer_id()
+
+    if QUALITY_LICENSING_AVAILABLE:
+        has_access = await check_quality_access(customer_id)
+        license_info = await get_license_status(customer_id)
+
+        return JSONResponse({
+            "module": "quality_fix",
+            "module_name": "QualityFix",
+            "has_access": has_access,
+            "price": "$99/month",
+            "features": [
+                "HACCP plan management",
+                "Temperature monitoring & compliance",
+                "Batch traceability system",
+                "Supplier quality audits",
+                "Food safety inspections",
+                "ISO 22000/FSSC 22000 compliance",
+                "AI-powered quality insights"
+            ],
+            "license_info": license_info,
+            "upgrade_url": "https://chatterfix.com/upgrade/quality-fix"
+        })
+    else:
+        return JSONResponse({
+            "module": "quality_fix",
+            "module_name": "QualityFix",
+            "has_access": True,
+            "mode": "demo",
+            "message": "Running in demo mode - all features available"
+        })
+
+
+@router.get("/upgrade-info")
+async def quality_upgrade_info():
+    """Get QualityFix upgrade information"""
+    return JSONResponse({
+        "module": "quality_fix",
+        "name": "QualityFix Premium Module",
+        "price": "$99/month",
+        "description": "Comprehensive quality management with HACCP, ISO, and food safety compliance",
+        "features": [
+            "HACCP plan management",
+            "Temperature monitoring & compliance",
+            "Batch traceability system",
+            "Supplier quality audits",
+            "Food safety inspections",
+            "Sanitation schedules",
+            "Environmental monitoring",
+            "CAPA records management",
+            "ISO 22000/FSSC 22000 compliance",
+            "AI-powered quality insights"
+        ],
+        "industries_supported": [
+            "Cheese Processing Plants",
+            "Beverage Processing Plants",
+            "Dairy Processing Plants",
+            "Food Manufacturing",
+            "Pharmaceutical"
+        ],
+        "upgrade_url": "https://chatterfix.com/upgrade/quality-fix",
+        "contact_sales": "sales@chatterfix.com"
+    })
 
 # ===== INDUSTRY CONFIGURATIONS =====
 

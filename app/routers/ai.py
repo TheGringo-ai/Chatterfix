@@ -1388,12 +1388,13 @@ class CodeReviewRequest(BaseModel):
 @router.post("/code-review")
 async def ai_team_code_review(request: CodeReviewRequest):
     """
-    AI Team Code Review - Analyzes ACTUAL CODE for issues
+    AI Team Code Review - Analyzes ACTUAL CODE for issues WITH MEMORY
 
     Unlike generic reviews, this endpoint:
-    1. Reads real files from the codebase
-    2. Sends actual code to all 6 AI models
-    3. Returns specific, line-by-line recommendations
+    1. Queries past mistakes and solutions from AI memory
+    2. Reads real files from the codebase
+    3. Sends actual code + historical context to AI models
+    4. Captures findings back to memory (never repeat mistakes!)
 
     Args:
         files: List of file paths (relative to project root) or patterns
@@ -1404,6 +1405,32 @@ async def ai_team_code_review(request: CodeReviewRequest):
     from pathlib import Path
 
     try:
+        # === MEMORY INTEGRATION: Query past learnings ===
+        past_context = ""
+        memory_stats = {}
+        try:
+            if MEMORY_AVAILABLE:
+                memory = get_ai_memory_service()
+
+                # Get recent mistakes to warn about
+                similar_mistakes = await memory.find_similar_mistakes("code review security performance bugs")
+
+                # Get successful solutions for reference
+                past_solutions = await memory.find_solutions("code fix security vulnerability")
+
+                if similar_mistakes:
+                    past_context += "\n\n=== PAST MISTAKES TO AVOID (from AI Memory) ===\n"
+                    for m in similar_mistakes[:3]:
+                        past_context += f"- {m.get('description', 'Unknown')}: {m.get('prevention_strategy', 'N/A')}\n"
+
+                if past_solutions:
+                    past_context += "\n=== PROVEN SOLUTIONS (from AI Memory) ===\n"
+                    for s in past_solutions[:3]:
+                        past_context += f"- {s.get('problem_pattern', 'Unknown')}: Success rate {s.get('success_rate', 0)*100:.0f}%\n"
+
+                memory_stats = await memory.get_memory_stats()
+        except Exception as mem_error:
+            past_context = f"\n(Memory query failed: {mem_error})\n"
         # Get project root dynamically (works locally and on Cloud Run)
         project_root = Path(__file__).parent.parent.parent  # ai.py -> routers -> app -> project
         code_snippets = []
@@ -1489,7 +1516,8 @@ For each issue found, provide:
 4. ISSUE: what's wrong and why it matters
 5. FIX: concrete code to replace it with
 
-If you cannot find VERIFIED issues, say "No verified issues found" - this is better than false positives."""
+If you cannot find VERIFIED issues, say "No verified issues found" - this is better than false positives.
+{past_context}"""
 
         # Use AI Team for comprehensive review
         result = await chatterfix_ai.process_with_team(
@@ -1500,14 +1528,44 @@ If you cannot find VERIFIED issues, say "No verified issues found" - this is bet
             fast_mode=request.review_type == "quick"
         )
 
+        ai_analysis = result.get("response", result.get("final_answer", "No analysis generated"))
+
+        # === MEMORY INTEGRATION: Capture review findings ===
+        try:
+            if MEMORY_AVAILABLE:
+                memory = get_ai_memory_service()
+
+                # Capture this interaction
+                await memory.capture_interaction(
+                    user_message=f"Code review: {', '.join(files_reviewed[:5])}",
+                    ai_response=ai_analysis[:2000],
+                    model="ai_team",
+                    context=f"review_type={request.review_type}, focus={request.focus_areas}",
+                    success=True,
+                    metadata={"files": files_reviewed, "focus_areas": request.focus_areas}
+                )
+
+                # If issues found, capture as potential mistakes to track
+                if "security" in ai_analysis.lower() or "vulnerability" in ai_analysis.lower():
+                    await memory.capture_mistake(
+                        mistake_type="security_review",
+                        description=f"Security issues found in: {', '.join(files_reviewed[:3])}",
+                        context={"files": files_reviewed, "review_type": request.review_type},
+                        error_message=ai_analysis[:500],
+                        severity="high"
+                    )
+        except Exception as mem_error:
+            pass  # Don't fail the review if memory capture fails
+
         return JSONResponse({
             "success": True,
             "review_type": request.review_type,
             "files_reviewed": files_reviewed,
             "focus_areas": request.focus_areas,
-            "ai_team_analysis": result.get("response", result.get("final_answer", "No analysis generated")),
+            "ai_team_analysis": ai_analysis,
             "models_used": result.get("models_used", []),
-            "confidence": result.get("confidence", 0.0)
+            "confidence": result.get("confidence", 0.0),
+            "memory_stats": memory_stats if memory_stats else {"status": "not_available"}
         })
 
     except Exception as e:

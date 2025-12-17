@@ -134,6 +134,52 @@ async def liveness_check():
     return JSONResponse({"alive": True, "timestamp": datetime.utcnow().isoformat()})
 
 
+@router.get("/health/environment")
+async def environment_info():
+    """
+    Get current environment information
+
+    Clearly shows if you're on DEV or PROD
+    """
+    env = os.getenv("ENVIRONMENT", "development").lower()
+
+    # Determine environment type
+    is_production = env == "production"
+    is_dev = env in ["development", "dev", "staging"]
+
+    # Get service info
+    service_url = os.getenv("K_SERVICE", "unknown")
+    revision = os.getenv("K_REVISION", "unknown")
+
+    env_info = {
+        "environment": env,
+        "is_production": is_production,
+        "is_development": is_dev,
+        "service": service_url,
+        "revision": revision,
+        "version": APP_VERSION,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+    if is_production:
+        env_info["banner"] = "🚀 PRODUCTION - chatterfix.com"
+        env_info["warning"] = "Changes here affect real users!"
+        env_info["urls"] = {
+            "main": "https://chatterfix.com",
+            "demo": "https://chatterfix.com/demo"
+        }
+    else:
+        env_info["banner"] = "🧪 DEVELOPMENT - Testing Environment"
+        env_info["info"] = "Safe to test - does not affect production"
+        env_info["urls"] = {
+            "main": "https://gringo-core-650169261019.us-central1.run.app",
+            "demo": "https://gringo-core-650169261019.us-central1.run.app/demo"
+        }
+        env_info["promote_command"] = "./scripts/deploy-prod.sh"
+
+    return JSONResponse(env_info)
+
+
 async def check_database_health() -> Dict[str, Any]:
     """Check database connectivity"""
     db_info = {

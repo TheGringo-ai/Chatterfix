@@ -366,13 +366,6 @@ DEMO_STATS = {
 }
 
 
-@router.get("/demo", response_class=HTMLResponse)
-async def demo_dashboard(request: Request):
-    """Demo dashboard with real Firestore data"""
-    # Redirect to public_demo dashboard which uses real data
-    return RedirectResponse(url="/demo/dashboard", status_code=302)
-
-
 @router.get("/demo/assets", response_class=HTMLResponse)
 async def demo_assets(request: Request):
     """Demo assets page with real Firestore data"""

@@ -1371,3 +1371,143 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
             "error": str(e),
             "analysis": "Image analysis failed. Please try again."
         }, status_code=500)
+
+
+# =============================================================================
+# CODE-AWARE AI TEAM REVIEW SYSTEM
+# =============================================================================
+
+class CodeReviewRequest(BaseModel):
+    """Request for AI Team code review with actual code analysis"""
+    files: list[str] = []  # List of file paths or patterns to review
+    focus_areas: list[str] = ["security", "performance", "bugs", "best_practices"]
+    max_file_size: int = 10000  # Max chars per file
+    review_type: str = "comprehensive"  # comprehensive, security, performance, quick
+
+
+@router.post("/code-review")
+async def ai_team_code_review(request: CodeReviewRequest):
+    """
+    AI Team Code Review - Analyzes ACTUAL CODE for issues
+
+    Unlike generic reviews, this endpoint:
+    1. Reads real files from the codebase
+    2. Sends actual code to all 6 AI models
+    3. Returns specific, line-by-line recommendations
+
+    Args:
+        files: List of file paths (relative to project root) or patterns
+        focus_areas: What to look for (security, performance, bugs, best_practices)
+        review_type: comprehensive, security, performance, or quick
+    """
+    import glob as glob_module
+    from pathlib import Path
+
+    try:
+        project_root = Path("/Users/fredtaylor/ChatterFix")
+        code_snippets = []
+        files_reviewed = []
+
+        # Default files if none specified
+        if not request.files:
+            request.files = [
+                "app/routers/*.py",
+                "app/services/*.py",
+                "main.py"
+            ]
+
+        # Collect code from files
+        for file_pattern in request.files:
+            # Handle glob patterns
+            if "*" in file_pattern:
+                matching_files = list(project_root.glob(file_pattern))
+            else:
+                file_path = project_root / file_pattern
+                matching_files = [file_path] if file_path.exists() else []
+
+            for file_path in matching_files[:10]:  # Limit to 10 files per pattern
+                if file_path.is_file() and file_path.suffix == ".py":
+                    try:
+                        content = file_path.read_text()
+                        # Truncate if too large
+                        if len(content) > request.max_file_size:
+                            content = content[:request.max_file_size] + "\n... (truncated)"
+
+                        relative_path = str(file_path.relative_to(project_root))
+                        code_snippets.append(f"### FILE: {relative_path}\n```python\n{content}\n```")
+                        files_reviewed.append(relative_path)
+                    except Exception as e:
+                        code_snippets.append(f"### FILE: {file_path} - ERROR: {e}")
+
+        if not code_snippets:
+            return JSONResponse({
+                "success": False,
+                "error": "No files found matching the specified patterns",
+                "patterns_searched": request.files
+            }, status_code=400)
+
+        # Build comprehensive prompt for AI Team
+        focus_str = ", ".join(request.focus_areas)
+        code_context = "\n\n".join(code_snippets[:5])  # Limit to 5 files for context
+
+        review_prompt = f"""You are reviewing the ChatterFix CMMS codebase.
+
+REVIEW TYPE: {request.review_type}
+FOCUS AREAS: {focus_str}
+FILES BEING REVIEWED: {', '.join(files_reviewed[:5])}
+
+ACTUAL CODE TO REVIEW:
+{code_context}
+
+Please analyze this ACTUAL CODE and provide:
+1. SPECIFIC issues found with file:line references
+2. Security vulnerabilities (if any)
+3. Performance concerns (if any)
+4. Code quality issues
+5. Concrete fix recommendations with code examples
+
+Be SPECIFIC - reference actual function names, line numbers, and variable names from the code above.
+Do NOT give generic recommendations. Only report issues you can see in the actual code."""
+
+        # Use AI Team for comprehensive review
+        result = await chatterfix_ai.process_with_team(
+            message=review_prompt,
+            context=f"Code review of {len(files_reviewed)} files: {', '.join(files_reviewed[:5])}",
+            user_id=0,
+            context_type="code_review",
+            fast_mode=request.review_type == "quick"
+        )
+
+        return JSONResponse({
+            "success": True,
+            "review_type": request.review_type,
+            "files_reviewed": files_reviewed,
+            "focus_areas": request.focus_areas,
+            "ai_team_analysis": result.get("response", result.get("final_answer", "No analysis generated")),
+            "models_used": result.get("models_used", []),
+            "confidence": result.get("confidence", 0.0)
+        })
+
+    except Exception as e:
+        import traceback
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }, status_code=500)
+
+
+@router.get("/code-review/quick")
+async def quick_code_review():
+    """
+    Quick AI Team Code Review - Fast scan of critical files
+
+    Reviews main.py and core routers for critical issues.
+    Uses fast_mode for ~50% faster response.
+    """
+    request = CodeReviewRequest(
+        files=["main.py", "app/routers/work_orders.py", "app/routers/auth.py"],
+        focus_areas=["security", "bugs"],
+        review_type="quick"
+    )
+    return await ai_team_code_review(request)

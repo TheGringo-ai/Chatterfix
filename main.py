@@ -304,6 +304,33 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+# Global exception handler for uncaught exceptions
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler that catches all uncaught exceptions.
+    Returns user-friendly error responses and logs details for debugging.
+    """
+    import traceback
+
+    # Log the full error for debugging
+    logger.error(f"❌ Unhandled exception on {request.method} {request.url.path}: {type(exc).__name__}: {exc}")
+    logger.error(f"   Traceback: {traceback.format_exc()}")
+
+    # Return user-friendly JSON response
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "An unexpected error occurred",
+            "detail": str(exc) if os.getenv("ENVIRONMENT") == "development" else "Please try again or contact support",
+            "path": request.url.path,
+            "method": request.method
+        }
+    )
+
+
 # Mount static files
 app_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.join(app_dir, "app", "static")

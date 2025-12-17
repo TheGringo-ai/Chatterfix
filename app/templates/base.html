@@ -152,7 +152,7 @@
         .cmms-navigation {
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 100000;
             background: var(--bg-primary, #ffffff);
             border-bottom: 1px solid var(--border-color, #e9ecef);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -167,7 +167,8 @@
             background: linear-gradient(135deg, var(--accent-color, #667eea), var(--accent-secondary, #764ba2));
             color: white;
             position: relative;
-            z-index: 1100;
+            z-index: 100001;
+            overflow: visible;
         }
 
         .nav-brand {
@@ -214,15 +215,21 @@
         /* Fix for user dropdown being hidden behind navigation */
         .nav-header .dropdown {
             position: relative;
-            z-index: 9999;
+            z-index: 100002;
         }
 
         .nav-header .dropdown-menu {
-            z-index: 99999 !important;
+            z-index: 100003 !important;
             position: absolute !important;
             right: 0 !important;
             top: 100% !important;
             transform: translateY(0) !important;
+            min-width: 220px;
+        }
+
+        /* Ensure dropdown appears above ALL page content */
+        .nav-header .dropdown-menu.show {
+            z-index: 100004 !important;
         }
 
         /* Ensure nav-tabs-container doesn't overlap the dropdown */
@@ -991,14 +998,14 @@
                 {% endif %}
 
                 {% if current_user %}
-                <div class="dropdown" style="position: relative; z-index: 99999;">
+                <div class="dropdown" style="position: relative;">
                     <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
                         id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                         <img src="{{ current_user.avatar_url or 'https://placehold.co/200x200?text=User' }}"
                             alt="{{ current_user.username }}" width="28" height="28"
                             class="rounded-circle border border-1 border-light">
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark text-small shadow" style="z-index: 99999;">
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark text-small shadow">
                         {% if current_user.id == 'demo-user-001' %}
                         <!-- Demo Mode: Show Sign Up option -->
                         <li><a class="dropdown-item" href="/signup"><i class="fas fa-user-plus me-2"></i> Sign Up for Full Access</a></li>

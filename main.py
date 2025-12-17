@@ -450,10 +450,13 @@ def is_authenticated(request: Request) -> bool:
 @app.get("/")
 async def root(request: Request):
     """
-    🚀 ROOT REDIRECT - Direct to Demo
-    
-    Always redirect to /demo page as requested
+    🚀 ROOT REDIRECT - Smart routing based on authentication
+
+    - Authenticated users → /dashboard (real data)
+    - Unauthenticated users → /demo (demo experience)
     """
+    if is_authenticated(request):
+        return RedirectResponse(url="/dashboard", status_code=302)
     return RedirectResponse(url="/demo", status_code=302)
 
 

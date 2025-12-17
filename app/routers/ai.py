@@ -1512,3 +1512,347 @@ async def quick_code_review():
         review_type="quick"
     )
     return await ai_team_code_review(request)
+
+
+# =============================================================================
+# AI TEAM CODE EDITING WITH BRANCH ISOLATION (SAFEGUARDS)
+# =============================================================================
+
+class CodeFixRequest(BaseModel):
+    """Request for AI Team to fix code with branch isolation"""
+    files: list[str] = []  # Files to fix
+    fix_type: str = "auto"  # auto, security, performance, bugs, refactor
+    description: str = ""  # Optional description of what to fix
+    create_pr: bool = False  # Whether to create a PR after fixing
+    dry_run: bool = False  # If true, only show what would be changed
+
+
+@router.post("/code-fix")
+async def ai_team_code_fix(request: CodeFixRequest):
+    """
+    AI Team Code Fix - Makes code changes in ISOLATED BRANCHES
+
+    SAFEGUARDS:
+    1. All changes happen in a new branch (ai-team/fix-{timestamp})
+    2. Never modifies main branch directly
+    3. Returns branch name for manual review
+    4. User must merge after reviewing changes
+
+    Args:
+        files: Files to fix (or patterns)
+        fix_type: auto, security, performance, bugs, refactor
+        description: What to fix
+        create_pr: Create a GitHub PR after fixing
+        dry_run: Preview changes without making them
+    """
+    import subprocess
+    import time
+    from pathlib import Path
+    from datetime import datetime
+
+    try:
+        # Get project root
+        project_root = Path(__file__).parent.parent.parent
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        branch_name = f"ai-team/fix-{timestamp}"
+
+        # SAFEGUARD 1: Store current branch to restore later if needed
+        current_branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        original_branch = current_branch_result.stdout.strip()
+
+        # SAFEGUARD 2: Check for uncommitted changes
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        if status_result.stdout.strip():
+            return JSONResponse({
+                "success": False,
+                "error": "Uncommitted changes detected. Please commit or stash changes first.",
+                "safeguard": "Protecting your uncommitted work"
+            }, status_code=400)
+
+        # DRY RUN MODE - Just analyze and show what would change
+        if request.dry_run:
+            # Get AI Team analysis
+            review_request = CodeReviewRequest(
+                files=request.files if request.files else ["app/routers/*.py"],
+                focus_areas=["bugs", "security"] if request.fix_type == "auto" else [request.fix_type],
+                review_type="comprehensive"
+            )
+            review_result = await ai_team_code_review(review_request)
+            review_data = json.loads(review_result.body)
+
+            return JSONResponse({
+                "success": True,
+                "mode": "dry_run",
+                "message": "This is a preview. No changes were made.",
+                "branch_would_be": branch_name,
+                "files_to_review": review_data.get("files_reviewed", []),
+                "ai_analysis": review_data.get("ai_team_analysis", ""),
+                "next_step": "Run again with dry_run=false to apply fixes"
+            })
+
+        # SAFEGUARD 3: Create isolated branch
+        create_branch_result = subprocess.run(
+            ["git", "checkout", "-b", branch_name],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        if create_branch_result.returncode != 0:
+            return JSONResponse({
+                "success": False,
+                "error": f"Failed to create branch: {create_branch_result.stderr}",
+                "safeguard": "Branch creation failed - no changes made"
+            }, status_code=500)
+
+        # Collect files to fix
+        files_to_fix = []
+        for file_pattern in (request.files if request.files else ["app/routers/*.py"]):
+            if "*" in file_pattern:
+                matching_files = list(project_root.glob(file_pattern))
+            else:
+                file_path = project_root / file_pattern
+                matching_files = [file_path] if file_path.exists() else []
+
+            for file_path in matching_files[:5]:  # Limit to 5 files
+                if file_path.is_file() and file_path.suffix == ".py":
+                    files_to_fix.append(file_path)
+
+        if not files_to_fix:
+            # Return to original branch
+            subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+            subprocess.run(["git", "branch", "-D", branch_name], cwd=project_root)
+            return JSONResponse({
+                "success": False,
+                "error": "No files found to fix",
+                "safeguard": "Returned to original branch, no changes made"
+            }, status_code=400)
+
+        # Get AI Team to analyze and suggest fixes
+        fixes_made = []
+        for file_path in files_to_fix:
+            try:
+                original_content = file_path.read_text()
+
+                # Build fix prompt
+                fix_prompt = f"""You are an expert code fixer for the ChatterFix CMMS.
+
+FIX TYPE: {request.fix_type}
+ADDITIONAL CONTEXT: {request.description or 'Auto-fix common issues'}
+
+FILE TO FIX: {file_path.name}
+
+```python
+{original_content[:8000]}
+```
+
+Analyze this code and provide SPECIFIC fixes. For each fix:
+1. Show the EXACT code to replace (old code)
+2. Show the EXACT replacement (new code)
+3. Explain why this fix is needed
+
+Format your response as JSON:
+{{
+    "fixes": [
+        {{
+            "old_code": "exact code to replace",
+            "new_code": "replacement code",
+            "reason": "why this fix is needed",
+            "line_hint": "approximate line number"
+        }}
+    ],
+    "summary": "brief summary of all fixes"
+}}
+
+Only suggest fixes you are CONFIDENT about. Be conservative."""
+
+                # Get AI Team fix suggestions
+                result = await chatterfix_ai.process_with_team(
+                    message=fix_prompt,
+                    context=f"Fixing {file_path.name}",
+                    user_id=0,
+                    context_type="code_fix",
+                    fast_mode=True
+                )
+
+                ai_response = result.get("response", result.get("final_answer", ""))
+
+                # Try to parse JSON from response
+                import re
+                json_match = re.search(r'\{[\s\S]*"fixes"[\s\S]*\}', ai_response)
+                if json_match:
+                    try:
+                        fix_data = json.loads(json_match.group())
+                        fixes = fix_data.get("fixes", [])
+
+                        # Apply fixes
+                        modified_content = original_content
+                        applied_fixes = []
+
+                        for fix in fixes[:3]:  # Limit to 3 fixes per file
+                            old_code = fix.get("old_code", "")
+                            new_code = fix.get("new_code", "")
+
+                            if old_code and new_code and old_code in modified_content:
+                                modified_content = modified_content.replace(old_code, new_code, 1)
+                                applied_fixes.append({
+                                    "old": old_code[:100] + "..." if len(old_code) > 100 else old_code,
+                                    "new": new_code[:100] + "..." if len(new_code) > 100 else new_code,
+                                    "reason": fix.get("reason", "")
+                                })
+
+                        if applied_fixes and modified_content != original_content:
+                            # Write the modified file
+                            file_path.write_text(modified_content)
+                            fixes_made.append({
+                                "file": str(file_path.relative_to(project_root)),
+                                "fixes_applied": len(applied_fixes),
+                                "details": applied_fixes
+                            })
+
+                    except json.JSONDecodeError:
+                        pass  # Could not parse AI response as JSON
+
+            except Exception as e:
+                fixes_made.append({
+                    "file": str(file_path.relative_to(project_root)),
+                    "error": str(e)
+                })
+
+        # If no fixes were made, clean up
+        if not any(f.get("fixes_applied", 0) > 0 for f in fixes_made):
+            subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+            subprocess.run(["git", "branch", "-D", branch_name], cwd=project_root)
+            return JSONResponse({
+                "success": True,
+                "message": "No fixable issues found or AI Team was too conservative",
+                "files_analyzed": [str(f.relative_to(project_root)) for f in files_to_fix],
+                "safeguard": "No changes made, returned to original branch"
+            })
+
+        # Commit the changes
+        subprocess.run(["git", "add", "-A"], cwd=project_root)
+        commit_message = f"""AI Team: {request.fix_type} fixes
+
+Files modified: {len([f for f in fixes_made if f.get('fixes_applied', 0) > 0])}
+Fix type: {request.fix_type}
+Description: {request.description or 'Automated fixes by AI Team'}
+
+🤖 Generated by ChatterFix AI Team
+Review carefully before merging!"""
+
+        subprocess.run(
+            ["git", "commit", "-m", commit_message],
+            cwd=project_root
+        )
+
+        # SAFEGUARD 4: Return to original branch (keep AI branch for review)
+        subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+
+        # Optionally create PR
+        pr_url = None
+        if request.create_pr:
+            try:
+                # Push branch
+                subprocess.run(
+                    ["git", "push", "-u", "origin", branch_name],
+                    cwd=project_root
+                )
+                # Create PR using gh CLI
+                pr_result = subprocess.run(
+                    ["gh", "pr", "create",
+                     "--title", f"AI Team: {request.fix_type} fixes",
+                     "--body", f"## AI Team Code Fixes\n\n{commit_message}\n\n**Review carefully before merging!**",
+                     "--head", branch_name],
+                    cwd=project_root,
+                    capture_output=True,
+                    text=True
+                )
+                if pr_result.returncode == 0:
+                    pr_url = pr_result.stdout.strip()
+            except Exception as e:
+                pr_url = f"PR creation failed: {e}"
+
+        return JSONResponse({
+            "success": True,
+            "branch": branch_name,
+            "original_branch": original_branch,
+            "fixes_made": fixes_made,
+            "total_files_modified": len([f for f in fixes_made if f.get('fixes_applied', 0) > 0]),
+            "pr_url": pr_url,
+            "safeguards_applied": [
+                "Changes made in isolated branch",
+                "Original branch preserved",
+                "Must manually merge after review"
+            ],
+            "next_steps": [
+                f"Review changes: git diff {original_branch}..{branch_name}",
+                f"Merge if approved: git merge {branch_name}",
+                f"Or delete if rejected: git branch -D {branch_name}"
+            ]
+        })
+
+    except Exception as e:
+        import traceback
+        # Try to return to original branch on error
+        try:
+            subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+        except:
+            pass
+
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "safeguard": "Error occurred - attempted to return to original branch"
+        }, status_code=500)
+
+
+@router.get("/code-fix/branches")
+async def list_ai_team_branches():
+    """
+    List all AI Team branches for review
+
+    Shows all branches created by the AI Team that haven't been merged yet.
+    """
+    import subprocess
+    from pathlib import Path
+
+    try:
+        project_root = Path(__file__).parent.parent.parent
+
+        result = subprocess.run(
+            ["git", "branch", "-a"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+
+        branches = result.stdout.strip().split("\n")
+        ai_branches = [b.strip().replace("* ", "") for b in branches if "ai-team/" in b]
+
+        return JSONResponse({
+            "success": True,
+            "ai_team_branches": ai_branches,
+            "count": len(ai_branches),
+            "instructions": {
+                "review": "git diff main..{branch_name}",
+                "merge": "git merge {branch_name}",
+                "delete": "git branch -D {branch_name}"
+            }
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)

@@ -323,13 +323,21 @@
                     });
 
                     if (response.ok) {
-                        successMsg.textContent = 'Account created successfully! Please check your email to verify your account.';
+                        successMsg.innerHTML = `
+                            <h3 style="margin: 0 0 10px 0; color: #27ae60;">🎉 Thank you for signing up!</h3>
+                            <p style="margin: 0;">Your account has been created successfully.</p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px;">Redirecting you to your dashboard...</p>
+                        `;
                         successMsg.style.display = 'block';
-                        
+                        successMsg.style.padding = '20px';
+                        successMsg.style.borderRadius = '8px';
+                        successMsg.style.backgroundColor = '#d4edda';
+                        successMsg.style.border = '1px solid #c3e6cb';
+
                         // Redirect to dashboard after short delay
                         setTimeout(() => {
                             window.location.href = '/dashboard?welcome=true';
-                        }, 2000);
+                        }, 2500);
                     } else {
                         throw new Error('Backend authentication failed');
                     }

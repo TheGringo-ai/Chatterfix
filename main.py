@@ -263,6 +263,23 @@ app = FastAPI(
 # Add ProxyHeadersMiddleware for proper Cloud Run integration
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
+
+# Cache-Control Middleware - Prevents browser caching issues after deployments
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        # Add no-cache headers for HTML responses to ensure fresh content after deployments
+        content_type = response.headers.get("content-type", "")
+        if "text/html" in content_type:
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+app.add_middleware(CacheControlMiddleware)
+
 # Add error tracking middleware
 app.add_middleware(
     ErrorTrackingMiddleware,

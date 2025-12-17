@@ -1002,7 +1002,7 @@
                         {% if current_user.id == 'demo-user-001' or request.url.path.startswith('/demo') %}
                         <!-- Demo Mode: Show Sign Up option -->
                         <li><a class="dropdown-item" href="/signup"><i class="fas fa-user-plus me-2"></i> Sign Up for Full Access</a></li>
-                        <li><a class="dropdown-item" href="/login"><i class="fas fa-sign-in-alt me-2"></i> Log In</a></li>
+                        <li><a class="dropdown-item" href="/auth/login"><i class="fas fa-sign-in-alt me-2"></i> Log In</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><span class="dropdown-item text-muted"><i class="fas fa-info-circle me-2"></i> You're in Demo Mode</span></li>
                         {% else %}

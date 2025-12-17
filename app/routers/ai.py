@@ -19,6 +19,20 @@ from app.services.voice_commands import (
     process_voice_command,
 )
 
+# Import Platform Knowledge for AI Team context
+try:
+    from app.services.platform_knowledge import (
+        get_platform_context,
+        get_ai_team_context,
+        get_cached_platform_context
+    )
+    PLATFORM_KNOWLEDGE_AVAILABLE = True
+except ImportError:
+    PLATFORM_KNOWLEDGE_AVAILABLE = False
+    def get_platform_context(include_full=False): return ""
+    def get_ai_team_context(task_type="general"): return ""
+    def get_cached_platform_context(): return ""
+
 # Server-side Speech-to-Text
 try:
     from app.services.speech_to_text_service import get_speech_service, AudioEncoding
@@ -1478,7 +1492,12 @@ async def ai_team_code_review(request: CodeReviewRequest):
         focus_str = ", ".join(request.focus_areas)
         code_context = "\n\n".join(code_snippets[:5])  # Limit to 5 files for context
 
+        # Get platform context for AI Team
+        platform_context = await get_ai_team_context("code_review") if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+
         review_prompt = f"""You are an EXPERT code reviewer for ChatterFix CMMS. Your job is to find REAL issues in code.
+
+{platform_context}
 
 REVIEW TYPE: {request.review_type}
 FOCUS AREAS: {focus_str}
@@ -1692,8 +1711,13 @@ async def implement_feature(request: FeatureRequest):
                 content = file_path.read_text()[:6000]
                 code_context.append(f"### {file_pattern}\n```python\n{content}\n```")
 
+        # Get platform context for AI Team
+        platform_context = get_cached_platform_context() if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+
         # Build feature implementation prompt
         feature_prompt = f"""You are implementing a feature for ChatterFix CMMS.
+
+{platform_context}
 
 FEATURE REQUEST: {request.feature}
 
@@ -1963,8 +1987,13 @@ async def ai_team_code_fix(request: CodeFixRequest):
             try:
                 original_content = file_path.read_text()
 
+                # Get platform context
+                platform_ctx = get_cached_platform_context() if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+
                 # Build fix prompt
                 fix_prompt = f"""You are an EXPERT code fixer for ChatterFix CMMS. Only fix VERIFIED issues.
+
+{platform_ctx}
 
 FIX TYPE: {request.fix_type}
 ADDITIONAL CONTEXT: {request.description or 'Auto-fix common issues'}
@@ -2183,6 +2212,125 @@ async def list_ai_team_branches():
                 "merge": "git merge {branch_name}",
                 "delete": "git branch -D {branch_name}"
             }
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+# =============================================================================
+# PLATFORM KNOWLEDGE ENDPOINTS
+# =============================================================================
+
+@router.get("/platform/knowledge")
+async def get_platform_knowledge_endpoint():
+    """
+    Get ChatterFix platform knowledge that guides the AI Team
+
+    Returns the complete platform vision, mission, capabilities, and guidelines
+    that are injected into all AI Team prompts.
+    """
+    if not PLATFORM_KNOWLEDGE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Platform knowledge module not available"
+        })
+
+    try:
+        from app.services.platform_knowledge import get_platform_knowledge
+
+        knowledge = get_platform_knowledge()
+
+        return JSONResponse({
+            "success": True,
+            "platform": knowledge["name"],
+            "tagline": knowledge["tagline"],
+            "mission": knowledge["mission"].strip(),
+            "ceo_vision": knowledge["ceo_vision"].strip(),
+            "differentiators": knowledge["differentiators"],
+            "capabilities": list(knowledge["capabilities"].keys()),
+            "modules": list(knowledge["modules"].keys()),
+            "ai_guidelines": knowledge["ai_guidelines"].strip()
+        })
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.post("/platform/knowledge/store")
+async def store_platform_knowledge_endpoint():
+    """
+    Store platform knowledge to Firestore for persistence
+
+    This ensures the AI Team's understanding of ChatterFix is
+    permanently stored and can be queried.
+    """
+    if not PLATFORM_KNOWLEDGE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Platform knowledge module not available"
+        })
+
+    try:
+        from app.services.platform_knowledge import store_platform_knowledge_to_firestore
+
+        result = await store_platform_knowledge_to_firestore()
+
+        if result:
+            return JSONResponse({
+                "success": True,
+                "message": "Platform knowledge stored to Firestore successfully",
+                "collection": "system_knowledge",
+                "document_id": "chatterfix_platform"
+            })
+        else:
+            return JSONResponse({
+                "success": False,
+                "error": "Failed to store platform knowledge"
+            }, status_code=500)
+
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": str(e)
+        }, status_code=500)
+
+
+@router.get("/platform/context/{task_type}")
+async def get_task_context(task_type: str = "general"):
+    """
+    Get platform context tailored for a specific task type
+
+    Task types:
+    - general: Basic platform overview
+    - code_review: Focus on technician-friendly code
+    - feature: Focus on voice/vision/hands-free
+    - troubleshooting: Focus on helping technicians
+    - training: Focus on frontline worker content
+    - quality: Focus on quality management
+    - safety: Focus on safety-first approach
+    """
+    if not PLATFORM_KNOWLEDGE_AVAILABLE:
+        return JSONResponse({
+            "success": False,
+            "error": "Platform knowledge module not available"
+        })
+
+    try:
+        context = await get_ai_team_context(task_type)
+
+        return JSONResponse({
+            "success": True,
+            "task_type": task_type,
+            "context": context,
+            "context_length": len(context),
+            "usage": "This context is automatically injected into AI Team prompts"
         })
 
     except Exception as e:

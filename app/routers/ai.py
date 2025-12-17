@@ -1525,6 +1525,240 @@ class CodeFixRequest(BaseModel):
     description: str = ""  # Optional description of what to fix
     create_pr: bool = False  # Whether to create a PR after fixing
     dry_run: bool = False  # If true, only show what would be changed
+    budget_mode: bool = True  # Use single model (Gemini) to save costs - DEFAULT ON
+
+
+# =============================================================================
+# FEATURE REQUEST SYSTEM - Cost-Effective Development
+# =============================================================================
+
+class FeatureRequest(BaseModel):
+    """Request for AI to implement a feature"""
+    feature: str  # Description of what you want (e.g., "add status field to work orders")
+    target_files: list[str] = []  # Specific files to modify (optional)
+    budget_mode: bool = True  # Use single cheap model (Gemini) - DEFAULT ON
+    create_branch: bool = True  # Create isolated branch for changes
+
+
+@router.post("/feature")
+async def implement_feature(request: FeatureRequest):
+    """
+    AI Feature Implementation - Cost-Effective Development Helper
+
+    Tell the AI what you want, it creates the code in an isolated branch.
+    Uses BUDGET MODE by default (single Gemini model = ~$0.01-0.02 per request)
+
+    Example: "add a priority dropdown field to the work order form"
+
+    SAFEGUARDS:
+    - Creates isolated branch (ai-team/feature-{timestamp})
+    - Never modifies main directly
+    - You review and merge when ready
+    """
+    import subprocess
+    from pathlib import Path
+    from datetime import datetime
+
+    try:
+        project_root = Path(__file__).parent.parent.parent
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        branch_name = f"ai-team/feature-{timestamp}"
+
+        # Check for uncommitted changes
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        if status_result.stdout.strip():
+            return JSONResponse({
+                "success": False,
+                "error": "Uncommitted changes detected. Commit or stash first.",
+                "safeguard": "Protecting your work"
+            }, status_code=400)
+
+        # Get current branch
+        current_branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        original_branch = current_branch_result.stdout.strip()
+
+        # Find relevant files if not specified
+        target_files = request.target_files
+        if not target_files:
+            # Smart file detection based on feature description
+            feature_lower = request.feature.lower()
+            if "work order" in feature_lower:
+                target_files = ["app/routers/work_orders.py", "app/templates/work_orders.html"]
+            elif "asset" in feature_lower:
+                target_files = ["app/routers/assets.py", "app/templates/assets.html"]
+            elif "inventory" in feature_lower or "part" in feature_lower:
+                target_files = ["app/routers/inventory.py", "app/templates/inventory.html"]
+            elif "training" in feature_lower:
+                target_files = ["app/routers/training.py", "app/templates/training.html"]
+            elif "dashboard" in feature_lower:
+                target_files = ["app/routers/dashboard.py", "app/templates/dashboard.html"]
+            else:
+                target_files = ["app/routers/work_orders.py"]  # Default
+
+        # Read current code from target files
+        code_context = []
+        for file_pattern in target_files[:3]:
+            file_path = project_root / file_pattern
+            if file_path.exists():
+                content = file_path.read_text()[:6000]
+                code_context.append(f"### {file_pattern}\n```python\n{content}\n```")
+
+        # Build feature implementation prompt
+        feature_prompt = f"""You are implementing a feature for ChatterFix CMMS.
+
+FEATURE REQUEST: {request.feature}
+
+EXISTING CODE:
+{chr(10).join(code_context)}
+
+Implement this feature. Provide the EXACT code changes needed:
+1. Show OLD code to replace
+2. Show NEW code (the replacement)
+3. Explain what each change does
+
+Format as JSON:
+{{
+    "changes": [
+        {{
+            "file": "path/to/file.py",
+            "old_code": "exact code to find and replace",
+            "new_code": "the new code",
+            "explanation": "what this change does"
+        }}
+    ],
+    "summary": "brief summary of implementation"
+}}
+
+Be SPECIFIC and use exact code from the files above."""
+
+        # Use budget mode (single Gemini) or full team
+        if request.budget_mode:
+            # Use just Gemini (cheapest)
+            from app.services.gemini_service import gemini_service
+            ai_response = await gemini_service.generate_response(feature_prompt)
+        else:
+            # Full AI Team (more expensive but better quality)
+            result = await chatterfix_ai.process_with_team(
+                message=feature_prompt,
+                context=f"Implementing: {request.feature}",
+                user_id=0,
+                context_type="feature_implementation",
+                fast_mode=True
+            )
+            ai_response = result.get("response", result.get("final_answer", ""))
+
+        # Parse and apply changes
+        import re
+        json_match = re.search(r'\{[\s\S]*"changes"[\s\S]*\}', ai_response)
+
+        if not json_match:
+            return JSONResponse({
+                "success": False,
+                "error": "AI could not generate structured changes",
+                "ai_response": ai_response[:1000],
+                "suggestion": "Try rephrasing your feature request"
+            })
+
+        try:
+            change_data = json.loads(json_match.group())
+            changes = change_data.get("changes", [])
+        except json.JSONDecodeError:
+            return JSONResponse({
+                "success": False,
+                "error": "Could not parse AI response",
+                "ai_response": ai_response[:1000]
+            })
+
+        if not changes:
+            return JSONResponse({
+                "success": True,
+                "message": "No changes needed or AI was unsure",
+                "ai_response": ai_response[:1000]
+            })
+
+        # Create branch if requested
+        if request.create_branch:
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name],
+                cwd=project_root,
+                capture_output=True
+            )
+
+        # Apply changes
+        applied_changes = []
+        for change in changes[:5]:  # Limit to 5 changes
+            file_rel_path = change.get("file", "")
+            old_code = change.get("old_code", "")
+            new_code = change.get("new_code", "")
+
+            if not all([file_rel_path, old_code, new_code]):
+                continue
+
+            file_path = project_root / file_rel_path
+            if file_path.exists():
+                content = file_path.read_text()
+                if old_code in content:
+                    new_content = content.replace(old_code, new_code, 1)
+                    file_path.write_text(new_content)
+                    applied_changes.append({
+                        "file": file_rel_path,
+                        "explanation": change.get("explanation", ""),
+                        "status": "applied"
+                    })
+                else:
+                    applied_changes.append({
+                        "file": file_rel_path,
+                        "status": "skipped - old code not found"
+                    })
+
+        # Commit if changes were made
+        if applied_changes and request.create_branch:
+            subprocess.run(["git", "add", "-A"], cwd=project_root)
+            commit_msg = f"""AI Feature: {request.feature[:50]}
+
+{change_data.get('summary', 'Feature implementation')}
+
+🤖 Generated by ChatterFix AI (budget_mode={'on' if request.budget_mode else 'off'})
+Review before merging!"""
+            subprocess.run(["git", "commit", "-m", commit_msg], cwd=project_root)
+            subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+
+        return JSONResponse({
+            "success": True,
+            "feature": request.feature,
+            "branch": branch_name if request.create_branch else None,
+            "budget_mode": request.budget_mode,
+            "estimated_cost": "$0.01-0.02" if request.budget_mode else "$0.08-0.15",
+            "changes_applied": applied_changes,
+            "summary": change_data.get("summary", ""),
+            "next_steps": [
+                f"Review: git diff {original_branch}..{branch_name}",
+                f"Merge: git merge {branch_name}",
+                f"Delete: git branch -D {branch_name}"
+            ] if request.create_branch else ["Changes applied to current branch"]
+        })
+
+    except Exception as e:
+        import traceback
+        try:
+            subprocess.run(["git", "checkout", original_branch], cwd=project_root)
+        except:
+            pass
+        return JSONResponse({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }, status_code=500)
 
 
 @router.post("/code-fix")

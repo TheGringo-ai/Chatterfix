@@ -1451,7 +1451,7 @@ async def ai_team_code_review(request: CodeReviewRequest):
         focus_str = ", ".join(request.focus_areas)
         code_context = "\n\n".join(code_snippets[:5])  # Limit to 5 files for context
 
-        review_prompt = f"""You are reviewing the ChatterFix CMMS codebase.
+        review_prompt = f"""You are an EXPERT code reviewer for ChatterFix CMMS. Your job is to find REAL issues in code.
 
 REVIEW TYPE: {request.review_type}
 FOCUS AREAS: {focus_str}
@@ -1460,15 +1460,36 @@ FILES BEING REVIEWED: {', '.join(files_reviewed[:5])}
 ACTUAL CODE TO REVIEW:
 {code_context}
 
-Please analyze this ACTUAL CODE and provide:
-1. SPECIFIC issues found with file:line references
-2. Security vulnerabilities (if any)
-3. Performance concerns (if any)
-4. Code quality issues
-5. Concrete fix recommendations with code examples
+=== CRITICAL VERIFICATION REQUIREMENTS ===
+Before flagging ANY issue, you MUST:
+1. VERIFY the issue exists in the actual code above
+2. CITE the exact line number and code snippet as evidence
+3. SEARCH the entire code for usage before claiming something is "unused"
+4. CHECK if validation/handling already exists before claiming it's "missing"
 
-Be SPECIFIC - reference actual function names, line numbers, and variable names from the code above.
-Do NOT give generic recommendations. Only report issues you can see in the actual code."""
+=== DO NOT FLAG (FALSE POSITIVE PREVENTION) ===
+❌ DO NOT flag "unused imports" unless you searched ALL code and confirmed the import is never used
+❌ DO NOT flag "missing validation" unless you verified no validation exists anywhere in the file
+❌ DO NOT flag "in-memory filtering" if filters are passed to database queries (e.g., organization_id param)
+❌ DO NOT make generic recommendations that don't reference specific code
+❌ DO NOT flag issues based on assumptions - only flag what you can PROVE from the code
+
+=== WHAT TO LOOK FOR (REAL ISSUES) ===
+✅ Security: Directory traversal (e.g., os.path.join with unvalidated user input)
+✅ Security: SQL injection, XSS, command injection
+✅ Bugs: String comparisons where datetime comparisons should be used
+✅ Bugs: Missing error handling for critical operations
+✅ Performance: N+1 queries in loops
+
+=== OUTPUT FORMAT ===
+For each issue found, provide:
+1. FILE: exact filename
+2. LINE: exact line number (verify this!)
+3. EVIDENCE: quote the problematic code
+4. ISSUE: what's wrong and why it matters
+5. FIX: concrete code to replace it with
+
+If you cannot find VERIFIED issues, say "No verified issues found" - this is better than false positives."""
 
         # Use AI Team for comprehensive review
         result = await chatterfix_ai.process_with_team(
@@ -1621,17 +1642,24 @@ FEATURE REQUEST: {request.feature}
 EXISTING CODE:
 {chr(10).join(code_context)}
 
-Implement this feature. Provide the EXACT code changes needed:
-1. Show OLD code to replace
-2. Show NEW code (the replacement)
-3. Explain what each change does
+=== IMPLEMENTATION REQUIREMENTS ===
+1. The old_code MUST exist EXACTLY in the file (copy it character-for-character)
+2. Only modify code that needs to change for this feature
+3. Do NOT refactor or "improve" unrelated code
+4. Keep changes minimal and focused
+
+=== VERIFICATION ===
+Before providing changes:
+1. Find the EXACT location in the code to modify
+2. Copy the old_code EXACTLY as it appears (including whitespace)
+3. Only provide changes that directly implement the requested feature
 
 Format as JSON:
 {{
     "changes": [
         {{
             "file": "path/to/file.py",
-            "old_code": "exact code to find and replace",
+            "old_code": "EXACT code to find (must match file exactly)",
             "new_code": "the new code",
             "explanation": "what this change does"
         }}
@@ -1639,7 +1667,7 @@ Format as JSON:
     "summary": "brief summary of implementation"
 }}
 
-Be SPECIFIC and use exact code from the files above."""
+IMPORTANT: If old_code doesn't match exactly, the change will fail. Be precise!"""
 
         # Use budget mode (single Gemini) or full team
         if request.budget_mode:
@@ -1878,7 +1906,7 @@ async def ai_team_code_fix(request: CodeFixRequest):
                 original_content = file_path.read_text()
 
                 # Build fix prompt
-                fix_prompt = f"""You are an expert code fixer for the ChatterFix CMMS.
+                fix_prompt = f"""You are an EXPERT code fixer for ChatterFix CMMS. Only fix VERIFIED issues.
 
 FIX TYPE: {request.fix_type}
 ADDITIONAL CONTEXT: {request.description or 'Auto-fix common issues'}
@@ -1889,25 +1917,39 @@ FILE TO FIX: {file_path.name}
 {original_content[:8000]}
 ```
 
-Analyze this code and provide SPECIFIC fixes. For each fix:
-1. Show the EXACT code to replace (old code)
-2. Show the EXACT replacement (new code)
-3. Explain why this fix is needed
+=== VERIFICATION REQUIREMENTS ===
+Before suggesting ANY fix:
+1. VERIFY the issue exists by finding it in the code above
+2. CONFIRM the old_code you provide exists EXACTLY in the file
+3. DO NOT suggest fixes for non-issues or "improvements" not requested
+4. ONLY fix security vulnerabilities, bugs, or issues matching the FIX TYPE
+
+=== DO NOT FIX ===
+❌ Imports that ARE used elsewhere in the file
+❌ "Missing validation" if validation exists
+❌ Code style preferences (focus on real bugs)
+❌ Things that aren't broken
+
+=== REAL ISSUES TO FIX ===
+✅ Directory traversal: os.path.join with unsanitized filenames
+✅ Date string comparisons that should use datetime objects
+✅ Missing null checks before accessing properties
+✅ SQL/command injection vulnerabilities
 
 Format your response as JSON:
 {{
     "fixes": [
         {{
-            "old_code": "exact code to replace",
+            "old_code": "EXACT code to replace (must exist in file)",
             "new_code": "replacement code",
-            "reason": "why this fix is needed",
-            "line_hint": "approximate line number"
+            "reason": "why this fix is needed (cite line number)",
+            "line_hint": "exact line number"
         }}
     ],
-    "summary": "brief summary of all fixes"
+    "summary": "brief summary of verified fixes only"
 }}
 
-Only suggest fixes you are CONFIDENT about. Be conservative."""
+BE CONSERVATIVE. Only suggest fixes you are 100% confident about. No fixes is better than wrong fixes."""
 
                 # Get AI Team fix suggestions
                 result = await chatterfix_ai.process_with_team(

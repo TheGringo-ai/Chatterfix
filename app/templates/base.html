@@ -999,10 +999,19 @@
                             class="rounded-circle border border-1 border-light">
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark text-small shadow">
+                        {% if current_user.id == 'demo-user-001' or request.url.path.startswith('/demo') %}
+                        <!-- Demo Mode: Show Sign Up option -->
+                        <li><a class="dropdown-item" href="/signup"><i class="fas fa-user-plus me-2"></i> Sign Up for Full Access</a></li>
+                        <li><a class="dropdown-item" href="/login"><i class="fas fa-sign-in-alt me-2"></i> Log In</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item text-muted"><i class="fas fa-info-circle me-2"></i> You're in Demo Mode</span></li>
+                        {% else %}
+                        <!-- Authenticated User: Show full options -->
                         <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i> Settings</a></li>
                         <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i> Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i> Sign out</a></li>
+                        {% endif %}
                     </ul>
                 </div>
                 {% endif %}

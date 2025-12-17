@@ -411,29 +411,29 @@
                     </div>
                     <div class="demo-actions">
                         {% if step.demo_type == 'work_order_creation' %}
-                            <a href="/demo/work-order-creation" class="demo-btn" target="_blank">
+                            <button class="demo-btn" onclick="openDemoModal('work_order')">
                                 📝 Try Creating a Work Order
-                            </a>
-                            <a href="/work-orders" class="demo-btn" target="_blank">
+                            </button>
+                            <a href="/demo/work-orders" class="demo-btn" target="_blank">
                                 👀 View Existing Work Orders
                             </a>
                         {% elif step.demo_type == 'parts_checkout' %}
-                            <a href="/demo/parts-checkout" class="demo-btn" target="_blank">
+                            <button class="demo-btn" onclick="openDemoModal('parts_checkout')">
                                 🔧 Practice Parts Checkout
-                            </a>
-                            <a href="/inventory" class="demo-btn" target="_blank">
+                            </button>
+                            <a href="/demo/inventory" class="demo-btn" target="_blank">
                                 📦 Browse Inventory
                             </a>
                         {% elif step.demo_type == 'mobile_features' %}
-                            <a href="/demo/mobile-tour" class="demo-btn" target="_blank">
+                            <button class="demo-btn" onclick="openDemoModal('mobile_tour')">
                                 📱 Mobile Feature Tour
-                            </a>
+                            </button>
                         {% elif step.demo_type == 'voice_commands' %}
-                            <button class="demo-btn" onclick="startVoiceDemo()">
+                            <button class="demo-btn" onclick="openDemoModal('voice_commands')">
                                 🎤 Try Voice Commands
                             </button>
                         {% elif step.demo_type == 'analytics' %}
-                            <a href="/analytics" class="demo-btn" target="_blank">
+                            <a href="/demo/analytics" class="demo-btn" target="_blank">
                                 📊 Explore Analytics Dashboard
                             </a>
                         {% endif %}
@@ -679,6 +679,197 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             activeStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 500);
+    }
+});
+
+// Interactive Demo Modal System
+const demoContent = {
+    work_order: {
+        title: '📝 Create a Work Order',
+        content: `
+            <div style="padding: 20px;">
+                <h3>Work Order Creation Demo</h3>
+                <p>In ChatterFix, you can create work orders in multiple ways:</p>
+                <ul style="text-align: left; margin: 15px 0;">
+                    <li><strong>Voice Command:</strong> "Hey ChatterFix, create a work order for pump 7"</li>
+                    <li><strong>Quick Form:</strong> Fill out title, description, priority</li>
+                    <li><strong>AI Assistant:</strong> Describe the issue and let AI fill in details</li>
+                </ul>
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <strong>Try it:</strong> Go to Work Orders and click "Create with AI" to practice!
+                </div>
+                <a href="/demo/work-orders" class="demo-btn" style="display: inline-block; margin-top: 10px;">
+                    Go to Work Orders →
+                </a>
+            </div>
+        `
+    },
+    parts_checkout: {
+        title: '🔧 Parts Checkout Demo',
+        content: `
+            <div style="padding: 20px;">
+                <h3>Parts Checkout Process</h3>
+                <p>Check out parts hands-free with ChatterFix:</p>
+                <ul style="text-align: left; margin: 15px 0;">
+                    <li><strong>Voice:</strong> "Check out 3 bearings for work order 1234"</li>
+                    <li><strong>Scan:</strong> Scan part barcode with your phone camera</li>
+                    <li><strong>Search:</strong> Type part name or number</li>
+                </ul>
+                <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <strong>Automatic Tracking:</strong> Parts are linked to work orders for cost tracking!
+                </div>
+                <a href="/demo/inventory" class="demo-btn" style="display: inline-block; margin-top: 10px;">
+                    Browse Inventory →
+                </a>
+            </div>
+        `
+    },
+    mobile_tour: {
+        title: '📱 Mobile Features Tour',
+        content: `
+            <div style="padding: 20px;">
+                <h3>ChatterFix Mobile Features</h3>
+                <p>ChatterFix is designed for technicians on the go:</p>
+                <ul style="text-align: left; margin: 15px 0;">
+                    <li><strong>Voice Commands:</strong> Hands-free operation</li>
+                    <li><strong>Camera Integration:</strong> Scan barcodes, take photos</li>
+                    <li><strong>Offline Mode:</strong> Works without internet</li>
+                    <li><strong>Push Notifications:</strong> Real-time alerts</li>
+                </ul>
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <strong>Coming Soon:</strong> Smart glasses integration for AR maintenance!
+                </div>
+            </div>
+        `
+    },
+    voice_commands: {
+        title: '🎤 Voice Commands Demo',
+        content: `
+            <div style="padding: 20px;">
+                <h3>Voice Command Examples</h3>
+                <p>Try these voice commands in ChatterFix:</p>
+                <ul style="text-align: left; margin: 15px 0;">
+                    <li>"Create work order for [equipment]"</li>
+                    <li>"Check out [quantity] [part name]"</li>
+                    <li>"What's the status of work order [number]?"</li>
+                    <li>"Show maintenance history for [asset]"</li>
+                    <li>"Mark work order [number] as complete"</li>
+                </ul>
+                <button class="demo-btn" onclick="startVoiceDemo(); closeDemoModal();" style="margin-top: 10px;">
+                    🎤 Try Voice Recognition
+                </button>
+            </div>
+        `
+    }
+};
+
+function openDemoModal(demoType) {
+    const demo = demoContent[demoType];
+    if (!demo) {
+        alert('Demo not available');
+        return;
+    }
+
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('demoModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'demoModal';
+        modal.innerHTML = `
+            <div class="demo-modal-overlay" onclick="closeDemoModal()"></div>
+            <div class="demo-modal-content">
+                <button class="demo-modal-close" onclick="closeDemoModal()">×</button>
+                <h2 id="demoModalTitle"></h2>
+                <div id="demoModalBody"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Add modal styles
+        const style = document.createElement('style');
+        style.textContent = `
+            #demoModal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10000;
+            }
+            #demoModal.show {
+                display: block;
+            }
+            .demo-modal-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.6);
+            }
+            .demo-modal-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 16px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            .demo-modal-content h2 {
+                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                color: white;
+                margin: 0;
+                padding: 20px;
+                border-radius: 16px 16px 0 0;
+            }
+            .demo-modal-close {
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 28px;
+                cursor: pointer;
+            }
+            #demoModalBody {
+                padding: 10px;
+            }
+            #demoModalBody .demo-btn {
+                background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 8px;
+                text-decoration: none;
+                border: none;
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.getElementById('demoModalTitle').textContent = demo.title;
+    document.getElementById('demoModalBody').innerHTML = demo.content;
+    modal.classList.add('show');
+}
+
+function closeDemoModal() {
+    const modal = document.getElementById('demoModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeDemoModal();
     }
 });
 </script>

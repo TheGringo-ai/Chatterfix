@@ -1404,7 +1404,8 @@ async def ai_team_code_review(request: CodeReviewRequest):
     from pathlib import Path
 
     try:
-        project_root = Path("/Users/fredtaylor/ChatterFix")
+        # Get project root dynamically (works locally and on Cloud Run)
+        project_root = Path(__file__).parent.parent.parent  # ai.py -> routers -> app -> project
         code_snippets = []
         files_reviewed = []
 

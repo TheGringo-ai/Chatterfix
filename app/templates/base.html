@@ -70,51 +70,6 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
     <style>
-        /* Interactive Demo Bar Styles */
-        .demo-bar {
-            background: linear-gradient(90deg, #2c3e50, #3498db);
-            color: white;
-            padding: 12px 0;
-            text-align: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 10500;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            animation: slideDown 0.5s ease-out;
-        }
-
-        .demo-bar-content {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .demo-pulse {
-            width: 10px;
-            height: 10px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse-dot 1.5s infinite;
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
-        }
-
-        @keyframes pulse-dot {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
-
         .demo-spotlight {
             display: none;
             position: absolute;
@@ -613,12 +568,7 @@
             .nav-search-compact {
                 width: 150px;
             }
-            
-            .demo-bar-content {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
+
             body {
                 padding-bottom: 80px; /* Space for mobile nav */
             }
@@ -1191,18 +1141,6 @@
         </button>
     </nav>
 
-    <!-- Interactive Demo Bar -->
-    <div id="demoBar" class="demo-bar" style="display: none;">
-        <div class="demo-bar-content">
-            <div class="demo-pulse"></div>
-            <strong>Interactive Demo Mode</strong>
-            <span>Explore the features of ChatterFix at your own pace.</span>
-            <button onclick="window.demoSystem.startFullDemo()" class="btn btn-sm btn-light text-primary fw-bold"
-                style="margin-left: 10px;">Start Interactive Tour</button>
-            <button onclick="window.demoSystem.dismissDemoBar()" class="btn btn-sm btn-outline-light ms-2">Dismiss</button>
-        </div>
-    </div>
-
     <div class="container-fluid">
         {% if get_flashed_messages is defined %}
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -1706,98 +1644,8 @@
                 window.addEventListener('resize', updateScrollButtons);
             }
 
-            // Check if user is in demo mode (URL path check or session)
-            if (window.location.pathname.startsWith('/demo')) {
-                // Show demo bar unless actively in a tour
-                try {
-                    const demoState = JSON.parse(localStorage.getItem('chatterfix_demo_state') || '{}');
-                    // Clear stale state if not actively in tour
-                    if (demoState.active && !window.demoSystem?.isActive) {
-                        localStorage.removeItem('chatterfix_demo_state');
-                    }
-                    // Show bar if not actively in tour and not dismissed
-                    if (!demoState.active && !demoState.dismissed) {
-                        const demoBar = document.getElementById('demoBar');
-                        if(demoBar) {
-                            demoBar.style.display = 'block';
-                            document.body.style.paddingTop = '50px'; // Space for fixed bar
-                        }
-                    }
-                } catch (e) {
-                    // localStorage may be restricted (Safari private browsing)
-                    const demoBar = document.getElementById('demoBar');
-                    if(demoBar) {
-                        demoBar.style.display = 'block';
-                        document.body.style.paddingTop = '50px';
-                    }
-                }
-            }
-
-            // Initialize AI Widget tour for new users
-            setTimeout(() => {
-                try {
-                    const hasSeenAITour = localStorage.getItem('chatterfix_ai_tour_seen');
-                    if (!hasSeenAITour) {
-                        showAIWidgetIntro();
-                        localStorage.setItem('chatterfix_ai_tour_seen', 'true');
-                    }
-                } catch (e) {
-                    // localStorage may be restricted (Safari private browsing)
-                    // Skip the AI tour intro on restricted browsers
-                }
-            }, 3000); // Show after 3 seconds
         });
-        
-        function showAIWidgetIntro() {
-            // Create a subtle tooltip pointing to the AI widget
-            const aiFab = document.querySelector('.ai-fab');
-            if (aiFab && window.innerWidth > 768) { // Only on desktop
-                const tooltip = document.createElement('div');
-                tooltip.style.cssText = `
-                    position: fixed;
-                    bottom: 140px;
-                    right: 20px;
-                    background: var(--bg-glass-heavy);
-                    color: var(--text-primary);
-                    padding: 15px 20px;
-                    border-radius: 15px;
-                    box-shadow: var(--shadow-glass);
-                    backdrop-filter: blur(20px);
-                    z-index: 10000;
-                    max-width: 280px;
-                    font-size: 0.9rem;
-                    line-height: 1.5;
-                    border: 1px solid var(--border-glass);
-                    animation: fadeIn 0.5s ease;
-                `;
-                tooltip.innerHTML = `
-                    <div style="font-weight: 600; margin-bottom: 8px; color: var(--accent-color);">
-                        🚀 New! AI-Powered Assistant
-                    </div>
-                    <div>Click the AI button to access intelligent maintenance insights, troubleshooting, and more!</div>
-                    <button onclick="this.parentElement.remove()" style="
-                        position: absolute;
-                        top: 8px;
-                        right: 8px;
-                        background: none;
-                        border: none;
-                        color: var(--text-muted);
-                        cursor: pointer;
-                        font-size: 1.1rem;
-                    ">&times;</button>
-                `;
-                document.body.appendChild(tooltip);
-                
-                // Auto-remove after 8 seconds
-                setTimeout(() => {
-                    if (tooltip.parentElement) {
-                        tooltip.style.animation = 'fadeOut 0.3s ease forwards';
-                        setTimeout(() => tooltip.remove(), 300);
-                    }
-                }, 8000);
-            }
-        }
-        
+
     </script>
 
     <script>

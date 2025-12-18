@@ -110,7 +110,11 @@ async def part_detail(request: Request, part_id: str, current_user: User = Depen
     
     vendor = None
     if part.get("vendor_id"):
-        vendor = await firestore_manager.get_document("vendors", part["vendor_id"])
+        # SECURITY: Validate vendor belongs to same organization
+        if current_user.organization_id:
+            vendor = await firestore_manager.get_org_document("vendors", part["vendor_id"], current_user.organization_id)
+        else:
+            vendor = await firestore_manager.get_document("vendors", part["vendor_id"])
 
     media = await firestore_manager.get_collection(
         "part_media", filters=[{"field": "part_id", "operator": "==", "value": part_id}]

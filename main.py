@@ -101,10 +101,11 @@ extended_routers = {}
 # List of critical routers that must work
 critical_routers = [
     'demo',
-    'analytics', 
+    'analytics',
     'work_orders',
     'assets',
-    'public_demo'
+    # NOTE: 'public_demo' REMOVED - it exposed real Firestore data without org filtering
+    # demo.py provides safe mock data demo routes instead
 ]
 
 # AI Team Configuration (moved above to fix variable reference issue)
@@ -125,7 +126,7 @@ all_extended_routers = [
     'linesmart_integration',
     'planner',
     'planner_simple',
-    'public_demo',
+    # NOTE: 'public_demo' REMOVED - security risk, exposed real data without org filtering
     'purchasing',
     'premium_modules',
     'quality_management',
@@ -396,7 +397,7 @@ if CORE_ROUTERS_AVAILABLE:
 # Include extended functionality - ROBUST ROUTER INCLUSION
 router_descriptions = {
     'demo': 'Demo routes',
-    'public_demo': 'Public demo routes (no auth required)',
+    # 'public_demo' REMOVED - was security risk exposing real data
     'work_orders': 'Work orders',
     'assets': 'Assets',
     'inventory': 'Inventory',

@@ -295,11 +295,16 @@ async def bulk_import_work_orders(
                     "due_date": str(row.get('due_date', '')).strip(),
                     "created_at": datetime.now().isoformat(),
                     "updated_at": datetime.now().isoformat(),
-                    "created_by": current_user.username if current_user else "bulk_import",
+                    "created_by": current_user.full_name if current_user else "bulk_import",
                 }
 
-                # Create work order in Firestore
-                await firestore_manager.create_document("work_orders", wo_data)
+                # Create work order in Firestore with organization scoping
+                if current_user and current_user.organization_id:
+                    # SECURITY: Use org-scoped method to ensure data isolation
+                    await firestore_manager.create_org_document("work_orders", wo_data, current_user.organization_id)
+                else:
+                    # Fallback for users without org (should not happen in production)
+                    await firestore_manager.create_document("work_orders", wo_data)
                 imported += 1
 
             except Exception as e:

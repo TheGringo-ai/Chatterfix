@@ -378,6 +378,7 @@ DEMO_USER = {
 
 # ==================== MAIN DEMO ENTRY POINTS ====================
 
+
 @router.get("/demo", response_class=RedirectResponse)
 async def demo_home(request: Request):
     """Demo home - redirect to dashboard"""
@@ -394,9 +395,15 @@ async def demo_home_slash(request: Request):
 async def demo_dashboard(request: Request):
     """Demo dashboard with mock data - SECURITY: Never uses real customer data"""
     # Calculate stats from mock data
-    active_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Open", "In Progress"]])
-    pending_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Scheduled", "On Hold"]])
-    completed_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") == "Completed"])
+    active_count = len(
+        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Open", "In Progress"]]
+    )
+    pending_count = len(
+        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Scheduled", "On Hold"]]
+    )
+    completed_count = len(
+        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") == "Completed"]
+    )
 
     workload = {
         "stats": {
@@ -420,7 +427,9 @@ async def demo_dashboard(request: Request):
 
     # Equipment stats from mock data
     healthy_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Operational"])
-    warning_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Maintenance Required"])
+    warning_assets = len(
+        [a for a in DEMO_ASSETS if a.get("status") == "Maintenance Required"]
+    )
     critical_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Down"])
 
     equipment = {
@@ -428,14 +437,24 @@ async def demo_dashboard(request: Request):
         "healthy": healthy_assets,
         "warning": warning_assets,
         "critical": critical_assets,
-        "uptime_percentage": round((healthy_assets / len(DEMO_ASSETS) * 100) if DEMO_ASSETS else 100, 1),
+        "uptime_percentage": round(
+            (healthy_assets / len(DEMO_ASSETS) * 100) if DEMO_ASSETS else 100, 1
+        ),
     }
 
     notifications = {
         "unread_count": 3,
         "recent_interactions": [
-            {"type": "AI", "message": "Predictive maintenance alert for Pump Station", "timestamp": "5 min ago"},
-            {"type": "System", "message": "New work order assigned", "timestamp": "15 min ago"},
+            {
+                "type": "AI",
+                "message": "Predictive maintenance alert for Pump Station",
+                "timestamp": "5 min ago",
+            },
+            {
+                "type": "System",
+                "message": "New work order assigned",
+                "timestamp": "15 min ago",
+            },
         ],
     }
 
@@ -462,8 +481,20 @@ async def demo_assets(request: Request):
     stats = {
         "total": len(DEMO_ASSETS),
         "active": len([a for a in DEMO_ASSETS if a.get("status") == "Operational"]),
-        "critical": len([a for a in DEMO_ASSETS if a.get("criticality") == "Critical" or a.get("status") == "Down"]),
-        "maintenance_due": len([a for a in DEMO_ASSETS if a.get("status") in ["Maintenance Required", "Down"]]),
+        "critical": len(
+            [
+                a
+                for a in DEMO_ASSETS
+                if a.get("criticality") == "Critical" or a.get("status") == "Down"
+            ]
+        ),
+        "maintenance_due": len(
+            [
+                a
+                for a in DEMO_ASSETS
+                if a.get("status") in ["Maintenance Required", "Down"]
+            ]
+        ),
     }
 
     return templates.TemplateResponse(
@@ -474,7 +505,11 @@ async def demo_assets(request: Request):
             "stats": stats,
             "is_demo": True,
             "demo_mode": True,
-            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+            "current_user": {
+                "uid": "demo",
+                "role": "technician",
+                "full_name": "Demo User",
+            },
         },
     )
 
@@ -485,10 +520,16 @@ async def demo_work_orders(request: Request):
     # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
     stats = {
         "total": len(DEMO_WORK_ORDERS),
-        "in_progress": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "In Progress"]),
-        "scheduled": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Scheduled"]),
+        "in_progress": len(
+            [w for w in DEMO_WORK_ORDERS if w.get("status") == "In Progress"]
+        ),
+        "scheduled": len(
+            [w for w in DEMO_WORK_ORDERS if w.get("status") == "Scheduled"]
+        ),
         "overdue": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Overdue"]),
-        "completed": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Completed"]),
+        "completed": len(
+            [w for w in DEMO_WORK_ORDERS if w.get("status") == "Completed"]
+        ),
     }
 
     return templates.TemplateResponse(
@@ -499,7 +540,11 @@ async def demo_work_orders(request: Request):
             "stats": stats,
             "is_demo": True,
             "demo_mode": True,
-            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+            "current_user": {
+                "uid": "demo",
+                "role": "technician",
+                "full_name": "Demo User",
+            },
         },
     )
 
@@ -793,23 +838,23 @@ async def demo_training_module_detail(request: Request, module_id: str):
                         {
                             "title": "Safety Procedures",
                             "content": "Essential safety protocols for pump maintenance operations.",
-                            "type": "text"
+                            "type": "text",
                         },
                         {
                             "title": "Diagnostic Procedures",
                             "content": "Step-by-step diagnostic procedures for common pump issues.",
-                            "type": "interactive"
+                            "type": "interactive",
                         },
                         {
                             "title": "Maintenance Tasks",
                             "content": "Regular maintenance procedures and schedules.",
-                            "type": "hands_on"
-                        }
+                            "type": "hands_on",
+                        },
                     ]
-                }
+                },
             },
             "2": {
-                "id": "2", 
+                "id": "2",
                 "title": "HVAC System Troubleshooting SOP",
                 "description": "Standard Operating Procedures for diagnosing and repairing HVAC systems - step-by-step guides with AI assistance",
                 "difficulty_level": "Intermediate",
@@ -820,19 +865,19 @@ async def demo_training_module_detail(request: Request, module_id: str):
                         {
                             "title": "System Overview",
                             "content": "Understanding HVAC system components and operation principles.",
-                            "type": "text"
+                            "type": "text",
                         },
                         {
                             "title": "Troubleshooting Guide",
                             "content": "Systematic approach to diagnosing HVAC problems.",
-                            "type": "interactive"
-                        }
+                            "type": "interactive",
+                        },
                     ]
-                }
+                },
             },
             "3": {
                 "id": "3",
-                "title": "Electrical Safety & Lockout/Tagout Procedures", 
+                "title": "Electrical Safety & Lockout/Tagout Procedures",
                 "description": "Essential safety training for electrical work - OSHA compliance, LOTO procedures, and emergency response",
                 "difficulty_level": "Beginner",
                 "estimated_duration_minutes": 120,
@@ -842,16 +887,16 @@ async def demo_training_module_detail(request: Request, module_id: str):
                         {
                             "title": "Electrical Safety Fundamentals",
                             "content": "Basic electrical safety principles and OSHA requirements.",
-                            "type": "text"
+                            "type": "text",
                         },
                         {
                             "title": "Lockout/Tagout Procedures",
                             "content": "Step-by-step LOTO procedures for electrical systems.",
-                            "type": "hands_on"
-                        }
+                            "type": "hands_on",
+                        },
                     ]
-                }
-            }
+                },
+            },
         }
 
         module = demo_modules.get(module_id)
@@ -873,9 +918,10 @@ async def demo_training_module_detail(request: Request, module_id: str):
                 "demo_banner": f"Demo: {module['title']} - Interactive training experience",
             },
         )
-        
+
     except Exception:
         import traceback
+
         return HTMLResponse(
             content=f"<h1>Error Loading Training Module</h1><pre>{traceback.format_exc()}</pre>",
             status_code=500,
@@ -963,6 +1009,7 @@ async def demo_analytics(request: Request):
 async def demo_analytics_dashboard_redirect():
     """Redirect to demo analytics - for URL consistency"""
     from fastapi.responses import RedirectResponse
+
     return RedirectResponse(url="/demo/analytics", status_code=302)
 
 
@@ -984,14 +1031,56 @@ async def demo_inventory(request: Request):
     """Demo inventory page - ALWAYS uses mock data for security (never real customer data)"""
     # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
     demo_parts = [
-        {"id": 1, "part_number": "FLT-001", "name": "HVAC Air Filter", "quantity": 15, "reorder_point": 10, "cost": 12.50, "status": "In Stock"},
-        {"id": 2, "part_number": "OIL-COMP", "name": "Compressor Oil 5W-30", "quantity": 3, "reorder_point": 5, "cost": 85.00, "status": "Low Stock"},
-        {"id": 3, "part_number": "BRG-001", "name": "Ball Bearing 6205", "quantity": 25, "reorder_point": 10, "cost": 18.75, "status": "In Stock"},
-        {"id": 4, "part_number": "BLT-002", "name": "Drive Belt A-68", "quantity": 8, "reorder_point": 5, "cost": 32.00, "status": "In Stock"},
-        {"id": 5, "part_number": "SEN-TEMP", "name": "Temperature Sensor PT100", "quantity": 2, "reorder_point": 5, "cost": 145.00, "status": "Low Stock"},
+        {
+            "id": 1,
+            "part_number": "FLT-001",
+            "name": "HVAC Air Filter",
+            "quantity": 15,
+            "reorder_point": 10,
+            "cost": 12.50,
+            "status": "In Stock",
+        },
+        {
+            "id": 2,
+            "part_number": "OIL-COMP",
+            "name": "Compressor Oil 5W-30",
+            "quantity": 3,
+            "reorder_point": 5,
+            "cost": 85.00,
+            "status": "Low Stock",
+        },
+        {
+            "id": 3,
+            "part_number": "BRG-001",
+            "name": "Ball Bearing 6205",
+            "quantity": 25,
+            "reorder_point": 10,
+            "cost": 18.75,
+            "status": "In Stock",
+        },
+        {
+            "id": 4,
+            "part_number": "BLT-002",
+            "name": "Drive Belt A-68",
+            "quantity": 8,
+            "reorder_point": 5,
+            "cost": 32.00,
+            "status": "In Stock",
+        },
+        {
+            "id": 5,
+            "part_number": "SEN-TEMP",
+            "name": "Temperature Sensor PT100",
+            "quantity": 2,
+            "reorder_point": 5,
+            "cost": 145.00,
+            "status": "Low Stock",
+        },
     ]
 
-    low_stock_count = len([p for p in demo_parts if p.get("quantity", 0) <= p.get("reorder_point", 5)])
+    low_stock_count = len(
+        [p for p in demo_parts if p.get("quantity", 0) <= p.get("reorder_point", 5)]
+    )
     total_value = sum((p.get("quantity", 0) * p.get("cost", 0)) for p in demo_parts)
 
     return templates.TemplateResponse(
@@ -1003,7 +1092,11 @@ async def demo_inventory(request: Request):
             "total_value": total_value,
             "is_demo": True,
             "demo_mode": True,
-            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+            "current_user": {
+                "uid": "demo",
+                "role": "technician",
+                "full_name": "Demo User",
+            },
         },
     )
 
@@ -1262,6 +1355,7 @@ async def demo_manager_inventory(request: Request):
 # DEMO ANALYTICS API ENDPOINTS (No Authentication Required)
 # =============================================================================
 
+
 @router.get("/demo/analytics/kpi/summary")
 async def demo_analytics_kpi_summary(days: int = 30):
     """Demo KPI summary data for analytics dashboard"""
@@ -1274,7 +1368,7 @@ async def demo_analytics_kpi_summary(days: int = 30):
             "min_repair_time": 0.5,
             "max_repair_time": 8.0,
             "trend": "improving",
-            "status": "good"
+            "status": "good",
         },
         "mtbf": {
             "value": 168.5,
@@ -1283,20 +1377,16 @@ async def demo_analytics_kpi_summary(days: int = 30):
             "total_operating_hours": 2022,
             "total_downtime": 28.8,
             "trend": "stable",
-            "status": "good"
+            "status": "good",
         },
         "asset_utilization": {
             "average_utilization": 87.3,
             "unit": "percent",
             "total_assets": 24,
             "active_assets": 21,
-            "status_breakdown": {
-                "Active": 21,
-                "Maintenance": 2,
-                "Inactive": 1
-            },
+            "status_breakdown": {"Active": 21, "Maintenance": 2, "Inactive": 1},
             "trend": "improving",
-            "status": "good"
+            "status": "good",
         },
         "cost_tracking": {
             "total_cost": 24750,
@@ -1307,10 +1397,10 @@ async def demo_analytics_kpi_summary(days: int = 30):
             "costs_by_type": {
                 "Preventive": 8500,
                 "Corrective": 12250,
-                "Emergency": 4000
+                "Emergency": 4000,
             },
             "trend": "stable",
-            "currency": "USD"
+            "currency": "USD",
         },
         "work_order_metrics": {
             "total_created": 156,
@@ -1320,16 +1410,11 @@ async def demo_analytics_kpi_summary(days: int = 30):
                 "Open": 12,
                 "In Progress": 18,
                 "Completed": 140,
-                "On Hold": 4
+                "On Hold": 4,
             },
-            "priority_breakdown": {
-                "Low": 45,
-                "Medium": 68,
-                "High": 32,
-                "Critical": 11
-            },
+            "priority_breakdown": {"Low": 45, "Medium": 68, "High": 32, "Critical": 11},
             "trend": "improving",
-            "status": "good"
+            "status": "good",
         },
         "compliance_metrics": {
             "pm_compliance_rate": 92.5,
@@ -1338,16 +1423,12 @@ async def demo_analytics_kpi_summary(days: int = 30):
             "training_compliance_rate": 88.0,
             "total_training_assigned": 25,
             "training_completed": 22,
-            "certification_status": {
-                "total": 18,
-                "valid": 16,
-                "expired": 2
-            },
+            "certification_status": {"total": 18, "valid": 16, "expired": 2},
             "overall_compliance": 90.25,
-            "status": "good"
+            "status": "good",
         },
         "generated_at": datetime.now().isoformat(),
-        "period_days": days
+        "period_days": days,
     }
 
 
@@ -1361,8 +1442,8 @@ async def demo_analytics_work_order_status(days: int = 30):
             "Open": "#f39c12",
             "In Progress": "#3498db",
             "Completed": "#27ae60",
-            "On Hold": "#e74c3c"
-        }
+            "On Hold": "#e74c3c",
+        },
     }
 
 
@@ -1376,8 +1457,8 @@ async def demo_analytics_priority_distribution(days: int = 30):
             "Low": "#27ae60",
             "Medium": "#3498db",
             "High": "#f39c12",
-            "Critical": "#e74c3c"
-        }
+            "Critical": "#e74c3c",
+        },
     }
 
 
@@ -1390,18 +1471,15 @@ async def demo_analytics_cost_trend(days: int = 30):
 
     # Generate realistic cost data
     import random
+
     random.seed(42)  # Consistent demo data
     for i in range(min(days, 30)):
-        date = today - timedelta(days=29-i)
+        date = today - timedelta(days=29 - i)
         labels.append(date.strftime("%Y-%m-%d"))
         # Realistic daily cost between $200-$1500
         data.append(random.randint(200, 1500))
 
-    return {
-        "labels": labels,
-        "data": data,
-        "label": "Daily Maintenance Cost ($)"
-    }
+    return {"labels": labels, "data": data, "label": "Daily Maintenance Cost ($)"}
 
 
 @router.get("/demo/analytics/charts/completion-trend")
@@ -1413,9 +1491,10 @@ async def demo_analytics_completion_trend(days: int = 30):
     completed = []
 
     import random
+
     random.seed(42)
     for i in range(min(days, 30)):
-        date = today - timedelta(days=29-i)
+        date = today - timedelta(days=29 - i)
         labels.append(date.strftime("%Y-%m-%d"))
         c = random.randint(3, 8)
         created.append(c)
@@ -1428,15 +1507,15 @@ async def demo_analytics_completion_trend(days: int = 30):
                 "label": "Created",
                 "data": created,
                 "borderColor": "#3498db",
-                "fill": False
+                "fill": False,
             },
             {
                 "label": "Completed",
                 "data": completed,
                 "borderColor": "#27ae60",
-                "fill": False
-            }
-        ]
+                "fill": False,
+            },
+        ],
     }
 
 
@@ -1449,13 +1528,15 @@ async def demo_analytics_asset_health():
         "colors": {
             "Active": "#27ae60",
             "Maintenance": "#f39c12",
-            "Inactive": "#95a5a6"
-        }
+            "Inactive": "#95a5a6",
+        },
     }
 
 
 @router.get("/demo/food-processing-quality", response_class=HTMLResponse)
-async def demo_food_processing_quality(request: Request, industry: str = "cheese_plant"):
+async def demo_food_processing_quality(
+    request: Request, industry: str = "cheese_plant"
+):
     """Demo Food Processing Quality Management System with HACCP, GMP, and Food Safety Compliance"""
     try:
         # Industry configurations
@@ -1466,32 +1547,44 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "critical_limits": {
                     "milk_temp": {"min": 4, "max": 7, "unit": "°C"},
                     "pasteurization_temp": {"min": 72, "max": 75, "unit": "°C"},
-                    "aging_temp": {"min": 7, "max": 15, "unit": "°C"}
+                    "aging_temp": {"min": 7, "max": 15, "unit": "°C"},
                 },
-                "certifications": ["SQF", "FSMA", "EU Organic", "Halal"]
+                "certifications": ["SQF", "FSMA", "EU Organic", "Halal"],
             },
             "beverage_plant": {
                 "name": "Beverage Processing Plant",
-                "haccp_focus": ["Filtration", "Pasteurization", "Carbonation", "Packaging"],
+                "haccp_focus": [
+                    "Filtration",
+                    "Pasteurization",
+                    "Carbonation",
+                    "Packaging",
+                ],
                 "critical_limits": {
                     "product_temp": {"min": 2, "max": 8, "unit": "°C"},
                     "pasteurization_temp": {"min": 85, "max": 95, "unit": "°C"},
-                    "ph_range": {"min": 2.5, "max": 4.5, "unit": "pH"}
+                    "ph_range": {"min": 2.5, "max": 4.5, "unit": "pH"},
                 },
-                "certifications": ["FSSC 22000", "BRC", "IFS", "Organic"]
+                "certifications": ["FSSC 22000", "BRC", "IFS", "Organic"],
             },
             "dairy_processing": {
                 "name": "Dairy Processing Plant",
-                "haccp_focus": ["Pasteurization", "Homogenization", "Cooling", "Packaging"],
+                "haccp_focus": [
+                    "Pasteurization",
+                    "Homogenization",
+                    "Cooling",
+                    "Packaging",
+                ],
                 "critical_limits": {
                     "milk_temp": {"min": 4, "max": 7, "unit": "°C"},
-                    "pasteurization_temp": {"min": 72, "max": 75, "unit": "°C"}
+                    "pasteurization_temp": {"min": 72, "max": 75, "unit": "°C"},
                 },
-                "certifications": ["SQF", "FSMA", "ISO 22000"]
-            }
+                "certifications": ["SQF", "FSMA", "ISO 22000"],
+            },
         }
 
-        industry_config = industry_configs.get(industry, industry_configs["cheese_plant"])
+        industry_config = industry_configs.get(
+            industry, industry_configs["cheese_plant"]
+        )
 
         # Demo HACCP plans
         haccp_plans = [
@@ -1501,13 +1594,16 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "hazard_type": "Biological",
                 "hazard_description": "Pathogenic bacteria growth in raw milk",
                 "critical_control_point": True,
-                "critical_limits": {"temperature": {"min": 0, "max": 7, "unit": "°C"}, "time": {"max": 2, "unit": "hours"}},
+                "critical_limits": {
+                    "temperature": {"min": 0, "max": 7, "unit": "°C"},
+                    "time": {"max": 2, "unit": "hours"},
+                },
                 "monitoring_procedures": "Temperature monitoring every 2 hours, visual inspection",
                 "corrective_actions": "Reject milk if temperature >7°C or holding time >2 hours",
                 "verification_procedures": "Daily calibration of thermometers, weekly review",
                 "responsible_person": "Receiving Supervisor",
                 "review_frequency": "Daily",
-                "status": "Active"
+                "status": "Active",
             },
             {
                 "plan_id": "HACCP-002",
@@ -1515,14 +1611,17 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "hazard_type": "Biological",
                 "hazard_description": "Survival of pathogenic microorganisms",
                 "critical_control_point": True,
-                "critical_limits": {"temperature": {"min": 72, "max": 75, "unit": "°C"}, "time": {"min": 15, "unit": "seconds"}},
+                "critical_limits": {
+                    "temperature": {"min": 72, "max": 75, "unit": "°C"},
+                    "time": {"min": 15, "unit": "seconds"},
+                },
                 "monitoring_procedures": "Continuous temperature recording, time-temperature integration",
                 "corrective_actions": "Stop production, re-pasteurize if temperature drops below 72°C",
                 "verification_procedures": "Weekly validation of pasteurization equipment",
                 "responsible_person": "Production Manager",
                 "review_frequency": "Daily",
-                "status": "Active"
-            }
+                "status": "Active",
+            },
         ]
 
         # Demo temperature readings
@@ -1537,7 +1636,7 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "critical_limit_max": 7,
                 "within_limits": True,
                 "recorded_by": "Maria Sanchez",
-                "reading_time": "2024-12-14T06:00:00"
+                "reading_time": "2024-12-14T06:00:00",
             },
             {
                 "reading_id": "TEMP-002",
@@ -1549,8 +1648,8 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "critical_limit_max": 15,
                 "within_limits": True,
                 "recorded_by": "Carlos Rodriguez",
-                "reading_time": "2024-12-14T08:30:00"
-            }
+                "reading_time": "2024-12-14T08:30:00",
+            },
         ]
 
         # Demo batch records
@@ -1565,7 +1664,7 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "quantity_produced": 2500,
                 "unit_of_measure": "kg",
                 "status": "Released",
-                "release_date": "2024-12-14T16:00:00"
+                "release_date": "2024-12-14T16:00:00",
             }
         ]
 
@@ -1576,15 +1675,15 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "supplier_name": "Dairy Farms Inc",
                 "supplier_type": "Raw Materials",
                 "audit_score": 94.5,
-                "status": "Approved"
+                "status": "Approved",
             },
             {
                 "supplier_id": "SUP-002",
                 "supplier_name": "Packaging Solutions Ltd",
                 "supplier_type": "Packaging",
                 "audit_score": 91.2,
-                "status": "Approved"
-            }
+                "status": "Approved",
+            },
         ]
 
         # Demo inspections
@@ -1596,7 +1695,7 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "inspector_name": "Dr. Sarah Johnson",
                 "inspection_date": "2024-12-14T09:00:00",
                 "overall_score": 92.5,
-                "status": "Pass"
+                "status": "Pass",
             }
         ]
 
@@ -1607,7 +1706,7 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "area": "Cheese Processing Line A",
                 "frequency": "Daily",
                 "status": "Completed",
-                "last_completed": "2024-12-14T06:00:00"
+                "last_completed": "2024-12-14T06:00:00",
             }
         ]
 
@@ -1618,7 +1717,7 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
                 "source": "HACCP Deviation",
                 "problem_description": "Pasteurization temperature dropped below 72°C",
                 "status": "In Progress",
-                "target_completion_date": "2025-01-31"
+                "target_completion_date": "2025-01-31",
             }
         ]
 
@@ -1626,18 +1725,28 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
             "request": request,
             "industry_config": industry_config,
             "industry": industry,
-            "active_haccp_plans": len([p for p in haccp_plans if p["status"] == "Active"]),
-            "critical_control_points": len([p for p in haccp_plans if p["critical_control_point"]]),
-            "temperature_deviations": len([t for t in temperature_readings if not t["within_limits"]]),
-            "approved_suppliers": len([s for s in suppliers if s["status"] == "Approved"]),
-            "completed_batches": len([b for b in batch_records if b["status"] == "Released"]),
+            "active_haccp_plans": len(
+                [p for p in haccp_plans if p["status"] == "Active"]
+            ),
+            "critical_control_points": len(
+                [p for p in haccp_plans if p["critical_control_point"]]
+            ),
+            "temperature_deviations": len(
+                [t for t in temperature_readings if not t["within_limits"]]
+            ),
+            "approved_suppliers": len(
+                [s for s in suppliers if s["status"] == "Approved"]
+            ),
+            "completed_batches": len(
+                [b for b in batch_records if b["status"] == "Released"]
+            ),
             "sanitation_compliance": 95.0,
             "environmental_compliance": 98.0,
             "food_safety_metrics": {
                 "haccp_compliance": 96.8,
                 "gmp_compliance": 94.2,
                 "certification_status": "SQF Level 3",
-                "last_audit_score": 92.5
+                "last_audit_score": 92.5,
             },
             "haccp_plans": haccp_plans,
             "temperature_readings": temperature_readings,
@@ -1647,13 +1756,14 @@ async def demo_food_processing_quality(request: Request, industry: str = "cheese
             "sanitation_schedules": sanitation_schedules,
             "capa_records": capa_records,
             "is_demo": True,
-            "demo_banner": f"Demo: {industry_config['name']} - Complete HACCP & GMP Quality Management System"
+            "demo_banner": f"Demo: {industry_config['name']} - Complete HACCP & GMP Quality Management System",
         }
 
         return templates.TemplateResponse("quality_dashboard.html", context)
 
     except Exception as e:
         import traceback
+
         return HTMLResponse(
             content=f"<h1>Demo Error</h1><pre>{traceback.format_exc()}</pre>",
             status_code=500,

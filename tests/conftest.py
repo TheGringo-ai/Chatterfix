@@ -4,7 +4,7 @@ pytest configuration and fixtures
 
 import os
 import sys
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 

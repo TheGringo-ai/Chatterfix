@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
+
 class WorkOrder(BaseModel):
-    id: Optional[str] = Field(None, alias='id')
+    id: Optional[str] = Field(None, alias="id")
     title: str
     description: str
     priority: str
@@ -22,6 +23,4 @@ class WorkOrder(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        json_encoders = {datetime: lambda v: v.isoformat()}

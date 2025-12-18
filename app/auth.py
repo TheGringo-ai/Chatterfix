@@ -18,12 +18,15 @@ from app.services.auth_service import verify_id_token_and_get_user, check_permis
 # This tells FastAPI where the client can go to get a token.
 # Since Firebase handles this on the client-side, this is mainly for documentation purposes.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
-oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/token", auto_error=False
+)
 
 
 # ==========================================
 # COOKIE-BASED AUTH (for web pages)
 # ==========================================
+
 
 async def get_current_user_from_cookie(request: Request) -> Optional[User]:
     """
@@ -61,7 +64,10 @@ async def require_auth_cookie(request: Request) -> User:
 # OAUTH2 BEARER TOKEN AUTH (for API calls)
 # ==========================================
 
-async def get_optional_current_user(token: Optional[str] = Depends(oauth2_scheme_optional)) -> Optional[User]:
+
+async def get_optional_current_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+) -> Optional[User]:
     """
     FastAPI dependency that tries to get a user but does not fail if not present.
     """
@@ -69,7 +75,6 @@ async def get_optional_current_user(token: Optional[str] = Depends(oauth2_scheme
         return None
     user = await verify_id_token_and_get_user(token)
     return user
-
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
@@ -98,7 +103,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """
     FastAPI dependency that builds on `get_current_user` to also check
@@ -110,9 +115,10 @@ async def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+
 # You can also create dependencies for specific roles
 async def get_current_manager_user(
-    current_user: Annotated[User, Depends(get_current_active_user)]
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
     """
     FastAPI dependency to ensure the user has the 'manager' role.
@@ -124,16 +130,19 @@ async def get_current_manager_user(
         )
     return current_user
 
+
 def require_permission(permission: str):
     """
     Dependency factory for requiring specific permissions.
     This creates a dependency that can be used in endpoint definitions.
     """
+
     async def permission_checker(current_user: User = Depends(get_current_active_user)):
         if not check_permission(current_user, permission):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: '{permission}' required."
+                detail=f"Permission denied: '{permission}' required.",
             )
         return current_user
+
     return permission_checker

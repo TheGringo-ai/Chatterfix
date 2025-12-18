@@ -13,14 +13,15 @@ License data is stored per organization and validated against Firebase Auth.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 # Try to import Firestore
 try:
-    from app.core.firestore_db import firestore_db, FirestoreManager
+    from app.core.firestore_db import firestore_db
+
     FIRESTORE_AVAILABLE = True
 except ImportError:
     FIRESTORE_AVAILABLE = False
@@ -29,6 +30,7 @@ except ImportError:
 
 class LicenseModule(str, Enum):
     """Available premium modules"""
+
     IOT_ADVANCED = "iot_advanced"
     QUALITY_FIX = "quality_fix"
     SAFETY_FIX = "safety_fix"
@@ -37,6 +39,7 @@ class LicenseModule(str, Enum):
 
 class LicenseTier(str, Enum):
     """License tier levels"""
+
     FREE = "free"
     STARTER = "starter"
     PROFESSIONAL = "professional"
@@ -49,24 +52,24 @@ MODULE_PRICING = {
         "name": "IoT Advanced",
         "base_price": 199,
         "per_sensor_price": 25,
-        "billing_cycle": "monthly"
+        "billing_cycle": "monthly",
     },
     LicenseModule.QUALITY_FIX: {
         "name": "QualityFix",
         "base_price": 99,
-        "billing_cycle": "monthly"
+        "billing_cycle": "monthly",
     },
     LicenseModule.SAFETY_FIX: {
         "name": "SafetyFix",
         "base_price": 99,
-        "billing_cycle": "monthly"
+        "billing_cycle": "monthly",
     },
     LicenseModule.ENTERPRISE: {
         "name": "Enterprise Bundle",
         "per_technician_price": 299,
         "includes_all_modules": True,
-        "billing_cycle": "monthly"
-    }
+        "billing_cycle": "monthly",
+    },
 }
 
 
@@ -114,7 +117,7 @@ class FirestoreLicenseService:
             "enabled_modules": [
                 LicenseModule.IOT_ADVANCED.value,
                 LicenseModule.QUALITY_FIX.value,
-                LicenseModule.SAFETY_FIX.value
+                LicenseModule.SAFETY_FIX.value,
             ],
             "is_demo": True,
             "is_trial": True,
@@ -133,18 +136,18 @@ class FirestoreLicenseService:
                 "safety_lab_results": True,
                 "voice_commands": True,
                 "computer_vision": True,
-                "ai_assistant": True
+                "ai_assistant": True,
             },
             "limits": {
                 "sensors": 100,
                 "technicians": 50,
                 "assets": 500,
                 "work_orders_per_month": 10000,
-                "api_calls_per_month": 100000
+                "api_calls_per_month": 100000,
             },
             "created_at": datetime.now().isoformat(),
             "status": "active",
-            "mode": "demo"
+            "mode": "demo",
         }
 
     async def get_license(self, customer_id: str) -> Dict[str, Any]:
@@ -162,7 +165,9 @@ class FirestoreLicenseService:
         if self.db:
             try:
                 # Check organization license first
-                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(customer_id)
+                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(
+                    customer_id
+                )
                 org_doc = org_ref.get()
 
                 if org_doc.exists:
@@ -183,7 +188,9 @@ class FirestoreLicenseService:
                         return license_data
 
                 # Try legacy customer_licenses collection
-                legacy_ref = self.db.collection(self.COLLECTION_CUSTOMER_LICENSES).document(customer_id)
+                legacy_ref = self.db.collection(
+                    self.COLLECTION_CUSTOMER_LICENSES
+                ).document(customer_id)
                 legacy_doc = legacy_ref.get()
 
                 if legacy_doc.exists:
@@ -205,7 +212,9 @@ class FirestoreLicenseService:
 
         return demo_license
 
-    async def check_module_access(self, customer_id: str, module: LicenseModule) -> bool:
+    async def check_module_access(
+        self, customer_id: str, module: LicenseModule
+    ) -> bool:
         """Check if customer has access to a specific module"""
         license_data = await self.get_license(customer_id)
 
@@ -217,8 +226,13 @@ class FirestoreLicenseService:
         trial_expires = license_data.get("trial_expires_at")
         if trial_expires:
             try:
-                expires_dt = datetime.fromisoformat(trial_expires.replace("Z", "+00:00"))
-                if datetime.now(expires_dt.tzinfo if expires_dt.tzinfo else None) > expires_dt:
+                expires_dt = datetime.fromisoformat(
+                    trial_expires.replace("Z", "+00:00")
+                )
+                if (
+                    datetime.now(expires_dt.tzinfo if expires_dt.tzinfo else None)
+                    > expires_dt
+                ):
                     # Trial expired - check for paid license
                     if license_data.get("status") != "active":
                         return False
@@ -239,7 +253,7 @@ class FirestoreLicenseService:
         tier: LicenseTier = LicenseTier.FREE,
         enabled_modules: List[LicenseModule] = None,
         is_trial: bool = True,
-        trial_days: int = 14
+        trial_days: int = 14,
     ) -> Dict[str, Any]:
         """Create a new license for an organization"""
 
@@ -253,22 +267,30 @@ class FirestoreLicenseService:
             "is_trial": is_trial,
             "trial_days_remaining": trial_days if is_trial else 0,
             "trial_started_at": datetime.now().isoformat() if is_trial else None,
-            "trial_expires_at": (datetime.now() + timedelta(days=trial_days)).isoformat() if is_trial else None,
+            "trial_expires_at": (
+                (datetime.now() + timedelta(days=trial_days)).isoformat()
+                if is_trial
+                else None
+            ),
             "features": self._get_features_for_tier(tier, enabled_modules),
             "limits": self._get_limits_for_tier(tier),
             "created_at": datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat(),
-            "status": "active"
+            "status": "active",
         }
 
         if self.db:
             try:
                 # Store under organization
-                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(organization_id)
+                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(
+                    organization_id
+                )
                 license_ref = org_ref.collection("license").document("current")
                 license_ref.set(license_data)
 
-                logger.info(f"Created license for organization {organization_id}: {tier.value}")
+                logger.info(
+                    f"Created license for organization {organization_id}: {tier.value}"
+                )
 
             except Exception as e:
                 logger.error(f"Error creating license in Firestore: {e}")
@@ -283,7 +305,7 @@ class FirestoreLicenseService:
         self,
         organization_id: str,
         module: LicenseModule,
-        payment_confirmed: bool = False
+        payment_confirmed: bool = False,
     ) -> Dict[str, Any]:
         """Activate a premium module for an organization"""
 
@@ -309,11 +331,15 @@ class FirestoreLicenseService:
 
         if self.db:
             try:
-                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(organization_id)
+                org_ref = self.db.collection(self.COLLECTION_ORG_LICENSES).document(
+                    organization_id
+                )
                 license_ref = org_ref.collection("license").document("current")
                 license_ref.update(license_data)
 
-                logger.info(f"Activated module {module.value} for organization {organization_id}")
+                logger.info(
+                    f"Activated module {module.value} for organization {organization_id}"
+                )
 
             except Exception as e:
                 logger.error(f"Error activating module in Firestore: {e}")
@@ -328,7 +354,7 @@ class FirestoreLicenseService:
         self,
         organization_id: str,
         modules: List[LicenseModule] = None,
-        trial_days: int = 14
+        trial_days: int = 14,
     ) -> Dict[str, Any]:
         """Start a trial with specified modules (or all modules)"""
 
@@ -337,7 +363,7 @@ class FirestoreLicenseService:
             modules = [
                 LicenseModule.IOT_ADVANCED,
                 LicenseModule.QUALITY_FIX,
-                LicenseModule.SAFETY_FIX
+                LicenseModule.SAFETY_FIX,
             ]
 
         return await self.create_license(
@@ -345,13 +371,11 @@ class FirestoreLicenseService:
             tier=LicenseTier.PROFESSIONAL,
             enabled_modules=modules,
             is_trial=True,
-            trial_days=trial_days
+            trial_days=trial_days,
         )
 
     def _get_features_for_tier(
-        self,
-        tier: LicenseTier,
-        modules: List[LicenseModule] = None
+        self, tier: LicenseTier, modules: List[LicenseModule] = None
     ) -> Dict[str, bool]:
         """Get feature flags based on tier and enabled modules"""
 
@@ -362,7 +386,7 @@ class FirestoreLicenseService:
             "work_orders": True,
             "assets": True,
             "inventory": True,
-            "basic_reports": True
+            "basic_reports": True,
         }
 
         if modules:
@@ -371,21 +395,23 @@ class FirestoreLicenseService:
 
         if tier == LicenseTier.ENTERPRISE:
             # Enterprise gets everything
-            features.update({
-                "iot_sensors": True,
-                "iot_analytics": True,
-                "iot_alerts": True,
-                "quality_haccp": True,
-                "quality_iso": True,
-                "quality_audits": True,
-                "safety_incidents": True,
-                "safety_osha": True,
-                "safety_lab_results": True,
-                "ai_assistant": True,
-                "white_label": True,
-                "api_access": True,
-                "priority_support": True
-            })
+            features.update(
+                {
+                    "iot_sensors": True,
+                    "iot_analytics": True,
+                    "iot_alerts": True,
+                    "quality_haccp": True,
+                    "quality_iso": True,
+                    "quality_audits": True,
+                    "safety_incidents": True,
+                    "safety_osha": True,
+                    "safety_lab_results": True,
+                    "ai_assistant": True,
+                    "white_label": True,
+                    "api_access": True,
+                    "priority_support": True,
+                }
+            )
 
         return features
 
@@ -397,7 +423,7 @@ class FirestoreLicenseService:
                 "iot_sensors": True,
                 "iot_analytics": True,
                 "iot_alerts": True,
-                "predictive_maintenance": True
+                "predictive_maintenance": True,
             }
         elif module == LicenseModule.QUALITY_FIX:
             return {
@@ -405,7 +431,7 @@ class FirestoreLicenseService:
                 "quality_iso": True,
                 "quality_audits": True,
                 "quality_traceability": True,
-                "quality_capa": True
+                "quality_capa": True,
             }
         elif module == LicenseModule.SAFETY_FIX:
             return {
@@ -413,14 +439,14 @@ class FirestoreLicenseService:
                 "safety_osha": True,
                 "safety_lab_results": True,
                 "safety_inspections": True,
-                "safety_analytics": True
+                "safety_analytics": True,
             }
         elif module == LicenseModule.ENTERPRISE:
             return {
                 "white_label": True,
                 "api_access": True,
                 "priority_support": True,
-                "custom_integrations": True
+                "custom_integrations": True,
             }
 
         return {}
@@ -434,29 +460,29 @@ class FirestoreLicenseService:
                 "technicians": 5,
                 "assets": 25,
                 "work_orders_per_month": 100,
-                "api_calls_per_month": 1000
+                "api_calls_per_month": 1000,
             },
             LicenseTier.STARTER: {
                 "sensors": 25,
                 "technicians": 15,
                 "assets": 100,
                 "work_orders_per_month": 500,
-                "api_calls_per_month": 10000
+                "api_calls_per_month": 10000,
             },
             LicenseTier.PROFESSIONAL: {
                 "sensors": 100,
                 "technicians": 50,
                 "assets": 500,
                 "work_orders_per_month": 5000,
-                "api_calls_per_month": 50000
+                "api_calls_per_month": 50000,
             },
             LicenseTier.ENTERPRISE: {
                 "sensors": -1,  # Unlimited
                 "technicians": -1,
                 "assets": -1,
                 "work_orders_per_month": -1,
-                "api_calls_per_month": -1
-            }
+                "api_calls_per_month": -1,
+            },
         }
 
         return limits.get(tier, limits[LicenseTier.FREE])
@@ -473,14 +499,17 @@ class FirestoreLicenseService:
             "is_trial": license_data.get("is_trial", False),
             "trial_days_remaining": license_data.get("trial_days_remaining", 0),
             "modules": {
-                "iot_advanced": LicenseModule.IOT_ADVANCED.value in license_data.get("enabled_modules", []),
-                "quality_fix": LicenseModule.QUALITY_FIX.value in license_data.get("enabled_modules", []),
-                "safety_fix": LicenseModule.SAFETY_FIX.value in license_data.get("enabled_modules", [])
+                "iot_advanced": LicenseModule.IOT_ADVANCED.value
+                in license_data.get("enabled_modules", []),
+                "quality_fix": LicenseModule.QUALITY_FIX.value
+                in license_data.get("enabled_modules", []),
+                "safety_fix": LicenseModule.SAFETY_FIX.value
+                in license_data.get("enabled_modules", []),
             },
             "features": license_data.get("features", {}),
             "limits": license_data.get("limits", {}),
             "status": license_data.get("status", "active"),
-            "expires_at": license_data.get("trial_expires_at")
+            "expires_at": license_data.get("trial_expires_at"),
         }
 
 
@@ -491,17 +520,23 @@ firestore_license_service = FirestoreLicenseService()
 # Convenience functions for use in routers
 async def check_iot_access(customer_id: str) -> bool:
     """Check if customer has IoT Advanced access"""
-    return await firestore_license_service.check_module_access(customer_id, LicenseModule.IOT_ADVANCED)
+    return await firestore_license_service.check_module_access(
+        customer_id, LicenseModule.IOT_ADVANCED
+    )
 
 
 async def check_quality_access(customer_id: str) -> bool:
     """Check if customer has QualityFix access"""
-    return await firestore_license_service.check_module_access(customer_id, LicenseModule.QUALITY_FIX)
+    return await firestore_license_service.check_module_access(
+        customer_id, LicenseModule.QUALITY_FIX
+    )
 
 
 async def check_safety_access(customer_id: str) -> bool:
     """Check if customer has SafetyFix access"""
-    return await firestore_license_service.check_module_access(customer_id, LicenseModule.SAFETY_FIX)
+    return await firestore_license_service.check_module_access(
+        customer_id, LicenseModule.SAFETY_FIX
+    )
 
 
 async def get_license(customer_id: str) -> Dict[str, Any]:

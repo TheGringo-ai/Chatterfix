@@ -6,7 +6,6 @@ Integrates with AI Services microservice for intelligent features
 
 Designed with AI Team collaboration for optimal separation of concerns
 """
-import asyncio
 import logging
 import os
 import sys
@@ -69,7 +68,7 @@ class AIServicesClient:
         try:
             response = await self.client.get(f"{self.ai_services_url}/ai-services-info")
             return response.json() if response.status_code == 200 else None
-        except:
+        except Exception:
             return None
 
     async def process_unified_request(self, request_data: dict):
@@ -278,7 +277,7 @@ async def cmms_health():
         try:
             db_adapter = get_db_adapter()
             db_healthy = True
-        except:
+        except Exception:
             pass
 
         # Check AI Services

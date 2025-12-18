@@ -778,11 +778,9 @@ class FirestoreSQLiteWrapper:
 
     def commit(self):
         """Commit transaction (no-op for demo)"""
-        pass
 
     def close(self):
         """Close connection (no-op)"""
-        pass
 
     def cursor(self):
         """Return a cursor (returns self for SQLite compatibility)"""

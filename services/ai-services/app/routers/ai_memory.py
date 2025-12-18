@@ -5,7 +5,7 @@ Designed with AI Team collaboration to prevent repeat mistakes
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse

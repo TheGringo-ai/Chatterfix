@@ -15,31 +15,31 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["Fix-it-Fred AI"])
 
+
 class MaintenanceConsultationRequest(BaseModel):
     """Request model for maintenance consultation"""
+
     problem_description: str = Field(
-        ..., 
+        ...,
         description="Detailed description of the maintenance issue",
-        example="Hydraulic pump is overheating and making loud noises"
+        example="Hydraulic pump is overheating and making loud noises",
     )
     equipment_type: Optional[str] = Field(
         None,
         description="Type of equipment (pump, motor, conveyor, etc.)",
-        example="Hydraulic Pump"
+        example="Hydraulic Pump",
     )
     priority: Optional[str] = Field(
-        None,
-        description="Issue priority level",
-        example="High"
+        None, description="Issue priority level", example="High"
     )
     location: Optional[str] = Field(
-        None,
-        description="Equipment location",
-        example="Production Line A"
+        None, description="Equipment location", example="Production Line A"
     )
+
 
 class MaintenanceConsultationResponse(BaseModel):
     """Response model for maintenance consultation"""
+
     success: bool
     fred_says: Optional[str] = None
     problem: str
@@ -50,41 +50,46 @@ class MaintenanceConsultationResponse(BaseModel):
     error: Optional[str] = None
     note: Optional[str] = None
 
+
 @router.post("/consult", response_model=MaintenanceConsultationResponse)
 async def consult_fix_it_fred(request: MaintenanceConsultationRequest):
     """
     🔧 Consult Fix-it-Fred for maintenance solutions
-    
+
     Send a maintenance problem to Fred, our veteran AI maintenance technician.
     Fred will provide safety-first, practical solutions with prevention tips.
-    
+
     **Example Problems to Try:**
     - "Conveyor belt is vibrating excessively during operation"
-    - "Electric motor is running hot and tripping breakers"  
+    - "Electric motor is running hot and tripping breakers"
     - "Hydraulic pump pressure is dropping unexpectedly"
     - "Air compressor is cycling too frequently"
     """
     try:
-        logger.info(f"Fix-it-Fred consultation request: {request.problem_description[:50]}...")
-        
+        logger.info(
+            f"Fix-it-Fred consultation request: {request.problem_description[:50]}..."
+        )
+
         # Get AI-powered solution from Fix-it-Fred
         solution = await get_maintenance_solution(
             problem_description=request.problem_description,
             equipment_type=request.equipment_type,
-            priority=request.priority
+            priority=request.priority,
         )
-        
+
         # Log the consultation for analytics
-        logger.info(f"Fix-it-Fred response generated (type: {solution.get('response_type')})")
-        
+        logger.info(
+            f"Fix-it-Fred response generated (type: {solution.get('response_type')})"
+        )
+
         return MaintenanceConsultationResponse(**solution)
-        
+
     except Exception as e:
         logger.error(f"Error in Fix-it-Fred consultation: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Fred encountered an error: {str(e)}"
+            status_code=500, detail=f"Fred encountered an error: {str(e)}"
         )
+
 
 @router.get("/health")
 async def fred_health_check():
@@ -93,29 +98,34 @@ async def fred_health_check():
     """
     try:
         from app.services.ai_service import fix_it_fred_service
-        
+
         has_openai = fix_it_fred_service.client is not None
-        
+
         return {
             "fred_status": "ready" if has_openai else "demo_mode",
             "ai_enabled": has_openai,
-            "message": "Fred is ready to help!" if has_openai else "Fred is in demo mode - configure OPENAI_API_KEY for full AI",
+            "message": (
+                "Fred is ready to help!"
+                if has_openai
+                else "Fred is in demo mode - configure OPENAI_API_KEY for full AI"
+            ),
             "capabilities": [
                 "Safety-first troubleshooting",
-                "Root cause analysis", 
+                "Root cause analysis",
                 "Preventive maintenance tips",
                 "Tool recommendations",
-                "Escalation guidance"
-            ]
+                "Escalation guidance",
+            ],
         }
-        
+
     except Exception as e:
         logger.error(f"Fred health check failed: {e}")
         return {
             "fred_status": "error",
             "ai_enabled": False,
-            "message": f"Fred is having issues: {str(e)}"
+            "message": f"Fred is having issues: {str(e)}",
         }
+
 
 @router.get("/examples")
 async def get_consultation_examples():
@@ -128,19 +138,19 @@ async def get_consultation_examples():
                 "category": "Mechanical",
                 "problems": [
                     "Conveyor belt is making grinding noises",
-                    "Bearing temperature is running high on motor #3", 
+                    "Bearing temperature is running high on motor #3",
                     "Gearbox oil is leaking from the seal",
-                    "Chain drive is skipping teeth under load"
-                ]
+                    "Chain drive is skipping teeth under load",
+                ],
             },
             {
-                "category": "Hydraulic", 
+                "category": "Hydraulic",
                 "problems": [
                     "Hydraulic pump pressure keeps dropping",
                     "Cylinder is moving too slowly",
                     "Hydraulic fluid is foaming excessively",
-                    "Relief valve is chattering during operation"
-                ]
+                    "Relief valve is chattering during operation",
+                ],
             },
             {
                 "category": "Electrical",
@@ -148,23 +158,23 @@ async def get_consultation_examples():
                     "Motor starter is tripping on overload",
                     "VFD showing communication faults",
                     "Control panel breaker keeps tripping",
-                    "Sensor readings are erratic and unstable"
-                ]
+                    "Sensor readings are erratic and unstable",
+                ],
             },
             {
                 "category": "HVAC",
                 "problems": [
-                    "Air handler fan is vibrating severely", 
+                    "Air handler fan is vibrating severely",
                     "Chiller is short cycling frequently",
                     "Ductwork has excessive condensation",
-                    "Building pressure is not maintaining setpoint"
-                ]
-            }
+                    "Building pressure is not maintaining setpoint",
+                ],
+            },
         ],
         "tips": [
             "Be specific about symptoms and conditions",
-            "Include equipment type and model if known", 
+            "Include equipment type and model if known",
             "Mention when the problem started",
-            "Note any recent maintenance or changes"
-        ]
+            "Note any recent maintenance or changes",
+        ],
     }

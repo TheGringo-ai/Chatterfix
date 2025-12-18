@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatterFix CMMS - AI-Powered Maintenance Management</title>
-    
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK (for anonymous auth) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
     
     <style>
         :root {
@@ -287,13 +291,17 @@
                         </p>
                         
                         <div class="demo-buttons fade-in-up-delay">
-                            <a href="/demo/dashboard" class="demo-btn demo-btn-primary">
-                                <i class="fas fa-play"></i>
-                                Try Live Demo
+                            <button onclick="startDemo()" class="demo-btn demo-btn-primary" id="tryDemoBtn">
+                                <i class="fas fa-rocket"></i>
+                                Try Demo (48hr)
+                            </button>
+                            <a href="/auth/login" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
                             </a>
-                            <a href="/demo/features" class="demo-btn demo-btn-secondary">
-                                <i class="fas fa-eye"></i>
-                                Explore Features
+                            <a href="/signup" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-user-plus"></i>
+                                Sign Up Free
                             </a>
                         </div>
 
@@ -379,24 +387,21 @@
                 <div class="col-12 text-center">
                     <div class="demo-preview">
                         <h3><i class="fas fa-rocket"></i> Ready to Experience ChatterFix?</h3>
-                        <p>No signup required - jump straight into our fully functional demo</p>
+                        <p>Get your own workspace with full features for 48 hours - no credit card required</p>
                         <div class="demo-buttons">
-                            <a href="/demo/dashboard" class="demo-btn demo-btn-primary">
-                                <i class="fas fa-play"></i>
-                                Launch Full Demo
-                            </a>
-                            <a href="/demo/mobile" class="demo-btn demo-btn-secondary">
-                                <i class="fas fa-mobile-alt"></i>
-                                Mobile Demo
-                            </a>
-                            <a href="/demo/ai" class="demo-btn demo-btn-secondary">
-                                <i class="fas fa-brain"></i>
-                                AI Features Demo
+                            <button onclick="startDemo()" class="demo-btn demo-btn-primary">
+                                <i class="fas fa-rocket"></i>
+                                Start Your 48hr Demo
+                            </button>
+                            <a href="/signup" class="demo-btn demo-btn-secondary">
+                                <i class="fas fa-user-plus"></i>
+                                Create Free Account
                             </a>
                         </div>
                         <p class="mt-3 small opacity-75">
                             <i class="fas fa-info-circle"></i>
-                            Demo includes real-time data, AI analysis, and full feature access
+                            Your demo includes your own workspace, AI features, work orders, assets, and more.
+                            Upgrade anytime to keep your data!
                         </p>
                     </div>
                 </div>
@@ -426,10 +431,162 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script>
-        // Add some interactive demo stats
+        // Firebase Configuration - loaded dynamically from backend
+        let firebaseConfig = null;
+        let auth = null;
+
+        // Initialize Firebase
+        async function initFirebase() {
+            try {
+                const response = await fetch('/auth/config');
+                const config = await response.json();
+
+                if (config.firebase_config && config.firebase_config.apiKey) {
+                    firebaseConfig = config.firebase_config;
+                    firebase.initializeApp(firebaseConfig);
+                    auth = firebase.auth();
+                    console.log('Firebase initialized for demo');
+                }
+            } catch (error) {
+                console.warn('Firebase config fetch failed:', error);
+            }
+        }
+
+        // Start Demo - Creates anonymous Firebase user and demo organization
+        async function startDemo() {
+            // Find all demo buttons and update them
+            const buttons = document.querySelectorAll('[onclick="startDemo()"]');
+            const btn = buttons[0]; // Use first button for state tracking
+            const originalContents = Array.from(buttons).map(b => b.innerHTML);
+
+            try {
+                // Show loading state on all demo buttons
+                buttons.forEach(b => {
+                    b.disabled = true;
+                    b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating workspace...';
+                });
+
+                // Ensure Firebase is initialized
+                if (!auth) {
+                    await initFirebase();
+                }
+
+                if (!auth) {
+                    throw new Error('Firebase not available. Please try again.');
+                }
+
+                // Sign in anonymously with Firebase
+                const userCredential = await auth.signInAnonymously();
+                const user = userCredential.user;
+
+                // Get ID token
+                const idToken = await user.getIdToken();
+
+                // Send to our backend to create demo organization
+                const response = await fetch('/auth/try-demo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ idToken: idToken })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Success! Update all buttons
+                    buttons.forEach(b => {
+                        b.innerHTML = '<i class="fas fa-check"></i> Workspace Ready!';
+                        b.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+                    });
+
+                    // Show welcome notification
+                    showNotification(
+                        'success',
+                        `Welcome to ${data.organization.name}!`,
+                        `Your 48-hour demo is ready. Redirecting to dashboard...`
+                    );
+
+                    // Redirect to dashboard after short delay
+                    setTimeout(() => {
+                        window.location.href = '/dashboard?welcome=demo';
+                    }, 1500);
+                } else {
+                    throw new Error(data.detail || data.message || 'Demo creation failed');
+                }
+
+            } catch (error) {
+                console.error('Demo start error:', error);
+
+                // Reset all buttons
+                buttons.forEach((b, i) => {
+                    b.disabled = false;
+                    b.innerHTML = originalContents[i];
+                });
+
+                // Show error notification
+                showNotification(
+                    'error',
+                    'Demo Setup Failed',
+                    error.message || 'Please try again or sign up for a free account.'
+                );
+            }
+        }
+
+        // Simple notification helper
+        function showNotification(type, title, message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 20px 25px;
+                border-radius: 10px;
+                background: ${type === 'success' ? 'rgba(39, 174, 96, 0.95)' : 'rgba(231, 76, 60, 0.95)'};
+                color: white;
+                z-index: 10000;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                backdrop-filter: blur(10px);
+                animation: slideIn 0.3s ease;
+                max-width: 350px;
+            `;
+
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 5px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${title}
+                </div>
+                <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+            `;
+
+            // Add slide animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.body.appendChild(notification);
+
+            // Remove after delay
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, type === 'success' ? 5000 : 4000);
+        }
+
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Firebase in background
+            initFirebase();
+
             // Animate demo stats
             const stats = [
                 { id: 'demo-assets', values: ['147', '148', '149', '150', '151'], suffix: '+' },
@@ -440,12 +597,13 @@
 
             stats.forEach(stat => {
                 const element = document.getElementById(stat.id);
-                let index = 0;
-                
-                setInterval(() => {
-                    element.textContent = stat.values[index] + stat.suffix;
-                    index = (index + 1) % stat.values.length;
-                }, 3000 + Math.random() * 2000);
+                if (element) {
+                    let index = 0;
+                    setInterval(() => {
+                        element.textContent = stat.values[index] + stat.suffix;
+                        index = (index + 1) % stat.values.length;
+                    }, 3000 + Math.random() * 2000);
+                }
             });
         });
     </script>

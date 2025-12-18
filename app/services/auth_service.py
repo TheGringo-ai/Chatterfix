@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # --- Firebase Initialization ---
 
+
 def initialize_firebase_app():
     """
     Initializes the Firebase Admin SDK.
@@ -36,11 +37,13 @@ def initialize_firebase_app():
                 "correctly to a valid service account JSON file."
             )
 
+
 # Call initialization on module load
 initialize_firebase_app()
 
 
 # --- Core Authentication Functions ---
+
 
 async def verify_id_token_and_get_user(token: str) -> Optional[User]:
     """
@@ -59,19 +62,21 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
     try:
         # Verify the token against the Firebase Auth service
         decoded_token = auth.verify_id_token(token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email')
+        uid = decoded_token["uid"]
+        email = decoded_token.get("email")
 
         # Fetch user profile from Firestore to get roles and permissions
         firestore_manager = get_firestore_manager()
-        user_doc = await firestore_manager.get_document('users', uid)
+        user_doc = await firestore_manager.get_document("users", uid)
 
         if not user_doc:
-            logger.warning(f"User with UID '{uid}' authenticated but not found in Firestore.")
+            logger.warning(
+                f"User with UID '{uid}' authenticated but not found in Firestore."
+            )
             # Optionally, you could create a user profile here on first login.
             # For now, we'll deny access if they don't have a profile.
             return None
-        
+
         # Get permissions based on the user's role
         role = user_doc.get("role", "technician")
         permissions = get_permissions_for_role(role)
@@ -104,6 +109,7 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
 
 
 # --- Permission Management ---
+
 
 def get_permissions_for_role(role: str) -> list[str]:
     """
@@ -161,9 +167,9 @@ def check_permission(user: User, required_permission: str) -> bool:
     """
     if not user:
         return False
-    
+
     # "manager" role has all permissions
     if "all" in user.permissions:
         return True
-    
+
     return required_permission in user.permissions

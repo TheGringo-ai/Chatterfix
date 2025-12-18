@@ -77,9 +77,7 @@ class FirebaseAuthService:
                     self.app = firebase_admin.initialize_app(
                         cred,
                         {
-                            "projectId": os.getenv(
-                                "GOOGLE_CLOUD_PROJECT", "fredfix"
-                            ),
+                            "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix"),
                         },
                     )
             else:

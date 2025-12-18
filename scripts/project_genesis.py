@@ -16,41 +16,43 @@ import sys
 import logging
 import random
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
 from dataclasses import dataclass
 
 # Add the app directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from app.core.firestore_db import FirestoreManager, get_firestore_manager
+from app.core.firestore_db import get_firestore_manager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class FactoryScenario:
     """Complete factory scenario configuration"""
+
     company_name: str = "Advanced Manufacturing Solutions Inc."
     location: str = "Detroit, Michigan"
     industry: str = "Automotive Parts Manufacturing"
     employee_count: int = 247
     annual_revenue: str = "$45M"
-    
+
+
 class ProjectGenesis:
     """Ultimate database seeding system for ChatterFix CMMS"""
-    
+
     def __init__(self):
         self.firestore_manager = get_firestore_manager()
         self.scenario = FactoryScenario()
         self.created_ids = {
-            'users': [],
-            'assets': [],
-            'parts': [],
-            'work_orders': [],
-            'training_modules': [],
-            'vendors': []
+            "users": [],
+            "assets": [],
+            "parts": [],
+            "work_orders": [],
+            "training_modules": [],
+            "vendors": [],
         }
-        
+
     async def execute_genesis(self):
         """Execute the complete Project Genesis sequence"""
         try:
@@ -58,7 +60,7 @@ class ProjectGenesis:
             logger.info(f"🏭 Creating {self.scenario.company_name}")
             logger.info(f"📍 Location: {self.scenario.location}")
             logger.info(f"🏗️ Industry: {self.scenario.industry}")
-            
+
             # Execute seeding in logical order
             await self.clear_existing_data()
             await self.create_users()
@@ -70,39 +72,48 @@ class ProjectGenesis:
             await self.create_user_training_assignments()
             await self.create_performance_data()
             await self.create_analytics_data()
-            
+
             logger.info("✅ PROJECT GENESIS COMPLETED SUCCESSFULLY!")
             await self.print_summary()
-            
+
         except Exception as e:
             logger.error(f"❌ PROJECT GENESIS FAILED: {e}")
             raise
-    
+
     async def clear_existing_data(self):
         """Clear existing data to ensure clean slate"""
         logger.info("🧹 Clearing existing data...")
-        
+
         collections_to_clear = [
-            'users', 'assets', 'parts', 'work_orders', 'vendors', 
-            'training_modules', 'user_training', 'user_performance',
-            'asset_parts', 'work_order_media', 'work_order_parts_checkout',
-            'work_order_parts_usage', 'maintenance_history'
+            "users",
+            "assets",
+            "parts",
+            "work_orders",
+            "vendors",
+            "training_modules",
+            "user_training",
+            "user_performance",
+            "asset_parts",
+            "work_order_media",
+            "work_order_parts_checkout",
+            "work_order_parts_usage",
+            "maintenance_history",
         ]
-        
+
         # Note: In production, you'd implement proper collection clearing
         # For now, we'll just note that we're starting fresh
         logger.info("✅ Ready for fresh data creation")
-    
+
     async def create_users(self):
         """Create 5 users with distinct personas"""
         logger.info("👥 Creating user personas...")
-        
+
         users_data = [
             {
                 # ADMIN: Sarah Chen - Operations Manager
                 "id": "sarah_chen",
                 "email": "sarah.chen@amsi-detroit.com",
-                "username": "sarah.chen", 
+                "username": "sarah.chen",
                 "full_name": "Sarah Chen",
                 "role": "Admin",
                 "password_hash": "$2b$12$dummy_hash_for_demo",
@@ -112,16 +123,20 @@ class ProjectGenesis:
                 "is_active": True,
                 "hire_date": "2019-03-15",
                 "certifications": ["PMP", "Lean Six Sigma Black Belt"],
-                "skills": ["Strategic Planning", "Process Optimization", "Team Leadership"],
+                "skills": [
+                    "Strategic Planning",
+                    "Process Optimization",
+                    "Team Leadership",
+                ],
                 "shift": "Day",
-                "bio": "Operations manager with 12 years experience in automotive manufacturing. Specializes in lean operations and digital transformation."
+                "bio": "Operations manager with 12 years experience in automotive manufacturing. Specializes in lean operations and digital transformation.",
             },
             {
-                # PLANNER: Marcus Rodriguez - Maintenance Planner  
+                # PLANNER: Marcus Rodriguez - Maintenance Planner
                 "id": "marcus_rodriguez",
                 "email": "marcus.rodriguez@amsi-detroit.com",
                 "username": "marcus.rodriguez",
-                "full_name": "Marcus Rodriguez", 
+                "full_name": "Marcus Rodriguez",
                 "role": "Supervisor",
                 "password_hash": "$2b$12$dummy_hash_for_demo",
                 "department": "Maintenance",
@@ -130,75 +145,98 @@ class ProjectGenesis:
                 "is_active": True,
                 "hire_date": "2020-08-10",
                 "certifications": ["CMMS Certified", "Predictive Maintenance"],
-                "skills": ["Maintenance Planning", "Resource Optimization", "Risk Assessment"],
+                "skills": [
+                    "Maintenance Planning",
+                    "Resource Optimization",
+                    "Risk Assessment",
+                ],
                 "shift": "Day",
-                "bio": "Maintenance planner focused on preventive maintenance strategies and resource optimization. Expert in scheduling and conflict resolution."
+                "bio": "Maintenance planner focused on preventive maintenance strategies and resource optimization. Expert in scheduling and conflict resolution.",
             },
             {
                 # BUYER: Lisa Washington - Procurement Specialist
-                "id": "lisa_washington", 
+                "id": "lisa_washington",
                 "email": "lisa.washington@amsi-detroit.com",
                 "username": "lisa.washington",
                 "full_name": "Lisa Washington",
-                "role": "Supervisor", 
+                "role": "Supervisor",
                 "password_hash": "$2b$12$dummy_hash_for_demo",
                 "department": "Procurement",
                 "employee_id": "AMS-047",
                 "phone": "+1-313-555-0147",
                 "is_active": True,
                 "hire_date": "2021-01-20",
-                "certifications": ["Certified Purchasing Professional", "Supply Chain Management"],
-                "skills": ["Vendor Management", "Cost Analysis", "Inventory Optimization"],
+                "certifications": [
+                    "Certified Purchasing Professional",
+                    "Supply Chain Management",
+                ],
+                "skills": [
+                    "Vendor Management",
+                    "Cost Analysis",
+                    "Inventory Optimization",
+                ],
                 "shift": "Day",
-                "bio": "Procurement specialist managing vendor relationships and inventory optimization. Expert in cost reduction and supply chain efficiency."
+                "bio": "Procurement specialist managing vendor relationships and inventory optimization. Expert in cost reduction and supply chain efficiency.",
             },
             {
                 # TECHNICIAN 1: Jake Thompson - Senior Maintenance Technician
                 "id": "jake_thompson",
-                "email": "jake.thompson@amsi-detroit.com", 
+                "email": "jake.thompson@amsi-detroit.com",
                 "username": "jake.thompson",
                 "full_name": "Jake Thompson",
                 "role": "Technician",
-                "password_hash": "$2b$12$dummy_hash_for_demo", 
+                "password_hash": "$2b$12$dummy_hash_for_demo",
                 "department": "Maintenance",
                 "employee_id": "AMS-078",
                 "phone": "+1-313-555-0178",
                 "is_active": True,
                 "hire_date": "2018-06-05",
-                "certifications": ["Electrical Safety", "HVAC Certified", "Forklift Operator"],
+                "certifications": [
+                    "Electrical Safety",
+                    "HVAC Certified",
+                    "Forklift Operator",
+                ],
                 "skills": ["HVAC Systems", "Electrical Troubleshooting", "Pneumatics"],
                 "shift": "Day",
-                "bio": "Senior maintenance technician with 15 years experience. Specializes in HVAC, electrical systems, and equipment troubleshooting."
+                "bio": "Senior maintenance technician with 15 years experience. Specializes in HVAC, electrical systems, and equipment troubleshooting.",
             },
             {
                 # TECHNICIAN 2: Anna Kowalski - Maintenance Technician II
                 "id": "anna_kowalski",
                 "email": "anna.kowalski@amsi-detroit.com",
-                "username": "anna.kowalski", 
+                "username": "anna.kowalski",
                 "full_name": "Anna Kowalski",
                 "role": "Technician",
                 "password_hash": "$2b$12$dummy_hash_for_demo",
-                "department": "Maintenance", 
+                "department": "Maintenance",
                 "employee_id": "AMS-092",
                 "phone": "+1-313-555-0192",
                 "is_active": True,
                 "hire_date": "2022-04-12",
                 "certifications": ["Mechanical Systems", "Safety First Aid"],
-                "skills": ["Mechanical Repair", "Preventive Maintenance", "Documentation"],
+                "skills": [
+                    "Mechanical Repair",
+                    "Preventive Maintenance",
+                    "Documentation",
+                ],
                 "shift": "Day",
-                "bio": "Skilled maintenance technician focusing on mechanical systems and preventive maintenance. Strong attention to detail and safety protocols."
-            }
+                "bio": "Skilled maintenance technician focusing on mechanical systems and preventive maintenance. Strong attention to detail and safety protocols.",
+            },
         ]
-        
+
         for user_data in users_data:
-            user_id = await self.firestore_manager.create_document("users", user_data, user_data["id"])
-            self.created_ids['users'].append(user_id)
-            logger.info(f"✅ Created user: {user_data['full_name']} ({user_data['role']})")
-    
+            user_id = await self.firestore_manager.create_document(
+                "users", user_data, user_data["id"]
+            )
+            self.created_ids["users"].append(user_id)
+            logger.info(
+                f"✅ Created user: {user_data['full_name']} ({user_data['role']})"
+            )
+
     async def create_vendors(self):
         """Create vendor directory for parts sourcing"""
         logger.info("🏢 Creating vendor network...")
-        
+
         vendors_data = [
             {
                 "name": "Industrial Supply Co.",
@@ -210,175 +248,795 @@ class ProjectGenesis:
                 "rating": 4.5,
                 "preferred_vendor": True,
                 "payment_terms": "Net 30",
-                "lead_time_days": 3
+                "lead_time_days": 3,
             },
             {
-                "name": "HVAC Components USA", 
+                "name": "HVAC Components USA",
                 "contact_name": "Jennifer Adams",
                 "email": "sales@hvacusa.com",
                 "phone": "+1-877-HVAC-USA",
                 "address": "1820 Climate Drive, Grand Rapids, MI 49504",
                 "category": "HVAC & Climate",
                 "rating": 4.8,
-                "preferred_vendor": True, 
+                "preferred_vendor": True,
                 "payment_terms": "Net 30",
-                "lead_time_days": 5
+                "lead_time_days": 5,
             },
             {
                 "name": "Electrical Specialists Inc.",
                 "contact_name": "David Park",
-                "email": "orders@electricalspec.com", 
+                "email": "orders@electricalspec.com",
                 "phone": "+1-888-ELEC-TRO",
                 "address": "950 Voltage Ave, Warren, MI 48088",
                 "category": "Electrical",
                 "rating": 4.3,
                 "preferred_vendor": True,
-                "payment_terms": "Net 45", 
-                "lead_time_days": 7
+                "payment_terms": "Net 45",
+                "lead_time_days": 7,
             },
             {
                 "name": "Safety First Equipment",
                 "contact_name": "Maria Gonzalez",
                 "email": "safety@safetyfirst.com",
-                "phone": "+1-800-BE-SAFE-1", 
+                "phone": "+1-800-BE-SAFE-1",
                 "address": "3600 Protection Way, Troy, MI 48084",
                 "category": "Safety Equipment",
                 "rating": 4.7,
                 "preferred_vendor": True,
                 "payment_terms": "Net 30",
-                "lead_time_days": 2
+                "lead_time_days": 2,
             },
             {
                 "name": "Global Bearings & Seals",
                 "contact_name": "Chen Wei",
                 "email": "usa.sales@globalbearings.com",
                 "phone": "+1-734-555-BEAR",
-                "address": "1200 Precision Circle, Ann Arbor, MI 48108", 
+                "address": "1200 Precision Circle, Ann Arbor, MI 48108",
                 "category": "Mechanical Components",
                 "rating": 4.6,
                 "preferred_vendor": False,
                 "payment_terms": "Net 60",
-                "lead_time_days": 14
-            }
+                "lead_time_days": 14,
+            },
         ]
-        
+
         for vendor_data in vendors_data:
-            vendor_id = await self.firestore_manager.create_document("vendors", vendor_data)
-            self.created_ids['vendors'].append(vendor_id)
+            vendor_id = await self.firestore_manager.create_document(
+                "vendors", vendor_data
+            )
+            self.created_ids["vendors"].append(vendor_id)
             logger.info(f"✅ Created vendor: {vendor_data['name']}")
-    
+
     async def create_parts_inventory(self):
         """Create comprehensive parts inventory with realistic stock levels"""
         logger.info("📦 Creating parts inventory (50 items)...")
-        
+
         # HVAC Parts (15 items)
         hvac_parts = [
-            {"name": "HVAC Air Filter - MERV 13", "part_number": "AF-MERV13-20X25", "category": "HVAC", "description": "High-efficiency air filter for main HVAC units", "current_stock": 8, "minimum_stock": 12, "max_stock": 50, "unit_cost": 24.99, "location": "Warehouse-A-01", "vendor_id": None, "critical": False},
-            {"name": "Compressor Belt - Industrial", "part_number": "CB-IND-4L500", "category": "HVAC", "description": "Heavy-duty compressor drive belt", "current_stock": 3, "minimum_stock": 6, "max_stock": 20, "unit_cost": 45.50, "location": "Warehouse-A-02", "vendor_id": None, "critical": True},
-            {"name": "Refrigerant R-410A - 25lb", "part_number": "REF-410A-25", "category": "HVAC", "description": "Refrigerant for HVAC systems", "current_stock": 2, "minimum_stock": 4, "max_stock": 12, "unit_cost": 189.99, "location": "Climate-Storage", "vendor_id": None, "critical": True},
-            {"name": "Thermostat Control Unit", "part_number": "THERM-CTRL-7D", "category": "HVAC", "description": "Digital thermostat with 7-day programming", "current_stock": 5, "minimum_stock": 3, "max_stock": 15, "unit_cost": 125.00, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Evaporator Coil - 3 Ton", "part_number": "EVAP-COIL-3T", "category": "HVAC", "description": "Evaporator coil assembly for 3-ton units", "current_stock": 1, "minimum_stock": 2, "max_stock": 6, "unit_cost": 485.00, "location": "Major-Components", "vendor_id": None, "critical": True},
-            {"name": "Blower Motor - 1/2 HP", "part_number": "BM-05HP-1725", "category": "HVAC", "description": "1/2 HP blower motor, 1725 RPM", "current_stock": 2, "minimum_stock": 3, "max_stock": 8, "unit_cost": 234.50, "location": "Motor-Storage", "vendor_id": None, "critical": True},
-            {"name": "Ductwork Connector - 12\"", "part_number": "DUCT-CONN-12", "category": "HVAC", "description": "Flexible ductwork connector, 12 inch diameter", "current_stock": 15, "minimum_stock": 10, "max_stock": 30, "unit_cost": 18.75, "location": "Warehouse-A-03", "vendor_id": None, "critical": False},
-            {"name": "Damper Motor - 24VAC", "part_number": "DM-24VAC-90", "category": "HVAC", "description": "Electronic damper motor, 24VAC, 90-degree rotation", "current_stock": 4, "minimum_stock": 2, "max_stock": 10, "unit_cost": 156.00, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Pressure Switch - High", "part_number": "PS-HIGH-350", "category": "HVAC", "description": "High pressure safety switch, 350 PSI cut-out", "current_stock": 6, "minimum_stock": 4, "max_stock": 15, "unit_cost": 67.25, "location": "Safety-Components", "vendor_id": None, "critical": False},
-            {"name": "Condenser Fan Motor", "part_number": "CFM-1075-1SP", "category": "HVAC", "description": "Condenser fan motor, 1075 RPM, single speed", "current_stock": 1, "minimum_stock": 3, "max_stock": 8, "unit_cost": 198.75, "location": "Motor-Storage", "vendor_id": None, "critical": True},
-            {"name": "Expansion Valve - TXV", "part_number": "TXV-3T-R410A", "category": "HVAC", "description": "Thermostatic expansion valve for 3-ton R-410A systems", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 145.50, "location": "Refrigeration-Parts", "vendor_id": None, "critical": False},
-            {"name": "Filter Drier - Liquid Line", "part_number": "FD-LL-083", "category": "HVAC", "description": "Liquid line filter drier, 3/8\" ODF connections", "current_stock": 8, "minimum_stock": 6, "max_stock": 20, "unit_cost": 28.50, "location": "Refrigeration-Parts", "vendor_id": None, "critical": False},
-            {"name": "Capacitor - Dual Run", "part_number": "CAP-DR-45-5", "category": "HVAC", "description": "Dual run capacitor, 45+5 MFD, 440VAC", "current_stock": 4, "minimum_stock": 8, "max_stock": 25, "unit_cost": 32.75, "location": "Electrical-Storage", "vendor_id": None, "critical": True},
-            {"name": "Heat Exchanger Gasket", "part_number": "HEX-GASKET-SS", "category": "HVAC", "description": "Stainless steel heat exchanger gasket set", "current_stock": 12, "minimum_stock": 6, "max_stock": 24, "unit_cost": 15.25, "location": "Warehouse-A-04", "vendor_id": None, "critical": False},
-            {"name": "Variable Speed Drive", "part_number": "VSD-3HP-480V", "category": "HVAC", "description": "Variable frequency drive for 3HP motor, 480V", "current_stock": 1, "minimum_stock": 1, "max_stock": 3, "unit_cost": 1250.00, "location": "High-Value-Storage", "vendor_id": None, "critical": True}
+            {
+                "name": "HVAC Air Filter - MERV 13",
+                "part_number": "AF-MERV13-20X25",
+                "category": "HVAC",
+                "description": "High-efficiency air filter for main HVAC units",
+                "current_stock": 8,
+                "minimum_stock": 12,
+                "max_stock": 50,
+                "unit_cost": 24.99,
+                "location": "Warehouse-A-01",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Compressor Belt - Industrial",
+                "part_number": "CB-IND-4L500",
+                "category": "HVAC",
+                "description": "Heavy-duty compressor drive belt",
+                "current_stock": 3,
+                "minimum_stock": 6,
+                "max_stock": 20,
+                "unit_cost": 45.50,
+                "location": "Warehouse-A-02",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Refrigerant R-410A - 25lb",
+                "part_number": "REF-410A-25",
+                "category": "HVAC",
+                "description": "Refrigerant for HVAC systems",
+                "current_stock": 2,
+                "minimum_stock": 4,
+                "max_stock": 12,
+                "unit_cost": 189.99,
+                "location": "Climate-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Thermostat Control Unit",
+                "part_number": "THERM-CTRL-7D",
+                "category": "HVAC",
+                "description": "Digital thermostat with 7-day programming",
+                "current_stock": 5,
+                "minimum_stock": 3,
+                "max_stock": 15,
+                "unit_cost": 125.00,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Evaporator Coil - 3 Ton",
+                "part_number": "EVAP-COIL-3T",
+                "category": "HVAC",
+                "description": "Evaporator coil assembly for 3-ton units",
+                "current_stock": 1,
+                "minimum_stock": 2,
+                "max_stock": 6,
+                "unit_cost": 485.00,
+                "location": "Major-Components",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Blower Motor - 1/2 HP",
+                "part_number": "BM-05HP-1725",
+                "category": "HVAC",
+                "description": "1/2 HP blower motor, 1725 RPM",
+                "current_stock": 2,
+                "minimum_stock": 3,
+                "max_stock": 8,
+                "unit_cost": 234.50,
+                "location": "Motor-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": 'Ductwork Connector - 12"',
+                "part_number": "DUCT-CONN-12",
+                "category": "HVAC",
+                "description": "Flexible ductwork connector, 12 inch diameter",
+                "current_stock": 15,
+                "minimum_stock": 10,
+                "max_stock": 30,
+                "unit_cost": 18.75,
+                "location": "Warehouse-A-03",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Damper Motor - 24VAC",
+                "part_number": "DM-24VAC-90",
+                "category": "HVAC",
+                "description": "Electronic damper motor, 24VAC, 90-degree rotation",
+                "current_stock": 4,
+                "minimum_stock": 2,
+                "max_stock": 10,
+                "unit_cost": 156.00,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Pressure Switch - High",
+                "part_number": "PS-HIGH-350",
+                "category": "HVAC",
+                "description": "High pressure safety switch, 350 PSI cut-out",
+                "current_stock": 6,
+                "minimum_stock": 4,
+                "max_stock": 15,
+                "unit_cost": 67.25,
+                "location": "Safety-Components",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Condenser Fan Motor",
+                "part_number": "CFM-1075-1SP",
+                "category": "HVAC",
+                "description": "Condenser fan motor, 1075 RPM, single speed",
+                "current_stock": 1,
+                "minimum_stock": 3,
+                "max_stock": 8,
+                "unit_cost": 198.75,
+                "location": "Motor-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Expansion Valve - TXV",
+                "part_number": "TXV-3T-R410A",
+                "category": "HVAC",
+                "description": "Thermostatic expansion valve for 3-ton R-410A systems",
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 145.50,
+                "location": "Refrigeration-Parts",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Filter Drier - Liquid Line",
+                "part_number": "FD-LL-083",
+                "category": "HVAC",
+                "description": 'Liquid line filter drier, 3/8" ODF connections',
+                "current_stock": 8,
+                "minimum_stock": 6,
+                "max_stock": 20,
+                "unit_cost": 28.50,
+                "location": "Refrigeration-Parts",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Capacitor - Dual Run",
+                "part_number": "CAP-DR-45-5",
+                "category": "HVAC",
+                "description": "Dual run capacitor, 45+5 MFD, 440VAC",
+                "current_stock": 4,
+                "minimum_stock": 8,
+                "max_stock": 25,
+                "unit_cost": 32.75,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Heat Exchanger Gasket",
+                "part_number": "HEX-GASKET-SS",
+                "category": "HVAC",
+                "description": "Stainless steel heat exchanger gasket set",
+                "current_stock": 12,
+                "minimum_stock": 6,
+                "max_stock": 24,
+                "unit_cost": 15.25,
+                "location": "Warehouse-A-04",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Variable Speed Drive",
+                "part_number": "VSD-3HP-480V",
+                "category": "HVAC",
+                "description": "Variable frequency drive for 3HP motor, 480V",
+                "current_stock": 1,
+                "minimum_stock": 1,
+                "max_stock": 3,
+                "unit_cost": 1250.00,
+                "location": "High-Value-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
         ]
-        
+
         # Electrical Parts (12 items)
         electrical_parts = [
-            {"name": "Circuit Breaker - 20A", "part_number": "CB-20A-1P", "category": "Electrical", "description": "Single pole 20-amp circuit breaker", "current_stock": 12, "minimum_stock": 8, "max_stock": 30, "unit_cost": 25.75, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Motor Starter - 5HP", "part_number": "MS-5HP-480V", "category": "Electrical", "description": "Magnetic motor starter for 5HP 480V motor", "current_stock": 2, "minimum_stock": 3, "max_stock": 8, "unit_cost": 189.50, "location": "Electrical-Storage", "vendor_id": None, "critical": True},
-            {"name": "Power Cable - 12 AWG", "part_number": "PC-12AWG-THHN", "category": "Electrical", "description": "THHN power cable, 12 AWG, 500ft spool", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 245.00, "location": "Cable-Storage", "vendor_id": None, "critical": False},
-            {"name": "Emergency Stop Button", "part_number": "E-STOP-RED-40mm", "category": "Electrical", "description": "Emergency stop pushbutton, 40mm, red mushroom", "current_stock": 8, "minimum_stock": 5, "max_stock": 20, "unit_cost": 45.25, "location": "Safety-Components", "vendor_id": None, "critical": False},
-            {"name": "Contactors - 3 Pole", "part_number": "CONT-3P-40A", "category": "Electrical", "description": "3-pole contactor, 40A, 120VAC coil", "current_stock": 6, "minimum_stock": 4, "max_stock": 15, "unit_cost": 78.50, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Proximity Sensor - Inductive", "part_number": "PROX-IND-18mm", "category": "Electrical", "description": "Inductive proximity sensor, 18mm, PNP output", "current_stock": 4, "minimum_stock": 6, "max_stock": 18, "unit_cost": 65.75, "location": "Sensor-Storage", "vendor_id": None, "critical": True},
-            {"name": "LED Panel Light - 40W", "part_number": "LED-40W-4000K", "category": "Electrical", "description": "LED panel light, 40W, 4000K, dimmable", "current_stock": 18, "minimum_stock": 12, "max_stock": 36, "unit_cost": 42.00, "location": "Lighting-Storage", "vendor_id": None, "critical": False},
-            {"name": "Transformer - Control", "part_number": "XFMR-480-120-2KVA", "category": "Electrical", "description": "Control transformer, 480V-120V, 2KVA", "current_stock": 2, "minimum_stock": 2, "max_stock": 6, "unit_cost": 345.00, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Fuse - Time Delay", "part_number": "FUSE-30A-TD", "category": "Electrical", "description": "Time delay fuse, 30A, 600V class", "current_stock": 24, "minimum_stock": 20, "max_stock": 60, "unit_cost": 8.50, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Relay - Control", "part_number": "RELAY-8P-120VAC", "category": "Electrical", "description": "8-pin control relay, 120VAC coil", "current_stock": 15, "minimum_stock": 10, "max_stock": 30, "unit_cost": 18.75, "location": "Electrical-Storage", "vendor_id": None, "critical": False},
-            {"name": "Conduit - EMT 1\"", "part_number": "EMT-1IN-10FT", "category": "Electrical", "description": "EMT conduit, 1 inch diameter, 10ft lengths", "current_stock": 25, "minimum_stock": 15, "max_stock": 50, "unit_cost": 12.25, "location": "Conduit-Rack", "vendor_id": None, "critical": False},
-            {"name": "PLC Module - Input", "part_number": "PLC-DI16-24VDC", "category": "Electrical", "description": "16-point digital input module, 24VDC", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 425.00, "location": "Automation-Storage", "vendor_id": None, "critical": True}
+            {
+                "name": "Circuit Breaker - 20A",
+                "part_number": "CB-20A-1P",
+                "category": "Electrical",
+                "description": "Single pole 20-amp circuit breaker",
+                "current_stock": 12,
+                "minimum_stock": 8,
+                "max_stock": 30,
+                "unit_cost": 25.75,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Motor Starter - 5HP",
+                "part_number": "MS-5HP-480V",
+                "category": "Electrical",
+                "description": "Magnetic motor starter for 5HP 480V motor",
+                "current_stock": 2,
+                "minimum_stock": 3,
+                "max_stock": 8,
+                "unit_cost": 189.50,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Power Cable - 12 AWG",
+                "part_number": "PC-12AWG-THHN",
+                "category": "Electrical",
+                "description": "THHN power cable, 12 AWG, 500ft spool",
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 245.00,
+                "location": "Cable-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Emergency Stop Button",
+                "part_number": "E-STOP-RED-40mm",
+                "category": "Electrical",
+                "description": "Emergency stop pushbutton, 40mm, red mushroom",
+                "current_stock": 8,
+                "minimum_stock": 5,
+                "max_stock": 20,
+                "unit_cost": 45.25,
+                "location": "Safety-Components",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Contactors - 3 Pole",
+                "part_number": "CONT-3P-40A",
+                "category": "Electrical",
+                "description": "3-pole contactor, 40A, 120VAC coil",
+                "current_stock": 6,
+                "minimum_stock": 4,
+                "max_stock": 15,
+                "unit_cost": 78.50,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Proximity Sensor - Inductive",
+                "part_number": "PROX-IND-18mm",
+                "category": "Electrical",
+                "description": "Inductive proximity sensor, 18mm, PNP output",
+                "current_stock": 4,
+                "minimum_stock": 6,
+                "max_stock": 18,
+                "unit_cost": 65.75,
+                "location": "Sensor-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "LED Panel Light - 40W",
+                "part_number": "LED-40W-4000K",
+                "category": "Electrical",
+                "description": "LED panel light, 40W, 4000K, dimmable",
+                "current_stock": 18,
+                "minimum_stock": 12,
+                "max_stock": 36,
+                "unit_cost": 42.00,
+                "location": "Lighting-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Transformer - Control",
+                "part_number": "XFMR-480-120-2KVA",
+                "category": "Electrical",
+                "description": "Control transformer, 480V-120V, 2KVA",
+                "current_stock": 2,
+                "minimum_stock": 2,
+                "max_stock": 6,
+                "unit_cost": 345.00,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Fuse - Time Delay",
+                "part_number": "FUSE-30A-TD",
+                "category": "Electrical",
+                "description": "Time delay fuse, 30A, 600V class",
+                "current_stock": 24,
+                "minimum_stock": 20,
+                "max_stock": 60,
+                "unit_cost": 8.50,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Relay - Control",
+                "part_number": "RELAY-8P-120VAC",
+                "category": "Electrical",
+                "description": "8-pin control relay, 120VAC coil",
+                "current_stock": 15,
+                "minimum_stock": 10,
+                "max_stock": 30,
+                "unit_cost": 18.75,
+                "location": "Electrical-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": 'Conduit - EMT 1"',
+                "part_number": "EMT-1IN-10FT",
+                "category": "Electrical",
+                "description": "EMT conduit, 1 inch diameter, 10ft lengths",
+                "current_stock": 25,
+                "minimum_stock": 15,
+                "max_stock": 50,
+                "unit_cost": 12.25,
+                "location": "Conduit-Rack",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "PLC Module - Input",
+                "part_number": "PLC-DI16-24VDC",
+                "category": "Electrical",
+                "description": "16-point digital input module, 24VDC",
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 425.00,
+                "location": "Automation-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
         ]
-        
+
         # Mechanical Parts (15 items)
         mechanical_parts = [
-            {"name": "Bearing - Deep Groove", "part_number": "BRG-6205-2RS", "category": "Mechanical", "description": "Deep groove ball bearing, 6205 2RS sealed", "current_stock": 24, "minimum_stock": 15, "max_stock": 50, "unit_cost": 15.75, "location": "Bearing-Storage", "vendor_id": None, "critical": False},
-            {"name": "V-Belt - Classical", "part_number": "BELT-A47", "category": "Mechanical", "description": "Classical V-belt, A section, 47 inch pitch", "current_stock": 8, "minimum_stock": 6, "max_stock": 20, "unit_cost": 22.50, "location": "Belt-Storage", "vendor_id": None, "critical": False},
-            {"name": "Coupling - Flexible", "part_number": "COUP-FLEX-1.5", "category": "Mechanical", "description": "Flexible shaft coupling, 1.5 inch bore", "current_stock": 4, "minimum_stock": 3, "max_stock": 10, "unit_cost": 95.25, "location": "Drive-Components", "vendor_id": None, "critical": False},
-            {"name": "Hydraulic Seal Kit", "part_number": "HYD-SEAL-CYL-4", "category": "Mechanical", "description": "Hydraulic cylinder seal kit, 4 inch bore", "current_stock": 6, "minimum_stock": 4, "max_stock": 15, "unit_cost": 67.50, "location": "Hydraulic-Storage", "vendor_id": None, "critical": False},
-            {"name": "Gear Reducer - 20:1", "part_number": "GR-20-1-56C", "category": "Mechanical", "description": "Worm gear reducer, 20:1 ratio, 56C input", "current_stock": 1, "minimum_stock": 2, "max_stock": 5, "unit_cost": 485.00, "location": "Major-Components", "vendor_id": None, "critical": True},
-            {"name": "Chain - Roller #60", "part_number": "CHAIN-60-10FT", "category": "Mechanical", "description": "Roller chain, #60 pitch, 10ft section", "current_stock": 4, "minimum_stock": 3, "max_stock": 12, "unit_cost": 45.75, "location": "Chain-Storage", "vendor_id": None, "critical": False},
-            {"name": "Sprocket - 18 Tooth", "part_number": "SPR-60-18T-1", "category": "Mechanical", "description": "Sprocket for #60 chain, 18 tooth, 1\" bore", "current_stock": 6, "minimum_stock": 4, "max_stock": 15, "unit_cost": 35.50, "location": "Drive-Components", "vendor_id": None, "critical": False},
-            {"name": "Pneumatic Cylinder", "part_number": "PNEU-CYL-2x6", "category": "Mechanical", "description": "Pneumatic cylinder, 2\" bore x 6\" stroke", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 125.00, "location": "Pneumatic-Storage", "vendor_id": None, "critical": False},
-            {"name": "O-Ring Assortment", "part_number": "ORING-ASST-NBR", "category": "Mechanical", "description": "Nitrile O-ring assortment, 382 pieces", "current_stock": 5, "minimum_stock": 3, "max_stock": 12, "unit_cost": 89.99, "location": "Seal-Storage", "vendor_id": None, "critical": False},
-            {"name": "Grease - High Temp", "part_number": "GREASE-HT-14oz", "category": "Mechanical", "description": "High temperature bearing grease, 14oz cartridge", "current_stock": 18, "minimum_stock": 12, "max_stock": 36, "unit_cost": 12.75, "location": "Lubricant-Storage", "vendor_id": None, "critical": False},
-            {"name": "Shaft - Stainless Steel", "part_number": "SHAFT-SS-1.5x24", "category": "Mechanical", "description": "Stainless steel shaft, 1.5\" dia x 24\" length", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 145.50, "location": "Material-Storage", "vendor_id": None, "critical": False},
-            {"name": "Pump Impeller", "part_number": "IMP-PUMP-6IN", "category": "Mechanical", "description": "Centrifugal pump impeller, 6 inch diameter", "current_stock": 2, "minimum_stock": 1, "max_stock": 4, "unit_cost": 285.00, "location": "Pump-Parts", "vendor_id": None, "critical": True},
-            {"name": "Motor Mount - Adjustable", "part_number": "MT-ADJ-5HP", "category": "Mechanical", "description": "Adjustable motor mount base for 5HP motors", "current_stock": 4, "minimum_stock": 2, "max_stock": 8, "unit_cost": 125.75, "location": "Mount-Storage", "vendor_id": None, "critical": False},
-            {"name": "Gasket Material - Sheet", "part_number": "GASK-SHEET-1/16", "category": "Mechanical", "description": "Gasket material sheet, 1/16\" thick, 12x12", "current_stock": 8, "minimum_stock": 6, "max_stock": 20, "unit_cost": 25.50, "location": "Gasket-Storage", "vendor_id": None, "critical": False},
-            {"name": "Threaded Rod - Grade 8", "part_number": "ROD-G8-5/8-36", "category": "Mechanical", "description": "Grade 8 threaded rod, 5/8-11 x 36 inch", "current_stock": 12, "minimum_stock": 8, "max_stock": 24, "unit_cost": 18.25, "location": "Fastener-Storage", "vendor_id": None, "critical": False}
+            {
+                "name": "Bearing - Deep Groove",
+                "part_number": "BRG-6205-2RS",
+                "category": "Mechanical",
+                "description": "Deep groove ball bearing, 6205 2RS sealed",
+                "current_stock": 24,
+                "minimum_stock": 15,
+                "max_stock": 50,
+                "unit_cost": 15.75,
+                "location": "Bearing-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "V-Belt - Classical",
+                "part_number": "BELT-A47",
+                "category": "Mechanical",
+                "description": "Classical V-belt, A section, 47 inch pitch",
+                "current_stock": 8,
+                "minimum_stock": 6,
+                "max_stock": 20,
+                "unit_cost": 22.50,
+                "location": "Belt-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Coupling - Flexible",
+                "part_number": "COUP-FLEX-1.5",
+                "category": "Mechanical",
+                "description": "Flexible shaft coupling, 1.5 inch bore",
+                "current_stock": 4,
+                "minimum_stock": 3,
+                "max_stock": 10,
+                "unit_cost": 95.25,
+                "location": "Drive-Components",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Hydraulic Seal Kit",
+                "part_number": "HYD-SEAL-CYL-4",
+                "category": "Mechanical",
+                "description": "Hydraulic cylinder seal kit, 4 inch bore",
+                "current_stock": 6,
+                "minimum_stock": 4,
+                "max_stock": 15,
+                "unit_cost": 67.50,
+                "location": "Hydraulic-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Gear Reducer - 20:1",
+                "part_number": "GR-20-1-56C",
+                "category": "Mechanical",
+                "description": "Worm gear reducer, 20:1 ratio, 56C input",
+                "current_stock": 1,
+                "minimum_stock": 2,
+                "max_stock": 5,
+                "unit_cost": 485.00,
+                "location": "Major-Components",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Chain - Roller #60",
+                "part_number": "CHAIN-60-10FT",
+                "category": "Mechanical",
+                "description": "Roller chain, #60 pitch, 10ft section",
+                "current_stock": 4,
+                "minimum_stock": 3,
+                "max_stock": 12,
+                "unit_cost": 45.75,
+                "location": "Chain-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Sprocket - 18 Tooth",
+                "part_number": "SPR-60-18T-1",
+                "category": "Mechanical",
+                "description": 'Sprocket for #60 chain, 18 tooth, 1" bore',
+                "current_stock": 6,
+                "minimum_stock": 4,
+                "max_stock": 15,
+                "unit_cost": 35.50,
+                "location": "Drive-Components",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Pneumatic Cylinder",
+                "part_number": "PNEU-CYL-2x6",
+                "category": "Mechanical",
+                "description": 'Pneumatic cylinder, 2" bore x 6" stroke',
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 125.00,
+                "location": "Pneumatic-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "O-Ring Assortment",
+                "part_number": "ORING-ASST-NBR",
+                "category": "Mechanical",
+                "description": "Nitrile O-ring assortment, 382 pieces",
+                "current_stock": 5,
+                "minimum_stock": 3,
+                "max_stock": 12,
+                "unit_cost": 89.99,
+                "location": "Seal-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Grease - High Temp",
+                "part_number": "GREASE-HT-14oz",
+                "category": "Mechanical",
+                "description": "High temperature bearing grease, 14oz cartridge",
+                "current_stock": 18,
+                "minimum_stock": 12,
+                "max_stock": 36,
+                "unit_cost": 12.75,
+                "location": "Lubricant-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Shaft - Stainless Steel",
+                "part_number": "SHAFT-SS-1.5x24",
+                "category": "Mechanical",
+                "description": 'Stainless steel shaft, 1.5" dia x 24" length',
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 145.50,
+                "location": "Material-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Pump Impeller",
+                "part_number": "IMP-PUMP-6IN",
+                "category": "Mechanical",
+                "description": "Centrifugal pump impeller, 6 inch diameter",
+                "current_stock": 2,
+                "minimum_stock": 1,
+                "max_stock": 4,
+                "unit_cost": 285.00,
+                "location": "Pump-Parts",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Motor Mount - Adjustable",
+                "part_number": "MT-ADJ-5HP",
+                "category": "Mechanical",
+                "description": "Adjustable motor mount base for 5HP motors",
+                "current_stock": 4,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 125.75,
+                "location": "Mount-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Gasket Material - Sheet",
+                "part_number": "GASK-SHEET-1/16",
+                "category": "Mechanical",
+                "description": 'Gasket material sheet, 1/16" thick, 12x12',
+                "current_stock": 8,
+                "minimum_stock": 6,
+                "max_stock": 20,
+                "unit_cost": 25.50,
+                "location": "Gasket-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Threaded Rod - Grade 8",
+                "part_number": "ROD-G8-5/8-36",
+                "category": "Mechanical",
+                "description": "Grade 8 threaded rod, 5/8-11 x 36 inch",
+                "current_stock": 12,
+                "minimum_stock": 8,
+                "max_stock": 24,
+                "unit_cost": 18.25,
+                "location": "Fastener-Storage",
+                "vendor_id": None,
+                "critical": False,
+            },
         ]
-        
+
         # Safety Parts (8 items)
         safety_parts = [
-            {"name": "Safety Valve - 150 PSI", "part_number": "SV-150PSI-1IN", "category": "Safety", "description": "Pressure relief safety valve, 150 PSI, 1\" NPT", "current_stock": 4, "minimum_stock": 3, "max_stock": 10, "unit_cost": 125.00, "location": "Safety-Components", "vendor_id": None, "critical": True},
-            {"name": "Fire Suppression Nozzle", "part_number": "FS-NOZZLE-K80", "category": "Safety", "description": "Fire suppression spray nozzle, K=80", "current_stock": 8, "minimum_stock": 6, "max_stock": 20, "unit_cost": 45.75, "location": "Fire-Safety", "vendor_id": None, "critical": False},
-            {"name": "Emergency Valve - Quarter Turn", "part_number": "E-VALVE-QT-2IN", "category": "Safety", "description": "Emergency shut-off valve, quarter turn, 2 inch", "current_stock": 2, "minimum_stock": 4, "max_stock": 12, "unit_cost": 185.50, "location": "Safety-Components", "vendor_id": None, "critical": True},
-            {"name": "Gas Leak Detector", "part_number": "GLD-COMB-120V", "category": "Safety", "description": "Combustible gas leak detector, 120VAC", "current_stock": 3, "minimum_stock": 2, "max_stock": 8, "unit_cost": 265.00, "location": "Safety-Electronics", "vendor_id": None, "critical": False},
-            {"name": "Safety Light Curtain", "part_number": "SLC-24IN-TYPE4", "category": "Safety", "description": "Safety light curtain, 24 inch, Type 4", "current_stock": 1, "minimum_stock": 2, "max_stock": 6, "unit_cost": 1250.00, "location": "High-Value-Storage", "vendor_id": None, "critical": True},
-            {"name": "Lockout Device Set", "part_number": "LOTO-SET-ELEC", "category": "Safety", "description": "Electrical lockout/tagout device set", "current_stock": 12, "minimum_stock": 8, "max_stock": 30, "unit_cost": 85.00, "location": "Safety-Equipment", "vendor_id": None, "critical": False},
-            {"name": "Eyewash Station - Portable", "part_number": "EWS-PORT-16GAL", "category": "Safety", "description": "Portable eyewash station, 16 gallon capacity", "current_stock": 2, "minimum_stock": 1, "max_stock": 4, "unit_cost": 485.00, "location": "Safety-Equipment", "vendor_id": None, "critical": False},
-            {"name": "Spill Kit - Universal", "part_number": "SPILL-UNI-20GAL", "category": "Safety", "description": "Universal spill response kit, 20 gallon capacity", "current_stock": 6, "minimum_stock": 4, "max_stock": 15, "unit_cost": 145.50, "location": "Spill-Response", "vendor_id": None, "critical": False}
+            {
+                "name": "Safety Valve - 150 PSI",
+                "part_number": "SV-150PSI-1IN",
+                "category": "Safety",
+                "description": 'Pressure relief safety valve, 150 PSI, 1" NPT',
+                "current_stock": 4,
+                "minimum_stock": 3,
+                "max_stock": 10,
+                "unit_cost": 125.00,
+                "location": "Safety-Components",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Fire Suppression Nozzle",
+                "part_number": "FS-NOZZLE-K80",
+                "category": "Safety",
+                "description": "Fire suppression spray nozzle, K=80",
+                "current_stock": 8,
+                "minimum_stock": 6,
+                "max_stock": 20,
+                "unit_cost": 45.75,
+                "location": "Fire-Safety",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Emergency Valve - Quarter Turn",
+                "part_number": "E-VALVE-QT-2IN",
+                "category": "Safety",
+                "description": "Emergency shut-off valve, quarter turn, 2 inch",
+                "current_stock": 2,
+                "minimum_stock": 4,
+                "max_stock": 12,
+                "unit_cost": 185.50,
+                "location": "Safety-Components",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Gas Leak Detector",
+                "part_number": "GLD-COMB-120V",
+                "category": "Safety",
+                "description": "Combustible gas leak detector, 120VAC",
+                "current_stock": 3,
+                "minimum_stock": 2,
+                "max_stock": 8,
+                "unit_cost": 265.00,
+                "location": "Safety-Electronics",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Safety Light Curtain",
+                "part_number": "SLC-24IN-TYPE4",
+                "category": "Safety",
+                "description": "Safety light curtain, 24 inch, Type 4",
+                "current_stock": 1,
+                "minimum_stock": 2,
+                "max_stock": 6,
+                "unit_cost": 1250.00,
+                "location": "High-Value-Storage",
+                "vendor_id": None,
+                "critical": True,
+            },
+            {
+                "name": "Lockout Device Set",
+                "part_number": "LOTO-SET-ELEC",
+                "category": "Safety",
+                "description": "Electrical lockout/tagout device set",
+                "current_stock": 12,
+                "minimum_stock": 8,
+                "max_stock": 30,
+                "unit_cost": 85.00,
+                "location": "Safety-Equipment",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Eyewash Station - Portable",
+                "part_number": "EWS-PORT-16GAL",
+                "category": "Safety",
+                "description": "Portable eyewash station, 16 gallon capacity",
+                "current_stock": 2,
+                "minimum_stock": 1,
+                "max_stock": 4,
+                "unit_cost": 485.00,
+                "location": "Safety-Equipment",
+                "vendor_id": None,
+                "critical": False,
+            },
+            {
+                "name": "Spill Kit - Universal",
+                "part_number": "SPILL-UNI-20GAL",
+                "category": "Safety",
+                "description": "Universal spill response kit, 20 gallon capacity",
+                "current_stock": 6,
+                "minimum_stock": 4,
+                "max_stock": 15,
+                "unit_cost": 145.50,
+                "location": "Spill-Response",
+                "vendor_id": None,
+                "critical": False,
+            },
         ]
-        
+
         # Combine all parts
         all_parts = hvac_parts + electrical_parts + mechanical_parts + safety_parts
-        
+
         # Assign vendor IDs and create parts
-        vendor_count = len(self.created_ids['vendors'])
+        vendor_count = len(self.created_ids["vendors"])
         for i, part_data in enumerate(all_parts):
             # Assign vendor based on category
             if vendor_count > 0:
-                if part_data['category'] == 'HVAC':
-                    part_data['vendor_id'] = self.created_ids['vendors'][1] if len(self.created_ids['vendors']) > 1 else self.created_ids['vendors'][0]
-                elif part_data['category'] == 'Electrical':
-                    part_data['vendor_id'] = self.created_ids['vendors'][2] if len(self.created_ids['vendors']) > 2 else self.created_ids['vendors'][0]
-                elif part_data['category'] == 'Safety':
-                    part_data['vendor_id'] = self.created_ids['vendors'][3] if len(self.created_ids['vendors']) > 3 else self.created_ids['vendors'][0]
+                if part_data["category"] == "HVAC":
+                    part_data["vendor_id"] = (
+                        self.created_ids["vendors"][1]
+                        if len(self.created_ids["vendors"]) > 1
+                        else self.created_ids["vendors"][0]
+                    )
+                elif part_data["category"] == "Electrical":
+                    part_data["vendor_id"] = (
+                        self.created_ids["vendors"][2]
+                        if len(self.created_ids["vendors"]) > 2
+                        else self.created_ids["vendors"][0]
+                    )
+                elif part_data["category"] == "Safety":
+                    part_data["vendor_id"] = (
+                        self.created_ids["vendors"][3]
+                        if len(self.created_ids["vendors"]) > 3
+                        else self.created_ids["vendors"][0]
+                    )
                 else:
-                    part_data['vendor_id'] = self.created_ids['vendors'][0]
-            
+                    part_data["vendor_id"] = self.created_ids["vendors"][0]
+
             # Add additional fields
-            part_data['last_ordered'] = (datetime.now() - timedelta(days=random.randint(5, 60))).isoformat()
-            part_data['next_order_date'] = (datetime.now() + timedelta(days=random.randint(7, 30))).isoformat()
-            
+            part_data["last_ordered"] = (
+                datetime.now() - timedelta(days=random.randint(5, 60))
+            ).isoformat()
+            part_data["next_order_date"] = (
+                datetime.now() + timedelta(days=random.randint(7, 30))
+            ).isoformat()
+
             part_id = await self.firestore_manager.create_document("parts", part_data)
-            self.created_ids['parts'].append(part_id)
-            
+            self.created_ids["parts"].append(part_id)
+
             # Log critical low stock items
-            if part_data['current_stock'] < part_data['minimum_stock']:
-                logger.warning(f"🔴 LOW STOCK: {part_data['name']} ({part_data['current_stock']}/{part_data['minimum_stock']})")
-            elif part_data.get('critical', False):
+            if part_data["current_stock"] < part_data["minimum_stock"]:
+                logger.warning(
+                    f"🔴 LOW STOCK: {part_data['name']} ({part_data['current_stock']}/{part_data['minimum_stock']})"
+                )
+            elif part_data.get("critical", False):
                 logger.info(f"🟡 Critical part: {part_data['name']}")
-        
+
         logger.info(f"✅ Created {len(all_parts)} parts in inventory")
-    
+
     async def create_assets(self):
         """Create 20 assets representing a comprehensive factory"""
         logger.info("🏭 Creating factory assets (20 items)...")
-        
+
         assets_data = [
             # HVAC Systems (5 assets)
             {
                 "name": "Main HVAC Unit - Building A",
                 "asset_tag": "HVAC-001",
-                "serial_number": "TRN-450XL-2019-001", 
+                "serial_number": "TRN-450XL-2019-001",
                 "manufacturer": "Trane",
                 "model": "450XL",
                 "category": "HVAC",
@@ -394,20 +1052,20 @@ class ProjectGenesis:
                     "cooling_capacity": "45 tons",
                     "heating_capacity": "550 MBH",
                     "air_flow": "18,000 CFM",
-                    "power": "460V, 3-phase"
+                    "power": "460V, 3-phase",
                 },
                 "last_service": (datetime.now() - timedelta(days=45)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=15)).isoformat(),
                 "service_interval_days": 60,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
-                "name": "Secondary HVAC Unit - Building B", 
+                "name": "Secondary HVAC Unit - Building B",
                 "asset_tag": "HVAC-002",
                 "serial_number": "CAR-30GT-2020-002",
                 "manufacturer": "Carrier",
                 "model": "30GT",
-                "category": "HVAC", 
+                "category": "HVAC",
                 "location": "Building B - Rooftop",
                 "department": "Facility",
                 "status": "Active",
@@ -417,19 +1075,19 @@ class ProjectGenesis:
                 "warranty_expiry": "2025-08-20",
                 "description": "Secondary HVAC system for office areas (8,000 sq ft)",
                 "specifications": {
-                    "cooling_capacity": "30 tons", 
+                    "cooling_capacity": "30 tons",
                     "heating_capacity": "350 MBH",
                     "air_flow": "12,000 CFM",
-                    "power": "460V, 3-phase"
+                    "power": "460V, 3-phase",
                 },
                 "last_service": (datetime.now() - timedelta(days=30)).isoformat(),
-                "next_service": (datetime.now() + timedelta(days=30)).isoformat(), 
+                "next_service": (datetime.now() + timedelta(days=30)).isoformat(),
                 "service_interval_days": 60,
-                "condition": "Excellent"
+                "condition": "Excellent",
             },
             {
                 "name": "Warehouse Climate Control",
-                "asset_tag": "HVAC-003", 
+                "asset_tag": "HVAC-003",
                 "serial_number": "LNX-RTU-2018-003",
                 "manufacturer": "Lennox",
                 "model": "RTU-015",
@@ -438,26 +1096,28 @@ class ProjectGenesis:
                 "department": "Warehouse",
                 "status": "Active",
                 "criticality": 3,
-                "purchase_date": "2018-03-10", 
+                "purchase_date": "2018-03-10",
                 "purchase_cost": 28000.00,
                 "warranty_expiry": "2023-03-10",
                 "description": "Climate control for temperature-sensitive storage areas",
                 "specifications": {
                     "cooling_capacity": "15 tons",
-                    "heating_capacity": "200 MBH", 
+                    "heating_capacity": "200 MBH",
                     "air_flow": "6,000 CFM",
-                    "power": "208V, 3-phase"
+                    "power": "208V, 3-phase",
                 },
                 "last_service": (datetime.now() - timedelta(days=75)).isoformat(),
-                "next_service": (datetime.now() - timedelta(days=15)).isoformat(),  # Overdue!
+                "next_service": (
+                    datetime.now() - timedelta(days=15)
+                ).isoformat(),  # Overdue!
                 "service_interval_days": 60,
-                "condition": "Fair"
+                "condition": "Fair",
             },
             {
                 "name": "Compressor Station #1",
                 "asset_tag": "COMP-001",
                 "serial_number": "ING-R55-2020-001",
-                "manufacturer": "Ingersoll Rand", 
+                "manufacturer": "Ingersoll Rand",
                 "model": "R55n",
                 "category": "HVAC",
                 "location": "Compressor Room",
@@ -466,28 +1126,28 @@ class ProjectGenesis:
                 "criticality": 5,
                 "purchase_date": "2020-11-05",
                 "purchase_cost": 45000.00,
-                "warranty_expiry": "2025-11-05", 
+                "warranty_expiry": "2025-11-05",
                 "description": "Primary compressed air system for facility",
                 "specifications": {
                     "capacity": "300 CFM",
                     "pressure": "125 PSI",
                     "power": "75 HP, 460V",
-                    "tank_size": "240 gallons"
+                    "tank_size": "240 gallons",
                 },
                 "last_service": (datetime.now() - timedelta(days=20)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=10)).isoformat(),
                 "service_interval_days": 30,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Exhaust Fan System - Welding Area",
                 "asset_tag": "FAN-001",
-                "serial_number": "ACC-IDF-2019-001", 
+                "serial_number": "ACC-IDF-2019-001",
                 "manufacturer": "Accurex",
                 "model": "IDF-48",
                 "category": "HVAC",
                 "location": "Welding Bay - North Wall",
-                "department": "Production", 
+                "department": "Production",
                 "status": "Active",
                 "criticality": 4,
                 "purchase_date": "2019-07-12",
@@ -497,15 +1157,14 @@ class ProjectGenesis:
                 "specifications": {
                     "air_flow": "8,000 CFM",
                     "static_pressure": "4 inches WG",
-                    "motor": "10 HP, 460V"
+                    "motor": "10 HP, 460V",
                 },
                 "last_service": (datetime.now() - timedelta(days=35)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=25)).isoformat(),
                 "service_interval_days": 60,
-                "condition": "Good"
+                "condition": "Good",
             },
-            
-            # Production Equipment (7 assets)  
+            # Production Equipment (7 assets)
             {
                 "name": "CNC Machining Center #1",
                 "asset_tag": "CNC-001",
@@ -513,7 +1172,7 @@ class ProjectGenesis:
                 "manufacturer": "Haas Automation",
                 "model": "VF-2SS",
                 "category": "Production",
-                "location": "Machining Cell A", 
+                "location": "Machining Cell A",
                 "department": "Manufacturing",
                 "status": "Active",
                 "criticality": 5,
@@ -523,21 +1182,21 @@ class ProjectGenesis:
                 "description": "5-axis vertical machining center for precision parts",
                 "specifications": {
                     "x_travel": "30 inches",
-                    "y_travel": "16 inches", 
+                    "y_travel": "16 inches",
                     "z_travel": "20 inches",
                     "spindle_speed": "8,100 RPM",
-                    "tool_capacity": "20 tools"
+                    "tool_capacity": "20 tools",
                 },
                 "last_service": (datetime.now() - timedelta(days=15)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=75)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Excellent"
+                "condition": "Excellent",
             },
             {
                 "name": "Hydraulic Press - 100 Ton",
-                "asset_tag": "PRESS-001", 
+                "asset_tag": "PRESS-001",
                 "serial_number": "GRN-H100-2018-001",
-                "manufacturer": "Greenerd", 
+                "manufacturer": "Greenerd",
                 "model": "H-100",
                 "category": "Production",
                 "location": "Stamping Area - Bay 2",
@@ -552,22 +1211,22 @@ class ProjectGenesis:
                     "tonnage": "100 tons",
                     "bed_size": "24x36 inches",
                     "stroke": "12 inches",
-                    "pump_motor": "15 HP"
+                    "pump_motor": "15 HP",
                 },
                 "last_service": (datetime.now() - timedelta(days=60)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=30)).isoformat(),
-                "service_interval_days": 90, 
-                "condition": "Good"
+                "service_interval_days": 90,
+                "condition": "Good",
             },
             {
                 "name": "Welding Station - Robotic",
                 "asset_tag": "WELD-001",
-                "serial_number": "ABB-IRB1600-2020-001", 
+                "serial_number": "ABB-IRB1600-2020-001",
                 "manufacturer": "ABB Robotics",
                 "model": "IRB 1600",
                 "category": "Production",
                 "location": "Welding Cell B",
-                "department": "Manufacturing", 
+                "department": "Manufacturing",
                 "status": "Active",
                 "criticality": 5,
                 "purchase_date": "2020-06-10",
@@ -576,25 +1235,25 @@ class ProjectGenesis:
                 "description": "6-axis robotic welding system with positioner",
                 "specifications": {
                     "payload": "5 kg",
-                    "reach": "1.2 m", 
+                    "reach": "1.2 m",
                     "repeatability": "±0.02 mm",
-                    "welding_process": "MIG/MAG"
+                    "welding_process": "MIG/MAG",
                 },
                 "last_service": (datetime.now() - timedelta(days=25)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=35)).isoformat(),
                 "service_interval_days": 60,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Conveyor System - Main Line",
                 "asset_tag": "CONV-001",
-                "serial_number": "HAB-MC150-2019-001", 
+                "serial_number": "HAB-MC150-2019-001",
                 "manufacturer": "Hytrol",
                 "model": "MC-150",
                 "category": "Production",
                 "location": "Assembly Line - Main",
                 "department": "Manufacturing",
-                "status": "Active", 
+                "status": "Active",
                 "criticality": 5,
                 "purchase_date": "2019-11-08",
                 "purchase_cost": 35000.00,
@@ -604,16 +1263,16 @@ class ProjectGenesis:
                     "length": "150 feet",
                     "width": "18 inches",
                     "capacity": "50 lbs/ft",
-                    "speed": "65 FPM variable"
+                    "speed": "65 FPM variable",
                 },
                 "last_service": (datetime.now() - timedelta(days=40)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=20)).isoformat(),
                 "service_interval_days": 60,
-                "condition": "Fair"
+                "condition": "Fair",
             },
             {
                 "name": "Industrial Oven - Heat Treat",
-                "asset_tag": "OVEN-001", 
+                "asset_tag": "OVEN-001",
                 "serial_number": "LIN-LB4848-2020-001",
                 "manufacturer": "Lindberg/MPH",
                 "model": "LB4848",
@@ -624,49 +1283,49 @@ class ProjectGenesis:
                 "criticality": 3,
                 "purchase_date": "2020-01-22",
                 "purchase_cost": 65000.00,
-                "warranty_expiry": "2025-01-22", 
+                "warranty_expiry": "2025-01-22",
                 "description": "Electric heat treating oven for parts processing",
                 "specifications": {
                     "chamber_size": "48x48x48 inches",
                     "max_temp": "2000°F",
-                    "heating_power": "50 KW", 
-                    "atmosphere": "Air/Nitrogen"
+                    "heating_power": "50 KW",
+                    "atmosphere": "Air/Nitrogen",
                 },
                 "last_service": (datetime.now() - timedelta(days=90)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=90)).isoformat(),
                 "service_interval_days": 180,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Overhead Crane - 5 Ton",
                 "asset_tag": "CRANE-001",
-                "serial_number": "KON-BR5T-2018-001", 
+                "serial_number": "KON-BR5T-2018-001",
                 "manufacturer": "Konecranes",
                 "model": "BR5T",
                 "category": "Material Handling",
                 "location": "Production Floor - Bay A",
                 "department": "Manufacturing",
                 "status": "Active",
-                "criticality": 4, 
+                "criticality": 4,
                 "purchase_date": "2018-12-05",
                 "purchase_cost": 55000.00,
                 "warranty_expiry": "2023-12-05",
                 "description": "5-ton overhead bridge crane with radio controls",
                 "specifications": {
                     "capacity": "5 tons",
-                    "span": "40 feet", 
+                    "span": "40 feet",
                     "lift_height": "20 feet",
-                    "hoist_speed": "16 FPM"
+                    "hoist_speed": "16 FPM",
                 },
                 "last_service": (datetime.now() - timedelta(days=50)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=40)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Laser Cutting System",
                 "asset_tag": "LASER-001",
-                "serial_number": "TRU-L3030-2021-001", 
+                "serial_number": "TRU-L3030-2021-001",
                 "manufacturer": "Trumpf",
                 "model": "TruLaser 3030",
                 "category": "Production",
@@ -674,30 +1333,29 @@ class ProjectGenesis:
                 "department": "Manufacturing",
                 "status": "Active",
                 "criticality": 5,
-                "purchase_date": "2021-09-14", 
+                "purchase_date": "2021-09-14",
                 "purchase_cost": 450000.00,
                 "warranty_expiry": "2026-09-14",
                 "description": "CO2 laser cutting system for sheet metal processing",
                 "specifications": {
                     "laser_power": "3.2 kW",
                     "cutting_area": "60x120 inches",
-                    "max_thickness": "1 inch steel", 
-                    "positioning_accuracy": "±0.1 mm"
+                    "max_thickness": "1 inch steel",
+                    "positioning_accuracy": "±0.1 mm",
                 },
                 "last_service": (datetime.now() - timedelta(days=10)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=80)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Excellent"
+                "condition": "Excellent",
             },
-            
             # Utility Systems (5 assets)
             {
                 "name": "Electrical Main Switchgear",
                 "asset_tag": "ELEC-001",
-                "serial_number": "SQD-NQ-2019-001", 
+                "serial_number": "SQD-NQ-2019-001",
                 "manufacturer": "Schneider Electric",
                 "model": "NQ Panelboard",
-                "category": "Electrical", 
+                "category": "Electrical",
                 "location": "Main Electrical Room",
                 "department": "Facility",
                 "status": "Active",
@@ -710,18 +1368,18 @@ class ProjectGenesis:
                     "voltage": "480V, 3-phase",
                     "main_breaker": "1200A",
                     "branch_circuits": "42",
-                    "short_circuit_rating": "65 kA"
+                    "short_circuit_rating": "65 kA",
                 },
                 "last_service": (datetime.now() - timedelta(days=180)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=185)).isoformat(),
                 "service_interval_days": 365,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Emergency Generator",
                 "asset_tag": "GEN-001",
                 "serial_number": "CAT-3508-2020-001",
-                "manufacturer": "Caterpillar", 
+                "manufacturer": "Caterpillar",
                 "model": "3508 DITA",
                 "category": "Electrical",
                 "location": "Generator Building",
@@ -730,25 +1388,25 @@ class ProjectGenesis:
                 "criticality": 4,
                 "purchase_date": "2020-03-15",
                 "purchase_cost": 125000.00,
-                "warranty_expiry": "2025-03-15", 
+                "warranty_expiry": "2025-03-15",
                 "description": "Diesel emergency generator for facility backup power",
                 "specifications": {
                     "power_output": "500 kW",
-                    "voltage": "480V, 3-phase", 
+                    "voltage": "480V, 3-phase",
                     "fuel_capacity": "500 gallons",
-                    "runtime": "24 hours at full load"
+                    "runtime": "24 hours at full load",
                 },
                 "last_service": (datetime.now() - timedelta(days=25)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=5)).isoformat(),
                 "service_interval_days": 30,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Chilled Water System",
                 "asset_tag": "CHILL-001",
-                "serial_number": "TRN-RTAC-2019-001", 
+                "serial_number": "TRN-RTAC-2019-001",
                 "manufacturer": "Trane",
-                "model": "RTAC-140", 
+                "model": "RTAC-140",
                 "category": "HVAC",
                 "location": "Mechanical Room",
                 "department": "Facility",
@@ -761,18 +1419,18 @@ class ProjectGenesis:
                 "specifications": {
                     "cooling_capacity": "140 tons",
                     "refrigerant": "R-134a",
-                    "power": "460V, 3-phase", 
-                    "efficiency": "10.8 EER"
+                    "power": "460V, 3-phase",
+                    "efficiency": "10.8 EER",
                 },
                 "last_service": (datetime.now() - timedelta(days=65)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=25)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Fire Suppression System",
                 "asset_tag": "FIRE-001",
-                "serial_number": "TYC-FM200-2018-001", 
+                "serial_number": "TYC-FM200-2018-001",
                 "manufacturer": "Tyco",
                 "model": "FM-200",
                 "category": "Safety",
@@ -780,28 +1438,28 @@ class ProjectGenesis:
                 "department": "Facility",
                 "status": "Active",
                 "criticality": 5,
-                "purchase_date": "2018-11-30", 
+                "purchase_date": "2018-11-30",
                 "purchase_cost": 25000.00,
                 "warranty_expiry": "2023-11-30",
                 "description": "Clean agent fire suppression for critical areas",
                 "specifications": {
                     "agent_type": "FM-200",
                     "coverage_area": "1,500 sq ft",
-                    "discharge_time": "10 seconds", 
-                    "tank_capacity": "180 lbs"
+                    "discharge_time": "10 seconds",
+                    "tank_capacity": "180 lbs",
                 },
                 "last_service": (datetime.now() - timedelta(days=90)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=275)).isoformat(),
                 "service_interval_days": 365,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Water Treatment System",
                 "asset_tag": "WATER-001",
-                "serial_number": "PEN-RO500-2020-001", 
+                "serial_number": "PEN-RO500-2020-001",
                 "manufacturer": "Pentair",
                 "model": "RO-500",
-                "category": "Utility", 
+                "category": "Utility",
                 "location": "Utility Building",
                 "department": "Facility",
                 "status": "Active",
@@ -813,19 +1471,18 @@ class ProjectGenesis:
                 "specifications": {
                     "capacity": "500 GPD",
                     "input_pressure": "60 PSI",
-                    "recovery_rate": "75%", 
-                    "TDS_removal": "95%"
+                    "recovery_rate": "75%",
+                    "TDS_removal": "95%",
                 },
                 "last_service": (datetime.now() - timedelta(days=30)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=60)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Good"
+                "condition": "Good",
             },
-            
             # Vehicle/Mobile Assets (3 assets)
             {
                 "name": "Forklift - Electric 5K",
-                "asset_tag": "FORK-001", 
+                "asset_tag": "FORK-001",
                 "serial_number": "TOY-8FBE20-2020-001",
                 "manufacturer": "Toyota",
                 "model": "8FBE20",
@@ -834,7 +1491,7 @@ class ProjectGenesis:
                 "department": "Warehouse",
                 "status": "Active",
                 "criticality": 3,
-                "purchase_date": "2020-05-12", 
+                "purchase_date": "2020-05-12",
                 "purchase_cost": 32000.00,
                 "warranty_expiry": "2023-05-12",
                 "description": "Electric forklift for warehouse material handling",
@@ -842,24 +1499,24 @@ class ProjectGenesis:
                     "capacity": "5,000 lbs",
                     "lift_height": "187 inches",
                     "battery_voltage": "48V",
-                    "runtime": "8 hours"
+                    "runtime": "8 hours",
                 },
                 "last_service": (datetime.now() - timedelta(days=15)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=75)).isoformat(),
                 "service_interval_days": 90,
-                "condition": "Good"
+                "condition": "Good",
             },
             {
                 "name": "Maintenance Cart - Mobile",
                 "asset_tag": "CART-001",
-                "serial_number": "JST-MC500-2021-001", 
+                "serial_number": "JST-MC500-2021-001",
                 "manufacturer": "Just-Rite",
                 "model": "MC-500",
                 "category": "Mobile Equipment",
                 "location": "Maintenance Shop",
                 "department": "Maintenance",
                 "status": "Active",
-                "criticality": 2, 
+                "criticality": 2,
                 "purchase_date": "2021-03-18",
                 "purchase_cost": 2500.00,
                 "warranty_expiry": "2024-03-18",
@@ -868,15 +1525,15 @@ class ProjectGenesis:
                     "drawer_count": "6",
                     "tool_capacity": "150 lbs",
                     "dimensions": "42x18x36 inches",
-                    "wheels": "5-inch casters"
+                    "wheels": "5-inch casters",
                 },
                 "last_service": (datetime.now() - timedelta(days=45)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=135)).isoformat(),
                 "service_interval_days": 180,
-                "condition": "Excellent"
+                "condition": "Excellent",
             },
             {
-                "name": "Scissor Lift - 26ft", 
+                "name": "Scissor Lift - 26ft",
                 "asset_tag": "LIFT-001",
                 "serial_number": "GEN-GS2646-2019-001",
                 "manufacturer": "Genie",
@@ -884,7 +1541,7 @@ class ProjectGenesis:
                 "category": "Mobile Equipment",
                 "location": "Equipment Storage",
                 "department": "Maintenance",
-                "status": "Active", 
+                "status": "Active",
                 "criticality": 3,
                 "purchase_date": "2019-08-14",
                 "purchase_cost": 15000.00,
@@ -894,54 +1551,62 @@ class ProjectGenesis:
                     "platform_height": "26 feet",
                     "capacity": "500 lbs",
                     "platform_size": "68x30 inches",
-                    "power": "24V DC"
+                    "power": "24V DC",
                 },
                 "last_service": (datetime.now() - timedelta(days=120)).isoformat(),
                 "next_service": (datetime.now() + timedelta(days=60)).isoformat(),
                 "service_interval_days": 180,
-                "condition": "Fair"
-            }
+                "condition": "Fair",
+            },
         ]
-        
+
         for asset_data in assets_data:
-            asset_id = await self.firestore_manager.create_document("assets", asset_data)
-            self.created_ids['assets'].append(asset_id)
-            
+            asset_id = await self.firestore_manager.create_document(
+                "assets", asset_data
+            )
+            self.created_ids["assets"].append(asset_id)
+
             # Log assets needing attention
-            next_service = datetime.fromisoformat(asset_data['next_service'].replace('Z', '+00:00'))
+            next_service = datetime.fromisoformat(
+                asset_data["next_service"].replace("Z", "+00:00")
+            )
             if next_service < datetime.now(next_service.tzinfo):
-                logger.warning(f"🔴 OVERDUE SERVICE: {asset_data['name']} (Due: {asset_data['next_service'][:10]})")
-            elif asset_data['criticality'] >= 5:
+                logger.warning(
+                    f"🔴 OVERDUE SERVICE: {asset_data['name']} (Due: {asset_data['next_service'][:10]})"
+                )
+            elif asset_data["criticality"] >= 5:
                 logger.info(f"🟡 Critical asset: {asset_data['name']}")
-        
+
         logger.info(f"✅ Created {len(assets_data)} factory assets")
-    
+
     async def create_work_orders(self):
         """Create 10 work orders with realistic scenarios"""
         logger.info("🔧 Creating work orders (10 items)...")
-        
+
         # Ensure we have assets to reference
-        if not self.created_ids['assets']:
+        if not self.created_ids["assets"]:
             logger.warning("No assets created yet for work orders")
             return
-            
+
         work_orders_data = [
             {
-                # URGENT: Fire system inspection overdue 
+                # URGENT: Fire system inspection overdue
                 "title": "Fire Suppression System - Annual Inspection",
                 "description": "Mandatory annual inspection and testing of FM-200 fire suppression system. Check agent levels, test detection systems, verify discharge sequence.",
                 "priority": "Urgent",
-                "status": "Open", 
+                "status": "Open",
                 "work_order_type": "Preventive Maintenance",
-                "asset_id": self.created_ids['assets'][16],  # Fire suppression system
+                "asset_id": self.created_ids["assets"][16],  # Fire suppression system
                 "assigned_to": "jake_thompson",
-                "created_by": "marcus_rodriguez", 
-                "due_date": (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d"),  # 5 days overdue!
+                "created_by": "marcus_rodriguez",
+                "due_date": (datetime.now() - timedelta(days=5)).strftime(
+                    "%Y-%m-%d"
+                ),  # 5 days overdue!
                 "scheduled_start": (datetime.now() - timedelta(days=5)).isoformat(),
                 "estimated_hours": 3.0,
                 "work_instructions": "1. Check FM-200 agent tank pressure and weight\n2. Test smoke detectors and heat sensors\n3. Verify alarm panel functionality\n4. Test manual release and abort switches\n5. Document all findings and compliance issues",
                 "required_skills": ["Fire Safety", "Electrical Testing"],
-                "safety_notes": "LOTO required. Coordinate with fire department. Area evacuation plan in place."
+                "safety_notes": "LOTO required. Coordinate with fire department. Area evacuation plan in place.",
             },
             {
                 # HIGH: HVAC unit filter replacement urgent
@@ -949,8 +1614,8 @@ class ProjectGenesis:
                 "description": "Replace MERV 13 filters in main HVAC unit. Filters are clogged causing reduced airflow and increased energy consumption.",
                 "priority": "High",
                 "status": "Open",
-                "work_order_type": "Corrective Maintenance", 
-                "asset_id": self.created_ids['assets'][0],  # Main HVAC unit
+                "work_order_type": "Corrective Maintenance",
+                "asset_id": self.created_ids["assets"][0],  # Main HVAC unit
                 "assigned_to": "anna_kowalski",
                 "created_by": "sarah_chen",
                 "due_date": (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d"),
@@ -958,19 +1623,22 @@ class ProjectGenesis:
                 "estimated_hours": 1.5,
                 "work_instructions": "1. Lock out HVAC system\n2. Remove access panels\n3. Replace all 8 MERV 13 filters\n4. Check for air leaks\n5. Restart system and verify operation",
                 "required_parts": [
-                    {"part_id": self.created_ids['parts'][0], "quantity_needed": 8}  # HVAC filters
+                    {
+                        "part_id": self.created_ids["parts"][0],
+                        "quantity_needed": 8,
+                    }  # HVAC filters
                 ],
                 "required_skills": ["HVAC Systems"],
-                "safety_notes": "Fall protection required for rooftop access. Check weather conditions."
+                "safety_notes": "Fall protection required for rooftop access. Check weather conditions.",
             },
             {
-                # HIGH: Conveyor belt alignment issue 
+                # HIGH: Conveyor belt alignment issue
                 "title": "Conveyor Belt Alignment and Tensioning",
                 "description": "Main production conveyor belt is tracking off-center causing product jams. Need to realign belt and adjust tension.",
-                "priority": "High", 
+                "priority": "High",
                 "status": "In Progress",
                 "work_order_type": "Corrective Maintenance",
-                "asset_id": self.created_ids['assets'][10],  # Conveyor system
+                "asset_id": self.created_ids["assets"][10],  # Conveyor system
                 "assigned_to": "jake_thompson",
                 "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
@@ -978,16 +1646,16 @@ class ProjectGenesis:
                 "estimated_hours": 4.0,
                 "work_instructions": "1. Stop production and lock out conveyor\n2. Check belt tracking and alignment\n3. Adjust roller positions and belt tension\n4. Test belt operation at slow speed\n5. Gradually increase to full production speed",
                 "required_skills": ["Mechanical Systems", "Belt Conveyors"],
-                "safety_notes": "Production shutdown required. Coordinate with production manager."
+                "safety_notes": "Production shutdown required. Coordinate with production manager.",
             },
             {
                 # MEDIUM: Compressor PM
                 "title": "Compressor Preventive Maintenance",
                 "description": "Scheduled 30-day PM on main air compressor. Change oil, filters, check belts and pressures.",
                 "priority": "Medium",
-                "status": "Open", 
+                "status": "Open",
                 "work_order_type": "Preventive Maintenance",
-                "asset_id": self.created_ids['assets'][3],  # Compressor station
+                "asset_id": self.created_ids["assets"][3],  # Compressor station
                 "assigned_to": "anna_kowalski",
                 "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
@@ -995,28 +1663,34 @@ class ProjectGenesis:
                 "estimated_hours": 2.5,
                 "work_instructions": "1. Record compressor hours and pressures\n2. Change compressor oil and oil filter\n3. Replace air filter element\n4. Check and adjust belt tension\n5. Test safety valves and controls",
                 "required_parts": [
-                    {"part_id": self.created_ids['parts'][26], "quantity_needed": 1},  # Oil filter equivalent
-                    {"part_id": self.created_ids['parts'][20], "quantity_needed": 2}   # Belt equivalent
+                    {
+                        "part_id": self.created_ids["parts"][26],
+                        "quantity_needed": 1,
+                    },  # Oil filter equivalent
+                    {
+                        "part_id": self.created_ids["parts"][20],
+                        "quantity_needed": 2,
+                    },  # Belt equivalent
                 ],
                 "required_skills": ["Mechanical Systems", "Pneumatics"],
-                "safety_notes": "System depressurization required. Hot surfaces present."
+                "safety_notes": "System depressurization required. Hot surfaces present.",
             },
             {
                 # MEDIUM: Electrical panel inspection
-                "title": "Main Electrical Panel - Quarterly Inspection", 
+                "title": "Main Electrical Panel - Quarterly Inspection",
                 "description": "Quarterly thermal inspection and cleaning of main electrical switchgear. Check connections, clean contacts, test protection devices.",
                 "priority": "Medium",
                 "status": "Open",
                 "work_order_type": "Preventive Maintenance",
-                "asset_id": self.created_ids['assets'][13],  # Electrical switchgear
-                "assigned_to": "jake_thompson", 
+                "asset_id": self.created_ids["assets"][13],  # Electrical switchgear
+                "assigned_to": "jake_thompson",
                 "created_by": "sarah_chen",
                 "due_date": (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d"),
                 "scheduled_start": (datetime.now() + timedelta(days=10)).isoformat(),
                 "estimated_hours": 3.5,
                 "work_instructions": "1. Obtain electrical work permit\n2. Perform thermal imaging scan\n3. Clean panel interior with approved methods\n4. Torque check main connections\n5. Test ground fault and overcurrent devices",
                 "required_skills": ["Electrical Systems", "High Voltage"],
-                "safety_notes": "Arc flash PPE required. Qualified electrician only. Live work permit needed."
+                "safety_notes": "Arc flash PPE required. Qualified electrician only. Live work permit needed.",
             },
             {
                 # LOW: CNC preventive maintenance
@@ -1024,36 +1698,43 @@ class ProjectGenesis:
                 "description": "Weekly lubrication and inspection of CNC machining center. Check fluid levels, lubricate ways, inspect tooling.",
                 "priority": "Low",
                 "status": "Open",
-                "work_order_type": "Preventive Maintenance", 
-                "asset_id": self.created_ids['assets'][6],  # CNC machine
+                "work_order_type": "Preventive Maintenance",
+                "asset_id": self.created_ids["assets"][6],  # CNC machine
                 "assigned_to": "anna_kowalski",
-                "created_by": "marcus_rodriguez", 
+                "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() + timedelta(days=21)).strftime("%Y-%m-%d"),
                 "scheduled_start": (datetime.now() + timedelta(days=14)).isoformat(),
                 "estimated_hours": 1.0,
                 "work_instructions": "1. Check hydraulic fluid level and condition\n2. Lubricate X, Y, Z axis ways\n3. Clean chip conveyor\n4. Inspect cutting tools for wear\n5. Update maintenance log",
                 "required_parts": [
-                    {"part_id": self.created_ids['parts'][25], "quantity_needed": 2}  # Grease equivalent
+                    {
+                        "part_id": self.created_ids["parts"][25],
+                        "quantity_needed": 2,
+                    }  # Grease equivalent
                 ],
                 "required_skills": ["CNC Operations", "Mechanical Systems"],
-                "safety_notes": "Machine must be in maintenance mode. Watch for sharp cutting tools."
+                "safety_notes": "Machine must be in maintenance mode. Watch for sharp cutting tools.",
             },
             {
                 # URGENT: Generator won't start
                 "title": "Emergency Generator - Failure to Start",
-                "description": "Emergency generator failed to start during weekly test. Investigation shows possible fuel system issue. Critical for emergency preparedness.", 
+                "description": "Emergency generator failed to start during weekly test. Investigation shows possible fuel system issue. Critical for emergency preparedness.",
                 "priority": "Urgent",
                 "status": "Open",
                 "work_order_type": "Corrective Maintenance",
-                "asset_id": self.created_ids['assets'][14],  # Emergency generator
+                "asset_id": self.created_ids["assets"][14],  # Emergency generator
                 "assigned_to": "jake_thompson",
                 "created_by": "sarah_chen",
                 "due_date": datetime.now().strftime("%Y-%m-%d"),  # Due today!
                 "scheduled_start": datetime.now().isoformat(),
                 "estimated_hours": 4.0,
                 "work_instructions": "1. Check fuel tank level and fuel quality\n2. Inspect fuel filters and lines\n3. Test battery voltage and connections\n4. Check engine control module for codes\n5. Perform manual start sequence\n6. Load test if repairs successful",
-                "required_skills": ["Diesel Engines", "Electrical Systems", "Generator Systems"],
-                "safety_notes": "Fuel vapors present. No ignition sources. Ventilation required."
+                "required_skills": [
+                    "Diesel Engines",
+                    "Electrical Systems",
+                    "Generator Systems",
+                ],
+                "safety_notes": "Fuel vapors present. No ignition sources. Ventilation required.",
             },
             {
                 # MEDIUM: Forklift inspection
@@ -1062,7 +1743,7 @@ class ProjectGenesis:
                 "priority": "Medium",
                 "status": "Completed",
                 "work_order_type": "Preventive Maintenance",
-                "asset_id": self.created_ids['assets'][18],  # Forklift
+                "asset_id": self.created_ids["assets"][18],  # Forklift
                 "assigned_to": "anna_kowalski",
                 "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d"),
@@ -1073,16 +1754,16 @@ class ProjectGenesis:
                 "work_instructions": "1. Inspect forks for cracks and wear\n2. Test all safety lights and alarms\n3. Check battery connections and electrolyte\n4. Test lift and tilt hydraulics\n5. Verify operator safety features",
                 "work_summary": "Completed full inspection. All systems operational. Minor fork wear noted but within acceptable limits. Battery charge system tested OK.",
                 "required_skills": ["Mobile Equipment", "Hydraulic Systems"],
-                "safety_notes": "Block wheels during inspection. Battery maintenance safety required."
+                "safety_notes": "Block wheels during inspection. Battery maintenance safety required.",
             },
             {
                 # HIGH: Laser cutting system calibration
-                "title": "Laser Cutting System - Focus Calibration", 
+                "title": "Laser Cutting System - Focus Calibration",
                 "description": "Laser cutting quality has degraded. Need to calibrate laser focus and check cutting gas pressures. Parts showing burn marks.",
                 "priority": "High",
                 "status": "Open",
-                "work_order_type": "Corrective Maintenance", 
-                "asset_id": self.created_ids['assets'][12],  # Laser cutting system
+                "work_order_type": "Corrective Maintenance",
+                "asset_id": self.created_ids["assets"][12],  # Laser cutting system
                 "assigned_to": "jake_thompson",
                 "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d"),
@@ -1090,16 +1771,16 @@ class ProjectGenesis:
                 "estimated_hours": 3.0,
                 "work_instructions": "1. Run laser power calibration routine\n2. Check and adjust beam focus position\n3. Verify cutting gas pressures (N2, O2)\n4. Clean lens and mirror assemblies\n5. Run test cuts on various materials",
                 "required_skills": ["Laser Systems", "Precision Optics"],
-                "safety_notes": "Laser safety glasses required. Class 4 laser system - authorized personnel only."
+                "safety_notes": "Laser safety glasses required. Class 4 laser system - authorized personnel only.",
             },
             {
                 # LOW: Water treatment system filter change
                 "title": "Water Treatment - Filter Replacement",
                 "description": "Scheduled replacement of RO membrane and pre-filters in water treatment system. TDS levels trending upward.",
                 "priority": "Low",
-                "status": "Open", 
+                "status": "Open",
                 "work_order_type": "Preventive Maintenance",
-                "asset_id": self.created_ids['assets'][17],  # Water treatment system
+                "asset_id": self.created_ids["assets"][17],  # Water treatment system
                 "assigned_to": "anna_kowalski",
                 "created_by": "marcus_rodriguez",
                 "due_date": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
@@ -1107,30 +1788,30 @@ class ProjectGenesis:
                 "estimated_hours": 2.0,
                 "work_instructions": "1. Shut down RO system and depressurize\n2. Replace sediment and carbon pre-filters\n3. Replace RO membrane elements\n4. Sanitize system with approved solution\n5. Restart and monitor TDS readings",
                 "required_skills": ["Water Treatment", "Plumbing"],
-                "safety_notes": "Chemical exposure possible. Use proper PPE for sanitizing chemicals."
-            }
+                "safety_notes": "Chemical exposure possible. Use proper PPE for sanitizing chemicals.",
+            },
         ]
-        
+
         for wo_data in work_orders_data:
             wo_id = await self.firestore_manager.create_document("work_orders", wo_data)
-            self.created_ids['work_orders'].append(wo_id)
-            
+            self.created_ids["work_orders"].append(wo_id)
+
             # Log critical work orders
-            if wo_data['priority'] == 'Urgent':
+            if wo_data["priority"] == "Urgent":
                 logger.warning(f"🔴 URGENT: {wo_data['title']}")
-            elif wo_data['status'] == 'In Progress':
+            elif wo_data["status"] == "In Progress":
                 logger.info(f"🟡 IN PROGRESS: {wo_data['title']}")
-        
+
         logger.info(f"✅ Created {len(work_orders_data)} work orders")
-    
+
     async def create_training_modules(self):
         """Create comprehensive training modules"""
         logger.info("🎓 Creating training modules...")
-        
+
         training_modules_data = [
             {
                 "title": "HVAC Systems Fundamentals",
-                "description": "Comprehensive training on HVAC system operation, maintenance, and troubleshooting", 
+                "description": "Comprehensive training on HVAC system operation, maintenance, and troubleshooting",
                 "skill_category": "HVAC",
                 "asset_types": ["HVAC"],
                 "difficulty_level": "Intermediate",
@@ -1140,14 +1821,14 @@ class ProjectGenesis:
                     "Understand HVAC system components and operation",
                     "Perform routine maintenance tasks",
                     "Troubleshoot common HVAC problems",
-                    "Follow safety procedures for HVAC work"
+                    "Follow safety procedures for HVAC work",
                 ],
                 "prerequisites": ["Basic Mechanical Knowledge", "Electrical Safety"],
                 "certification_available": True,
-                "passing_score": 80
+                "passing_score": 80,
             },
             {
-                "title": "Electrical Safety and LOTO Procedures", 
+                "title": "Electrical Safety and LOTO Procedures",
                 "description": "Essential electrical safety training including lockout/tagout procedures",
                 "skill_category": "Electrical Safety",
                 "asset_types": ["Electrical", "All"],
@@ -1158,51 +1839,51 @@ class ProjectGenesis:
                     "Identify electrical hazards in the workplace",
                     "Implement proper lockout/tagout procedures",
                     "Use appropriate PPE for electrical work",
-                    "Respond to electrical emergencies"
+                    "Respond to electrical emergencies",
                 ],
                 "prerequisites": ["Basic Safety Training"],
-                "certification_available": True, 
-                "passing_score": 90
+                "certification_available": True,
+                "passing_score": 90,
             },
             {
                 "title": "CNC Machine Operation and Maintenance",
                 "description": "Training on CNC machining center operation, programming, and maintenance",
                 "skill_category": "Production Equipment",
                 "asset_types": ["Production"],
-                "difficulty_level": "Advanced", 
+                "difficulty_level": "Advanced",
                 "duration_hours": 16,
                 "content_type": "hands-on",
                 "learning_objectives": [
-                    "Operate CNC machines safely and efficiently", 
+                    "Operate CNC machines safely and efficiently",
                     "Perform basic programming and setup",
                     "Execute preventive maintenance procedures",
-                    "Troubleshoot common machine problems"
+                    "Troubleshoot common machine problems",
                 ],
                 "prerequisites": ["Mechanical Systems", "Basic Programming"],
                 "certification_available": True,
-                "passing_score": 85
+                "passing_score": 85,
             },
             {
                 "title": "Fire Safety and Emergency Response",
                 "description": "Comprehensive fire safety training including emergency procedures and equipment",
-                "skill_category": "Safety", 
+                "skill_category": "Safety",
                 "asset_types": ["Safety"],
                 "difficulty_level": "Essential",
                 "duration_hours": 3,
                 "content_type": "interactive",
                 "learning_objectives": [
                     "Understand fire prevention principles",
-                    "Use fire suppression equipment properly", 
+                    "Use fire suppression equipment properly",
                     "Execute emergency evacuation procedures",
-                    "Coordinate with emergency responders"
+                    "Coordinate with emergency responders",
                 ],
                 "prerequisites": ["General Safety Training"],
                 "certification_available": True,
-                "passing_score": 90
+                "passing_score": 90,
             },
             {
                 "title": "Preventive Maintenance Planning",
-                "description": "Training for maintenance planners on PM scheduling and optimization", 
+                "description": "Training for maintenance planners on PM scheduling and optimization",
                 "skill_category": "Planning",
                 "asset_types": ["All"],
                 "difficulty_level": "Advanced",
@@ -1212,76 +1893,147 @@ class ProjectGenesis:
                     "Develop effective PM schedules",
                     "Optimize resource allocation",
                     "Analyze maintenance data and trends",
-                    "Implement predictive maintenance strategies"
+                    "Implement predictive maintenance strategies",
                 ],
                 "prerequisites": ["CMMS Experience", "Maintenance Fundamentals"],
                 "certification_available": True,
-                "passing_score": 85
-            }
+                "passing_score": 85,
+            },
         ]
-        
+
         for module_data in training_modules_data:
-            module_id = await self.firestore_manager.create_document("training_modules", module_data)
-            self.created_ids['training_modules'].append(module_id)
+            module_id = await self.firestore_manager.create_document(
+                "training_modules", module_data
+            )
+            self.created_ids["training_modules"].append(module_id)
             logger.info(f"✅ Created training module: {module_data['title']}")
-    
+
     async def create_user_training_assignments(self):
         """Create training assignments for users"""
         logger.info("📚 Creating user training assignments...")
-        
-        if not self.created_ids['training_modules'] or not self.created_ids['users']:
+
+        if not self.created_ids["training_modules"] or not self.created_ids["users"]:
             logger.warning("Missing training modules or users for assignments")
             return
-            
+
         # Training assignments based on user roles and needs
         assignments = [
             # Jake Thompson (Senior Technician) - needs HVAC and electrical training
-            {"user_id": "jake_thompson", "training_module_id": self.created_ids['training_modules'][0], "status": "completed", "completion_date": "2024-11-15", "score": 92},
-            {"user_id": "jake_thompson", "training_module_id": self.created_ids['training_modules'][1], "status": "completed", "completion_date": "2024-10-20", "score": 95},
-            {"user_id": "jake_thompson", "training_module_id": self.created_ids['training_modules'][2], "status": "in_progress", "progress": 65},
-            
+            {
+                "user_id": "jake_thompson",
+                "training_module_id": self.created_ids["training_modules"][0],
+                "status": "completed",
+                "completion_date": "2024-11-15",
+                "score": 92,
+            },
+            {
+                "user_id": "jake_thompson",
+                "training_module_id": self.created_ids["training_modules"][1],
+                "status": "completed",
+                "completion_date": "2024-10-20",
+                "score": 95,
+            },
+            {
+                "user_id": "jake_thompson",
+                "training_module_id": self.created_ids["training_modules"][2],
+                "status": "in_progress",
+                "progress": 65,
+            },
             # Anna Kowalski (Technician II) - needs basic certifications
-            {"user_id": "anna_kowalski", "training_module_id": self.created_ids['training_modules'][1], "status": "completed", "completion_date": "2024-11-01", "score": 88},
-            {"user_id": "anna_kowalski", "training_module_id": self.created_ids['training_modules'][3], "status": "assigned", "assigned_date": "2024-12-01", "due_date": "2024-12-31"},
-            {"user_id": "anna_kowalski", "training_module_id": self.created_ids['training_modules'][0], "status": "assigned", "assigned_date": "2024-12-10", "due_date": "2025-01-15"},
-            
+            {
+                "user_id": "anna_kowalski",
+                "training_module_id": self.created_ids["training_modules"][1],
+                "status": "completed",
+                "completion_date": "2024-11-01",
+                "score": 88,
+            },
+            {
+                "user_id": "anna_kowalski",
+                "training_module_id": self.created_ids["training_modules"][3],
+                "status": "assigned",
+                "assigned_date": "2024-12-01",
+                "due_date": "2024-12-31",
+            },
+            {
+                "user_id": "anna_kowalski",
+                "training_module_id": self.created_ids["training_modules"][0],
+                "status": "assigned",
+                "assigned_date": "2024-12-10",
+                "due_date": "2025-01-15",
+            },
             # Marcus Rodriguez (Planner) - needs planning certification
-            {"user_id": "marcus_rodriguez", "training_module_id": self.created_ids['training_modules'][4], "status": "in_progress", "progress": 80},
-            {"user_id": "marcus_rodriguez", "training_module_id": self.created_ids['training_modules'][1], "status": "completed", "completion_date": "2024-09-15", "score": 91},
-            
+            {
+                "user_id": "marcus_rodriguez",
+                "training_module_id": self.created_ids["training_modules"][4],
+                "status": "in_progress",
+                "progress": 80,
+            },
+            {
+                "user_id": "marcus_rodriguez",
+                "training_module_id": self.created_ids["training_modules"][1],
+                "status": "completed",
+                "completion_date": "2024-09-15",
+                "score": 91,
+            },
             # Sarah Chen (Manager) - completed leadership training
-            {"user_id": "sarah_chen", "training_module_id": self.created_ids['training_modules'][4], "status": "completed", "completion_date": "2024-08-20", "score": 89},
-            {"user_id": "sarah_chen", "training_module_id": self.created_ids['training_modules'][3], "status": "completed", "completion_date": "2024-07-10", "score": 94},
-            
+            {
+                "user_id": "sarah_chen",
+                "training_module_id": self.created_ids["training_modules"][4],
+                "status": "completed",
+                "completion_date": "2024-08-20",
+                "score": 89,
+            },
+            {
+                "user_id": "sarah_chen",
+                "training_module_id": self.created_ids["training_modules"][3],
+                "status": "completed",
+                "completion_date": "2024-07-10",
+                "score": 94,
+            },
             # Lisa Washington (Buyer) - safety training
-            {"user_id": "lisa_washington", "training_module_id": self.created_ids['training_modules'][3], "status": "completed", "completion_date": "2024-10-01", "score": 87}
+            {
+                "user_id": "lisa_washington",
+                "training_module_id": self.created_ids["training_modules"][3],
+                "status": "completed",
+                "completion_date": "2024-10-01",
+                "score": 87,
+            },
         ]
-        
+
         for assignment in assignments:
             assignment_data = {
                 "user_id": assignment["user_id"],
-                "training_module_id": assignment["training_module_id"], 
+                "training_module_id": assignment["training_module_id"],
                 "status": assignment["status"],
                 "assigned_date": assignment.get("assigned_date", "2024-12-01"),
                 "due_date": assignment.get("due_date"),
                 "completion_date": assignment.get("completion_date"),
                 "score": assignment.get("score"),
-                "progress": assignment.get("progress", 0 if assignment["status"] != "completed" else 100)
+                "progress": assignment.get(
+                    "progress", 0 if assignment["status"] != "completed" else 100
+                ),
             }
-            
-            await self.firestore_manager.create_document("user_training", assignment_data)
-        
+
+            await self.firestore_manager.create_document(
+                "user_training", assignment_data
+            )
+
         logger.info(f"✅ Created {len(assignments)} training assignments")
-    
+
     async def create_performance_data(self):
         """Create user performance metrics"""
         logger.info("📊 Creating performance data...")
-        
+
         # Performance metrics for the past 6 months
         performance_periods = [
-            "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12"
+            "2024-07",
+            "2024-08",
+            "2024-09",
+            "2024-10",
+            "2024-11",
+            "2024-12",
         ]
-        
+
         for user_id in ["jake_thompson", "anna_kowalski", "marcus_rodriguez"]:
             for period in performance_periods:
                 if user_id == "jake_thompson":
@@ -1290,22 +2042,28 @@ class ProjectGenesis:
                         "work_orders_completed": random.randint(15, 25),
                         "avg_completion_time": round(random.uniform(2.8, 4.2), 1),
                         "quality_score": random.randint(88, 98),
-                        "safety_incidents": 0 if period != "2024-09" else 1,  # One minor incident
+                        "safety_incidents": (
+                            0 if period != "2024-09" else 1
+                        ),  # One minor incident
                         "training_hours": random.randint(2, 8),
                         "overtime_hours": random.randint(5, 15),
-                        "cost_savings": random.randint(500, 2000)
+                        "cost_savings": random.randint(500, 2000),
                     }
                 elif user_id == "anna_kowalski":
                     # Junior technician - improving performance
-                    base_performance = 70 + (int(period.split('-')[1]) - 7) * 3  # Improving over time
+                    base_performance = (
+                        70 + (int(period.split("-")[1]) - 7) * 3
+                    )  # Improving over time
                     metrics = {
                         "work_orders_completed": random.randint(8, 15),
                         "avg_completion_time": round(random.uniform(3.5, 5.5), 1),
-                        "quality_score": random.randint(base_performance, min(95, base_performance + 10)),
+                        "quality_score": random.randint(
+                            base_performance, min(95, base_performance + 10)
+                        ),
                         "safety_incidents": 0,
-                        "training_hours": random.randint(4, 12), 
+                        "training_hours": random.randint(4, 12),
                         "overtime_hours": random.randint(2, 8),
-                        "cost_savings": random.randint(200, 800)
+                        "cost_savings": random.randint(200, 800),
                     }
                 else:  # marcus_rodriguez (planner)
                     # Planner metrics
@@ -1315,49 +2073,77 @@ class ProjectGenesis:
                         "resource_utilization": random.randint(80, 92),
                         "cost_variance": round(random.uniform(-5.0, 8.0), 1),
                         "training_hours": random.randint(1, 4),
-                        "planning_accuracy": random.randint(88, 96)
+                        "planning_accuracy": random.randint(88, 96),
                     }
-                
+
                 performance_data = {
                     "user_id": user_id,
-                    "period": "monthly", 
+                    "period": "monthly",
                     "period_date": f"{period}-01",
-                    **metrics
+                    **metrics,
                 }
-                
-                await self.firestore_manager.create_document("user_performance", performance_data)
-        
+
+                await self.firestore_manager.create_document(
+                    "user_performance", performance_data
+                )
+
         logger.info("✅ Created performance metrics for 3 users over 6 months")
-    
+
     async def create_analytics_data(self):
         """Create additional analytics and relationship data"""
         logger.info("📈 Creating analytics data...")
-        
+
         # Asset-Parts relationships
         asset_parts_relationships = [
             # HVAC Unit needs filters and belts
-            {"asset_id": self.created_ids['assets'][0], "part_id": self.created_ids['parts'][0], "quantity_used": 8, "replacement_interval_days": 90},
-            {"asset_id": self.created_ids['assets'][0], "part_id": self.created_ids['parts'][1], "quantity_used": 2, "replacement_interval_days": 365},
-            
-            # Compressor needs belts and filters  
-            {"asset_id": self.created_ids['assets'][3], "part_id": self.created_ids['parts'][20], "quantity_used": 1, "replacement_interval_days": 180},
-            {"asset_id": self.created_ids['assets'][3], "part_id": self.created_ids['parts'][25], "quantity_used": 2, "replacement_interval_days": 30},
-            
+            {
+                "asset_id": self.created_ids["assets"][0],
+                "part_id": self.created_ids["parts"][0],
+                "quantity_used": 8,
+                "replacement_interval_days": 90,
+            },
+            {
+                "asset_id": self.created_ids["assets"][0],
+                "part_id": self.created_ids["parts"][1],
+                "quantity_used": 2,
+                "replacement_interval_days": 365,
+            },
+            # Compressor needs belts and filters
+            {
+                "asset_id": self.created_ids["assets"][3],
+                "part_id": self.created_ids["parts"][20],
+                "quantity_used": 1,
+                "replacement_interval_days": 180,
+            },
+            {
+                "asset_id": self.created_ids["assets"][3],
+                "part_id": self.created_ids["parts"][25],
+                "quantity_used": 2,
+                "replacement_interval_days": 30,
+            },
             # Generator needs filters and oil
-            {"asset_id": self.created_ids['assets'][14], "part_id": self.created_ids['parts'][26], "quantity_used": 3, "replacement_interval_days": 90},
-            
+            {
+                "asset_id": self.created_ids["assets"][14],
+                "part_id": self.created_ids["parts"][26],
+                "quantity_used": 3,
+                "replacement_interval_days": 90,
+            },
             # Add more relationships...
         ]
-        
+
         for relationship in asset_parts_relationships:
-            relationship["last_replaced"] = (datetime.now() - timedelta(days=random.randint(10, 200))).isoformat()
+            relationship["last_replaced"] = (
+                datetime.now() - timedelta(days=random.randint(10, 200))
+            ).isoformat()
             await self.firestore_manager.create_document("asset_parts", relationship)
-        
-        # Work order completion history  
+
+        # Work order completion history
         completed_work_orders = [
             {
-                "work_order_id": self.created_ids['work_orders'][7],  # Forklift inspection
-                "asset_id": self.created_ids['assets'][18],
+                "work_order_id": self.created_ids["work_orders"][
+                    7
+                ],  # Forklift inspection
+                "asset_id": self.created_ids["assets"][18],
                 "completion_date": (datetime.now() - timedelta(days=1)).isoformat(),
                 "actual_hours": 1.5,
                 "labor_cost": 75.00,
@@ -1365,60 +2151,74 @@ class ProjectGenesis:
                 "total_cost": 75.00,
                 "downtime_hours": 0.5,
                 "work_type": "Preventive Maintenance",
-                "technician_id": "anna_kowalski"
+                "technician_id": "anna_kowalski",
             }
         ]
-        
+
         for history in completed_work_orders:
             await self.firestore_manager.create_document("maintenance_history", history)
-        
+
         logger.info("✅ Created analytics and relationship data")
-    
+
     async def print_summary(self):
         """Print comprehensive summary of created data"""
-        logger.info("\n" + "="*80)
+        logger.info("\n" + "=" * 80)
         logger.info("🎯 PROJECT GENESIS COMPLETION SUMMARY")
-        logger.info("="*80)
-        
+        logger.info("=" * 80)
+
         logger.info(f"🏭 Company: {self.scenario.company_name}")
         logger.info(f"📍 Location: {self.scenario.location}")
         logger.info(f"🏗️ Industry: {self.scenario.industry}")
         logger.info("")
-        
+
         logger.info("📊 CREATED DATA:")
-        logger.info(f"   👥 Users: {len(self.created_ids['users'])} (1 Admin, 1 Planner, 1 Buyer, 2 Technicians)")
-        logger.info(f"   🏭 Assets: {len(self.created_ids['assets'])} (HVAC, Production, Electrical, Safety)")
-        logger.info(f"   📦 Parts: {len(self.created_ids['parts'])} (50+ inventory items)")
-        logger.info(f"   🔧 Work Orders: {len(self.created_ids['work_orders'])} (Urgent, High, Medium, Low priorities)")
-        logger.info(f"   🏢 Vendors: {len(self.created_ids['vendors'])} (Supply chain partners)")
-        logger.info(f"   🎓 Training Modules: {len(self.created_ids['training_modules'])} (Skill development)")
+        logger.info(
+            f"   👥 Users: {len(self.created_ids['users'])} (1 Admin, 1 Planner, 1 Buyer, 2 Technicians)"
+        )
+        logger.info(
+            f"   🏭 Assets: {len(self.created_ids['assets'])} (HVAC, Production, Electrical, Safety)"
+        )
+        logger.info(
+            f"   📦 Parts: {len(self.created_ids['parts'])} (50+ inventory items)"
+        )
+        logger.info(
+            f"   🔧 Work Orders: {len(self.created_ids['work_orders'])} (Urgent, High, Medium, Low priorities)"
+        )
+        logger.info(
+            f"   🏢 Vendors: {len(self.created_ids['vendors'])} (Supply chain partners)"
+        )
+        logger.info(
+            f"   🎓 Training Modules: {len(self.created_ids['training_modules'])} (Skill development)"
+        )
         logger.info("")
-        
+
         logger.info("🎯 CRITICAL SCENARIOS CREATED:")
         logger.info("   🔴 Overdue fire system inspection (Compliance risk)")
-        logger.info("   🔴 Emergency generator failure (Business continuity)")  
+        logger.info("   🔴 Emergency generator failure (Business continuity)")
         logger.info("   🟡 Multiple low stock alerts (Supply chain)")
         logger.info("   🟡 Equipment alignment issues (Production impact)")
         logger.info("   🟡 Preventive maintenance due (Asset reliability)")
         logger.info("")
-        
+
         logger.info("🎬 DEMO SCENARIOS READY:")
         logger.info("   📱 Technician Mobile: 3-click work order completion")
-        logger.info("   📋 Planner Dashboard: Resource conflicts and scheduling")  
+        logger.info("   📋 Planner Dashboard: Resource conflicts and scheduling")
         logger.info("   🛒 Buyer Alerts: Auto-replenishment triggers")
         logger.info("   📊 Manager Analytics: ROI and performance metrics")
         logger.info("")
-        
+
         logger.info("🚀 CHATTERFIX IS NOW DEMO-READY!")
         logger.info("   Login as any user to explore their workflow")
         logger.info("   All features have realistic data for demonstration")
         logger.info("   Critical alerts and scenarios drive engagement")
-        logger.info("="*80)
+        logger.info("=" * 80)
+
 
 async def main():
     """Execute Project Genesis"""
     genesis = ProjectGenesis()
     await genesis.execute_genesis()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

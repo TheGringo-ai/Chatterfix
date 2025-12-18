@@ -11,7 +11,6 @@ The dashboard will be available at: http://localhost:8888
 """
 
 import os
-import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -73,6 +72,7 @@ def open_browser():
 
     try:
         import webbrowser
+
         webbrowser.open(url)
         print(f"🌐 Opening dashboard in browser: {url}")
     except Exception as e:

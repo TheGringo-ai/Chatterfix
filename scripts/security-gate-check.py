@@ -14,7 +14,6 @@ Exit codes:
 
 import json
 import sys
-import os
 from pathlib import Path
 
 
@@ -23,7 +22,7 @@ def load_json_report(filename: str) -> dict:
     path = Path(filename)
     if path.exists():
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 return json.load(f)
         except json.JSONDecodeError:
             print(f"Warning: Could not parse {filename}")
@@ -43,7 +42,7 @@ def check_safety_report(report: dict) -> tuple[bool, list[str]]:
         return True, []
 
     # Safety report format varies by version
-    vulnerabilities = report.get('vulnerabilities', [])
+    vulnerabilities = report.get("vulnerabilities", [])
     if isinstance(report, list):
         vulnerabilities = report
 
@@ -51,14 +50,14 @@ def check_safety_report(report: dict) -> tuple[bool, list[str]]:
     high_count = 0
 
     for vuln in vulnerabilities:
-        severity = vuln.get('severity', 'unknown').lower()
-        package = vuln.get('package_name', vuln.get('name', 'unknown'))
-        vuln_id = vuln.get('vulnerability_id', vuln.get('id', 'unknown'))
+        severity = vuln.get("severity", "unknown").lower()
+        package = vuln.get("package_name", vuln.get("name", "unknown"))
+        vuln_id = vuln.get("vulnerability_id", vuln.get("id", "unknown"))
 
-        if severity == 'critical':
+        if severity == "critical":
             critical_count += 1
             issues.append(f"CRITICAL: {package} - {vuln_id}")
-        elif severity == 'high':
+        elif severity == "high":
             high_count += 1
             issues.append(f"HIGH: {package} - {vuln_id}")
 
@@ -84,23 +83,23 @@ def check_bandit_report(report: dict) -> tuple[bool, list[str]]:
         print("Info: No bandit report found - skipping static security analysis")
         return True, []
 
-    results = report.get('results', [])
+    results = report.get("results", [])
 
     high_severity_count = 0
     high_confidence_count = 0
 
     for result in results:
-        severity = result.get('issue_severity', 'LOW')
-        confidence = result.get('issue_confidence', 'LOW')
-        issue_text = result.get('issue_text', 'Unknown issue')
-        filename = result.get('filename', 'unknown')
-        line = result.get('line_number', 0)
+        severity = result.get("issue_severity", "LOW")
+        confidence = result.get("issue_confidence", "LOW")
+        issue_text = result.get("issue_text", "Unknown issue")
+        filename = result.get("filename", "unknown")
+        line = result.get("line_number", 0)
 
         # Only block on high severity + high confidence issues
-        if severity == 'HIGH' and confidence == 'HIGH':
+        if severity == "HIGH" and confidence == "HIGH":
             high_severity_count += 1
             issues.append(f"HIGH/HIGH: {filename}:{line} - {issue_text}")
-        elif severity == 'HIGH':
+        elif severity == "HIGH":
             high_confidence_count += 1
             issues.append(f"HIGH: {filename}:{line} - {issue_text}")
 
@@ -108,7 +107,9 @@ def check_bandit_report(report: dict) -> tuple[bool, list[str]]:
     passed = high_severity_count == 0
 
     if high_severity_count > 0:
-        print(f"Found {high_severity_count} high severity/high confidence issues - BLOCKING")
+        print(
+            f"Found {high_severity_count} high severity/high confidence issues - BLOCKING"
+        )
     if high_confidence_count > 0:
         print(f"Found {high_confidence_count} high severity issues - WARNING")
 
@@ -126,7 +127,7 @@ def main():
 
     # Check safety report
     print("Checking dependency vulnerabilities (safety)...")
-    safety_report = load_json_report('safety-report.json')
+    safety_report = load_json_report("safety-report.json")
     safety_passed, safety_issues = check_safety_report(safety_report)
     all_passed = all_passed and safety_passed
     all_issues.extend(safety_issues)
@@ -134,7 +135,7 @@ def main():
 
     # Check bandit report
     print("Checking static security analysis (bandit)...")
-    bandit_report = load_json_report('bandit-report.json')
+    bandit_report = load_json_report("bandit-report.json")
     bandit_passed, bandit_issues = check_bandit_report(bandit_report)
     all_passed = all_passed and bandit_passed
     all_issues.extend(bandit_issues)

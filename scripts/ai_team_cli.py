@@ -29,7 +29,6 @@ Usage:
 import argparse
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -39,15 +38,11 @@ sys.path.insert(0, str(project_root))
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv(project_root / ".env")
 
 from app.clients.ai_team_client import (
-    AITeamHTTPClient,
     get_ai_team_client,
-    execute_ai_task,
-    invoke_autonomous_builder,
-    ai_code_review,
-    check_ai_team_health
 )
 
 
@@ -67,19 +62,19 @@ async def cmd_execute(args):
         prompt=args.prompt,
         context=args.context or "",
         required_agents=agents,
-        max_iterations=args.iterations
+        max_iterations=args.iterations,
     )
 
     if result.get("success"):
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("RESULT:")
-        print("="*60)
+        print("=" * 60)
         print(result.get("final_answer", "No answer generated"))
 
         if args.verbose:
-            print("\n" + "-"*60)
+            print("\n" + "-" * 60)
             print("AGENT RESPONSES:")
-            print("-"*60)
+            print("-" * 60)
             for resp in result.get("agent_responses", []):
                 print(f"\n[{resp.get('agent')}] ({resp.get('model_type')}):")
                 print(resp.get("response", "")[:500])
@@ -110,18 +105,17 @@ async def cmd_build(args):
 
     client = await get_ai_team_client()
     result = await client.invoke_autonomous_builder(
-        customer_request=args.request,
-        auto_deploy=args.deploy
+        customer_request=args.request, auto_deploy=args.deploy
     )
 
     if result.get("success"):
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("BUILD RESULT:")
-        print("="*60)
+        print("=" * 60)
         print(result.get("final_answer", "Build completed"))
 
         if args.output:
-            with open(args.output, 'w') as f:
+            with open(args.output, "w") as f:
                 json.dump(result, f, indent=2)
             print(f"\nFull result saved to: {args.output}")
     else:
@@ -151,9 +145,9 @@ async def cmd_review(args):
     result = await client.code_review(code, str(file_path))
 
     if result.get("success"):
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("REVIEW RESULT:")
-        print("="*60)
+        print("=" * 60)
         print(result.get("final_answer", "No review generated"))
     else:
         print(f"\nREVIEW FAILED: {result.get('error', 'Unknown error')}")
@@ -174,19 +168,17 @@ async def cmd_generate(args):
 
     client = await get_ai_team_client()
     result = await client.generate_feature(
-        feature_name=args.name,
-        description=args.description,
-        feature_type=args.type
+        feature_name=args.name, description=args.description, feature_type=args.type
     )
 
     if result.get("success"):
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("GENERATED FEATURE:")
-        print("="*60)
+        print("=" * 60)
         print(result.get("final_answer", "No output generated"))
 
         if args.output:
-            with open(args.output, 'w') as f:
+            with open(args.output, "w") as f:
                 json.dump(result, f, indent=2)
             print(f"\nFull result saved to: {args.output}")
     else:
@@ -209,9 +201,11 @@ async def cmd_health(args):
     print(f"Service: {result.get('service', 'AI Team Service')}")
     print(f"Version: {result.get('version', 'unknown')}")
     print(f"Models Count: {result.get('ai_models_count', 0)}")
-    print(f"Orchestrator: {'Ready' if result.get('orchestrator_initialized') else 'Not initialized'}")
+    print(
+        f"Orchestrator: {'Ready' if result.get('orchestrator_initialized') else 'Not initialized'}"
+    )
 
-    if result.get('error'):
+    if result.get("error"):
         print(f"Error: {result.get('error')}")
         return 1
 
@@ -254,23 +248,35 @@ Examples:
   %(prog)s generate inventory_alerts "Alert system for low stock"
   %(prog)s health
   %(prog)s models
-        """
+        """,
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Execute command
-    exec_parser = subparsers.add_parser("execute", help="Execute a collaborative AI task")
+    exec_parser = subparsers.add_parser(
+        "execute", help="Execute a collaborative AI task"
+    )
     exec_parser.add_argument("prompt", help="The task to execute")
     exec_parser.add_argument("-c", "--context", help="Additional context")
-    exec_parser.add_argument("-a", "--agents", help="Comma-separated list of agents (claude,chatgpt,gemini,grok)")
-    exec_parser.add_argument("-i", "--iterations", type=int, default=3, help="Max iterations")
-    exec_parser.add_argument("-v", "--verbose", action="store_true", help="Show all agent responses")
+    exec_parser.add_argument(
+        "-a",
+        "--agents",
+        help="Comma-separated list of agents (claude,chatgpt,gemini,grok)",
+    )
+    exec_parser.add_argument(
+        "-i", "--iterations", type=int, default=3, help="Max iterations"
+    )
+    exec_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show all agent responses"
+    )
 
     # Build command
     build_parser = subparsers.add_parser("build", help="Invoke the Autonomous Builder")
     build_parser.add_argument("request", help="Natural language feature request")
-    build_parser.add_argument("-d", "--deploy", action="store_true", help="Auto-deploy changes")
+    build_parser.add_argument(
+        "-d", "--deploy", action="store_true", help="Auto-deploy changes"
+    )
     build_parser.add_argument("-o", "--output", help="Save result to file")
 
     # Review command
@@ -281,7 +287,9 @@ Examples:
     gen_parser = subparsers.add_parser("generate", help="Generate a feature")
     gen_parser.add_argument("name", help="Feature name (snake_case)")
     gen_parser.add_argument("description", help="Feature description")
-    gen_parser.add_argument("-t", "--type", default="crud", choices=["crud", "api", "ui", "service"])
+    gen_parser.add_argument(
+        "-t", "--type", default="crud", choices=["crud", "api", "ui", "service"]
+    )
     gen_parser.add_argument("-o", "--output", help="Save result to file")
 
     # Health command

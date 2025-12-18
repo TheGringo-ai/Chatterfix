@@ -23,7 +23,9 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def team_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def team_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Team dashboard - shows org team data for authenticated users, demo for others"""
     if not current_user:
         # Redirect unauthenticated users to demo
@@ -38,14 +40,25 @@ async def team_dashboard(request: Request, current_user: Optional[User] = Depend
             # Get team members from organization
             team_members = await firestore_manager.get_collection(
                 "users",
-                filters=[{"field": "organization_id", "operator": "==", "value": current_user.organization_id}]
+                filters=[
+                    {
+                        "field": "organization_id",
+                        "operator": "==",
+                        "value": current_user.organization_id,
+                    }
+                ],
             )
         except Exception as e:
             logger.error(f"Error loading team: {e}")
 
     return templates.TemplateResponse(
         "team_dashboard.html",
-        {"request": request, "team_members": team_members, "current_user": current_user, "is_demo": False}
+        {
+            "request": request,
+            "team_members": team_members,
+            "current_user": current_user,
+            "is_demo": False,
+        },
     )
 
 
@@ -61,7 +74,13 @@ async def get_users(current_user: Optional[User] = Depends(get_optional_current_
         try:
             users = await firestore_manager.get_collection(
                 "users",
-                filters=[{"field": "organization_id", "operator": "==", "value": current_user.organization_id}]
+                filters=[
+                    {
+                        "field": "organization_id",
+                        "operator": "==",
+                        "value": current_user.organization_id,
+                    }
+                ],
             )
         except Exception as e:
             logger.error(f"Error loading users: {e}")
@@ -70,7 +89,11 @@ async def get_users(current_user: Optional[User] = Depends(get_optional_current_
 
 
 @router.get("/users/{user_id}", response_class=HTMLResponse)
-async def user_profile(request: Request, user_id: str, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def user_profile(
+    request: Request,
+    user_id: str,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
     """User profile - redirect to demo team for now"""
     if not current_user:
         return RedirectResponse(url="/demo/team", status_code=302)
@@ -78,7 +101,9 @@ async def user_profile(request: Request, user_id: str, current_user: Optional[Us
 
 
 @router.get("/messages", response_class=JSONResponse)
-async def get_messages(current_user: Optional[User] = Depends(get_optional_current_user)):
+async def get_messages(
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
     """Get messages - redirect to demo team for unauthenticated"""
     if not current_user:
         return RedirectResponse(url="/demo/team", status_code=302)
@@ -86,7 +111,9 @@ async def get_messages(current_user: Optional[User] = Depends(get_optional_curre
 
 
 @router.get("/notifications", response_class=JSONResponse)
-async def get_notifications(current_user: Optional[User] = Depends(get_optional_current_user)):
+async def get_notifications(
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
     """Get notifications - redirect to demo team for unauthenticated"""
     if not current_user:
         return RedirectResponse(url="/demo/team", status_code=302)

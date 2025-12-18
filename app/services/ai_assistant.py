@@ -21,6 +21,7 @@ def _get_ai_router():
     if _ai_router is None:
         try:
             from .ai_router import ai_router
+
             _ai_router = ai_router
             logger.info("🧠 Smart AI Router loaded")
         except ImportError as e:
@@ -64,7 +65,7 @@ class ChatterFixAIClient:
         user_id: int = None,
         context_type: str = "general",
         force_team: bool = False,
-        fast_mode: bool = False
+        fast_mode: bool = False,
     ) -> str:
         """
         Process a user message and return an AI response
@@ -95,11 +96,13 @@ class ChatterFixAIClient:
                 context_type=context_type,
                 user_id=user_id,
                 force_team=force_team,
-                fast_mode=fast_mode
+                fast_mode=fast_mode,
             )
 
             if result.get("success"):
-                logger.info(f"✅ AI response via {result.get('model_used')} ({result.get('complexity')}) in {result.get('response_time', 'N/A')}")
+                logger.info(
+                    f"✅ AI response via {result.get('model_used')} ({result.get('complexity')}) in {result.get('response_time', 'N/A')}"
+                )
                 return result.get("response", "")
             else:
                 logger.warning(f"⚠️ AI router failed, using fallback")
@@ -118,7 +121,7 @@ class ChatterFixAIClient:
         context: str = "",
         user_id: int = None,
         context_type: str = "general",
-        fast_mode: bool = False
+        fast_mode: bool = False,
     ) -> dict:
         """
         Force full AI team processing and return detailed result
@@ -141,7 +144,7 @@ class ChatterFixAIClient:
                 context_type=context_type,
                 user_id=user_id,
                 force_team=True,
-                fast_mode=fast_mode
+                fast_mode=fast_mode,
             )
 
         # Fallback
@@ -153,13 +156,13 @@ class ChatterFixAIClient:
                 "success": True,
                 "response": response,
                 "model_used": "gemini-2.0-flash (fallback)",
-                "complexity": "unknown"
+                "complexity": "unknown",
             }
 
         return {
             "success": False,
             "response": "AI features are currently unavailable.",
-            "model_used": "none"
+            "model_used": "none",
         }
 
     async def diagnose_equipment(
@@ -167,7 +170,7 @@ class ChatterFixAIClient:
         description: str,
         equipment_type: str = "",
         symptoms: str = "",
-        user_id: int = None
+        user_id: int = None,
     ) -> dict:
         """
         Equipment diagnosis - always uses AI team for thorough analysis
@@ -182,14 +185,11 @@ Symptoms/Issues: {symptoms}
             message=description,
             context=context,
             user_id=user_id,
-            context_type="equipment_diagnosis"
+            context_type="equipment_diagnosis",
         )
 
     async def troubleshoot(
-        self,
-        issue: str,
-        asset_info: str = "",
-        user_id: int = None
+        self, issue: str, asset_info: str = "", user_id: int = None
     ) -> dict:
         """
         Troubleshooting - uses AI team for complex issues
@@ -200,7 +200,7 @@ Symptoms/Issues: {symptoms}
             message=issue,
             context=f"Asset: {asset_info}",
             user_id=user_id,
-            context_type="troubleshooting"
+            context_type="troubleshooting",
         )
 
 

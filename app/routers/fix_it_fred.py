@@ -7,10 +7,10 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
-from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -18,17 +18,22 @@ from pydantic import BaseModel
 AI_TEAM_AVAILABLE = False
 try:
     from ai_team.grpc_client import get_ai_team_client
+
     AI_TEAM_AVAILABLE = True
 except ImportError:
     # AI team not available - use fallback mock client
     def get_ai_team_client():
         """Fallback mock client when AI team is not available"""
+
         class MockAITeamClient:
             async def health_check(self):
                 return {"healthy": False, "message": "AI Team service not configured"}
+
             async def execute_fix(self, *args, **kwargs):
                 return {"success": False, "message": "AI Team service not available"}
+
         return MockAITeamClient()
+
 
 logger = logging.getLogger(__name__)
 

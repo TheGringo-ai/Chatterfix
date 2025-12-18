@@ -22,7 +22,11 @@ logger = logging.getLogger(__name__)
 
 # Import the core memory service
 try:
-    from app.services.ai_memory_integration import get_ai_memory_service, AIMemoryService
+    from app.services.ai_memory_integration import (
+        get_ai_memory_service,
+        AIMemoryService,
+    )
+
     MEMORY_SERVICE_AVAILABLE = True
 except ImportError:
     MEMORY_SERVICE_AVAILABLE = False
@@ -31,6 +35,7 @@ except ImportError:
 
 class CommandOutcome(Enum):
     """Outcome of a voice command"""
+
     SUCCESS = "success"
     PARTIAL_SUCCESS = "partial_success"
     FAILED = "failed"
@@ -41,6 +46,7 @@ class CommandOutcome(Enum):
 
 class VisionTaskType(Enum):
     """Types of vision tasks"""
+
     PART_RECOGNITION = "part_recognition"
     EQUIPMENT_INSPECTION = "equipment_inspection"
     DOCUMENT_SCAN = "document_scan"
@@ -52,6 +58,7 @@ class VisionTaskType(Enum):
 @dataclass
 class VoiceCommandRecord:
     """Record of a voice command interaction"""
+
     command_id: str
     technician_id: str
     raw_transcript: str
@@ -69,6 +76,7 @@ class VoiceCommandRecord:
 @dataclass
 class VisionAnalysisRecord:
     """Record of a vision analysis"""
+
     analysis_id: str
     technician_id: str
     task_type: VisionTaskType
@@ -85,6 +93,7 @@ class VisionAnalysisRecord:
 @dataclass
 class TechnicianProfile:
     """Profile of technician behavior patterns"""
+
     technician_id: str
     total_commands: int
     successful_commands: int
@@ -161,9 +170,7 @@ class VoiceVisionMemoryService:
 
             # Store in Firestore
             await self.memory_service.firestore.create_document(
-                self.VOICE_COMMANDS_COLLECTION,
-                command_data,
-                command_id
+                self.VOICE_COMMANDS_COLLECTION, command_data, command_id
             )
 
             # Also capture as general AI interaction
@@ -177,7 +184,7 @@ class VoiceVisionMemoryService:
                     "confidence": confidence,
                     "noise_level": noise_level,
                     "technician_id": technician_id,
-                }
+                },
             )
 
             # Update technician profile
@@ -185,11 +192,14 @@ class VoiceVisionMemoryService:
                 technician_id,
                 command_type,
                 outcome == CommandOutcome.SUCCESS,
-                confidence
+                confidence,
             )
 
             # Learn from outcome
-            if outcome == CommandOutcome.FAILED or outcome == CommandOutcome.NOT_UNDERSTOOD:
+            if (
+                outcome == CommandOutcome.FAILED
+                or outcome == CommandOutcome.NOT_UNDERSTOOD
+            ):
                 await self._capture_command_failure(
                     raw_transcript, processed_command, command_type, confidence
                 )
@@ -244,9 +254,7 @@ class VoiceVisionMemoryService:
             }
 
             await self.memory_service.firestore.create_document(
-                self.VISION_ANALYSIS_COLLECTION,
-                analysis_data,
-                analysis_id
+                self.VISION_ANALYSIS_COLLECTION, analysis_data, analysis_id
             )
 
             # If issues found, capture for learning
@@ -269,8 +277,7 @@ class VoiceVisionMemoryService:
 
         try:
             profile = await self.memory_service.firestore.get_document(
-                self.TECHNICIAN_PROFILES_COLLECTION,
-                technician_id
+                self.TECHNICIAN_PROFILES_COLLECTION, technician_id
             )
 
             if not profile:
@@ -288,9 +295,7 @@ class VoiceVisionMemoryService:
                     "last_active": datetime.now(timezone.utc),
                 }
                 await self.memory_service.firestore.create_document(
-                    self.TECHNICIAN_PROFILES_COLLECTION,
-                    profile,
-                    technician_id
+                    self.TECHNICIAN_PROFILES_COLLECTION, profile, technician_id
                 )
 
             return profile
@@ -300,10 +305,7 @@ class VoiceVisionMemoryService:
             return None
 
     async def get_command_suggestions(
-        self,
-        technician_id: str,
-        context: str = "",
-        limit: int = 5
+        self, technician_id: str, context: str = "", limit: int = 5
     ) -> List[Dict]:
         """
         Get personalized command suggestions based on history
@@ -319,7 +321,7 @@ class VoiceVisionMemoryService:
                 self.VOICE_COMMANDS_COLLECTION,
                 filters={"technician_id": technician_id},
                 limit=100,
-                order_by="-timestamp"
+                order_by="-timestamp",
             )
 
             # Analyze patterns
@@ -331,17 +333,17 @@ class VoiceVisionMemoryService:
                 command_counts[cmd_type] = command_counts.get(cmd_type, 0) + 1
 
                 if cmd.get("outcome") == "success":
-                    successful_patterns.append({
-                        "command": cmd.get("processed_command"),
-                        "type": cmd_type,
-                        "confidence": cmd.get("confidence", 0)
-                    })
+                    successful_patterns.append(
+                        {
+                            "command": cmd.get("processed_command"),
+                            "type": cmd_type,
+                            "confidence": cmd.get("confidence", 0),
+                        }
+                    )
 
             # Get most used commands
             sorted_commands = sorted(
-                command_counts.items(),
-                key=lambda x: x[1],
-                reverse=True
+                command_counts.items(), key=lambda x: x[1], reverse=True
             )[:limit]
 
             suggestions = []
@@ -350,13 +352,15 @@ class VoiceVisionMemoryService:
                 examples = [p for p in successful_patterns if p["type"] == cmd_type]
                 if examples:
                     best = max(examples, key=lambda x: x["confidence"])
-                    suggestions.append({
-                        "command_type": cmd_type,
-                        "example": best["command"],
-                        "usage_count": count,
-                        "confidence": best["confidence"],
-                        "suggestion": self._generate_suggestion_text(cmd_type)
-                    })
+                    suggestions.append(
+                        {
+                            "command_type": cmd_type,
+                            "example": best["command"],
+                            "usage_count": count,
+                            "confidence": best["confidence"],
+                            "suggestion": self._generate_suggestion_text(cmd_type),
+                        }
+                    )
 
             # Add context-based suggestions
             if context:
@@ -370,8 +374,7 @@ class VoiceVisionMemoryService:
             return self._get_default_suggestions()
 
     async def get_equipment_recognition_data(
-        self,
-        equipment_type: str
+        self, equipment_type: str
     ) -> Dict[str, Any]:
         """
         Get learned data about equipment for better recognition
@@ -384,14 +387,13 @@ class VoiceVisionMemoryService:
         try:
             # Get vision analyses for this equipment type
             analyses = await self.memory_service.firestore.get_collection(
-                self.VISION_ANALYSIS_COLLECTION,
-                limit=50,
-                order_by="-timestamp"
+                self.VISION_ANALYSIS_COLLECTION, limit=50, order_by="-timestamp"
             )
 
             # Filter for this equipment type
             relevant = [
-                a for a in analyses
+                a
+                for a in analyses
                 if equipment_type.lower() in str(a.get("detected_items", [])).lower()
             ]
 
@@ -421,17 +423,19 @@ class VoiceVisionMemoryService:
                 issue_types[issue_type] = issue_types.get(issue_type, 0) + 1
 
             common_issues = sorted(
-                issue_types.items(),
-                key=lambda x: x[1],
-                reverse=True
+                issue_types.items(), key=lambda x: x[1], reverse=True
             )[:5]
 
             return {
                 "equipment_type": equipment_type,
                 "sample_count": len(relevant),
-                "average_condition": condition_sum / condition_count if condition_count else None,
+                "average_condition": (
+                    condition_sum / condition_count if condition_count else None
+                ),
                 "common_issues": [{"type": t, "count": c} for t, c in common_issues],
-                "recognition_hints": self._generate_recognition_hints(equipment_type, relevant)
+                "recognition_hints": self._generate_recognition_hints(
+                    equipment_type, relevant
+                ),
             }
 
         except Exception as e:
@@ -439,9 +443,7 @@ class VoiceVisionMemoryService:
             return {}
 
     async def get_voice_analytics(
-        self,
-        technician_id: Optional[str] = None,
-        days: int = 30
+        self, technician_id: Optional[str] = None, days: int = 30
     ) -> Dict[str, Any]:
         """Get analytics about voice command usage"""
         if not self.memory_service:
@@ -456,7 +458,7 @@ class VoiceVisionMemoryService:
                 self.VOICE_COMMANDS_COLLECTION,
                 filters=filters,
                 limit=1000,
-                order_by="-timestamp"
+                order_by="-timestamp",
             )
 
             # Calculate analytics
@@ -471,7 +473,9 @@ class VoiceVisionMemoryService:
                 type_counts[cmd_type] = type_counts.get(cmd_type, 0) + 1
 
             # Average confidence
-            confidences = [c.get("confidence", 0) for c in commands if c.get("confidence")]
+            confidences = [
+                c.get("confidence", 0) for c in commands if c.get("confidence")
+            ]
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0
 
             # Noise level distribution
@@ -489,7 +493,9 @@ class VoiceVisionMemoryService:
                 "average_confidence": round(avg_confidence, 2),
                 "command_distribution": type_counts,
                 "noise_distribution": noise_counts,
-                "unique_technicians": len(set(c.get("technician_id") for c in commands)),
+                "unique_technicians": len(
+                    set(c.get("technician_id") for c in commands)
+                ),
             }
 
         except Exception as e:
@@ -497,11 +503,7 @@ class VoiceVisionMemoryService:
             return {}
 
     async def _update_technician_profile(
-        self,
-        technician_id: str,
-        command_type: str,
-        success: bool,
-        confidence: float
+        self, technician_id: str, command_type: str, success: bool, confidence: float
     ):
         """Update technician profile with new command data"""
         if not technician_id or not self.memory_service:
@@ -515,7 +517,9 @@ class VoiceVisionMemoryService:
             # Update counts
             profile["total_commands"] = profile.get("total_commands", 0) + 1
             if success:
-                profile["successful_commands"] = profile.get("successful_commands", 0) + 1
+                profile["successful_commands"] = (
+                    profile.get("successful_commands", 0) + 1
+                )
 
             # Update most used commands
             most_used = profile.get("most_used_commands", [])
@@ -532,9 +536,7 @@ class VoiceVisionMemoryService:
 
             # Save updated profile
             await self.memory_service.firestore.update_document(
-                self.TECHNICIAN_PROFILES_COLLECTION,
-                technician_id,
-                profile
+                self.TECHNICIAN_PROFILES_COLLECTION, technician_id, profile
             )
 
         except Exception as e:
@@ -545,7 +547,7 @@ class VoiceVisionMemoryService:
         raw_transcript: str,
         processed_command: str,
         command_type: str,
-        confidence: float
+        confidence: float,
     ):
         """Capture failed command for learning"""
         if not self.memory_service:
@@ -563,16 +565,13 @@ class VoiceVisionMemoryService:
                 },
                 error_message=f"Command not understood or failed to execute",
                 severity="low" if confidence < 0.5 else "medium",
-                resolution=f"Improve recognition for command type: {command_type}"
+                resolution=f"Improve recognition for command type: {command_type}",
             )
         except Exception as e:
             logger.debug(f"Failed to capture command failure: {e}")
 
     async def _capture_successful_pattern(
-        self,
-        raw_transcript: str,
-        processed_command: str,
-        command_type: str
+        self, raw_transcript: str, processed_command: str, command_type: str
     ):
         """Capture successful command pattern"""
         if not self.memory_service:
@@ -580,7 +579,9 @@ class VoiceVisionMemoryService:
 
         try:
             # Only capture unique patterns
-            pattern_id = self.memory_service._generate_id(f"pattern_{command_type}_{processed_command[:50]}")
+            pattern_id = self.memory_service._generate_id(
+                f"pattern_{command_type}_{processed_command[:50]}"
+            )
 
             pattern_data = {
                 "pattern_id": pattern_id,
@@ -592,9 +593,7 @@ class VoiceVisionMemoryService:
             }
 
             await self.memory_service.firestore.create_document(
-                self.COMMAND_PATTERNS_COLLECTION,
-                pattern_data,
-                pattern_id
+                self.COMMAND_PATTERNS_COLLECTION, pattern_data, pattern_id
             )
 
         except Exception as e:
@@ -604,7 +603,7 @@ class VoiceVisionMemoryService:
         self,
         detected_items: List[str],
         issues_found: List[Dict],
-        condition_score: Optional[float]
+        condition_score: Optional[float],
     ):
         """Capture equipment issues for learning"""
         if not self.memory_service or not issues_found:
@@ -624,9 +623,7 @@ class VoiceVisionMemoryService:
                 }
 
                 await self.memory_service.firestore.create_document(
-                    self.EQUIPMENT_LEARNING_COLLECTION,
-                    learning_data,
-                    learning_id
+                    self.EQUIPMENT_LEARNING_COLLECTION, learning_data, learning_id
                 )
 
         except Exception as e:
@@ -639,25 +636,31 @@ class VoiceVisionMemoryService:
         suggestions = []
 
         if "work order" in context_lower or "maintenance" in context_lower:
-            suggestions.append({
-                "command_type": "work_order",
-                "example": "Create work order for [equipment]",
-                "suggestion": "Try: 'Create work order for pump 5, high priority'"
-            })
+            suggestions.append(
+                {
+                    "command_type": "work_order",
+                    "example": "Create work order for [equipment]",
+                    "suggestion": "Try: 'Create work order for pump 5, high priority'",
+                }
+            )
 
         if "inventory" in context_lower or "parts" in context_lower:
-            suggestions.append({
-                "command_type": "inventory",
-                "example": "Check inventory for [part]",
-                "suggestion": "Try: 'Check inventory for bearing 6205'"
-            })
+            suggestions.append(
+                {
+                    "command_type": "inventory",
+                    "example": "Check inventory for [part]",
+                    "suggestion": "Try: 'Check inventory for bearing 6205'",
+                }
+            )
 
         if "inspect" in context_lower or "check" in context_lower:
-            suggestions.append({
-                "command_type": "inspection",
-                "example": "Inspect [equipment]",
-                "suggestion": "Try: 'Run inspection on conveyor belt'"
-            })
+            suggestions.append(
+                {
+                    "command_type": "inspection",
+                    "example": "Inspect [equipment]",
+                    "suggestion": "Try: 'Run inspection on conveyor belt'",
+                }
+            )
 
         return suggestions
 
@@ -667,27 +670,27 @@ class VoiceVisionMemoryService:
             {
                 "command_type": "work_order",
                 "example": "Create work order",
-                "suggestion": "Say: 'Create work order for [equipment], [priority] priority'"
+                "suggestion": "Say: 'Create work order for [equipment], [priority] priority'",
             },
             {
                 "command_type": "inventory",
                 "example": "Check inventory",
-                "suggestion": "Say: 'Check inventory for [part name or number]'"
+                "suggestion": "Say: 'Check inventory for [part name or number]'",
             },
             {
                 "command_type": "asset_status",
                 "example": "Show status",
-                "suggestion": "Say: 'Show status of [equipment name]'"
+                "suggestion": "Say: 'Show status of [equipment name]'",
             },
             {
                 "command_type": "inspection",
                 "example": "Run inspection",
-                "suggestion": "Say: 'Run inspection on [equipment]'"
+                "suggestion": "Say: 'Run inspection on [equipment]'",
             },
             {
                 "command_type": "emergency",
                 "example": "Emergency stop",
-                "suggestion": "Say: 'Emergency stop [equipment]' for urgent issues"
+                "suggestion": "Say: 'Emergency stop [equipment]' for urgent issues",
             },
         ]
 
@@ -706,9 +709,7 @@ class VoiceVisionMemoryService:
         return suggestions.get(command_type, "Voice command")
 
     def _generate_recognition_hints(
-        self,
-        equipment_type: str,
-        analyses: List[Dict]
+        self, equipment_type: str, analyses: List[Dict]
     ) -> List[str]:
         """Generate hints for better equipment recognition"""
         hints = []
@@ -721,11 +722,14 @@ class VoiceVisionMemoryService:
                     high_conf_items.append(item)
 
         if high_conf_items:
-            hints.append(f"Best recognized when labeled: {', '.join(set(high_conf_items)[:3])}")
+            hints.append(
+                f"Best recognized when labeled: {', '.join(set(high_conf_items)[:3])}"
+            )
 
         # Check lighting conditions from issues
         lighting_issues = sum(
-            1 for a in analyses
+            1
+            for a in analyses
             for i in a.get("issues_found", [])
             if "lighting" in str(i).lower()
         )

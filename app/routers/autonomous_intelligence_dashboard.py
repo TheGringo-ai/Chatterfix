@@ -23,32 +23,42 @@ Dashboard Sections:
 - Business Impact Analytics
 """
 
-import asyncio
-import json
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from datetime import datetime
+from typing import Dict, List, Any
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import random
 import uuid
 
 # Import our autonomous AI services
-from app.services.predictive_intelligence_hub import get_predictive_intelligence_hub, PredictionResult
-from app.services.autonomous_data_engine import get_autonomous_data_engine, SensorReading, AnomalyDetection
-from app.services.ai_orchestrator_advanced import get_ai_orchestrator, AITaskRequest, TaskType, AIModelType
-from app.services.intelligent_prediction_engine import get_prediction_engine, PredictionType
+from app.services.predictive_intelligence_hub import (
+    get_predictive_intelligence_hub,
+)
+from app.services.autonomous_data_engine import (
+    get_autonomous_data_engine,
+)
+from app.services.ai_orchestrator_advanced import (
+    get_ai_orchestrator,
+    AITaskRequest,
+    TaskType,
+)
+from app.services.intelligent_prediction_engine import (
+    get_prediction_engine,
+    PredictionType,
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
 
+
 @router.get("/autonomous-intelligence", response_class=HTMLResponse)
 async def autonomous_intelligence_dashboard(request: Request):
     """
     🤖 AUTONOMOUS INTELLIGENCE DASHBOARD
-    
+
     Comprehensive dashboard showcasing AI team coordination and autonomous intelligence.
     """
     try:
@@ -57,32 +67,39 @@ async def autonomous_intelligence_dashboard(request: Request):
         data_engine = await get_autonomous_data_engine()
         ai_orchestrator = await get_ai_orchestrator()
         prediction_engine = await get_prediction_engine()
-        
+
         # Get dashboard data
         hub_data = await predictive_hub.get_intelligence_dashboard_data()
         engine_status = await data_engine.get_system_status()
         orchestrator_status = await ai_orchestrator.get_orchestrator_status()
         prediction_status = await prediction_engine.get_system_status()
-        
+
         # Generate sample equipment data for demonstration
         sample_equipment = await generate_sample_equipment_data()
-        
-        return templates.TemplateResponse("autonomous_intelligence_dashboard.html", {
-            "request": request,
-            "hub_data": hub_data,
-            "engine_status": engine_status,
-            "orchestrator_status": orchestrator_status,
-            "prediction_status": prediction_status,
-            "sample_equipment": sample_equipment,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-        
+
+        return templates.TemplateResponse(
+            "autonomous_intelligence_dashboard.html",
+            {
+                "request": request,
+                "hub_data": hub_data,
+                "engine_status": engine_status,
+                "orchestrator_status": orchestrator_status,
+                "prediction_status": prediction_status,
+                "sample_equipment": sample_equipment,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            },
+        )
+
     except Exception as e:
         logger.error(f"❌ Dashboard error: {e}")
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": f"Dashboard temporarily unavailable: {str(e)}"
-        })
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": f"Dashboard temporarily unavailable: {str(e)}",
+            },
+        )
+
 
 @router.post("/autonomous-intelligence/execute-ai-task")
 async def execute_autonomous_ai_task(request_data: dict):
@@ -92,7 +109,7 @@ async def execute_autonomous_ai_task(request_data: dict):
     try:
         # Get AI orchestrator
         ai_orchestrator = await get_ai_orchestrator()
-        
+
         # Create AI task request
         task_request = AITaskRequest(
             task_id=str(uuid.uuid4()),
@@ -101,38 +118,43 @@ async def execute_autonomous_ai_task(request_data: dict):
             context=request_data.get("context", {}),
             requirements=request_data.get("requirements", {}),
             deadline=None,
-            requester="autonomous_dashboard"
+            requester="autonomous_dashboard",
         )
-        
+
         # Execute coordinated AI task
         consensus_result = await ai_orchestrator.execute_ai_task(task_request)
-        
+
         return {
             "success": True,
             "task_id": task_request.task_id,
             "consensus_result": {
                 "consensus_confidence": consensus_result.consensus_confidence,
-                "participating_models": [model.value for model in consensus_result.participating_models],
+                "participating_models": [
+                    model.value for model in consensus_result.participating_models
+                ],
                 "final_recommendation": consensus_result.final_recommendation,
                 "explanation": consensus_result.explanation,
                 "disagreement_areas": consensus_result.disagreement_areas,
-                "consensus_data": consensus_result.consensus_data
+                "consensus_data": consensus_result.consensus_data,
             },
             "ai_team_coordination": {
                 "models_involved": len(consensus_result.participating_models),
-                "consensus_method": consensus_result.consensus_data.get("method", "unknown"),
-                "coordination_success": True
+                "consensus_method": consensus_result.consensus_data.get(
+                    "method", "unknown"
+                ),
+                "coordination_success": True,
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"❌ AI task execution error: {e}")
         return {
             "success": False,
             "error": str(e),
-            "fallback_response": "AI task coordination temporarily unavailable"
+            "fallback_response": "AI task coordination temporarily unavailable",
         }
+
 
 @router.post("/autonomous-intelligence/predict-equipment-failure")
 async def predict_equipment_failure(equipment_data: dict):
@@ -143,10 +165,12 @@ async def predict_equipment_failure(equipment_data: dict):
         # Get prediction services
         predictive_hub = await get_predictive_intelligence_hub()
         prediction_engine = await get_prediction_engine()
-        
+
         # Analyze equipment health with AI team
-        health_prediction = await predictive_hub.analyze_equipment_health(equipment_data)
-        
+        health_prediction = await predictive_hub.analyze_equipment_health(
+            equipment_data
+        )
+
         # Generate detailed ML predictions
         failure_probability = await prediction_engine.generate_prediction(
             equipment_data, PredictionType.FAILURE_PROBABILITY
@@ -154,10 +178,12 @@ async def predict_equipment_failure(equipment_data: dict):
         time_to_failure = await prediction_engine.generate_prediction(
             equipment_data, PredictionType.TIME_TO_FAILURE
         )
-        
+
         # Generate maintenance recommendations
-        maintenance_recs = await predictive_hub.generate_maintenance_recommendations([health_prediction])
-        
+        maintenance_recs = await predictive_hub.generate_maintenance_recommendations(
+            [health_prediction]
+        )
+
         return {
             "success": True,
             "equipment_id": equipment_data.get("id", "unknown"),
@@ -166,20 +192,20 @@ async def predict_equipment_failure(equipment_data: dict):
                 "confidence_score": health_prediction.confidence_score,
                 "risk_level": health_prediction.risk_level,
                 "ai_model_consensus": health_prediction.ai_model_consensus,
-                "recommended_actions": health_prediction.recommended_actions
+                "recommended_actions": health_prediction.recommended_actions,
             },
             "ml_predictions": {
                 "failure_probability": {
                     "predicted_value": failure_probability.predicted_value,
                     "confidence": failure_probability.confidence_score,
                     "uncertainty_bounds": failure_probability.uncertainty_bounds,
-                    "model_ensemble": failure_probability.model_ensemble
+                    "model_ensemble": failure_probability.model_ensemble,
                 },
                 "time_to_failure": {
                     "predicted_hours": time_to_failure.predicted_value,
                     "confidence": time_to_failure.confidence_score,
-                    "feature_importance": time_to_failure.feature_importance
-                }
+                    "feature_importance": time_to_failure.feature_importance,
+                },
             },
             "maintenance_recommendations": [
                 {
@@ -187,17 +213,18 @@ async def predict_equipment_failure(equipment_data: dict):
                     "priority": rec.priority_score,
                     "estimated_cost": rec.estimated_cost,
                     "duration": rec.estimated_duration,
-                    "optimal_window": rec.optimal_scheduling_window
-                } for rec in maintenance_recs
+                    "optimal_window": rec.optimal_scheduling_window,
+                }
+                for rec in maintenance_recs
             ],
             "business_impact": {
                 "cost_impact": health_prediction.cost_impact,
                 "time_to_failure_hours": health_prediction.time_to_failure_hours,
-                "risk_assessment": health_prediction.risk_level
+                "risk_assessment": health_prediction.risk_level,
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Prediction error: {e}")
         return {
@@ -206,9 +233,10 @@ async def predict_equipment_failure(equipment_data: dict):
             "fallback_prediction": {
                 "failure_probability": 0.3,
                 "risk_level": "MEDIUM",
-                "message": "AI prediction services temporarily unavailable"
-            }
+                "message": "AI prediction services temporarily unavailable",
+            },
         }
+
 
 @router.post("/autonomous-intelligence/process-sensor-data")
 async def process_autonomous_sensor_data(sensor_data: dict):
@@ -218,23 +246,33 @@ async def process_autonomous_sensor_data(sensor_data: dict):
     try:
         # Get data engine
         data_engine = await get_autonomous_data_engine()
-        
+
         # Process sensor data with autonomous analysis
         health_snapshot = await data_engine.process_sensor_data(sensor_data)
-        
+
         # Get equipment dashboard data
         equipment_id = sensor_data.get("equipment_id", "unknown")
         dashboard_data = await data_engine.get_equipment_dashboard_data(equipment_id)
-        
+
         return {
             "success": True,
             "equipment_id": equipment_id,
             "health_snapshot": {
-                "overall_health_score": health_snapshot.overall_health_score if health_snapshot else 75,
-                "individual_metrics": health_snapshot.individual_metrics if health_snapshot else {},
-                "trend_analysis": health_snapshot.trend_analysis if health_snapshot else {},
-                "predicted_issues": health_snapshot.predicted_issues if health_snapshot else [],
-                "maintenance_urgency": health_snapshot.maintenance_urgency if health_snapshot else "LOW"
+                "overall_health_score": (
+                    health_snapshot.overall_health_score if health_snapshot else 75
+                ),
+                "individual_metrics": (
+                    health_snapshot.individual_metrics if health_snapshot else {}
+                ),
+                "trend_analysis": (
+                    health_snapshot.trend_analysis if health_snapshot else {}
+                ),
+                "predicted_issues": (
+                    health_snapshot.predicted_issues if health_snapshot else []
+                ),
+                "maintenance_urgency": (
+                    health_snapshot.maintenance_urgency if health_snapshot else "LOW"
+                ),
             },
             "autonomous_analysis": {
                 "anomalies_detected": dashboard_data["recent_alerts"],
@@ -243,13 +281,13 @@ async def process_autonomous_sensor_data(sensor_data: dict):
                 "ai_insights": [
                     "Real-time monitoring active",
                     "Predictive analysis completed",
-                    "Autonomous optimization applied"
-                ]
+                    "Autonomous optimization applied",
+                ],
             },
             "dashboard_data": dashboard_data,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Sensor processing error: {e}")
         return {
@@ -258,9 +296,10 @@ async def process_autonomous_sensor_data(sensor_data: dict):
             "fallback_analysis": {
                 "health_score": 80,
                 "status": "monitoring",
-                "message": "Autonomous data processing temporarily unavailable"
-            }
+                "message": "Autonomous data processing temporarily unavailable",
+            },
         }
+
 
 @router.get("/autonomous-intelligence/real-time-status")
 async def get_real_time_ai_status():
@@ -273,7 +312,7 @@ async def get_real_time_ai_status():
         data_engine = await get_autonomous_data_engine()
         ai_orchestrator = await get_ai_orchestrator()
         prediction_engine = await get_prediction_engine()
-        
+
         # Collect status from all services
         status_data = {
             "predictive_intelligence": await predictive_hub.get_intelligence_dashboard_data(),
@@ -284,11 +323,11 @@ async def get_real_time_ai_status():
             "active_ai_models": 6,
             "predictions_per_minute": random.randint(45, 75),
             "consensus_accuracy": random.uniform(0.88, 0.95),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
         return status_data
-        
+
     except Exception as e:
         logger.error(f"❌ Status retrieval error: {e}")
         return {
@@ -296,9 +335,10 @@ async def get_real_time_ai_status():
             "fallback_status": {
                 "overall_health": "monitoring",
                 "active_systems": "partial",
-                "timestamp": datetime.now().isoformat()
-            }
+                "timestamp": datetime.now().isoformat(),
+            },
         }
+
 
 @router.post("/autonomous-intelligence/generate-insights")
 async def generate_autonomous_insights(analysis_request: dict):
@@ -308,7 +348,7 @@ async def generate_autonomous_insights(analysis_request: dict):
     try:
         # Get AI orchestrator for coordinated analysis
         ai_orchestrator = await get_ai_orchestrator()
-        
+
         # Create comprehensive analysis task
         analysis_task = AITaskRequest(
             task_id=str(uuid.uuid4()),
@@ -317,33 +357,35 @@ async def generate_autonomous_insights(analysis_request: dict):
             context=analysis_request,
             requirements={"comprehensive_analysis": True},
             deadline=None,
-            requester="autonomous_insights"
+            requester="autonomous_insights",
         )
-        
+
         # Execute multi-AI analysis
         consensus = await ai_orchestrator.execute_ai_task(analysis_task)
-        
+
         # Generate business insights
         insights = await generate_business_insights(analysis_request, consensus)
-        
+
         return {
             "success": True,
             "analysis_id": analysis_task.task_id,
             "autonomous_insights": insights,
             "ai_coordination": {
-                "participating_models": [model.value for model in consensus.participating_models],
+                "participating_models": [
+                    model.value for model in consensus.participating_models
+                ],
                 "consensus_confidence": consensus.consensus_confidence,
-                "analysis_method": consensus.explanation
+                "analysis_method": consensus.explanation,
             },
             "actionable_recommendations": [
                 "Implement predictive maintenance schedule",
                 "Optimize resource allocation based on AI insights",
                 "Deploy autonomous monitoring for critical equipment",
-                "Establish AI-driven performance baselines"
+                "Establish AI-driven performance baselines",
             ],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Insights generation error: {e}")
         return {
@@ -351,14 +393,21 @@ async def generate_autonomous_insights(analysis_request: dict):
             "error": str(e),
             "fallback_insights": [
                 "AI insights service temporarily unavailable",
-                "Manual analysis recommended for critical decisions"
-            ]
+                "Manual analysis recommended for critical decisions",
+            ],
         }
+
 
 async def generate_sample_equipment_data() -> List[Dict[str, Any]]:
     """Generate sample equipment data for dashboard demonstration"""
-    equipment_types = ["Hydraulic Pump", "Conveyor Motor", "Compressor", "HVAC Unit", "CNC Machine"]
-    
+    equipment_types = [
+        "Hydraulic Pump",
+        "Conveyor Motor",
+        "Compressor",
+        "HVAC Unit",
+        "CNC Machine",
+    ]
+
     sample_data = []
     for i, eq_type in enumerate(equipment_types):
         equipment = {
@@ -377,14 +426,17 @@ async def generate_sample_equipment_data() -> List[Dict[str, Any]]:
             "ai_predictions": {
                 "failure_probability": random.uniform(0.1, 0.8),
                 "time_to_failure_hours": random.randint(168, 2160),
-                "maintenance_urgency": random.choice(["LOW", "MEDIUM", "HIGH"])
-            }
+                "maintenance_urgency": random.choice(["LOW", "MEDIUM", "HIGH"]),
+            },
         }
         sample_data.append(equipment)
-    
+
     return sample_data
 
-async def generate_business_insights(request_data: Dict[str, Any], consensus) -> List[Dict[str, Any]]:
+
+async def generate_business_insights(
+    request_data: Dict[str, Any], consensus
+) -> List[Dict[str, Any]]:
     """Generate business insights from AI analysis"""
     insights = [
         {
@@ -392,32 +444,33 @@ async def generate_business_insights(request_data: Dict[str, Any], consensus) ->
             "insight": "AI analysis identifies 23% reduction in unplanned downtime through predictive scheduling",
             "confidence": random.uniform(0.85, 0.95),
             "impact": "high",
-            "timeframe": "3 months"
+            "timeframe": "3 months",
         },
         {
-            "category": "Cost Optimization", 
+            "category": "Cost Optimization",
             "insight": "Multi-AI coordination enables 15% cost savings through optimized resource allocation",
             "confidence": random.uniform(0.80, 0.90),
             "impact": "medium",
-            "timeframe": "6 months"
+            "timeframe": "6 months",
         },
         {
             "category": "Performance Enhancement",
             "insight": "Autonomous monitoring improves equipment efficiency by average 12%",
             "confidence": random.uniform(0.78, 0.88),
             "impact": "high",
-            "timeframe": "ongoing"
+            "timeframe": "ongoing",
         },
         {
             "category": "Risk Mitigation",
             "insight": "Early warning system reduces catastrophic failure risk by 67%",
             "confidence": random.uniform(0.88, 0.96),
             "impact": "critical",
-            "timeframe": "immediate"
-        }
+            "timeframe": "immediate",
+        },
     ]
-    
+
     return insights
+
 
 # Create the dashboard template
 dashboard_template = """

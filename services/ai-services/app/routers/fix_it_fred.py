@@ -7,10 +7,10 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 # Import AI team client for collaborative fixing

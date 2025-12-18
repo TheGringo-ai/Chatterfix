@@ -2,10 +2,11 @@
 HTTP Client for AI Team Service
 Handles communication with the AI Team microservice for multi-model collaboration
 """
+
 import logging
 import os
 import json
-from typing import Optional, List, Dict, Any, AsyncGenerator
+from typing import Optional, List, AsyncGenerator
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -15,13 +16,15 @@ class AITeamHTTPClient:
     """HTTP client for communicating with the AI Team Service"""
 
     def __init__(self):
-        self.base_url = os.getenv("AI_TEAM_SERVICE_URL", "http://localhost:8082").rstrip('/')
+        self.base_url = os.getenv(
+            "AI_TEAM_SERVICE_URL", "http://localhost:8082"
+        ).rstrip("/")
         self.api_key = os.getenv("AI_TEAM_API_KEY", "dev-key")
         self.timeout = httpx.Timeout(300.0)  # 5 min timeout for AI tasks
         self.client = httpx.AsyncClient(
             timeout=self.timeout,
             limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
-            headers={"Authorization": f"Bearer {self.api_key}"}
+            headers={"Authorization": f"Bearer {self.api_key}"},
         )
         logger.info(f"AI Team HTTP client initialized: {self.base_url}")
 
@@ -57,7 +60,7 @@ class AITeamHTTPClient:
         context: str = "",
         required_agents: Optional[List[str]] = None,
         max_iterations: int = 3,
-        project_context: str = "ChatterFix"
+        project_context: str = "ChatterFix",
     ) -> dict:
         """
         Execute a collaborative AI task using the full AI team
@@ -78,12 +81,11 @@ class AITeamHTTPClient:
                 "context": context,
                 "required_agents": required_agents or ["claude", "chatgpt"],
                 "max_iterations": max_iterations,
-                "project_context": project_context
+                "project_context": project_context,
             }
 
             response = await self.client.post(
-                f"{self.base_url}/api/v1/execute",
-                json=payload
+                f"{self.base_url}/api/v1/execute", json=payload
             )
             response.raise_for_status()
             return response.json()
@@ -97,7 +99,7 @@ class AITeamHTTPClient:
         context: str = "",
         required_agents: Optional[List[str]] = None,
         max_iterations: int = 3,
-        project_context: str = "ChatterFix"
+        project_context: str = "ChatterFix",
     ) -> AsyncGenerator[dict, None]:
         """
         Stream a collaborative AI task with real-time responses
@@ -111,13 +113,11 @@ class AITeamHTTPClient:
                 "context": context,
                 "required_agents": required_agents or ["claude", "chatgpt"],
                 "max_iterations": max_iterations,
-                "project_context": project_context
+                "project_context": project_context,
             }
 
             async with self.client.stream(
-                "POST",
-                f"{self.base_url}/api/v1/stream",
-                json=payload
+                "POST", f"{self.base_url}/api/v1/stream", json=payload
             ) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -139,9 +139,7 @@ class AITeamHTTPClient:
             return {"error": str(e)}
 
     async def invoke_autonomous_builder(
-        self,
-        customer_request: str,
-        auto_deploy: bool = False
+        self, customer_request: str, auto_deploy: bool = False
     ) -> dict:
         """
         Invoke the Autonomous ChatterFix Builder
@@ -172,14 +170,18 @@ Instructions:
 
 Use all available AI models for best results.""",
                 "context": "Autonomous ChatterFix Builder activated",
-                "models": ["gpt4-analyst", "chatgpt-coder", "grok-coder", "grok-reasoner"],
+                "models": [
+                    "gpt4-analyst",
+                    "chatgpt-coder",
+                    "grok-coder",
+                    "grok-reasoner",
+                ],
                 "task_type": "build",
-                "project_context": "ChatterFix Autonomous Build"
+                "project_context": "ChatterFix Autonomous Build",
             }
 
             response = await self.client.post(
-                f"{self.base_url}/api/v1/execute",
-                json=payload
+                f"{self.base_url}/api/v1/execute", json=payload
             )
             response.raise_for_status()
             return response.json()
@@ -207,12 +209,11 @@ Provide specific, actionable feedback.""",
                 "context": "Code review request",
                 "required_agents": ["claude", "chatgpt"],
                 "max_iterations": 2,
-                "project_context": "ChatterFix Code Review"
+                "project_context": "ChatterFix Code Review",
             }
 
             response = await self.client.post(
-                f"{self.base_url}/api/v1/execute",
-                json=payload
+                f"{self.base_url}/api/v1/execute", json=payload
             )
             response.raise_for_status()
             return response.json()
@@ -221,10 +222,7 @@ Provide specific, actionable feedback.""",
             return {"success": False, "error": str(e)}
 
     async def generate_feature(
-        self,
-        feature_name: str,
-        description: str,
-        feature_type: str = "crud"
+        self, feature_name: str, description: str, feature_type: str = "crud"
     ) -> dict:
         """Generate a complete feature using AI team"""
         try:
@@ -245,12 +243,11 @@ Follow ChatterFix patterns and coding standards.""",
                 "context": f"Feature generation: {feature_name}",
                 "required_agents": ["claude", "chatgpt", "gemini"],
                 "max_iterations": 3,
-                "project_context": "ChatterFix Feature Generation"
+                "project_context": "ChatterFix Feature Generation",
             }
 
             response = await self.client.post(
-                f"{self.base_url}/api/v1/execute",
-                json=payload
+                f"{self.base_url}/api/v1/execute", json=payload
             )
             response.raise_for_status()
             return response.json()

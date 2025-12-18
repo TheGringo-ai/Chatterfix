@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
+
 class Asset(BaseModel):
-    id: Optional[str] = Field(None, alias='id')
+    id: Optional[str] = Field(None, alias="id")
     name: str
     description: Optional[str] = None
     asset_tag: Optional[str] = None
@@ -24,6 +25,4 @@ class Asset(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        json_encoders = {datetime: lambda v: v.isoformat()}

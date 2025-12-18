@@ -998,10 +998,31 @@
                 </button>
                 
                 {% if is_demo %}
-                <div style="background: rgba(255, 255, 255, 0.2); padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem;">
-                    <span style="background: #e74c3c; padding: 0.15rem 0.5rem; border-radius: 8px; margin-right: 0.5rem;">DEMO</span>
-                    <a href="/signup" style="color: white; text-decoration: none;">Get Full Access</a>
+                <div id="demoBanner" class="demo-time-banner" style="background: rgba(255, 107, 107, 0.3); padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="background: #e74c3c; padding: 0.15rem 0.5rem; border-radius: 8px;">DEMO</span>
+                    <span id="demoTimeRemaining" style="font-weight: 500;"><i class="fas fa-clock"></i> Loading...</span>
+                    <a href="/auth/upgrade" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 8px; font-weight: 600;">
+                        <i class="fas fa-rocket"></i> Upgrade Free
+                    </a>
                 </div>
+                <script>
+                    // Fetch demo status on page load
+                    (async function checkDemoStatus() {
+                        try {
+                            const response = await fetch('/auth/demo-status', { credentials: 'include' });
+                            const data = await response.json();
+                            const timeEl = document.getElementById('demoTimeRemaining');
+                            if (data.is_demo && !data.expired && data.display_time) {
+                                timeEl.innerHTML = '<i class="fas fa-clock"></i> ' + data.display_time + ' left';
+                            } else if (data.expired) {
+                                timeEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Expired!';
+                                document.getElementById('demoBanner').style.background = 'rgba(231, 76, 60, 0.6)';
+                            }
+                        } catch (e) {
+                            console.warn('Demo status check failed:', e);
+                        }
+                    })();
+                </script>
                 {% endif %}
 
                 {% if current_user %}

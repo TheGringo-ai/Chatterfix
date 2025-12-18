@@ -3,29 +3,24 @@ Voice Commands Service
 AI-powered voice command processing with Grok integration
 """
 
-import traceback
-from datetime import datetime, timedelta
 from typing import Optional
 import logging
 import os
 
-import httpx
 
-from app.core.firestore_db import get_db_connection
 
 # Import AI Memory Service for capturing interactions
 try:
-    from app.services.ai_memory_integration import get_ai_memory_service
+    pass
+
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
 
 # Import Voice/Vision Memory for learning from interactions
 try:
-    from app.services.voice_vision_memory import (
-        get_voice_vision_memory,
-        CommandOutcome,
-    )
+    pass
+
     VOICE_MEMORY_AVAILABLE = True
 except ImportError:
     VOICE_MEMORY_AVAILABLE = False
@@ -47,7 +42,9 @@ async def process_voice_command(voice_text: str, technician_id: Optional[str] = 
             pass
 
         priority = "Medium"
-        if any(word in voice_text.lower() for word in ["urgent", "emergency", "critical"]):
+        if any(
+            word in voice_text.lower() for word in ["urgent", "emergency", "critical"]
+        ):
             priority = "High"
 
         work_order_data = {
@@ -56,9 +53,9 @@ async def process_voice_command(voice_text: str, technician_id: Optional[str] = 
             "priority": priority,
             "status": "Open",
             "assigned_to_uid": technician_id,
-            "work_order_type": "Voice Command"
+            "work_order_type": "Voice Command",
         }
-        
+
         work_order_id = await work_order_service.create_work_order(work_order_data)
 
         return {
@@ -189,105 +186,140 @@ async def process_golden_workflow_commands(voice_text: str):
     Process Golden Workflow voice commands that trigger integrated AI workflows
     """
     voice_lower = voice_text.lower().strip()
-    
+
     # Golden Workflow 1: Complete Equipment Inspection
-    if any(phrase in voice_lower for phrase in [
-        "inspect equipment", "inspect this", "analyze equipment", 
-        "check condition", "visual inspection", "equipment analysis"
-    ]):
+    if any(
+        phrase in voice_lower
+        for phrase in [
+            "inspect equipment",
+            "inspect this",
+            "analyze equipment",
+            "check condition",
+            "visual inspection",
+            "equipment analysis",
+        ]
+    ):
         return {
             "success": True,
             "action": "golden_workflow",
-            "workflow_type": "complete_inspection", 
+            "workflow_type": "complete_inspection",
             "message": "🎯 GOLDEN WORKFLOW: Starting complete equipment inspection",
             "next_steps": [
                 "Camera interface will activate",
-                "Point camera at equipment for visual analysis", 
+                "Point camera at equipment for visual analysis",
                 "AI will analyze condition and extract details",
                 "Work order will be created automatically",
-                "Predictive maintenance will be scheduled"
+                "Predictive maintenance will be scheduled",
             ],
             "voice_guidance": "Camera ready. Point at equipment to begin inspection.",
-            "ui_action": "activate_camera_inspection_mode"
+            "ui_action": "activate_camera_inspection_mode",
         }
-    
+
     # Golden Workflow 2: Smart Gauge Reading
-    if any(phrase in voice_lower for phrase in [
-        "read gauge", "check gauge", "measure pressure", "read meter",
-        "check reading", "gauge reading", "meter reading"
-    ]):
+    if any(
+        phrase in voice_lower
+        for phrase in [
+            "read gauge",
+            "check gauge",
+            "measure pressure",
+            "read meter",
+            "check reading",
+            "gauge reading",
+            "meter reading",
+        ]
+    ):
         return {
             "success": True,
-            "action": "golden_workflow", 
+            "action": "golden_workflow",
             "workflow_type": "smart_gauge_reading",
             "message": "📊 GOLDEN WORKFLOW: Starting smart gauge reading",
             "next_steps": [
                 "Camera will focus on gauge/meter",
                 "AI will extract numerical reading",
-                "System will announce reading aloud", 
+                "System will announce reading aloud",
                 "Automatic trend analysis performed",
-                "Alert generated if reading abnormal"
+                "Alert generated if reading abnormal",
             ],
             "voice_guidance": "Point camera at gauge or meter. AI will read it for you.",
-            "ui_action": "activate_gauge_reading_mode"
+            "ui_action": "activate_gauge_reading_mode",
         }
-    
-    # Golden Workflow 3: Instant Part Lookup 
-    if any(phrase in voice_lower for phrase in [
-        "identify part", "what part is this", "scan part", "check part",
-        "part lookup", "recognize part", "part number"
-    ]):
+
+    # Golden Workflow 3: Instant Part Lookup
+    if any(
+        phrase in voice_lower
+        for phrase in [
+            "identify part",
+            "what part is this",
+            "scan part",
+            "check part",
+            "part lookup",
+            "recognize part",
+            "part number",
+        ]
+    ):
         return {
             "success": True,
             "action": "golden_workflow",
-            "workflow_type": "instant_part_lookup", 
+            "workflow_type": "instant_part_lookup",
             "message": "🔧 GOLDEN WORKFLOW: Starting instant part identification",
             "next_steps": [
-                "Camera captures part image", 
+                "Camera captures part image",
                 "AI recognizes part number",
                 "System checks inventory availability",
                 "Announces part status aloud",
-                "Creates reorder request if needed"
+                "Creates reorder request if needed",
             ],
             "voice_guidance": "Point camera at part nameplate or label for identification.",
-            "ui_action": "activate_part_recognition_mode"
+            "ui_action": "activate_part_recognition_mode",
         }
-    
+
     # Golden Workflow 4: Take Photo and Analyze
-    if any(phrase in voice_lower for phrase in [
-        "take photo and analyze", "photo analysis", "capture and analyze",
-        "take picture and check", "photograph and inspect"
-    ]):
+    if any(
+        phrase in voice_lower
+        for phrase in [
+            "take photo and analyze",
+            "photo analysis",
+            "capture and analyze",
+            "take picture and check",
+            "photograph and inspect",
+        ]
+    ):
         return {
             "success": True,
             "action": "golden_workflow",
             "workflow_type": "photo_and_analyze",
-            "message": "📸 GOLDEN WORKFLOW: Photo capture with instant AI analysis", 
+            "message": "📸 GOLDEN WORKFLOW: Photo capture with instant AI analysis",
             "next_steps": [
                 "Camera activates for photo capture",
                 "AI performs comprehensive visual analysis",
                 "Text extraction from any visible labels",
-                "Equipment condition assessment", 
-                "Automatic documentation in work order"
+                "Equipment condition assessment",
+                "Automatic documentation in work order",
             ],
             "voice_guidance": "Camera ready. Take photo when positioned correctly.",
-            "ui_action": "activate_photo_analysis_mode"
+            "ui_action": "activate_photo_analysis_mode",
         }
-    
+
     # Voice + Vision Integration Commands
-    if any(phrase in voice_lower for phrase in [
-        "what do you see", "analyze this view", "what am i looking at",
-        "describe this equipment", "tell me about this"
-    ]):
+    if any(
+        phrase in voice_lower
+        for phrase in [
+            "what do you see",
+            "analyze this view",
+            "what am i looking at",
+            "describe this equipment",
+            "tell me about this",
+        ]
+    ):
         return {
             "success": True,
             "action": "voice_vision_integration",
             "workflow_type": "live_analysis",
             "message": "👁️ AI VISION: Live equipment analysis activated",
             "voice_guidance": "I'm analyzing what you're looking at. Point camera at equipment.",
-            "ui_action": "activate_live_vision_analysis"
+            "ui_action": "activate_live_vision_analysis",
         }
-    
+
     return None
 
 
@@ -311,7 +343,7 @@ async def get_voice_command_suggestions():
         "Extract text from work order and process digitally",
         "Inspect equipment condition and update asset database",
         "Voice command: What maintenance is due today?",
-        "Golden workflow: Inspect, photograph, analyze, document"
+        "Golden workflow: Inspect, photograph, analyze, document",
     ]
 
     # Context-aware tips for technicians
@@ -323,7 +355,7 @@ async def get_voice_command_suggestions():
         "🔧 SMART WORKFLOWS: Voice commands automatically trigger appropriate AI analysis",
         "⚡ QUICK COMMANDS: 'Emergency stop', 'Check inventory', 'Create work order'",
         "🎯 CONTEXT AWARE: System understands your location and nearby equipment",
-        "📝 AUTO-DOCUMENTATION: All voice commands automatically logged and processed"
+        "📝 AUTO-DOCUMENTATION: All voice commands automatically logged and processed",
     ]
 
     return {
@@ -335,33 +367,33 @@ async def get_voice_command_suggestions():
                 "voice_trigger": "inspect equipment",
                 "steps": [
                     "Voice command activates camera",
-                    "AI analyzes visual condition", 
+                    "AI analyzes visual condition",
                     "OCR extracts equipment details",
                     "System creates detailed work order",
-                    "Predictive maintenance scheduled"
-                ]
+                    "Predictive maintenance scheduled",
+                ],
             },
             {
-                "name": "Smart Gauge Reading", 
+                "name": "Smart Gauge Reading",
                 "voice_trigger": "read gauge",
                 "steps": [
                     "Camera focuses on gauge/meter",
                     "AI extracts numerical reading",
                     "System announces reading aloud",
                     "Automatic trend analysis",
-                    "Alert if reading abnormal"
-                ]
+                    "Alert if reading abnormal",
+                ],
             },
             {
                 "name": "Instant Part Lookup",
-                "voice_trigger": "identify part", 
+                "voice_trigger": "identify part",
                 "steps": [
                     "Camera captures part image",
                     "AI recognizes part number",
                     "System checks inventory",
                     "Announces availability status",
-                    "Creates reorder if needed"
-                ]
-            }
-        ]
+                    "Creates reorder if needed",
+                ],
+            },
+        ],
     }

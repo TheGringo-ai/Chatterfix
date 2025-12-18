@@ -6,15 +6,16 @@ Firebase Authentication Only - No SQLite fallback
 
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.services.firebase_auth import firebase_auth_service
+from app.services.organization_service import OrganizationService
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,10 @@ async def login(
     if not firebase_auth_service.is_available:
         logger.error("Firebase authentication is not available")
         return JSONResponse(
-            {"success": False, "message": "Authentication service unavailable. Please contact support."},
+            {
+                "success": False,
+                "message": "Authentication service unavailable. Please contact support.",
+            },
             status_code=503,
         )
 
@@ -128,13 +132,19 @@ async def request_password_reset(
         # Firebase handles sending the password reset email
         await firebase_auth_service.send_password_reset_email(email)
         return JSONResponse(
-            {"success": True, "message": "If an account exists with this email, a password reset link has been sent."}
+            {
+                "success": True,
+                "message": "If an account exists with this email, a password reset link has been sent.",
+            }
         )
     except Exception as e:
         logger.warning(f"Password reset request failed for {email}: {e}")
         # Don't reveal if email exists or not
         return JSONResponse(
-            {"success": True, "message": "If an account exists with this email, a password reset link has been sent."}
+            {
+                "success": True,
+                "message": "If an account exists with this email, a password reset link has been sent.",
+            }
         )
 
 
@@ -176,7 +186,9 @@ async def verify_firebase_token(request: Request, token: str = Form(...)):
 async def get_firebase_user(session_token: Optional[str] = Cookie(None)):
     """Get current Firebase user data"""
     if not session_token:
-        return JSONResponse({"success": False, "message": "Not authenticated"}, status_code=401)
+        return JSONResponse(
+            {"success": False, "message": "Not authenticated"}, status_code=401
+        )
 
     try:
         user_data = await firebase_auth_service.verify_token(session_token)
@@ -208,7 +220,9 @@ async def update_firebase_profile(
 ):
     """Update Firebase user profile"""
     if not session_token:
-        return JSONResponse({"success": False, "message": "Not authenticated"}, status_code=401)
+        return JSONResponse(
+            {"success": False, "message": "Not authenticated"}, status_code=401
+        )
 
     try:
         current_user = await firebase_auth_service.verify_token(session_token)
@@ -309,7 +323,430 @@ async def get_auth_config():
             "authDomain": f"{project_id}.firebaseapp.com",
             "projectId": project_id,
             "storageBucket": f"{project_id}.appspot.com",
-        }
+        },
     }
 
     return JSONResponse(config)
+
+
+# ===== DEMO ORGANIZATION ENDPOINTS =====
+
+
+@router.post("/try-demo")
+@limiter.limit("10/minute")  # Rate limit demo creation
+async def try_demo(request: Request):
+    """Create a demo account with Firebase Anonymous Auth
+
+    This endpoint:
+    1. Accepts an anonymous Firebase ID token from the client
+    2. Creates a demo organization (expires in 48 hours)
+    3. Creates a user record linked to the demo org
+    4. Sets the session cookie
+    5. Returns success for client redirect
+    """
+    try:
+        body = await request.json()
+        id_token = body.get("idToken")
+
+        if not id_token:
+            raise HTTPException(status_code=400, detail="ID token required")
+
+        # Verify the anonymous Firebase token
+        from firebase_admin import auth
+
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+        except Exception as verify_error:
+            logger.error(f"Demo token verification failed: {verify_error}")
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+        anonymous_uid = decoded_token["uid"]
+        is_anonymous = (
+            decoded_token.get("firebase", {}).get("sign_in_provider") == "anonymous"
+        )
+
+        if not is_anonymous:
+            raise HTTPException(
+                status_code=400,
+                detail="This endpoint is for anonymous demo users only. Please use /signup for regular accounts.",
+            )
+
+        # Create demo organization using the organization service
+        org_service = OrganizationService()
+
+        try:
+            demo_org = await org_service.create_demo_organization(anonymous_uid)
+        except Exception as org_error:
+            logger.error(f"Demo organization creation failed: {org_error}")
+            raise HTTPException(
+                status_code=500, detail="Failed to create demo organization"
+            )
+
+        # Create/update user record in Firestore for the anonymous user
+        if firebase_auth_service.db:
+            user_ref = firebase_auth_service.db.collection("users").document(
+                anonymous_uid
+            )
+            from firebase_admin import firestore
+
+            user_data = {
+                "uid": anonymous_uid,
+                "email": f"demo-{anonymous_uid[:8]}@demo.chatterfix.com",
+                "display_name": f"Demo User",
+                "is_anonymous": True,
+                "is_demo": True,
+                "organization_id": demo_org["id"],
+                "organization_name": demo_org["name"],
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "last_login": firestore.SERVER_TIMESTAMP,
+                "role": "manager",  # Give demo users manager access to see all features
+                "status": "active",
+                "demo_expires_at": demo_org["expires_at"],
+            }
+            user_ref.set(user_data)
+
+        # Calculate time remaining for display
+        time_remaining = await org_service.get_demo_time_remaining(demo_org["id"])
+        hours_remaining = time_remaining // 60 if time_remaining else 48
+
+        # Create response with demo info
+        json_response = JSONResponse(
+            {
+                "success": True,
+                "demo": True,
+                "organization": {
+                    "id": demo_org["id"],
+                    "name": demo_org["name"],
+                    "expires_at": (
+                        demo_org["expires_at"].isoformat()
+                        if demo_org.get("expires_at")
+                        else None
+                    ),
+                    "hours_remaining": hours_remaining,
+                },
+                "user": {
+                    "uid": anonymous_uid,
+                    "role": "manager",
+                    "is_demo": True,
+                },
+                "message": f"Welcome to your 48-hour demo! Your workspace '{demo_org['name']}' is ready.",
+            }
+        )
+
+        # Set session cookie
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+        json_response.set_cookie(
+            key="session_token",
+            value=id_token,
+            httponly=True,
+            secure=is_production,
+            max_age=3600 * 48,  # 48 hours for demo
+            samesite="lax",
+            path="/",
+        )
+
+        logger.info(
+            f"Demo organization created: {demo_org['id']} for user {anonymous_uid}"
+        )
+        return json_response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Try demo error: {e}")
+        raise HTTPException(status_code=500, detail=f"Demo creation failed: {str(e)}")
+
+
+@router.get("/demo-status")
+async def get_demo_status(session_token: Optional[str] = Cookie(None)):
+    """Check the status of a demo account (time remaining, etc.)"""
+    if not session_token:
+        return JSONResponse({"is_demo": False}, status_code=200)
+
+    try:
+        user_data = await firebase_auth_service.verify_token(session_token)
+
+        # Check if user is a demo user
+        is_demo = user_data.get("user_data", {}).get("is_demo", False)
+
+        if not is_demo:
+            return JSONResponse({"is_demo": False}, status_code=200)
+
+        org_id = user_data.get("organization_id") or user_data.get("user_data", {}).get(
+            "organization_id"
+        )
+
+        if not org_id:
+            return JSONResponse(
+                {"is_demo": True, "error": "No organization found"}, status_code=200
+            )
+
+        # Get time remaining
+        org_service = OrganizationService()
+        time_remaining = await org_service.get_demo_time_remaining(org_id)
+
+        if time_remaining is None:
+            return JSONResponse(
+                {
+                    "is_demo": True,
+                    "expired": True,
+                    "message": "Your demo has expired. Sign up for a free account to keep your data!",
+                },
+                status_code=200,
+            )
+
+        hours = time_remaining // 60
+        minutes = time_remaining % 60
+
+        return JSONResponse(
+            {
+                "is_demo": True,
+                "expired": False,
+                "minutes_remaining": time_remaining,
+                "hours_remaining": hours,
+                "display_time": f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m",
+                "organization_id": org_id,
+                "message": f"Demo time remaining: {hours}h {minutes}m",
+            },
+            status_code=200,
+        )
+
+    except Exception as e:
+        logger.warning(f"Demo status check failed: {e}")
+        return JSONResponse({"is_demo": False, "error": str(e)}, status_code=200)
+
+
+@router.post("/upgrade-demo")
+@limiter.limit("5/minute")
+async def upgrade_demo_account(
+    request: Request, session_token: Optional[str] = Cookie(None)
+):
+    """Upgrade a demo account to a real account
+
+    This endpoint:
+    1. Links the anonymous Firebase user to an email/password
+    2. Converts the demo organization to a permanent one
+    3. Updates user records
+    """
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        body = await request.json()
+        email = body.get("email")
+        password = body.get("password")
+        full_name = body.get("full_name", "")
+        organization_name = body.get("organization_name")  # Optional new name
+
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+
+        if len(password) < 8:
+            raise HTTPException(
+                status_code=400, detail="Password must be at least 8 characters"
+            )
+
+        # Verify current session and get user data
+        user_data = await firebase_auth_service.verify_token(session_token)
+
+        # Check if user is a demo user
+        is_demo = user_data.get("user_data", {}).get("is_demo", False)
+        if not is_demo:
+            raise HTTPException(
+                status_code=400,
+                detail="This endpoint is only for demo accounts. You already have a full account.",
+            )
+
+        org_id = user_data.get("organization_id") or user_data.get("user_data", {}).get(
+            "organization_id"
+        )
+        old_uid = user_data["uid"]
+
+        if not org_id:
+            raise HTTPException(
+                status_code=400, detail="No organization found for this demo account"
+            )
+
+        # Create a new Firebase user with email/password
+        from firebase_admin import auth
+
+        try:
+            # Create new user with email/password
+            new_user = auth.create_user(
+                email=email,
+                password=password,
+                display_name=full_name or email.split("@")[0],
+                email_verified=False,
+            )
+            new_uid = new_user.uid
+
+            # Send email verification
+            try:
+                link = auth.generate_email_verification_link(email)
+                logger.info(f"Email verification link generated for {email}")
+            except Exception as verify_error:
+                logger.warning(f"Could not generate verification link: {verify_error}")
+
+        except auth.EmailAlreadyExistsError:
+            raise HTTPException(
+                status_code=400,
+                detail="An account with this email already exists. Please use a different email or login to your existing account.",
+            )
+        except Exception as create_error:
+            logger.error(f"Failed to create user: {create_error}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to create account: {str(create_error)}"
+            )
+
+        # Convert the demo organization to a real one
+        org_service = OrganizationService()
+
+        try:
+            success = await org_service.convert_demo_to_real(
+                org_id=org_id,
+                new_owner_uid=new_uid,
+                new_owner_email=email,
+                new_name=organization_name,
+            )
+
+            if not success:
+                # Rollback: delete the created user
+                auth.delete_user(new_uid)
+                raise HTTPException(
+                    status_code=500, detail="Failed to upgrade organization"
+                )
+
+        except HTTPException:
+            raise
+        except Exception as org_error:
+            # Rollback: delete the created user
+            try:
+                auth.delete_user(new_uid)
+            except Exception:
+                pass
+            logger.error(f"Organization conversion failed: {org_error}")
+            raise HTTPException(
+                status_code=500, detail="Failed to upgrade organization"
+            )
+
+        # Update user record in Firestore
+        if firebase_auth_service.db:
+            from firebase_admin import firestore
+
+            # Create new user document
+            new_user_ref = firebase_auth_service.db.collection("users").document(
+                new_uid
+            )
+            new_user_data = {
+                "uid": new_uid,
+                "email": email,
+                "display_name": full_name or email.split("@")[0],
+                "full_name": full_name,
+                "is_anonymous": False,
+                "is_demo": False,
+                "organization_id": org_id,
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "last_login": firestore.SERVER_TIMESTAMP,
+                "role": "manager",  # Keep manager role from demo
+                "status": "active",
+                "upgraded_from_demo": True,
+                "previous_anonymous_uid": old_uid,
+            }
+            new_user_ref.set(new_user_data)
+
+            # Mark old anonymous user as upgraded (don't delete for audit trail)
+            old_user_ref = firebase_auth_service.db.collection("users").document(
+                old_uid
+            )
+            old_user_ref.update(
+                {
+                    "status": "upgraded",
+                    "upgraded_to": new_uid,
+                    "upgraded_at": firestore.SERVER_TIMESTAMP,
+                }
+            )
+
+        # Delete the anonymous Firebase user (optional - keeps things clean)
+        try:
+            auth.delete_user(old_uid)
+            logger.info(f"Deleted anonymous user {old_uid} after upgrade")
+        except Exception as delete_error:
+            logger.warning(f"Could not delete anonymous user {old_uid}: {delete_error}")
+
+        # Create a custom token for the new user to sign them in
+        custom_token = auth.create_custom_token(new_uid)
+        if isinstance(custom_token, bytes):
+            custom_token = custom_token.decode("utf-8")
+
+        # Get updated org info
+        org_data = await org_service.get_organization(org_id)
+
+        return JSONResponse(
+            {
+                "success": True,
+                "message": "Account upgraded successfully! Please verify your email.",
+                "user": {
+                    "uid": new_uid,
+                    "email": email,
+                    "display_name": full_name or email.split("@")[0],
+                    "is_demo": False,
+                },
+                "organization": {
+                    "id": org_id,
+                    "name": org_data.get("name") if org_data else organization_name,
+                },
+                "custom_token": custom_token,  # Client uses this to sign in as the new user
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Demo upgrade error: {e}")
+        raise HTTPException(status_code=500, detail=f"Upgrade failed: {str(e)}")
+
+
+@router.get("/upgrade", response_class=HTMLResponse)
+async def upgrade_page(request: Request, session_token: Optional[str] = Cookie(None)):
+    """Render the demo upgrade page"""
+    # Check if user is logged in and is a demo user
+    is_demo = False
+    demo_status = None
+
+    if session_token:
+        try:
+            user_data = await firebase_auth_service.verify_token(session_token)
+            is_demo = user_data.get("user_data", {}).get("is_demo", False)
+
+            if is_demo:
+                org_id = user_data.get("organization_id") or user_data.get(
+                    "user_data", {}
+                ).get("organization_id")
+                if org_id:
+                    org_service = OrganizationService()
+                    time_remaining = await org_service.get_demo_time_remaining(org_id)
+                    if time_remaining:
+                        hours = time_remaining // 60
+                        minutes = time_remaining % 60
+                        demo_status = {
+                            "hours": hours,
+                            "minutes": minutes,
+                            "org_id": org_id,
+                            "org_name": user_data.get("user_data", {}).get(
+                                "organization_name", "Demo Workspace"
+                            ),
+                        }
+        except Exception:
+            pass
+
+    if not is_demo:
+        # Not a demo user, redirect to signup
+        return RedirectResponse(url="/signup", status_code=302)
+
+    return templates.TemplateResponse(
+        "upgrade.html",
+        {
+            "request": request,
+            "demo_status": demo_status,
+        },
+    )

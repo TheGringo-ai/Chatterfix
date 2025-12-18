@@ -26,14 +26,18 @@ logger = logging.getLogger(__name__)
 try:
     from google.cloud import speech_v1 as speech
     from google.cloud.speech_v1 import types
+
     GOOGLE_SPEECH_AVAILABLE = True
 except ImportError:
     GOOGLE_SPEECH_AVAILABLE = False
-    logger.warning("Google Cloud Speech not available. Install with: pip install google-cloud-speech")
+    logger.warning(
+        "Google Cloud Speech not available. Install with: pip install google-cloud-speech"
+    )
 
 # AI Memory integration for learning
 try:
     from app.services.ai_memory_integration import get_ai_memory_service
+
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
@@ -41,6 +45,7 @@ except ImportError:
 
 class AudioEncoding(Enum):
     """Supported audio encodings"""
+
     LINEAR16 = "LINEAR16"  # Uncompressed 16-bit signed little-endian
     FLAC = "FLAC"
     MULAW = "MULAW"
@@ -54,6 +59,7 @@ class AudioEncoding(Enum):
 @dataclass
 class TranscriptionResult:
     """Result of speech transcription"""
+
     transcript: str
     confidence: float
     language_code: str
@@ -69,6 +75,7 @@ class TranscriptionResult:
 @dataclass
 class StreamingConfig:
     """Configuration for streaming transcription"""
+
     language_code: str = "en-US"
     sample_rate_hertz: int = 16000
     encoding: AudioEncoding = AudioEncoding.LINEAR16
@@ -90,19 +97,57 @@ class SpeechToTextService:
     # Custom vocabulary for manufacturing/maintenance domain
     MANUFACTURING_VOCABULARY = [
         # Equipment types
-        "conveyor", "motor", "pump", "compressor", "valve", "actuator",
-        "bearing", "gearbox", "hydraulic", "pneumatic", "plc", "scada",
-        "hvac", "chiller", "boiler", "transformer", "switchgear",
+        "conveyor",
+        "motor",
+        "pump",
+        "compressor",
+        "valve",
+        "actuator",
+        "bearing",
+        "gearbox",
+        "hydraulic",
+        "pneumatic",
+        "plc",
+        "scada",
+        "hvac",
+        "chiller",
+        "boiler",
+        "transformer",
+        "switchgear",
         # Actions
-        "preventive", "corrective", "calibration", "lubrication",
-        "inspection", "overhaul", "replacement", "adjustment",
+        "preventive",
+        "corrective",
+        "calibration",
+        "lubrication",
+        "inspection",
+        "overhaul",
+        "replacement",
+        "adjustment",
         # Parts terminology
-        "gasket", "o-ring", "seal", "bushing", "coupling", "impeller",
-        "rotor", "stator", "windings", "capacitor", "contactor",
+        "gasket",
+        "o-ring",
+        "seal",
+        "bushing",
+        "coupling",
+        "impeller",
+        "rotor",
+        "stator",
+        "windings",
+        "capacitor",
+        "contactor",
         # Measurements
-        "psi", "rpm", "amperage", "voltage", "temperature", "vibration",
+        "psi",
+        "rpm",
+        "amperage",
+        "voltage",
+        "temperature",
+        "vibration",
         # ChatterFix specific
-        "chatterfix", "work order", "checkout", "inventory", "asset",
+        "chatterfix",
+        "work order",
+        "checkout",
+        "inventory",
+        "asset",
     ]
 
     # Wake words for hands-free activation
@@ -122,17 +167,25 @@ class SpeechToTextService:
         try:
             # Check for credentials
             creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT_ID")
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv(
+                "GCP_PROJECT_ID"
+            )
 
             if creds_path and os.path.exists(creds_path):
                 self.client = speech.SpeechClient()
-                logger.info("Google Cloud Speech client initialized with credentials file")
+                logger.info(
+                    "Google Cloud Speech client initialized with credentials file"
+                )
             elif project_id:
                 # Use default credentials (GCP environment)
                 self.client = speech.SpeechClient()
-                logger.info("Google Cloud Speech client initialized with default credentials")
+                logger.info(
+                    "Google Cloud Speech client initialized with default credentials"
+                )
             else:
-                logger.warning("No Google Cloud credentials configured. Using fallback.")
+                logger.warning(
+                    "No Google Cloud credentials configured. Using fallback."
+                )
                 self.client = None
         except Exception as e:
             logger.error(f"Failed to initialize Speech client: {e}")
@@ -145,7 +198,7 @@ class SpeechToTextService:
 
         return types.SpeechContext(
             phrases=self.MANUFACTURING_VOCABULARY + self.WAKE_WORDS,
-            boost=15.0  # Strong boost for domain-specific terms
+            boost=15.0,  # Strong boost for domain-specific terms
         )
 
     def _estimate_noise_level(self, audio_data: bytes) -> str:
@@ -158,7 +211,7 @@ class SpeechToTextService:
             import struct
 
             # Assuming 16-bit audio
-            samples = struct.unpack(f'{len(audio_data)//2}h', audio_data)
+            samples = struct.unpack(f"{len(audio_data)//2}h", audio_data)
 
             # Calculate RMS
             rms = (sum(s**2 for s in samples) / len(samples)) ** 0.5
@@ -182,7 +235,7 @@ class SpeechToTextService:
         sample_rate_hertz: int = 16000,
         language_code: str = "en-US",
         enable_word_time_offsets: bool = True,
-        model: str = "latest_long"
+        model: str = "latest_long",
     ) -> TranscriptionResult:
         """
         Transcribe audio data to text (non-streaming)
@@ -208,12 +261,16 @@ class SpeechToTextService:
 
         # Fallback if client not available
         if not self.client:
-            return await self._fallback_transcription(audio_data, language_code, start_time, noise_level)
+            return await self._fallback_transcription(
+                audio_data, language_code, start_time, noise_level
+            )
 
         try:
             # Build recognition config
             config = types.RecognitionConfig(
-                encoding=getattr(speech.RecognitionConfig.AudioEncoding, encoding.value),
+                encoding=getattr(
+                    speech.RecognitionConfig.AudioEncoding, encoding.value
+                ),
                 sample_rate_hertz=sample_rate_hertz,
                 language_code=language_code,
                 enable_automatic_punctuation=True,
@@ -230,7 +287,9 @@ class SpeechToTextService:
             response = self.client.recognize(config=config, audio=audio)
 
             processing_time = (datetime.now() - start_time).total_seconds() * 1000
-            audio_duration = len(audio_data) / (sample_rate_hertz * 2)  # 16-bit = 2 bytes per sample
+            audio_duration = len(audio_data) / (
+                sample_rate_hertz * 2
+            )  # 16-bit = 2 bytes per sample
 
             # Process results
             if not response.results:
@@ -244,7 +303,7 @@ class SpeechToTextService:
                     processing_time_ms=processing_time,
                     audio_duration_ms=audio_duration * 1000,
                     noise_level=noise_level,
-                    timestamp=datetime.now().isoformat()
+                    timestamp=datetime.now().isoformat(),
                 )
 
             # Get best result
@@ -253,22 +312,23 @@ class SpeechToTextService:
 
             # Extract word timings
             words = []
-            if enable_word_time_offsets and hasattr(best_alternative, 'words'):
+            if enable_word_time_offsets and hasattr(best_alternative, "words"):
                 for word_info in best_alternative.words:
-                    words.append({
-                        "word": word_info.word,
-                        "start_time": word_info.start_time.total_seconds(),
-                        "end_time": word_info.end_time.total_seconds(),
-                        "confidence": getattr(word_info, 'confidence', 0.0)
-                    })
+                    words.append(
+                        {
+                            "word": word_info.word,
+                            "start_time": word_info.start_time.total_seconds(),
+                            "end_time": word_info.end_time.total_seconds(),
+                            "confidence": getattr(word_info, "confidence", 0.0),
+                        }
+                    )
 
             # Build alternatives list
             alternatives = []
             for alt in best_result.alternatives:
-                alternatives.append({
-                    "transcript": alt.transcript,
-                    "confidence": alt.confidence
-                })
+                alternatives.append(
+                    {"transcript": alt.transcript, "confidence": alt.confidence}
+                )
 
             result = TranscriptionResult(
                 transcript=best_alternative.transcript,
@@ -280,7 +340,7 @@ class SpeechToTextService:
                 processing_time_ms=processing_time,
                 audio_duration_ms=audio_duration * 1000,
                 noise_level=noise_level,
-                timestamp=datetime.now().isoformat()
+                timestamp=datetime.now().isoformat(),
             )
 
             # Log to AI memory for learning
@@ -290,12 +350,14 @@ class SpeechToTextService:
 
         except Exception as e:
             logger.error(f"Transcription error: {e}")
-            return await self._fallback_transcription(audio_data, language_code, start_time, noise_level)
+            return await self._fallback_transcription(
+                audio_data, language_code, start_time, noise_level
+            )
 
     async def transcribe_audio_streaming(
         self,
         audio_generator: AsyncGenerator[bytes, None],
-        config: Optional[StreamingConfig] = None
+        config: Optional[StreamingConfig] = None,
     ) -> AsyncGenerator[TranscriptionResult, None]:
         """
         Stream audio for real-time transcription
@@ -318,7 +380,9 @@ class SpeechToTextService:
             # Build streaming config
             streaming_config = types.StreamingRecognitionConfig(
                 config=types.RecognitionConfig(
-                    encoding=getattr(speech.RecognitionConfig.AudioEncoding, config.encoding.value),
+                    encoding=getattr(
+                        speech.RecognitionConfig.AudioEncoding, config.encoding.value
+                    ),
                     sample_rate_hertz=config.sample_rate_hertz,
                     language_code=config.language_code,
                     enable_automatic_punctuation=config.enable_automatic_punctuation,
@@ -326,7 +390,9 @@ class SpeechToTextService:
                     max_alternatives=config.max_alternatives,
                     model=config.model,
                     use_enhanced=True,
-                    speech_contexts=[self._speech_context] if self._speech_context else [],
+                    speech_contexts=(
+                        [self._speech_context] if self._speech_context else []
+                    ),
                 ),
                 interim_results=config.interim_results,
                 single_utterance=config.single_utterance,
@@ -347,8 +413,7 @@ class SpeechToTextService:
 
             requests = [r async for r in request_generator()]
             responses = await loop.run_in_executor(
-                None,
-                lambda: list(self.client.streaming_recognize(requests))
+                None, lambda: list(self.client.streaming_recognize(requests))
             )
 
             for response in responses:
@@ -357,25 +422,30 @@ class SpeechToTextService:
                         best = result.alternatives[0]
 
                         words = []
-                        if config.enable_word_time_offsets and hasattr(best, 'words'):
+                        if config.enable_word_time_offsets and hasattr(best, "words"):
                             for word_info in best.words:
-                                words.append({
-                                    "word": word_info.word,
-                                    "start_time": word_info.start_time.total_seconds(),
-                                    "end_time": word_info.end_time.total_seconds(),
-                                })
+                                words.append(
+                                    {
+                                        "word": word_info.word,
+                                        "start_time": word_info.start_time.total_seconds(),
+                                        "end_time": word_info.end_time.total_seconds(),
+                                    }
+                                )
 
                         yield TranscriptionResult(
                             transcript=best.transcript,
                             confidence=best.confidence,
                             language_code=config.language_code,
                             is_final=result.is_final,
-                            alternatives=[{"transcript": a.transcript, "confidence": a.confidence} for a in result.alternatives],
+                            alternatives=[
+                                {"transcript": a.transcript, "confidence": a.confidence}
+                                for a in result.alternatives
+                            ],
                             words=words,
                             processing_time_ms=0,
                             audio_duration_ms=0,
                             noise_level="unknown",
-                            timestamp=datetime.now().isoformat()
+                            timestamp=datetime.now().isoformat(),
                         )
 
         except Exception as e:
@@ -404,11 +474,7 @@ class SpeechToTextService:
 
         return False, "", 0.0
 
-    async def transcribe_with_commands(
-        self,
-        audio_data: bytes,
-        **kwargs
-    ) -> Dict:
+    async def transcribe_with_commands(self, audio_data: bytes, **kwargs) -> Dict:
         """
         Transcribe audio and detect ChatterFix commands
 
@@ -430,7 +496,7 @@ class SpeechToTextService:
                 has_wake_word = True
                 # Extract command after wake word
                 idx = transcript_lower.find(wake_word)
-                command = result.transcript[idx + len(wake_word):].strip()
+                command = result.transcript[idx + len(wake_word) :].strip()
                 break
 
         # Detect command type
@@ -458,31 +524,48 @@ class SpeechToTextService:
         command_lower = command.lower()
 
         # Work order commands
-        if any(kw in command_lower for kw in ["work order", "create order", "new order", "maintenance request"]):
+        if any(
+            kw in command_lower
+            for kw in ["work order", "create order", "new order", "maintenance request"]
+        ):
             return "work_order"
 
         # Inventory commands
-        if any(kw in command_lower for kw in ["inventory", "parts", "checkout", "check out", "stock"]):
+        if any(
+            kw in command_lower
+            for kw in ["inventory", "parts", "checkout", "check out", "stock"]
+        ):
             return "inventory"
 
         # Asset/Equipment commands
-        if any(kw in command_lower for kw in ["asset", "equipment", "machine", "status"]):
+        if any(
+            kw in command_lower for kw in ["asset", "equipment", "machine", "status"]
+        ):
             return "asset_status"
 
         # Inspection commands
-        if any(kw in command_lower for kw in ["inspect", "inspection", "check", "examine"]):
+        if any(
+            kw in command_lower for kw in ["inspect", "inspection", "check", "examine"]
+        ):
             return "inspection"
 
         # Reading commands
-        if any(kw in command_lower for kw in ["reading", "gauge", "meter", "measurement"]):
+        if any(
+            kw in command_lower for kw in ["reading", "gauge", "meter", "measurement"]
+        ):
             return "reading"
 
         # Emergency commands
-        if any(kw in command_lower for kw in ["emergency", "urgent", "critical", "stop", "shutdown"]):
+        if any(
+            kw in command_lower
+            for kw in ["emergency", "urgent", "critical", "stop", "shutdown"]
+        ):
             return "emergency"
 
         # Query/Question commands
-        if any(kw in command_lower for kw in ["what", "where", "when", "how", "who", "?"]):
+        if any(
+            kw in command_lower for kw in ["what", "where", "when", "how", "who", "?"]
+        ):
             return "query"
 
         return "general"
@@ -492,12 +575,14 @@ class SpeechToTextService:
         audio_data: bytes,
         language_code: str,
         start_time: datetime,
-        noise_level: str
+        noise_level: str,
     ) -> TranscriptionResult:
         """Fallback transcription when Google Cloud Speech not available"""
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
 
-        logger.warning("Using fallback transcription - Google Cloud Speech not configured")
+        logger.warning(
+            "Using fallback transcription - Google Cloud Speech not configured"
+        )
 
         return TranscriptionResult(
             transcript="[Speech-to-text service not configured. Please set up Google Cloud Speech credentials.]",
@@ -509,7 +594,7 @@ class SpeechToTextService:
             processing_time_ms=processing_time,
             audio_duration_ms=len(audio_data) / 32000 * 1000,  # Rough estimate
             noise_level=noise_level,
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
         )
 
     async def _log_to_memory(self, result: TranscriptionResult):
@@ -531,7 +616,7 @@ class SpeechToTextService:
                     "processing_time_ms": result.processing_time_ms,
                     "audio_duration_ms": result.audio_duration_ms,
                     "word_count": len(result.words),
-                }
+                },
             )
         except Exception as e:
             logger.debug(f"Could not log to memory: {e}")

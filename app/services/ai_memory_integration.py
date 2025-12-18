@@ -33,11 +33,15 @@ class AIMemoryService:
 
     def _generate_session_id(self) -> str:
         """Generate unique session ID"""
-        return hashlib.md5(f"{time.time()}".encode(), usedforsecurity=False).hexdigest()[:12]
+        return hashlib.md5(
+            f"{time.time()}".encode(), usedforsecurity=False
+        ).hexdigest()[:12]
 
     def _generate_id(self, content: str) -> str:
         """Generate unique ID from content"""
-        return hashlib.md5(f"{content}{time.time()}".encode(), usedforsecurity=False).hexdigest()[:16]
+        return hashlib.md5(
+            f"{content}{time.time()}".encode(), usedforsecurity=False
+        ).hexdigest()[:16]
 
     async def capture_interaction(
         self,
@@ -115,7 +119,9 @@ class AIMemoryService:
                 "mistake_patterns", mistake_data, mistake_id
             )
 
-            logger.warning(f"🚨 Captured mistake pattern: {mistake_id} - {description[:50]}")
+            logger.warning(
+                f"🚨 Captured mistake pattern: {mistake_id} - {description[:50]}"
+            )
             return mistake_id
 
         except Exception as e:
@@ -181,9 +187,7 @@ class AIMemoryService:
                 "session_id": self._session_id,
             }
 
-            await self.firestore.create_document(
-                "code_changes", change_data, change_id
-            )
+            await self.firestore.create_document("code_changes", change_data, change_id)
 
             logger.info(f"📝 Captured code change: {change_id}")
             return change_id
@@ -196,9 +200,7 @@ class AIMemoryService:
         """Find similar mistakes from history to prevent repetition"""
         try:
             mistakes = await self.firestore.get_collection(
-                "mistake_patterns",
-                limit=20,
-                order_by="-timestamp"
+                "mistake_patterns", limit=20, order_by="-timestamp"
             )
 
             # Simple keyword matching (can be enhanced with ML)
@@ -225,9 +227,7 @@ class AIMemoryService:
         """Find relevant solutions from knowledge base"""
         try:
             solutions = await self.firestore.get_collection(
-                "solution_knowledge_base",
-                limit=20,
-                order_by="-timestamp"
+                "solution_knowledge_base", limit=20, order_by="-timestamp"
             )
 
             problem_lower = problem.lower()
@@ -250,10 +250,18 @@ class AIMemoryService:
     async def get_memory_stats(self) -> Dict[str, Any]:
         """Get statistics about the AI memory system"""
         try:
-            conversations = await self.firestore.get_collection("ai_conversations", limit=1000)
-            mistakes = await self.firestore.get_collection("mistake_patterns", limit=1000)
-            solutions = await self.firestore.get_collection("solution_knowledge_base", limit=1000)
-            code_changes = await self.firestore.get_collection("code_changes", limit=1000)
+            conversations = await self.firestore.get_collection(
+                "ai_conversations", limit=1000
+            )
+            mistakes = await self.firestore.get_collection(
+                "mistake_patterns", limit=1000
+            )
+            solutions = await self.firestore.get_collection(
+                "solution_knowledge_base", limit=1000
+            )
+            code_changes = await self.firestore.get_collection(
+                "code_changes", limit=1000
+            )
 
             return {
                 "total_conversations": len(conversations),
@@ -325,13 +333,18 @@ def with_memory_capture(model: str = "unknown"):
         async def generate_response(message: str) -> str:
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             memory = get_ai_memory_service()
 
             # Extract message from args/kwargs
-            message = kwargs.get("message") or kwargs.get("prompt") or (args[0] if args else "")
+            message = (
+                kwargs.get("message")
+                or kwargs.get("prompt")
+                or (args[0] if args else "")
+            )
             context = kwargs.get("context", "")
 
             try:
@@ -361,6 +374,7 @@ def with_memory_capture(model: str = "unknown"):
                 raise
 
         return wrapper
+
     return decorator
 
 
@@ -373,6 +387,7 @@ def capture_error(mistake_type: str = "runtime_error", severity: str = "medium")
         async def api_endpoint():
             ...
     """
+
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -391,4 +406,5 @@ def capture_error(mistake_type: str = "runtime_error", severity: str = "medium")
                 raise
 
         return wrapper
+
     return decorator

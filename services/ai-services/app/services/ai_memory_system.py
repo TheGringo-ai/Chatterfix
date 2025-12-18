@@ -10,7 +10,6 @@ Features:
 - Automatic learning from errors
 """
 
-import asyncio
 import hashlib
 import json
 import logging

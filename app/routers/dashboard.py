@@ -9,7 +9,10 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user, get_optional_current_user, get_current_user_from_cookie
+from app.auth import (
+    get_current_active_user,
+    get_current_user_from_cookie,
+)
 from app.models.user import User
 from app.core.db_adapter import get_db_adapter
 from app.services.dashboard_service import dashboard_service
@@ -81,18 +84,49 @@ async def dashboard(
         if is_demo:
             # For demo/unauthenticated users, show demo data
             work_orders = [
-                {"id": "WO-001", "title": "Emergency Generator Check", "status": "active", "priority": "critical"},
-                {"id": "WO-002", "title": "Fire Suppression Maintenance", "status": "pending", "priority": "high"},
-                {"id": "WO-003", "title": "HVAC Filter Replacement", "status": "completed", "priority": "medium"},
+                {
+                    "id": "WO-001",
+                    "title": "Emergency Generator Check",
+                    "status": "active",
+                    "priority": "critical",
+                },
+                {
+                    "id": "WO-002",
+                    "title": "Fire Suppression Maintenance",
+                    "status": "pending",
+                    "priority": "high",
+                },
+                {
+                    "id": "WO-003",
+                    "title": "HVAC Filter Replacement",
+                    "status": "completed",
+                    "priority": "medium",
+                },
             ]
             assets = [
-                {"id": "GEN-001", "name": "Emergency Generator", "status": "operational"},
-                {"id": "FIRE-001", "name": "Fire Suppression System", "status": "warning"},
+                {
+                    "id": "GEN-001",
+                    "name": "Emergency Generator",
+                    "status": "operational",
+                },
+                {
+                    "id": "FIRE-001",
+                    "name": "Fire Suppression System",
+                    "status": "warning",
+                },
                 {"id": "HVAC-001", "name": "HVAC Unit #1", "status": "operational"},
             ]
             ai_interactions = [
-                {"id": "AI-001", "message": "Predicted generator failure prevented", "timestamp": "2024-12-12"},
-                {"id": "AI-002", "message": "Optimized technician scheduling", "timestamp": "2024-12-12"},
+                {
+                    "id": "AI-001",
+                    "message": "Predicted generator failure prevented",
+                    "timestamp": "2024-12-12",
+                },
+                {
+                    "id": "AI-002",
+                    "message": "Optimized technician scheduling",
+                    "timestamp": "2024-12-12",
+                },
             ]
         else:
             # For authenticated users, show empty data with error message - NEVER show fake data
@@ -302,7 +336,9 @@ async def update_widget_config(
     widget_id: int, config: dict, current_user: User = Depends(get_current_active_user)
 ):
     """Update widget configuration"""
-    success = dashboard_service.update_widget_config(current_user.uid, widget_id, config)
+    success = dashboard_service.update_widget_config(
+        current_user.uid, widget_id, config
+    )
 
     return JSONResponse(
         content={
@@ -338,7 +374,9 @@ async def reset_dashboard(current_user: User = Depends(get_current_active_user))
 
 # Real-time data endpoints
 @router.websocket("/stream")
-async def dashboard_stream(websocket: WebSocket, user: User = Depends(get_current_active_user)):
+async def dashboard_stream(
+    websocket: WebSocket, user: User = Depends(get_current_active_user)
+):
     """WebSocket endpoint for real-time dashboard updates"""
     await websocket_manager.connect(websocket, user.uid)
 
@@ -360,7 +398,9 @@ async def dashboard_stream(websocket: WebSocket, user: User = Depends(get_curren
                 elif message.get("type") == "refresh":
                     widget_type = message.get("widget")
                     if widget_type:
-                        await real_time_feed.send_widget_updates(user.uid, [widget_type])
+                        await real_time_feed.send_widget_updates(
+                            user.uid, [widget_type]
+                        )
 
             except asyncio.TimeoutError:
                 # Send keepalive ping to maintain connection

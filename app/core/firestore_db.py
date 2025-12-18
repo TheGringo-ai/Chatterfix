@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
@@ -223,7 +222,11 @@ class FirestoreManager:
     # ==========================================
 
     async def create_org_document(
-        self, collection: str, data: Dict[str, Any], organization_id: str, doc_id: Optional[str] = None
+        self,
+        collection: str,
+        data: Dict[str, Any],
+        organization_id: str,
+        doc_id: Optional[str] = None,
     ) -> str:
         """Create a document scoped to an organization"""
         data["organization_id"] = organization_id
@@ -238,10 +241,14 @@ class FirestoreManager:
         additional_filters: Optional[List[Dict[str, Any]]] = None,
     ) -> List[Dict[str, Any]]:
         """Get documents from a collection filtered by organization_id"""
-        filters = [{"field": "organization_id", "operator": "==", "value": organization_id}]
+        filters = [
+            {"field": "organization_id", "operator": "==", "value": organization_id}
+        ]
         if additional_filters:
             filters.extend(additional_filters)
-        return await self.get_collection(collection, limit=limit, order_by=order_by, filters=filters)
+        return await self.get_collection(
+            collection, limit=limit, order_by=order_by, filters=filters
+        )
 
     async def get_org_document(
         self, collection: str, doc_id: str, organization_id: str
@@ -259,7 +266,9 @@ class FirestoreManager:
         # Verify ownership first
         doc = await self.get_document(collection, doc_id)
         if not doc or doc.get("organization_id") != organization_id:
-            logger.warning(f"Attempted to update doc {doc_id} not belonging to org {organization_id}")
+            logger.warning(
+                f"Attempted to update doc {doc_id} not belonging to org {organization_id}"
+            )
             return False
         return await self.update_document(collection, doc_id, data)
 
@@ -270,7 +279,9 @@ class FirestoreManager:
         # Verify ownership first
         doc = await self.get_document(collection, doc_id)
         if not doc or doc.get("organization_id") != organization_id:
-            logger.warning(f"Attempted to delete doc {doc_id} not belonging to org {organization_id}")
+            logger.warning(
+                f"Attempted to delete doc {doc_id} not belonging to org {organization_id}"
+            )
             return False
         return await self.delete_document(collection, doc_id)
 
@@ -278,9 +289,13 @@ class FirestoreManager:
     # CMMS-SPECIFIC ORGANIZATION-SCOPED METHODS
     # ==========================================
 
-    async def create_org_work_order(self, work_order_data: Dict[str, Any], organization_id: str) -> str:
+    async def create_org_work_order(
+        self, work_order_data: Dict[str, Any], organization_id: str
+    ) -> str:
         """Create a work order for an organization"""
-        return await self.create_org_document("work_orders", work_order_data, organization_id)
+        return await self.create_org_document(
+            "work_orders", work_order_data, organization_id
+        )
 
     async def get_org_work_orders(
         self,
@@ -292,14 +307,23 @@ class FirestoreManager:
         """Get work orders for an organization"""
         additional_filters = []
         if status:
-            additional_filters.append({"field": "status", "operator": "==", "value": status})
+            additional_filters.append(
+                {"field": "status", "operator": "==", "value": status}
+            )
         if assigned_to:
-            additional_filters.append({"field": "assigned_to", "operator": "==", "value": assigned_to})
+            additional_filters.append(
+                {"field": "assigned_to", "operator": "==", "value": assigned_to}
+            )
         return await self.get_org_collection(
-            "work_orders", organization_id, limit=limit, additional_filters=additional_filters if additional_filters else None
+            "work_orders",
+            organization_id,
+            limit=limit,
+            additional_filters=additional_filters if additional_filters else None,
         )
 
-    async def create_org_asset(self, asset_data: Dict[str, Any], organization_id: str) -> str:
+    async def create_org_asset(
+        self, asset_data: Dict[str, Any], organization_id: str
+    ) -> str:
         """Create an asset for an organization"""
         return await self.create_org_document("assets", asset_data, organization_id)
 
@@ -313,15 +337,24 @@ class FirestoreManager:
         """Get assets for an organization"""
         additional_filters = []
         if status:
-            additional_filters.append({"field": "status", "operator": "==", "value": status})
+            additional_filters.append(
+                {"field": "status", "operator": "==", "value": status}
+            )
         if location:
-            additional_filters.append({"field": "location", "operator": "==", "value": location})
+            additional_filters.append(
+                {"field": "location", "operator": "==", "value": location}
+            )
         return await self.get_org_collection(
-            "assets", organization_id, order_by="name", limit=limit,
-            additional_filters=additional_filters if additional_filters else None
+            "assets",
+            organization_id,
+            order_by="name",
+            limit=limit,
+            additional_filters=additional_filters if additional_filters else None,
         )
 
-    async def create_org_part(self, part_data: Dict[str, Any], organization_id: str) -> str:
+    async def create_org_part(
+        self, part_data: Dict[str, Any], organization_id: str
+    ) -> str:
         """Create a part/inventory item for an organization"""
         return await self.create_org_document("parts", part_data, organization_id)
 
@@ -334,28 +367,43 @@ class FirestoreManager:
         """Get parts for an organization"""
         additional_filters = []
         if category:
-            additional_filters.append({"field": "category", "operator": "==", "value": category})
+            additional_filters.append(
+                {"field": "category", "operator": "==", "value": category}
+            )
         return await self.get_org_collection(
-            "parts", organization_id, order_by="name", limit=limit,
-            additional_filters=additional_filters if additional_filters else None
+            "parts",
+            organization_id,
+            order_by="name",
+            limit=limit,
+            additional_filters=additional_filters if additional_filters else None,
         )
 
-    async def create_org_vendor(self, vendor_data: Dict[str, Any], organization_id: str) -> str:
+    async def create_org_vendor(
+        self, vendor_data: Dict[str, Any], organization_id: str
+    ) -> str:
         """Create a vendor for an organization"""
         return await self.create_org_document("vendors", vendor_data, organization_id)
 
-    async def get_org_vendors(self, organization_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def get_org_vendors(
+        self, organization_id: str, limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """Get vendors for an organization"""
-        return await self.get_org_collection("vendors", organization_id, order_by="name", limit=limit)
+        return await self.get_org_collection(
+            "vendors", organization_id, order_by="name", limit=limit
+        )
 
-    async def get_org_dashboard_data(self, organization_id: str, user_id: str) -> Dict[str, Any]:
+    async def get_org_dashboard_data(
+        self, organization_id: str, user_id: str
+    ) -> Dict[str, Any]:
         """Get dashboard data for an organization"""
         try:
             # Get recent work orders for this organization
             work_orders = await self.get_org_work_orders(organization_id, limit=10)
 
             # Get active assets for this organization
-            assets = await self.get_org_assets(organization_id, status="Active", limit=5)
+            assets = await self.get_org_assets(
+                organization_id, status="Active", limit=5
+            )
 
             # Get recent AI interactions
             ai_interactions = await self.get_collection(
@@ -385,14 +433,18 @@ class FirestoreManager:
 
     async def create_work_order(self, work_order_data: Dict[str, Any]) -> str:
         """DEPRECATED: Use create_org_work_order() for multi-tenant safety"""
-        logger.warning("DEPRECATED: create_work_order() called - use create_org_work_order() instead for multi-tenant safety")
+        logger.warning(
+            "DEPRECATED: create_work_order() called - use create_org_work_order() instead for multi-tenant safety"
+        )
         return await self.create_document("work_orders", work_order_data)
 
     async def get_work_orders(
         self, status: Optional[str] = None, assigned_to: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """DEPRECATED: Use get_org_work_orders() for multi-tenant safety - Returns ALL work orders without org filtering!"""
-        logger.warning("DEPRECATED: get_work_orders() called - use get_org_work_orders() instead for multi-tenant safety")
+        logger.warning(
+            "DEPRECATED: get_work_orders() called - use get_org_work_orders() instead for multi-tenant safety"
+        )
         # Simplified query to avoid composite index requirement
         # Apply single filter only to avoid index conflicts
         filters = []
@@ -405,21 +457,27 @@ class FirestoreManager:
         # If both filters are requested, only use status to avoid composite index requirement
 
         return await self.get_collection(
-            "work_orders", 
-            order_by="-created_at" if not filters else None,  # Remove ordering when filtering to avoid index issues
-            filters=filters if filters else None
+            "work_orders",
+            order_by=(
+                "-created_at" if not filters else None
+            ),  # Remove ordering when filtering to avoid index issues
+            filters=filters if filters else None,
         )
 
     async def create_asset(self, asset_data: Dict[str, Any]) -> str:
         """DEPRECATED: Use create_org_asset() for multi-tenant safety"""
-        logger.warning("DEPRECATED: create_asset() called - use create_org_asset() instead for multi-tenant safety")
+        logger.warning(
+            "DEPRECATED: create_asset() called - use create_org_asset() instead for multi-tenant safety"
+        )
         return await self.create_document("assets", asset_data)
 
     async def get_assets(
         self, status: Optional[str] = None, location: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """DEPRECATED: Use get_org_assets() for multi-tenant safety - Returns ALL assets without org filtering!"""
-        logger.warning("DEPRECATED: get_assets() called - use get_org_assets() instead for multi-tenant safety")
+        logger.warning(
+            "DEPRECATED: get_assets() called - use get_org_assets() instead for multi-tenant safety"
+        )
         filters = []
         if status:
             filters.append({"field": "status", "operator": "==", "value": status})
@@ -450,12 +508,14 @@ class FirestoreManager:
 
     async def get_dashboard_data(self, user_id: str) -> Dict[str, Any]:
         """DEPRECATED: Use get_org_dashboard_data() for multi-tenant safety - Returns ALL data without org filtering!"""
-        logger.warning("DEPRECATED: get_dashboard_data() called - use get_org_dashboard_data() instead for multi-tenant safety")
+        logger.warning(
+            "DEPRECATED: get_dashboard_data() called - use get_org_dashboard_data() instead for multi-tenant safety"
+        )
         try:
             # Get recent work orders (simplified query to avoid index issues)
             work_orders = await self.get_collection(
                 "work_orders",
-                limit=10
+                limit=10,
                 # Removed filters to avoid composite index requirement
             )
 
@@ -990,11 +1050,9 @@ class FirestoreSQLiteWrapper:
 
     def commit(self):
         """Commit transaction (no-op for demo)"""
-        pass
 
     def close(self):
         """Close connection (no-op)"""
-        pass
 
     def cursor(self):
         """Return a cursor (returns self for SQLite compatibility)"""

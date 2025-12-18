@@ -7,15 +7,18 @@ Converted to use Firestore database instead of SQLite
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_active_user, require_permission, get_current_user_from_cookie
+from app.auth import (
+    get_current_active_user,
+    require_permission,
+    get_current_user_from_cookie,
+)
 from app.models.user import User
-from typing import Optional as OptionalType
 from app.core.firestore_db import get_firestore_manager
 from app.services.notification_service import notification_service
 from app.services.training_generator import training_generator
@@ -23,6 +26,7 @@ from app.services.training_generator import training_generator
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
+
 
 # Redirect /training (without slash) to /training/ (with slash)
 @router.get("", response_class=HTMLResponse)
@@ -377,7 +381,9 @@ async def ask_question(question: str = Form(...), context: str = Form(None)):
 
 
 @router.post("/modules/{module_id}/start")
-async def start_training(module_id: str, current_user: User = Depends(get_current_active_user)):
+async def start_training(
+    module_id: str, current_user: User = Depends(get_current_active_user)
+):
     """Start a training module for the current user"""
     firestore_manager = get_firestore_manager()
     user_id = current_user.uid
@@ -419,9 +425,9 @@ async def start_training(module_id: str, current_user: User = Depends(get_curren
 
 @router.post("/modules/{module_id}/complete")
 async def complete_training(
-    module_id: str, 
+    module_id: str,
     score: float = Form(None),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Complete a training module for the current user"""
     firestore_manager = get_firestore_manager()
@@ -478,9 +484,9 @@ async def get_my_training(current_user: User = Depends(get_current_active_user))
 
 @router.post("/assign")
 async def assign_training(
-    user_id: str = Form(...), 
+    user_id: str = Form(...),
     module_id: str = Form(...),
-    current_user: User = Depends(require_permission("manager"))
+    current_user: User = Depends(require_permission("manager")),
 ):
     """Assign training to a user (manager only)"""
     firestore_manager = get_firestore_manager()

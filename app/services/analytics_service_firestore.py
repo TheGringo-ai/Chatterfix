@@ -8,13 +8,14 @@ when Firestore data is not available, ensuring demos always show real metrics.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
 # Import demo data service for rich mock data
 try:
     from app.services.demo_data_service import demo_data_service
+
     DEMO_DATA_AVAILABLE = True
 except ImportError:
     DEMO_DATA_AVAILABLE = False
@@ -76,13 +77,13 @@ class FirestoreAnalyticsService:
                 "critical": 1.2,
                 "high": 2.1,
                 "medium": 2.8,
-                "low": 4.5
+                "low": 4.5,
             },
             "trend": mttr_data.get("trend", "down"),
             "change_percent": mttr_data.get("change_percent", -8.5),
             "target": mttr_data.get("target", 3.0),
             "status": mttr_data.get("status", "good"),
-            "message": "MTTR improved 8.5% from last period"
+            "message": "MTTR improved 8.5% from last period",
         }
 
     async def calculate_mtbf(self, days: int = 30) -> Dict[str, Any]:
@@ -106,8 +107,8 @@ class FirestoreAnalyticsService:
                 {"cause": "Bearing wear", "count": 4, "percent": 33.3},
                 {"cause": "Electrical fault", "count": 3, "percent": 25.0},
                 {"cause": "Belt failure", "count": 2, "percent": 16.7},
-                {"cause": "Other", "count": 3, "percent": 25.0}
-            ]
+                {"cause": "Other", "count": 3, "percent": 25.0},
+            ],
         }
 
     async def calculate_asset_utilization(self, days: int = 30) -> Dict[str, Any]:
@@ -125,21 +126,17 @@ class FirestoreAnalyticsService:
             "critical_assets": 1,
             "uptime_percentage": uptime_data.get("value", 97.3),
             "downtime_hours": 65.2,
-            "status_breakdown": {
-                "Active": 46,
-                "Maintenance": 3,
-                "Inactive": 1
-            },
+            "status_breakdown": {"Active": 46, "Maintenance": 3, "Inactive": 1},
             "utilization_by_type": {
                 "Production Equipment": 92.1,
                 "HVAC": 95.8,
                 "Material Handling": 84.5,
                 "Compressors": 89.2,
-                "Electrical": 98.1
+                "Electrical": 98.1,
             },
             "trend": uptime_data.get("trend", "stable"),
             "change_percent": uptime_data.get("change_percent", 0.5),
-            "status": uptime_data.get("status", "good")
+            "status": uptime_data.get("status", "good"),
         }
 
     async def get_cost_tracking(self, days: int = 30) -> Dict[str, Any]:
@@ -149,14 +146,14 @@ class FirestoreAnalyticsService:
 
         # Generate daily cost trend for charts
         import random
+
         random.seed(42)
         daily_trend = []
         for i in range(min(days, 30)):
-            date = datetime.now() - timedelta(days=29-i)
-            daily_trend.append({
-                "date": date.strftime("%Y-%m-%d"),
-                "cost": random.randint(200, 1500)
-            })
+            date = datetime.now() - timedelta(days=29 - i)
+            daily_trend.append(
+                {"date": date.strftime("%Y-%m-%d"), "cost": random.randint(200, 1500)}
+            )
 
         return {
             "total_cost": costs.get("total_maintenance_cost", 24750.00),
@@ -173,22 +170,22 @@ class FirestoreAnalyticsService:
                 "Preventive Maintenance": 8500.00,
                 "Corrective Maintenance": 12200.00,
                 "Emergency Repairs": 2800.00,
-                "Inspections": 1250.00
+                "Inspections": 1250.00,
             },
             "costs_by_type": {
                 "Preventive": 8500,
                 "Corrective": 12250,
-                "Emergency": 4000
+                "Emergency": 4000,
             },
             "daily_trend": daily_trend,
             "cost_trend": [
                 {"month": "Oct", "cost": 22100},
                 {"month": "Nov", "cost": 23800},
-                {"month": "Dec", "cost": 24750}
+                {"month": "Dec", "cost": 24750},
             ],
             "savings_from_pm": 12500.00,
             "cost_avoidance": 35000.00,
-            "trend": "stable"
+            "trend": "stable",
         }
 
     async def get_work_order_metrics(self, days: int = 30) -> Dict[str, Any]:
@@ -200,17 +197,20 @@ class FirestoreAnalyticsService:
 
         # Generate daily trend data for charts
         import random
+
         random.seed(42)
         daily_trend = []
         for i in range(min(days, 30)):
-            date = datetime.now() - timedelta(days=29-i)
+            date = datetime.now() - timedelta(days=29 - i)
             created = random.randint(3, 8)
             completed = max(0, created - random.randint(0, 2))
-            daily_trend.append({
-                "date": date.strftime("%Y-%m-%d"),
-                "created": created,
-                "completed": completed
-            })
+            daily_trend.append(
+                {
+                    "date": date.strftime("%Y-%m-%d"),
+                    "created": created,
+                    "completed": completed,
+                }
+            )
 
         return {
             "total_created": overview.get("total_work_orders", 156),
@@ -228,30 +228,25 @@ class FirestoreAnalyticsService:
                 "Open": 12,
                 "In Progress": 18,
                 "Completed": 140,
-                "On Hold": 4
+                "On Hold": 4,
             },
-            "priority_breakdown": {
-                "Low": 45,
-                "Medium": 68,
-                "High": 32,
-                "Critical": 11
-            },
+            "priority_breakdown": {"Low": 45, "Medium": 68, "High": 32, "Critical": 11},
             "by_priority": {
                 "Critical": {"total": 8, "completed": 8, "rate": 100},
                 "High": {"total": 31, "completed": 28, "rate": 90.3},
                 "Medium": {"total": 78, "completed": 68, "rate": 87.2},
-                "Low": {"total": 39, "completed": 33, "rate": 84.6}
+                "Low": {"total": 39, "completed": 33, "rate": 84.6},
             },
             "by_type": {
                 "Preventive": 70,
                 "Corrective": 50,
                 "Emergency": 18,
-                "Inspection": 18
+                "Inspection": 18,
             },
             "daily_trend": daily_trend,
             "trend": completion_data.get("trend", "up"),
             "change_percent": completion_data.get("change_percent", 5.2),
-            "status": "good"
+            "status": "good",
         }
 
     async def get_compliance_metrics(self, days: int = 30) -> Dict[str, Any]:
@@ -275,16 +270,16 @@ class FirestoreAnalyticsService:
                 "Production": 94.2,
                 "Warehouse": 91.8,
                 "Facilities": 89.5,
-                "Utilities": 96.1
+                "Utilities": 96.1,
             },
             "upcoming_pm": [
                 {"asset": "HVAC Unit B-2", "due_in_days": 3},
                 {"asset": "Compressor C-5", "due_in_days": 5},
-                {"asset": "Production Line A", "due_in_days": 7}
+                {"asset": "Production Line A", "due_in_days": 7},
             ],
             "trend": pm_data.get("trend", "up"),
             "change_percent": pm_data.get("change_percent", 3.8),
-            "status": pm_data.get("status", "good")
+            "status": pm_data.get("status", "good"),
         }
 
     def _get_default_kpi_summary(self, days: int) -> Dict[str, Any]:
@@ -295,7 +290,10 @@ class FirestoreAnalyticsService:
             "asset_utilization": {"average_utilization": 87.3, "status": "good"},
             "cost_tracking": {"total_cost": 24750, "currency": "USD"},
             "work_order_metrics": {"total_created": 156, "completion_rate": 89.7},
-            "compliance_metrics": {"pm_compliance_rate": 92.5, "overall_compliance": 92.5},
+            "compliance_metrics": {
+                "pm_compliance_rate": 92.5,
+                "overall_compliance": 92.5,
+            },
             "generated_at": datetime.now().isoformat(),
             "period_days": days,
         }

@@ -18,7 +18,6 @@ APP_DESCRIPTION = "Enterprise QualityFix & SafetyFix with AI Team Debugging"
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -34,7 +33,9 @@ from app.services.ai_service import get_maintenance_solution
 # AI Team Configuration - MUST BE DEFINED BEFORE LOGGING
 # Fetch secrets securely
 DISABLE_AI_TEAM_GRPC_STR = get_secret_sync("DISABLE_AI_TEAM_GRPC")
-DISABLE_AI_TEAM_GRPC = DISABLE_AI_TEAM_GRPC_STR is not None and DISABLE_AI_TEAM_GRPC_STR.lower() == "true"
+DISABLE_AI_TEAM_GRPC = (
+    DISABLE_AI_TEAM_GRPC_STR is not None and DISABLE_AI_TEAM_GRPC_STR.lower() == "true"
+)
 
 AI_TEAM_SERVICE_URL = get_secret_sync("AI_TEAM_SERVICE_URL")
 USE_AI_TEAM_HTTP = AI_TEAM_SERVICE_URL is not None
@@ -100,10 +101,10 @@ extended_routers = {}
 
 # List of critical routers that must work
 critical_routers = [
-    'demo',
-    'analytics',
-    'work_orders',
-    'assets',
+    "demo",
+    "analytics",
+    "work_orders",
+    "assets",
     # NOTE: 'public_demo' REMOVED - it exposed real Firestore data without org filtering
     # demo.py provides safe mock data demo routes instead
 ]
@@ -112,76 +113,87 @@ critical_routers = [
 
 # List of all extended routers
 all_extended_routers = [
-    'ai',  # AI endpoints with memory integration
-    'ai_team_collaboration',
-    'analytics',
-    'assets',
-    'autonomous_features',
-    'autonomous_intelligence_dashboard',
-    'ceo_dashboard',
-    'demo',
-    'fix_it_fred',
-    'inventory',
-    'iot',
-    'linesmart_integration',
-    'planner',
-    'planner_simple',
+    "ai",  # AI endpoints with memory integration
+    "ai_team_collaboration",
+    "analytics",
+    "assets",
+    "autonomous_features",
+    "autonomous_intelligence_dashboard",
+    "ceo_dashboard",
+    "demo",
+    "fix_it_fred",
+    "inventory",
+    "iot",
+    "linesmart_integration",
+    "planner",
+    "planner_simple",
     # NOTE: 'public_demo' REMOVED - security risk, exposed real data without org filtering
-    'purchasing',
-    'premium_modules',
-    'quality_management',
-    'safety_management',
-    'team',
-    'training',
-    'user_management',
-    'work_orders',
+    "purchasing",
+    "premium_modules",
+    "quality_management",
+    "safety_management",
+    "team",
+    "training",
+    "user_management",
+    "work_orders",
 ]
 
 # Import each router individually to avoid one failure breaking all
 for router_name in all_extended_routers:
     # Skip AI team collaboration if disabled for Cloud Run startup fix
-    if router_name == 'ai_team_collaboration':
+    if router_name == "ai_team_collaboration":
         try:
             logger.info(f"🔍 AI Team router decision for {router_name}:")
             logger.info(f"   DISABLE_AI_TEAM_GRPC: {DISABLE_AI_TEAM_GRPC}")
             logger.info(f"   USE_AI_TEAM_HTTP: {USE_AI_TEAM_HTTP}")
             # Safe logging - avoid any potential API key issues
-            service_configured = "configured" if AI_TEAM_SERVICE_URL else "not configured"
+            service_configured = (
+                "configured" if AI_TEAM_SERVICE_URL else "not configured"
+            )
             logger.info(f"   AI_TEAM_SERVICE: {service_configured}")
-            
+
             # Use safe boolean logic
             should_skip = DISABLE_AI_TEAM_GRPC and not USE_AI_TEAM_HTTP
-            
+
             if should_skip:
-                logger.info(f"⏸️ Skipping {router_name} router (AI team service not configured)")
+                logger.info(
+                    f"⏸️ Skipping {router_name} router (AI team service not configured)"
+                )
                 continue
             else:
                 logger.info(f"✅ Will load {router_name} router")
         except Exception as e:
             logger.error(f"Error in AI team router decision: {e}")
             # Default to loading the router if there's an error in decision logic
-            logger.info(f"🔄 Defaulting to load {router_name} router due to decision error")
-        
+            logger.info(
+                f"🔄 Defaulting to load {router_name} router due to decision error"
+            )
+
     try:
-        router_module = __import__(f'app.routers.{router_name}', fromlist=[router_name])
+        router_module = __import__(f"app.routers.{router_name}", fromlist=[router_name])
         extended_routers[router_name] = router_module
         logger.info(f"✅ Successfully imported {router_name} router")
     except ImportError as e:
         logger.warning(f"❌ Warning: Could not import {router_name} router: {e}")
     except Exception as e:
         import traceback
-        logger.error(f"❌ Failed to import {router_name} router: {type(e).__name__}: {e}")
+
+        logger.error(
+            f"❌ Failed to import {router_name} router: {type(e).__name__}: {e}"
+        )
         logger.error(f"   Traceback: {traceback.format_exc()}")
 
 # Check if critical routers are available
 critical_routers_loaded = all(router in extended_routers for router in critical_routers)
 EXTENDED_ROUTERS_AVAILABLE = len(extended_routers) > 0
 
-logging.info(f"Extended routers status: {len(extended_routers)}/{len(all_extended_routers)} loaded")
+logging.info(
+    f"Extended routers status: {len(extended_routers)}/{len(all_extended_routers)} loaded"
+)
 logging.info(f"Critical routers status: {critical_routers_loaded}")
 
 # Special handling for simple planner
-SIMPLE_PLANNER_AVAILABLE = 'planner_simple' in extended_routers
+SIMPLE_PLANNER_AVAILABLE = "planner_simple" in extended_routers
 
 
 # Initialize FastAPI application
@@ -268,6 +280,7 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 # Cache-Control Middleware - Prevents browser caching issues after deployments
 from starlette.middleware.base import BaseHTTPMiddleware
 
+
 class CacheControlMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
@@ -278,6 +291,7 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response
+
 
 app.add_middleware(CacheControlMiddleware)
 
@@ -298,11 +312,13 @@ allowed_origins = [
 
 # In development, allow localhost
 if os.getenv("ENVIRONMENT", "development") == "development":
-    allowed_origins.extend([
-        "http://localhost:8080",
-        "http://localhost:3000",
-        "http://127.0.0.1:8080",
-    ])
+    allowed_origins.extend(
+        [
+            "http://localhost:8080",
+            "http://localhost:3000",
+            "http://127.0.0.1:8080",
+        ]
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -333,19 +349,26 @@ async def global_exception_handler(request: Request, exc: Exception):
     import traceback
 
     # Log the full error for debugging
-    logger.error(f"❌ Unhandled exception on {request.method} {request.url.path}: {type(exc).__name__}: {exc}")
+    logger.error(
+        f"❌ Unhandled exception on {request.method} {request.url.path}: {type(exc).__name__}: {exc}"
+    )
     logger.error(f"   Traceback: {traceback.format_exc()}")
 
     # Return user-friendly JSON response
     from fastapi.responses import JSONResponse
+
     return JSONResponse(
         status_code=500,
         content={
             "error": "An unexpected error occurred",
-            "detail": str(exc) if os.getenv("ENVIRONMENT") == "development" else "Please try again or contact support",
+            "detail": (
+                str(exc)
+                if os.getenv("ENVIRONMENT") == "development"
+                else "Please try again or contact support"
+            ),
             "path": request.url.path,
-            "method": request.method
-        }
+            "method": request.method,
+        },
     )
 
 
@@ -396,25 +419,25 @@ if CORE_ROUTERS_AVAILABLE:
 
 # Include extended functionality - ROBUST ROUTER INCLUSION
 router_descriptions = {
-    'demo': 'Demo routes',
+    "demo": "Demo routes",
     # 'public_demo' REMOVED - was security risk exposing real data
-    'work_orders': 'Work orders',
-    'assets': 'Assets',
-    'inventory': 'Inventory',
-    'team': 'Team management',
-    'planner': 'Planner functionality',
-    'purchasing': 'Purchasing and POS system',
-    'ai_team_collaboration': 'AI Team gRPC Collaboration',
-    'fix_it_fred': 'Fix it Fred AI-powered autonomous fixing',
-    'linesmart_integration': 'LineSmart training service integration',
-    'training': 'Training modules and learning management system',
-    'user_management': 'User management dashboard with Firebase Auth',
-    'analytics': 'Analytics dashboard with KPIs and reporting',
-    'planner_simple': 'Simple planner for testing',
-    'premium_modules': 'Premium Modules API - Licensing for IoT Advanced, QualityFix, SafetyFix',
-    'quality_management': 'QualityFix Premium Module - HACCP, ISO 22000, Food Safety compliance ($99/mo)',
-    'safety_management': 'SafetyFix Premium Module - OSHA compliance and incident tracking ($99/mo)',
-    'iot': 'IoT Advanced Premium Module - Real-time sensor monitoring and predictive analytics ($199/mo)'
+    "work_orders": "Work orders",
+    "assets": "Assets",
+    "inventory": "Inventory",
+    "team": "Team management",
+    "planner": "Planner functionality",
+    "purchasing": "Purchasing and POS system",
+    "ai_team_collaboration": "AI Team gRPC Collaboration",
+    "fix_it_fred": "Fix it Fred AI-powered autonomous fixing",
+    "linesmart_integration": "LineSmart training service integration",
+    "training": "Training modules and learning management system",
+    "user_management": "User management dashboard with Firebase Auth",
+    "analytics": "Analytics dashboard with KPIs and reporting",
+    "planner_simple": "Simple planner for testing",
+    "premium_modules": "Premium Modules API - Licensing for IoT Advanced, QualityFix, SafetyFix",
+    "quality_management": "QualityFix Premium Module - HACCP, ISO 22000, Food Safety compliance ($99/mo)",
+    "safety_management": "SafetyFix Premium Module - OSHA compliance and incident tracking ($99/mo)",
+    "iot": "IoT Advanced Premium Module - Real-time sensor monitoring and predictive analytics ($199/mo)",
 }
 
 # Include each router that was successfully imported
@@ -430,6 +453,7 @@ for router_name, router_module in extended_routers.items():
 if len(extended_routers) == 0:
     try:
         from app.routers import planner_simple
+
         app.include_router(planner_simple.router)
         logging.info("Fallback: Included simple planner router")
     except ImportError as e:
@@ -441,11 +465,12 @@ def is_authenticated(request: Request) -> bool:
     """Check if user has valid session - App First Logic"""
     # Check for session token in cookies
     session_token = request.cookies.get("session_token")
-    auth_token = request.cookies.get("auth_token") 
+    auth_token = request.cookies.get("auth_token")
     user_id = request.cookies.get("user_id")
-    
+
     # If any authentication indicators exist, consider them logged in
     return bool(session_token or auth_token or user_id)
+
 
 # Root endpoint - App-First Logic
 @app.get("/")
@@ -517,7 +542,10 @@ async def unified_ai_health():
 @app.get("/test-new-endpoint")
 async def test_new_endpoint():
     """Simple test to verify new endpoints are deployed"""
-    return {"status": "working", "message": "New endpoints are being deployed correctly"}
+    return {
+        "status": "working",
+        "message": "New endpoints are being deployed correctly",
+    }
 
 
 # TEMPORARY DIRECT TRAINING MODULE ENDPOINTS - BYPASS ROUTER LOADING ISSUE
@@ -528,13 +556,13 @@ async def training_module_direct(request: Request, module_id: str):
         from app.core.firestore_db import get_firestore_manager
         from fastapi.templating import Jinja2Templates
         import json
-        
+
         templates = Jinja2Templates(directory="app/templates")
         firestore_manager = get_firestore_manager()
-        
+
         # Get the training module from database
         module = await firestore_manager.get_document("training_modules", module_id)
-        
+
         if not module:
             return templates.TemplateResponse(
                 "training_module_interactive.html",
@@ -544,11 +572,11 @@ async def training_module_direct(request: Request, module_id: str):
                     "module": None,
                     "content": None,
                     "role": "technician",
-                    "role_config": {"title": "Training Module Not Found"}
+                    "role_config": {"title": "Training Module Not Found"},
                 },
-                status_code=404
+                status_code=404,
             )
-        
+
         # Parse content if available
         content = None
         if module.get("content_path"):
@@ -556,48 +584,51 @@ async def training_module_direct(request: Request, module_id: str):
                 content = json.loads(module["content_path"])
             except Exception as e:
                 logger.warning(f"Could not parse content for module {module_id}: {e}")
-                pass
-        
+
         # Convert datetime objects to strings to avoid serialization issues
         if module:
             for key, value in module.items():
-                if hasattr(value, 'strftime'):  # DateTime object
+                if hasattr(value, "strftime"):  # DateTime object
                     module[key] = value.strftime("%Y-%m-%d %H:%M:%S")
-                elif hasattr(value, '__dict__') and hasattr(value, 'timestamp'):  # Firestore timestamp
+                elif hasattr(value, "__dict__") and hasattr(
+                    value, "timestamp"
+                ):  # Firestore timestamp
                     module[key] = str(value)
-        
+
         return templates.TemplateResponse(
             "training_module_interactive.html",
             {
                 "request": request,
                 "module": module,
                 "content": content,
-                "role": "technician", 
-                "role_config": {"title": "Technician Training"}
-            }
+                "role": "technician",
+                "role_config": {"title": "Technician Training"},
+            },
         )
-        
+
     except Exception as e:
         logger.error(f"Error in direct training module endpoint: {e}")
         return HTMLResponse(
             content=f"<html><body><h1>Error</h1><p>Training module {module_id} failed to load: {str(e)}</p></body></html>",
-            status_code=500
+            status_code=500,
         )
 
 
-@app.get("/training", response_class=HTMLResponse) 
+@app.get("/training", response_class=HTMLResponse)
 async def training_center_direct(request: Request):
     """Direct training center endpoint - bypasses router loading issues"""
     try:
         from app.core.firestore_db import get_firestore_manager
         from fastapi.templating import Jinja2Templates
-        
+
         templates = Jinja2Templates(directory="app/templates")
         firestore_manager = get_firestore_manager()
-        
+
         # Get all training modules
-        modules = await firestore_manager.get_collection("training_modules", order_by="-created_at")
-        
+        modules = await firestore_manager.get_collection(
+            "training_modules", order_by="-created_at"
+        )
+
         return templates.TemplateResponse(
             "training_center.html",
             {
@@ -606,19 +637,19 @@ async def training_center_direct(request: Request):
                 "available_modules": modules,
                 "stats": {
                     "total_assigned": 0,
-                    "completed": 0, 
+                    "completed": 0,
                     "in_progress": 0,
-                    "avg_score": 0
+                    "avg_score": 0,
                 },
-                "user_id": "demo_user"
-            }
+                "user_id": "demo_user",
+            },
         )
-        
+
     except Exception as e:
         logger.error(f"Error in direct training center endpoint: {e}")
         return HTMLResponse(
             content=f"<html><body><h1>Training Center</h1><p>Failed to load: {str(e)}</p></body></html>",
-            status_code=500
+            status_code=500,
         )
 
 
@@ -633,17 +664,13 @@ async def iot_dashboard_direct(request: Request):
     """Direct IoT dashboard endpoint - premium module interface"""
     try:
         from fastapi.templating import Jinja2Templates
-        
+
         templates = Jinja2Templates(directory="app/templates")
-        
+
         return templates.TemplateResponse(
-            "iot_dashboard.html",
-            {
-                "request": request,
-                "user_id": "demo_user"
-            }
+            "iot_dashboard.html", {"request": request, "user_id": "demo_user"}
         )
-        
+
     except Exception as e:
         logger.error(f"Error in IoT dashboard endpoint: {e}")
         return HTMLResponse(
@@ -668,7 +695,7 @@ async def iot_dashboard_direct(request: Request):
             </body>
             </html>
             """,
-            status_code=500
+            status_code=500,
         )
 
 
@@ -684,7 +711,9 @@ async def debug_ai_config():
         "ai_team_config": {
             "DISABLE_AI_TEAM_GRPC": disable_grpc_debug,
             "AI_TEAM_SERVICE_URL": ai_team_service_url_debug,
-            "INTERNAL_API_KEY": internal_api_key_debug[:10] + "..." if internal_api_key_debug else None,
+            "INTERNAL_API_KEY": (
+                internal_api_key_debug[:10] + "..." if internal_api_key_debug else None
+            ),
             "USE_AI_TEAM_HTTP": ai_team_service_url_debug is not None,
         },
         "computed_values": {
@@ -703,6 +732,7 @@ async def ai_team_health_direct():
     """Direct AI team health check - bypasses router loading issues"""
     try:
         import httpx
+
         ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
         if not ai_service_url:
             return {"status": "error", "message": "AI team service URL not configured"}
@@ -716,13 +746,13 @@ async def ai_team_health_direct():
                     "message": "AI team service is healthy via direct integration",
                     "service_response": service_data,
                     "integration": "working",
-                    "bypass": "router_loading_issue"
+                    "bypass": "router_loading_issue",
                 }
             else:
                 return {
                     "status": "error",
                     "message": f"AI team service returned {response.status_code}",
-                    "response": response.text[:200]
+                    "response": response.text[:200],
                 }
     except Exception as e:
         return {
@@ -736,6 +766,7 @@ async def ai_team_models_direct():
     """Direct AI team models endpoint - bypasses router loading issues"""
     try:
         import httpx
+
         ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
         api_key = get_secret_sync("INTERNAL_API_KEY")
 
@@ -745,40 +776,8 @@ async def ai_team_models_direct():
         headers = {"Authorization": f"Bearer {api_key}"}
 
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{ai_service_url}/api/v1/models", headers=headers)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return {
-                    "status": "error",
-                    "message": f"AI team service returned {response.status_code}",
-                    "response": response.text[:200]
-                }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Failed to get AI models: {str(e)}"
-        }
-
-
-@app.post("/ai-team/execute")
-async def ai_team_execute_direct(request_data: dict):
-    """Direct AI team execution endpoint - bypasses router loading issues"""
-    try:
-        import httpx
-        ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
-        api_key = get_secret_sync("INTERNAL_API_KEY")
-        
-        if not ai_service_url or not api_key:
-            return {"status": "error", "message": "AI team service not configured"}
-        
-        headers = {"Authorization": f"Bearer {api_key}"}
-        
-        async with httpx.AsyncClient(timeout=60.0) as client:  # Longer timeout for AI processing
-            response = await client.post(
-                f"{ai_service_url}/api/v1/execute",
-                json=request_data,
-                headers=headers
+            response = await client.get(
+                f"{ai_service_url}/api/v1/models", headers=headers
             )
             if response.status_code == 200:
                 return response.json()
@@ -786,13 +785,46 @@ async def ai_team_execute_direct(request_data: dict):
                 return {
                     "status": "error",
                     "message": f"AI team service returned {response.status_code}",
-                    "response": response.text[:200]
+                    "response": response.text[:200],
+                }
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to get AI models: {str(e)}"}
+
+
+@app.post("/ai-team/execute")
+async def ai_team_execute_direct(request_data: dict):
+    """Direct AI team execution endpoint - bypasses router loading issues"""
+    try:
+        import httpx
+
+        ai_service_url = get_secret_sync("AI_TEAM_SERVICE_URL")
+        api_key = get_secret_sync("INTERNAL_API_KEY")
+
+        if not ai_service_url or not api_key:
+            return {"status": "error", "message": "AI team service not configured"}
+
+        headers = {"Authorization": f"Bearer {api_key}"}
+
+        async with httpx.AsyncClient(
+            timeout=60.0
+        ) as client:  # Longer timeout for AI processing
+            response = await client.post(
+                f"{ai_service_url}/api/v1/execute", json=request_data, headers=headers
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return {
+                    "status": "error",
+                    "message": f"AI team service returned {response.status_code}",
+                    "response": response.text[:200],
                 }
     except Exception as e:
         return {
-            "status": "error", 
-            "message": f"Failed to execute AI team task: {str(e)}"
+            "status": "error",
+            "message": f"Failed to execute AI team task: {str(e)}",
         }
+
 
 @app.post("/unified-ai/process")
 async def unified_ai_process(request_data: dict):
@@ -1108,23 +1140,26 @@ async def unified_ai_dashboard():
 # Fix-it-Fred AI Chat Endpoints
 class MaintenanceConsultationRequest(BaseModel):
     """Request model for Fix-it-Fred consultation"""
+
     problem_description: str = Field(
-        ..., 
+        ...,
         description="Detailed description of the maintenance issue",
-        json_schema_extra={"example": "Hydraulic pump is overheating and making loud noises"}
+        json_schema_extra={
+            "example": "Hydraulic pump is overheating and making loud noises"
+        },
     )
     equipment_type: str = Field(
         None,
         description="Type of equipment (pump, motor, conveyor, etc.)",
-        json_schema_extra={"example": "Hydraulic Pump"}
+        json_schema_extra={"example": "Hydraulic Pump"},
     )
     priority: str = Field(
-        None,
-        description="Issue priority level",
-        json_schema_extra={"example": "High"}
+        None, description="Issue priority level", json_schema_extra={"example": "High"}
     )
 
+
 # Root redirect to demo - REMOVED DUPLICATE (line 377 already defines root route)
+
 
 @app.get("/urgent-count", tags=["API"])
 @app.get("/api/work-orders/urgent-count", tags=["API"])
@@ -1143,20 +1178,35 @@ async def api_work_orders():
     """Get work orders list for API consumers"""
     try:
         from app.core.firestore_db import get_firestore_manager
+
         firestore_manager = get_firestore_manager()
         work_orders = await firestore_manager.get_collection("work_orders", limit=50)
-        return {"work_orders": work_orders, "count": len(work_orders), "status": "success"}
+        return {
+            "work_orders": work_orders,
+            "count": len(work_orders),
+            "status": "success",
+        }
     except Exception as e:
         logger.error(f"Error fetching work orders: {e}")
         # Fallback demo data
         return {
             "work_orders": [
-                {"id": "WO-001", "title": "HVAC Maintenance", "status": "open", "priority": "high"},
-                {"id": "WO-002", "title": "Conveyor Belt Inspection", "status": "in_progress", "priority": "medium"},
+                {
+                    "id": "WO-001",
+                    "title": "HVAC Maintenance",
+                    "status": "open",
+                    "priority": "high",
+                },
+                {
+                    "id": "WO-002",
+                    "title": "Conveyor Belt Inspection",
+                    "status": "in_progress",
+                    "priority": "medium",
+                },
             ],
             "count": 2,
             "status": "demo",
-            "message": str(e)
+            "message": str(e),
         }
 
 
@@ -1165,6 +1215,7 @@ async def api_health_all():
     """Comprehensive health check for all services"""
     try:
         from app.core.firestore_db import get_firestore_manager
+
         firestore_manager = get_firestore_manager()
 
         # Check database connectivity
@@ -1174,53 +1225,67 @@ async def api_health_all():
             "status": "healthy",
             "services": {
                 "api": {"status": "healthy", "version": APP_VERSION},
-                "database": {"status": "healthy" if db_healthy else "degraded", "type": "firestore"},
+                "database": {
+                    "status": "healthy" if db_healthy else "degraded",
+                    "type": "firestore",
+                },
                 "ai_team": {"status": "configured" if USE_AI_TEAM_HTTP else "disabled"},
             },
-            "timestamp": __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": __import__("datetime")
+            .datetime.now()
+            .strftime("%Y-%m-%d %H:%M:%S"),
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return {"status": "degraded", "error": str(e)}
 
+
 @app.post("/chat/consult", tags=["Fix-it-Fred AI"])
 async def consult_fix_it_fred(request: MaintenanceConsultationRequest):
     """
     🔧 Consult Fix-it-Fred for maintenance solutions
-    
+
     Send a maintenance problem to Fred, our veteran AI maintenance technician.
     Fred will provide safety-first, practical solutions with prevention tips.
     """
     try:
         logger.info(f"Fix-it-Fred consultation: {request.problem_description[:50]}...")
-        
+
         solution = await get_maintenance_solution(
             problem_description=request.problem_description,
             equipment_type=request.equipment_type,
-            priority=request.priority
+            priority=request.priority,
         )
-        
+
         return solution
-        
+
     except Exception as e:
         logger.error(f"Fix-it-Fred error: {e}")
-        raise HTTPException(status_code=500, detail=f"Fred encountered an error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Fred encountered an error: {str(e)}"
+        )
+
 
 @app.get("/chat/health", tags=["Fix-it-Fred AI"])
 async def fred_health_check():
     """🔧 Check Fix-it-Fred's availability status"""
     try:
         from app.services.ai_service import fix_it_fred_service
-        
+
         has_openai = fix_it_fred_service.client is not None
-        
+
         return {
             "fred_status": "ready" if has_openai else "demo_mode",
             "ai_enabled": has_openai,
-            "message": "Fred is ready to help!" if has_openai else "Fred is in demo mode - configure OPENAI_API_KEY for full AI"
+            "message": (
+                "Fred is ready to help!"
+                if has_openai
+                else "Fred is in demo mode - configure OPENAI_API_KEY for full AI"
+            ),
         }
     except Exception as e:
         return {"fred_status": "error", "message": f"Fred is having issues: {str(e)}"}
+
 
 @app.get("/debug/version")
 async def debug_version():

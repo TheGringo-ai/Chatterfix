@@ -32,17 +32,27 @@ class ApprovalRequest(BaseModel):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def purchasing_main(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def purchasing_main(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Main purchaser command center - landing page"""
     is_demo = current_user is None
-    return templates.TemplateResponse("purchaser_dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "purchaser_dashboard.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/tools", response_class=HTMLResponse)
-async def purchasing_tools(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def purchasing_tools(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Purchasing tools - PO creation, parts, document scanner, barcodes"""
     is_demo = current_user is None
-    return templates.TemplateResponse("enhanced_purchasing.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "enhanced_purchasing.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/purchase-orders")

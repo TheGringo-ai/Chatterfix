@@ -12,8 +12,6 @@ Run:
     python3 scripts/fix_get_db_imports.py
 """
 
-import io
-import os
 import re
 from pathlib import Path
 

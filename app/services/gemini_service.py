@@ -18,14 +18,15 @@ except ImportError as e:
 
 # Service account configuration - check multiple env vars
 GEMINI_SERVICE_ACCOUNT_PATH = (
-    os.getenv("GEMINI_SERVICE_ACCOUNT_PATH") or
-    os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or
-    "secrets/fredfix-045ebcc1422c.json"
+    os.getenv("GEMINI_SERVICE_ACCOUNT_PATH")
+    or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    or "secrets/fredfix-045ebcc1422c.json"
 )
 
 # Import AI Memory Service for capturing interactions
 try:
     from app.services.ai_memory_integration import get_ai_memory_service
+
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
@@ -49,14 +50,21 @@ class GeminiService:
             try:
                 abs_path = os.path.abspath(GEMINI_SERVICE_ACCOUNT_PATH)
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = abs_path
-                self.credentials = service_account.Credentials.from_service_account_file(
-                    abs_path,
-                    scopes=['https://www.googleapis.com/auth/generative-language', 'https://www.googleapis.com/auth/cloud-platform']
+                self.credentials = (
+                    service_account.Credentials.from_service_account_file(
+                        abs_path,
+                        scopes=[
+                            "https://www.googleapis.com/auth/generative-language",
+                            "https://www.googleapis.com/auth/cloud-platform",
+                        ],
+                    )
                 )
                 genai.configure(credentials=self.credentials)
                 self.using_service_account = True
                 self.available = True
-                logger.info(f"✨ Gemini AI initialized with service account: {GEMINI_SERVICE_ACCOUNT_PATH}")
+                logger.info(
+                    f"✨ Gemini AI initialized with service account: {GEMINI_SERVICE_ACCOUNT_PATH}"
+                )
                 return  # Explicitly stop if service account is used
 
             except Exception as e:
@@ -79,12 +87,16 @@ class GeminiService:
                 logger.error(f"❌ Failed to initialize Gemini AI with API key: {e}")
                 self.available = False
         else:
-            logger.info("ℹ️ Neither service account nor API key is configured. AI service is unavailable.")
+            logger.info(
+                "ℹ️ Neither service account nor API key is configured. AI service is unavailable."
+            )
             self.available = False
 
     def is_available(self) -> bool:
         """Check if the Gemini service is properly configured and available"""
-        return self.available and (self.using_service_account or bool(self.default_api_key))
+        return self.available and (
+            self.using_service_account or bool(self.default_api_key)
+        )
 
     def _get_api_key(self, user_id: Optional[int] = None) -> Optional[str]:
         """
@@ -155,7 +167,7 @@ class GeminiService:
                         model="gemini-2.5-flash",
                         context=context[:500],
                         success=True,
-                        metadata={"user_id": user_id}
+                        metadata={"user_id": user_id},
                     )
                 except Exception as mem_error:
                     logger.warning(f"Memory capture failed: {mem_error}")
@@ -174,7 +186,7 @@ class GeminiService:
                         context={"prompt": prompt[:500], "user_id": user_id},
                         error_message=str(e),
                         stack_trace=traceback.format_exc(),
-                        severity="medium"
+                        severity="medium",
                     )
                 except Exception as mem_error:
                     logger.warning(f"Memory capture failed: {mem_error}")

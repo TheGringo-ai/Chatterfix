@@ -15,10 +15,15 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/ar-mode", response_class=HTMLResponse)
-async def ar_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def ar_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Render the AR dashboard"""
     is_demo = current_user is None
-    return templates.TemplateResponse("ar/dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "ar/dashboard.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/ar/work-orders", response_class=HTMLResponse)

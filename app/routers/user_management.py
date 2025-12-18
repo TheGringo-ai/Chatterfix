@@ -4,14 +4,12 @@ Handles adding users, role assignment, and hands-on training for using ChatterFi
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import APIRouter, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.core.db_adapter import get_db_adapter
 from app.core.firestore_db import get_firestore_manager
 
 logger = logging.getLogger(__name__)
@@ -242,22 +240,32 @@ async def user_management_dashboard(request: Request):
         recent_users = []
         for user in users[:10]:
             created_at = user.get("created_at", "")
-            if hasattr(created_at, 'strftime'):
+            if hasattr(created_at, "strftime"):
                 created_at = created_at.strftime("%Y-%m-%d %H:%M:%S")
 
-            recent_users.append({
-                "id": user.get("uid", user.get("id", "")),
-                "username": user.get("username", user.get("email", "")),
-                "full_name": user.get("full_name", user.get("display_name", "")),
-                "role": user.get("role", "technician"),
-                "status": "active" if user.get("is_active", True) else "inactive",
-                "created_date": created_at,
-            })
+            recent_users.append(
+                {
+                    "id": user.get("uid", user.get("id", "")),
+                    "username": user.get("username", user.get("email", "")),
+                    "full_name": user.get("full_name", user.get("display_name", "")),
+                    "role": user.get("role", "technician"),
+                    "status": "active" if user.get("is_active", True) else "inactive",
+                    "created_date": created_at,
+                }
+            )
 
         # Calculate training stats from training_assignments collection
         training_assignments = await firestore.get_collection("training_assignments")
-        users_in_training = len(set(t.get("user_id") for t in training_assignments if t.get("status") == "in_progress"))
-        completed_training = len([t for t in training_assignments if t.get("status") == "completed"])
+        users_in_training = len(
+            set(
+                t.get("user_id")
+                for t in training_assignments
+                if t.get("status") == "in_progress"
+            )
+        )
+        completed_training = len(
+            [t for t in training_assignments if t.get("status") == "completed"]
+        )
 
         training_stats = {
             "users_in_training": users_in_training,
@@ -285,7 +293,11 @@ async def user_management_dashboard(request: Request):
                 "request": request,
                 "users_stats": [{"role": "technician", "count": 0, "active_count": 0}],
                 "recent_users": [],
-                "training_stats": {"users_in_training": 0, "completed_training": 0, "average_completion_time": 0},
+                "training_stats": {
+                    "users_in_training": 0,
+                    "completed_training": 0,
+                    "average_completion_time": 0,
+                },
                 "available_roles": list(ROLE_PERMISSIONS.keys()),
                 "error": str(e),
             },
@@ -334,6 +346,7 @@ async def create_new_user(
 
         # Generate a unique user ID
         import uuid
+
         user_id = str(uuid.uuid4())
 
         # Create user document
@@ -381,7 +394,9 @@ async def create_new_user(
 
     except Exception as e:
         logger.error(f"Error creating user: {e}")
-        return JSONResponse({"error": f"Failed to create user: {str(e)}"}, status_code=500)
+        return JSONResponse(
+            {"error": f"Failed to create user: {str(e)}"}, status_code=500
+        )
 
 
 @router.get("/user/{user_id}", response_class=HTMLResponse)
@@ -421,14 +436,13 @@ async def user_detail_page(request: Request, user_id: str):
                 "score": a.get("score"),
                 "time_spent_minutes": a.get("time_spent_minutes"),
             }
-            for a in all_assignments if a.get("user_id") == user_id
+            for a in all_assignments
+            if a.get("user_id") == user_id
         ]
 
         # Get proficiency data (if exists)
         all_proficiency = await firestore.get_collection("user_proficiency")
-        proficiency = [
-            p for p in all_proficiency if p.get("user_id") == user_id
-        ]
+        proficiency = [p for p in all_proficiency if p.get("user_id") == user_id]
 
         # Calculate overall training completion
         total_modules = len(APPLICATION_TRAINING_MODULES.get(user_data["role"], []))
@@ -447,7 +461,9 @@ async def user_detail_page(request: Request, user_id: str):
                 "training_progress": training_progress,
                 "proficiency": proficiency,
                 "completion_percentage": completion_percentage,
-                "available_modules": APPLICATION_TRAINING_MODULES.get(user_data["role"], []),
+                "available_modules": APPLICATION_TRAINING_MODULES.get(
+                    user_data["role"], []
+                ),
             },
         )
 

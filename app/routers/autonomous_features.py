@@ -9,20 +9,23 @@ Body: {"request": "I need budget tracking for my maintenance"}
 Response: AI automatically builds the feature!
 """
 
-import asyncio
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import Dict, Any
 
 # Import our autonomous builder (relative import for now)
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../ai-team-service'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../ai-team-service"))
 
 try:
-    from app.autonomous_agents.autonomous_chatterfix_builder import AutonomousAPI, AUTOGEN_AVAILABLE
+    from app.autonomous_agents.autonomous_chatterfix_builder import (
+        AutonomousAPI,
+        AUTOGEN_AVAILABLE,
+    )
+
     AUTONOMOUS_AVAILABLE = AUTOGEN_AVAILABLE
 except ImportError:
     AUTONOMOUS_AVAILABLE = False
@@ -31,18 +34,24 @@ except ImportError:
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/autonomous", tags=["Autonomous Features"])
 
+
 class FeatureRequest(BaseModel):
     """Simple feature request model"""
+
     request: str
     priority: str = "normal"
     customer_email: str = None
 
+
 class SimpleFeatureRequest(BaseModel):
     """Ultra-simple request - just text"""
+
     what_you_want: str
+
 
 # Global autonomous API instance
 autonomous_api = None
+
 
 async def get_autonomous_api():
     """Get or create autonomous API instance"""
@@ -51,14 +60,15 @@ async def get_autonomous_api():
         autonomous_api = AutonomousAPI()
     return autonomous_api
 
+
 @router.post("/request")
 async def request_feature(request: FeatureRequest, background_tasks: BackgroundTasks):
     """
     🤖 Request a new feature - AI will automatically implement it!
-    
+
     Examples:
     - "I need budget tracking"
-    - "Add calendar scheduling"  
+    - "Add calendar scheduling"
     - "Create maintenance reports"
     - "Make it work on mobile"
     - "Add inventory management"
@@ -68,40 +78,43 @@ async def request_feature(request: FeatureRequest, background_tasks: BackgroundT
             return {
                 "message": "I'll implement that manually for you!",
                 "request": request.request,
-                "status": "manual_implementation_pending"
+                "status": "manual_implementation_pending",
             }
-        
+
         api = await get_autonomous_api()
         if not api:
             raise HTTPException(status_code=503, detail="Autonomous system not ready")
-        
+
         logger.info(f"🤖 Autonomous feature request: {request.request}")
-        
+
         # Process in background for faster response
         background_tasks.add_task(process_autonomous_request, request.request)
-        
+
         return {
             "message": "🤖 I'm building that feature for you right now!",
             "request": request.request,
             "status": "implementing",
             "estimated_time": "2-5 minutes",
-            "note": "You'll see the new feature appear in your ChatterFix system shortly."
+            "note": "You'll see the new feature appear in your ChatterFix system shortly.",
         }
-        
+
     except Exception as e:
         logger.error(f"❌ Autonomous request error: {e}")
         return {
             "message": "I'll work on that feature and get it implemented soon!",
-            "request": request.request, 
+            "request": request.request,
             "status": "pending",
-            "error": str(e)
+            "error": str(e),
         }
 
+
 @router.post("/simple")
-async def simple_request(request: SimpleFeatureRequest, background_tasks: BackgroundTasks):
+async def simple_request(
+    request: SimpleFeatureRequest, background_tasks: BackgroundTasks
+):
     """
     🎯 Super simple interface - just tell us what you want!
-    
+
     Example: {"what_you_want": "budget tracking"}
     """
     try:
@@ -111,8 +124,9 @@ async def simple_request(request: SimpleFeatureRequest, background_tasks: Backgr
         return {
             "message": f"I understand you want: {request.what_you_want}. I'm working on it!",
             "status": "understood",
-            "error": str(e)
+            "error": str(e),
         }
+
 
 @router.get("/examples")
 async def get_examples():
@@ -121,18 +135,19 @@ async def get_examples():
         "examples": [
             "I need budget tracking for maintenance costs",
             "Add a calendar to schedule maintenance",
-            "Create reports showing maintenance history", 
+            "Create reports showing maintenance history",
             "Make the app work better on mobile phones",
             "Add inventory tracking for spare parts",
             "I want notifications when maintenance is due",
             "Create a dashboard with maintenance KPIs",
             "Add customer portal for maintenance requests",
             "Enable barcode scanning for equipment",
-            "Add time tracking for maintenance work"
+            "Add time tracking for maintenance work",
         ],
         "how_to_use": "Just describe what you need in plain English!",
-        "response_time": "2-5 minutes for automatic implementation"
+        "response_time": "2-5 minutes for automatic implementation",
     }
+
 
 @router.get("/status")
 async def autonomous_status():
@@ -140,8 +155,13 @@ async def autonomous_status():
     return {
         "autonomous_available": AUTONOMOUS_AVAILABLE,
         "status": "ready" if AUTONOMOUS_AVAILABLE else "manual_mode",
-        "message": "AI can automatically implement features" if AUTONOMOUS_AVAILABLE else "Features will be implemented manually"
+        "message": (
+            "AI can automatically implement features"
+            if AUTONOMOUS_AVAILABLE
+            else "Features will be implemented manually"
+        ),
     }
+
 
 async def process_autonomous_request(request: str):
     """Background task to process autonomous requests"""
@@ -154,6 +174,7 @@ async def process_autonomous_request(request: str):
             logger.info(f"📝 Manual implementation queued: {request}")
     except Exception as e:
         logger.error(f"❌ Background processing error: {e}")
+
 
 # Quick customer interface HTML
 @router.get("/interface", response_class=HTMLResponse)

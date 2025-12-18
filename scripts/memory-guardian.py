@@ -7,11 +7,9 @@ Does NOT interfere with builds or deployments
 
 import subprocess
 import time
-import os
 import sys
 import signal
 import logging
-from datetime import datetime
 from pathlib import Path
 
 # Configuration
@@ -22,20 +20,30 @@ LOG_FILE = Path.home() / ".memory-guardian.log"
 
 # Protected processes (won't be killed during cleanup)
 PROTECTED_PROCESSES = [
-    "deploy", "build", "npm", "pip", "pytest", "docker", "git",
-    "python", "node", "gcloud", "firebase", "make", "gcc", "clang"
+    "deploy",
+    "build",
+    "npm",
+    "pip",
+    "pytest",
+    "docker",
+    "git",
+    "python",
+    "node",
+    "gcloud",
+    "firebase",
+    "make",
+    "gcc",
+    "clang",
 ]
 
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(LOG_FILE), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
+
 
 class MemoryGuardian:
     def __init__(self):
@@ -50,35 +58,29 @@ class MemoryGuardian:
     def get_memory_usage(self) -> dict:
         """Get current memory usage statistics"""
         try:
-            result = subprocess.run(
-                ["vm_stat"],
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(["vm_stat"], capture_output=True, text=True)
 
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
             stats = {}
             page_size = 16384  # macOS default
 
             for line in lines:
-                if ':' in line:
-                    key, value = line.split(':')
-                    value = value.strip().replace('.', '')
+                if ":" in line:
+                    key, value = line.split(":")
+                    value = value.strip().replace(".", "")
                     if value.isdigit():
                         stats[key.strip()] = int(value) * page_size
 
             # Get total memory
             total_result = subprocess.run(
-                ["sysctl", "hw.memsize"],
-                capture_output=True,
-                text=True
+                ["sysctl", "hw.memsize"], capture_output=True, text=True
             )
-            total_mem = int(total_result.stdout.split(':')[1].strip())
+            total_mem = int(total_result.stdout.split(":")[1].strip())
 
             # Calculate usage
-            free = stats.get('Pages free', 0)
-            inactive = stats.get('Pages inactive', 0)
-            speculative = stats.get('Pages speculative', 0)
+            free = stats.get("Pages free", 0)
+            inactive = stats.get("Pages inactive", 0)
+            speculative = stats.get("Pages speculative", 0)
             available = free + inactive + speculative
 
             used = total_mem - available
@@ -88,7 +90,7 @@ class MemoryGuardian:
                 "total": total_mem,
                 "used": used,
                 "available": available,
-                "percent_used": percent_used
+                "percent_used": percent_used,
             }
         except Exception as e:
             logger.error(f"Error getting memory stats: {e}")
@@ -105,13 +107,9 @@ class MemoryGuardian:
     def get_heavy_processes(self) -> list:
         """Get list of heavy memory consuming processes"""
         try:
-            result = subprocess.run(
-                ["ps", "aux"],
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
 
-            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            lines = result.stdout.strip().split("\n")[1:]  # Skip header
             processes = []
 
             for line in lines:
@@ -119,16 +117,14 @@ class MemoryGuardian:
                 if len(parts) >= 11:
                     pid = parts[1]
                     mem_percent = float(parts[3])
-                    command = ' '.join(parts[10:])
+                    command = " ".join(parts[10:])
 
                     if mem_percent > 2.0:  # Only include if using >2% memory
-                        processes.append({
-                            "pid": pid,
-                            "mem_percent": mem_percent,
-                            "command": command
-                        })
+                        processes.append(
+                            {"pid": pid, "mem_percent": mem_percent, "command": command}
+                        )
 
-            return sorted(processes, key=lambda x: x['mem_percent'], reverse=True)
+            return sorted(processes, key=lambda x: x["mem_percent"], reverse=True)
         except Exception as e:
             logger.error(f"Error getting process list: {e}")
             return []
@@ -137,11 +133,7 @@ class MemoryGuardian:
         """Clear system caches safely"""
         try:
             # Clear inactive memory (safe operation)
-            subprocess.run(
-                ["sudo", "-n", "purge"],
-                capture_output=True,
-                timeout=10
-            )
+            subprocess.run(["sudo", "-n", "purge"], capture_output=True, timeout=10)
             logger.info("Cleared system caches")
         except subprocess.TimeoutExpired:
             logger.warning("Cache clear timed out")
@@ -152,10 +144,15 @@ class MemoryGuardian:
     def notify_user(self, title: str, message: str):
         """Send macOS notification"""
         try:
-            subprocess.run([
-                "osascript", "-e",
-                f'display notification "{message}" with title "{title}"'
-            ], capture_output=True, timeout=5)
+            subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    f'display notification "{message}" with title "{title}"',
+                ],
+                capture_output=True,
+                timeout=5,
+            )
         except Exception:
             pass
 
@@ -163,8 +160,10 @@ class MemoryGuardian:
         """Suggest which processes to close"""
         suggestions = []
         for proc in heavy_processes[:5]:
-            if not self.is_process_protected(proc['command']):
-                suggestions.append(f"  - {proc['command'][:50]}... ({proc['mem_percent']:.1f}%)")
+            if not self.is_process_protected(proc["command"]):
+                suggestions.append(
+                    f"  - {proc['command'][:50]}... ({proc['mem_percent']:.1f}%)"
+                )
 
         if suggestions:
             logger.warning("Consider closing these high-memory processes:")
@@ -176,25 +175,25 @@ class MemoryGuardian:
         try:
             # Find VS Code extension host processes using significant memory
             result = subprocess.run(
-                ["pgrep", "-f", "extensionHost"],
-                capture_output=True,
-                text=True
+                ["pgrep", "-f", "extensionHost"], capture_output=True, text=True
             )
 
             if result.returncode == 0:
-                pids = result.stdout.strip().split('\n')
+                pids = result.stdout.strip().split("\n")
                 for pid in pids:
                     if pid:
                         # Get memory usage of this process
                         ps_result = subprocess.run(
                             ["ps", "-p", pid, "-o", "pmem="],
                             capture_output=True,
-                            text=True
+                            text=True,
                         )
                         if ps_result.returncode == 0:
                             mem = float(ps_result.stdout.strip() or "0")
                             if mem > 5.0:  # Only if using >5% memory
-                                logger.info(f"VS Code extension host using {mem:.1f}% memory")
+                                logger.info(
+                                    f"VS Code extension host using {mem:.1f}% memory"
+                                )
                                 # Don't kill, just log - let user decide
         except Exception as e:
             logger.debug(f"Could not check extension host: {e}")
@@ -212,7 +211,7 @@ class MemoryGuardian:
         while self.running:
             try:
                 mem = self.get_memory_usage()
-                percent = mem.get('percent_used', 0)
+                percent = mem.get("percent_used", 0)
 
                 current_time = time.time()
 
@@ -223,7 +222,7 @@ class MemoryGuardian:
                     if current_time - last_warning_time > warning_cooldown:
                         self.notify_user(
                             "Memory Critical",
-                            f"Memory at {percent:.1f}%. Consider closing some apps."
+                            f"Memory at {percent:.1f}%. Consider closing some apps.",
                         )
                         last_warning_time = current_time
 
@@ -243,7 +242,7 @@ class MemoryGuardian:
                     if current_time - last_warning_time > warning_cooldown:
                         self.notify_user(
                             "Memory Warning",
-                            f"Memory at {percent:.1f}%. Monitor usage."
+                            f"Memory at {percent:.1f}%. Monitor usage.",
                         )
                         last_warning_time = current_time
                 else:
@@ -270,9 +269,9 @@ def main():
             print(f"Used: {mem['used'] / (1024**3):.1f} GB")
             print(f"Total: {mem['total'] / (1024**3):.1f} GB")
 
-            if mem['percent_used'] >= MEMORY_CRITICAL_THRESHOLD:
+            if mem["percent_used"] >= MEMORY_CRITICAL_THRESHOLD:
                 print("\nSTATUS: CRITICAL")
-            elif mem['percent_used'] >= MEMORY_WARNING_THRESHOLD:
+            elif mem["percent_used"] >= MEMORY_WARNING_THRESHOLD:
                 print("\nSTATUS: WARNING")
             else:
                 print("\nSTATUS: OK")

@@ -206,7 +206,7 @@ async def ai_services_health():
             client = get_ai_team_client()
             ai_health = await client.health_check()
             components["ai_team_grpc"] = ai_health.get("healthy", False)
-        except:
+        except Exception:
             pass
 
         # Check unified integration
@@ -218,7 +218,7 @@ async def ai_services_health():
             components["unified_integration"] = integration_status.get(
                 "unified_integration_healthy", False
             )
-        except:
+        except Exception:
             pass
 
         all_healthy = all(components.values())

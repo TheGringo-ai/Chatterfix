@@ -18,12 +18,11 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from app.services.ai_team_http_client import (
     execute_ai_team_task,
     check_ai_team_health,
-    get_ai_team_client,
 )
 
 # Lazy import to avoid circular dependencies
@@ -38,6 +37,7 @@ def _get_gemini_service():
     if _gemini_service is None:
         try:
             from app.services.gemini_service import gemini_service
+
             _gemini_service = gemini_service
         except Exception as e:
             logging.getLogger(__name__).warning(f"Gemini service not available: {e}")
@@ -51,6 +51,7 @@ def _get_openai_service():
     if _openai_service is None:
         try:
             from app.services.openai_service import openai_service
+
             _openai_service = openai_service
         except Exception as e:
             logging.getLogger(__name__).warning(f"OpenAI service not available: {e}")
@@ -64,6 +65,7 @@ def _get_ai_config():
     if _ai_config is None:
         try:
             from app.core.config import get_settings
+
             _ai_config = get_settings().ai
         except Exception as e:
             logging.getLogger(__name__).warning(f"Config not available: {e}")
@@ -75,14 +77,15 @@ logger = logging.getLogger(__name__)
 
 
 class TaskComplexity(Enum):
-    SIMPLE = "simple"           # Quick response, single model
-    MODERATE = "moderate"       # Single specialist model
-    COMPLEX = "complex"         # Full AI team collaboration
+    SIMPLE = "simple"  # Quick response, single model
+    MODERATE = "moderate"  # Single specialist model
+    COMPLEX = "complex"  # Full AI team collaboration
 
 
 @dataclass
 class ComplexityResult:
     """Result of complexity analysis with confidence score"""
+
     complexity: TaskComplexity
     confidence: float  # 0.0 to 1.0
     reasoning: str
@@ -93,6 +96,7 @@ class ComplexityResult:
 @dataclass
 class CacheEntry:
     """Cached response with metadata"""
+
     response: str
     model_used: str
     complexity: str
@@ -121,7 +125,9 @@ class CircuitBreaker:
         self.last_failure_time = time.time()
         if self.failure_count >= self.failure_threshold:
             self.state = "open"
-            logger.warning(f"🔴 Circuit breaker OPEN after {self.failure_count} failures")
+            logger.warning(
+                f"🔴 Circuit breaker OPEN after {self.failure_count} failures"
+            )
 
     def can_execute(self) -> bool:
         """Check if execution is allowed"""
@@ -156,7 +162,9 @@ class ResponseCache:
         # usedforsecurity=False because this is only for cache key generation, not cryptographic security
         return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
-    def get(self, message: str, context: str, context_type: str) -> Optional[CacheEntry]:
+    def get(
+        self, message: str, context: str, context_type: str
+    ) -> Optional[CacheEntry]:
         """Get cached response if valid"""
         key = self._generate_key(message, context, context_type)
 
@@ -177,8 +185,15 @@ class ResponseCache:
         self.misses += 1
         return None
 
-    def set(self, message: str, context: str, context_type: str,
-            response: str, model_used: str, complexity: str):
+    def set(
+        self,
+        message: str,
+        context: str,
+        context_type: str,
+        response: str,
+        model_used: str,
+        complexity: str,
+    ):
         """Cache a response"""
         key = self._generate_key(message, context, context_type)
 
@@ -190,7 +205,7 @@ class ResponseCache:
             response=response,
             model_used=model_used,
             complexity=complexity,
-            timestamp=time.time()
+            timestamp=time.time(),
         )
         logger.debug(f"📦 Cache SET (key={key[:8]}...)")
 
@@ -203,7 +218,7 @@ class ResponseCache:
             "max_size": self.max_size,
             "hits": self.hits,
             "misses": self.misses,
-            "hit_rate": f"{hit_rate:.1f}%"
+            "hit_rate": f"{hit_rate:.1f}%",
         }
 
 
@@ -214,22 +229,31 @@ class RoutingAnalytics:
         self.decisions: List[Dict] = []
         self.max_history = 1000
 
-    def record(self, message: str, complexity: str, model_used: str,
-               response_time: float, confidence: float, success: bool):
+    def record(
+        self,
+        message: str,
+        complexity: str,
+        model_used: str,
+        response_time: float,
+        confidence: float,
+        success: bool,
+    ):
         """Record a routing decision"""
-        self.decisions.append({
-            "timestamp": time.time(),
-            "message_length": len(message),
-            "complexity": complexity,
-            "model_used": model_used,
-            "response_time": response_time,
-            "confidence": confidence,
-            "success": success
-        })
+        self.decisions.append(
+            {
+                "timestamp": time.time(),
+                "message_length": len(message),
+                "complexity": complexity,
+                "model_used": model_used,
+                "response_time": response_time,
+                "confidence": confidence,
+                "success": success,
+            }
+        )
 
         # Keep history bounded
         if len(self.decisions) > self.max_history:
-            self.decisions = self.decisions[-self.max_history:]
+            self.decisions = self.decisions[-self.max_history :]
 
     def get_summary(self) -> Dict[str, Any]:
         """Get analytics summary"""
@@ -263,7 +287,7 @@ class RoutingAnalytics:
             "by_complexity": by_complexity,
             "by_model": by_model,
             "avg_response_time": f"{total_time / len(self.decisions):.2f}s",
-            "success_rate": f"{success_count / len(self.decisions) * 100:.1f}%"
+            "success_rate": f"{success_count / len(self.decisions) * 100:.1f}%",
         }
 
 
@@ -280,7 +304,6 @@ To unlock full AI capabilities, configure one or more of these API keys in your 
 - `ANTHROPIC_API_KEY` - Anthropic Claude
 
 I can still help you navigate the CMMS system and provide basic guidance!""",
-
         "work_order": """📋 **Work Order Assistance (Demo Mode)**
 
 To create or manage work orders, I would typically:
@@ -290,7 +313,6 @@ To create or manage work orders, I would typically:
 4. Assign to the best available technician
 
 *Configure an AI API key to enable intelligent work order assistance.*""",
-
         "troubleshooting": """🔧 **Troubleshooting Guide (Demo Mode)**
 
 For equipment troubleshooting, I would normally:
@@ -300,7 +322,6 @@ For equipment troubleshooting, I would normally:
 4. Suggest corrective actions with safety considerations
 
 *Enable AI services for intelligent diagnostics and root cause analysis.*""",
-
         "inventory": """📦 **Inventory Management (Demo Mode)**
 
 I can help with:
@@ -310,7 +331,6 @@ I can help with:
 - Vendor comparison
 
 *Full AI capabilities require an API key configuration.*""",
-
         "default": """🤖 **ChatterFix AI (Demo Mode)**
 
 I'm currently running without AI services configured. Here's what you can still do:
@@ -328,7 +348,7 @@ Add one of these to your .env file:
 - `XAI_API_KEY`
 - `ANTHROPIC_API_KEY`
 
-How can I help you navigate ChatterFix today?"""
+How can I help you navigate ChatterFix today?""",
     }
 
     @classmethod
@@ -337,19 +357,38 @@ How can I help you navigate ChatterFix today?"""
         message_lower = message.lower()
 
         # Check for greetings
-        if any(word in message_lower for word in ["hello", "hi", "hey", "help", "start"]):
+        if any(
+            word in message_lower for word in ["hello", "hi", "hey", "help", "start"]
+        ):
             return cls.DEMO_RESPONSES["greeting"]
 
         # Check for work order related
-        if any(word in message_lower for word in ["work order", "ticket", "task", "job", "repair"]):
+        if any(
+            word in message_lower
+            for word in ["work order", "ticket", "task", "job", "repair"]
+        ):
             return cls.DEMO_RESPONSES["work_order"]
 
         # Check for troubleshooting
-        if any(word in message_lower for word in ["troubleshoot", "diagnose", "fix", "error", "problem", "issue", "broken"]):
+        if any(
+            word in message_lower
+            for word in [
+                "troubleshoot",
+                "diagnose",
+                "fix",
+                "error",
+                "problem",
+                "issue",
+                "broken",
+            ]
+        ):
             return cls.DEMO_RESPONSES["troubleshooting"]
 
         # Check for inventory
-        if any(word in message_lower for word in ["part", "inventory", "stock", "order", "supplier"]):
+        if any(
+            word in message_lower
+            for word in ["part", "inventory", "stock", "order", "supplier"]
+        ):
             return cls.DEMO_RESPONSES["inventory"]
 
         # Context-based responses
@@ -379,22 +418,56 @@ class AIRouter:
 
     # Keywords indicating complex tasks requiring team collaboration
     COMPLEX_KEYWORDS = [
-        "analyze", "diagnose", "troubleshoot", "investigate",
-        "design", "architect", "plan", "strategy",
-        "multiple", "several", "compare", "comprehensive",
-        "emergency", "critical", "urgent", "safety",
-        "root cause", "failure analysis", "predictive",
-        "optimization", "improve", "enhance",
-        "workflow", "process", "procedure",
-        "training", "documentation", "manual"
+        "analyze",
+        "diagnose",
+        "troubleshoot",
+        "investigate",
+        "design",
+        "architect",
+        "plan",
+        "strategy",
+        "multiple",
+        "several",
+        "compare",
+        "comprehensive",
+        "emergency",
+        "critical",
+        "urgent",
+        "safety",
+        "root cause",
+        "failure analysis",
+        "predictive",
+        "optimization",
+        "improve",
+        "enhance",
+        "workflow",
+        "process",
+        "procedure",
+        "training",
+        "documentation",
+        "manual",
     ]
 
     # Keywords indicating simple tasks
     SIMPLE_KEYWORDS = [
-        "hello", "hi", "hey", "thanks", "thank you",
-        "what is", "where is", "how do i", "show me",
-        "status", "check", "list", "get",
-        "yes", "no", "ok", "okay", "sure"
+        "hello",
+        "hi",
+        "hey",
+        "thanks",
+        "thank you",
+        "what is",
+        "where is",
+        "how do i",
+        "show me",
+        "status",
+        "check",
+        "list",
+        "get",
+        "yes",
+        "no",
+        "ok",
+        "okay",
+        "sure",
     ]
 
     # Context types that require specific handling
@@ -414,21 +487,21 @@ class AIRouter:
         r"^(what|where|when|who|why|how)\s",
         r"\?$",
         r"^(can you|could you|will you|would you)",
-        r"^(is|are|do|does|did|has|have|was|were)\s"
+        r"^(is|are|do|does|did|has|have|was|were)\s",
     ]
 
     MULTI_STEP_PATTERNS = [
         r"(first|then|after|before|next|finally)",
         r"(step\s*\d+|1\.|2\.|3\.)",
         r"(and\s+also|in addition|furthermore|moreover)",
-        r"(multiple|several|various|different)"
+        r"(multiple|several|various|different)",
     ]
 
     TECHNICAL_PATTERNS = [
         r"(error|exception|failure|fault|malfunction)",
         r"(pressure|temperature|voltage|current|rpm|flow)",
         r"(vibration|noise|leak|wear|corrosion)",
-        r"(calibrat|align|adjust|tighten|lubricate)"
+        r"(calibrat|align|adjust|tighten|lubricate)",
     ]
 
     def __init__(self):
@@ -438,11 +511,15 @@ class AIRouter:
 
         # Enhanced features
         self.cache = ResponseCache(max_size=100, ttl=300.0)  # 5 min TTL
-        self.circuit_breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=60.0)
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=3, recovery_timeout=60.0
+        )
         self.analytics = RoutingAnalytics()
         self.in_flight_requests: Dict[str, asyncio.Event] = {}
 
-        logger.info("🧠 Smart AI Router initialized with caching, circuit breaker, and analytics")
+        logger.info(
+            "🧠 Smart AI Router initialized with caching, circuit breaker, and analytics"
+        )
 
     async def _check_ai_team_availability(self) -> bool:
         """Check if AI team service is available (with caching)"""
@@ -459,12 +536,16 @@ class AIRouter:
 
         return self.ai_team_available
 
-    def _detect_complexity(self, message: str, context: str = "", context_type: str = "") -> TaskComplexity:
+    def _detect_complexity(
+        self, message: str, context: str = "", context_type: str = ""
+    ) -> TaskComplexity:
         """Detect the complexity of a task based on message content (simple return)"""
         result = self._analyze_complexity(message, context, context_type)
         return result.complexity
 
-    def _analyze_complexity(self, message: str, context: str = "", context_type: str = "") -> ComplexityResult:
+    def _analyze_complexity(
+        self, message: str, context: str = "", context_type: str = ""
+    ) -> ComplexityResult:
         """
         Enhanced complexity analysis with confidence scoring and semantic patterns.
 
@@ -483,7 +564,14 @@ class AIRouter:
         semantic_signals = {}
 
         # Emergency/critical always gets full team (high confidence)
-        emergency_words = ["emergency", "critical", "urgent", "safety hazard", "danger", "immediately"]
+        emergency_words = [
+            "emergency",
+            "critical",
+            "urgent",
+            "safety hazard",
+            "danger",
+            "immediately",
+        ]
         emergency_matches = [w for w in emergency_words if w in combined]
         if context_type == "emergency" or emergency_matches:
             logger.info("🚨 Emergency detected - using full AI team")
@@ -492,7 +580,7 @@ class AIRouter:
                 confidence=0.98,
                 reasoning=f"Emergency keywords detected: {emergency_matches}",
                 keyword_matches=emergency_matches,
-                semantic_signals={"emergency": 1.0}
+                semantic_signals={"emergency": 1.0},
             )
 
         # Check for simple greetings/acknowledgments (high confidence for simple)
@@ -504,7 +592,7 @@ class AIRouter:
                 confidence=0.95,
                 reasoning=f"Short message with simple keywords: {simple_matches}",
                 keyword_matches=simple_matches,
-                semantic_signals={"greeting": 1.0}
+                semantic_signals={"greeting": 1.0},
             )
 
         # === Semantic Pattern Analysis ===
@@ -542,7 +630,7 @@ class AIRouter:
 
         # === Structural Analysis ===
 
-        sentence_count = len([s for s in re.split(r'[.!?]', message) if s.strip()])
+        sentence_count = len([s for s in re.split(r"[.!?]", message) if s.strip()])
         semantic_signals["sentence_count"] = min(sentence_count / 5, 1.0)
         semantic_signals["word_count"] = min(word_count / 50, 1.0)
 
@@ -562,7 +650,12 @@ class AIRouter:
         complexity_score += semantic_signals.get("word_count", 0) * 1.0
 
         # Context type boost
-        high_complexity_contexts = ["equipment_diagnosis", "troubleshooting", "failure_analysis", "root_cause"]
+        high_complexity_contexts = [
+            "equipment_diagnosis",
+            "troubleshooting",
+            "failure_analysis",
+            "root_cause",
+        ]
         moderate_complexity_contexts = ["work_order", "inventory", "documentation"]
 
         if context_type in high_complexity_contexts:
@@ -582,7 +675,9 @@ class AIRouter:
         elif complexity_score >= 2.0:
             complexity = TaskComplexity.MODERATE
             # Confidence based on how centered in range
-            distance_from_boundaries = min(complexity_score - 2.0, 5.0 - complexity_score)
+            distance_from_boundaries = min(
+                complexity_score - 2.0, 5.0 - complexity_score
+            )
             confidence = 0.6 + distance_from_boundaries * 0.1
             reasoning = f"Moderate complexity score ({complexity_score:.1f}): {len(keyword_matches)} keywords"
         else:
@@ -591,14 +686,16 @@ class AIRouter:
             confidence = min(0.8 + (2.0 - complexity_score) * 0.1, 0.95)
             reasoning = f"Low complexity score ({complexity_score:.1f}): simple request"
 
-        logger.debug(f"📊 Complexity analysis: {complexity.value} (confidence={confidence:.2f})")
+        logger.debug(
+            f"📊 Complexity analysis: {complexity.value} (confidence={confidence:.2f})"
+        )
 
         return ComplexityResult(
             complexity=complexity,
             confidence=confidence,
             reasoning=reasoning,
             keyword_matches=keyword_matches,
-            semantic_signals=semantic_signals
+            semantic_signals=semantic_signals,
         )
 
     def _get_specialist_agents(self, context_type: str) -> Optional[List[str]]:
@@ -613,7 +710,7 @@ class AIRouter:
         user_id: Optional[int] = None,
         force_team: bool = False,
         use_cache: bool = True,
-        fast_mode: bool = False
+        fast_mode: bool = False,
     ) -> Dict[str, Any]:
         """
         Route a request to the appropriate AI model(s)
@@ -644,7 +741,7 @@ class AIRouter:
                     "complexity": cached.complexity,
                     "response_time": f"{elapsed_time:.3f}s",
                     "cached": True,
-                    "cache_hits": cached.hit_count
+                    "cache_hits": cached.hit_count,
                 }
 
         # === Analyze Complexity with Confidence ===
@@ -652,7 +749,7 @@ class AIRouter:
             complexity_result = ComplexityResult(
                 complexity=TaskComplexity.COMPLEX,
                 confidence=1.0,
-                reasoning="Forced team collaboration"
+                reasoning="Forced team collaboration",
             )
         else:
             complexity_result = self._analyze_complexity(message, context, context_type)
@@ -660,12 +757,19 @@ class AIRouter:
         complexity = complexity_result.complexity
         confidence = complexity_result.confidence
 
-        logger.info(f"📊 Task complexity: {complexity.value} (confidence={confidence:.2f}) for: {message[:50]}...")
+        logger.info(
+            f"📊 Task complexity: {complexity.value} (confidence={confidence:.2f}) for: {message[:50]}..."
+        )
 
         # === Check Circuit Breaker ===
-        if complexity != TaskComplexity.SIMPLE and not self.circuit_breaker.can_execute():
+        if (
+            complexity != TaskComplexity.SIMPLE
+            and not self.circuit_breaker.can_execute()
+        ):
             logger.warning("🔴 Circuit breaker OPEN - using fallback")
-            response = await self._route_to_gemini(message, f"[FALLBACK MODE]\n{context}", user_id)
+            response = await self._route_to_gemini(
+                message, f"[FALLBACK MODE]\n{context}", user_id
+            )
             elapsed_time = time.time() - start_time
             return {
                 "success": True,
@@ -674,7 +778,7 @@ class AIRouter:
                 "complexity": complexity.value,
                 "confidence": confidence,
                 "response_time": f"{elapsed_time:.2f}s",
-                "circuit_breaker": "open"
+                "circuit_breaker": "open",
             }
 
         # === Check AI Team Availability ===
@@ -691,7 +795,9 @@ class AIRouter:
                 specialists = self._get_specialist_agents(context_type)
 
                 if specialists and team_available:
-                    response = await self._route_to_specialists(message, context, specialists)
+                    response = await self._route_to_specialists(
+                        message, context, specialists
+                    )
                     model_used = f"specialists: {', '.join(specialists)}"
                 else:
                     response = await self._route_to_gemini(message, context, user_id)
@@ -700,12 +806,18 @@ class AIRouter:
             else:  # COMPLEX
                 # Use full AI team collaboration
                 if team_available:
-                    response = await self._route_to_team(message, context, context_type, fast_mode=fast_mode)
+                    response = await self._route_to_team(
+                        message, context, context_type, fast_mode=fast_mode
+                    )
                     model_used = "full-ai-team" + (" (fast)" if fast_mode else "")
                 else:
                     # Fallback to Gemini with enhanced prompt
-                    enhanced_context = f"[COMPLEX TASK - Provide thorough analysis]\n{context}"
-                    response = await self._route_to_gemini(message, enhanced_context, user_id)
+                    enhanced_context = (
+                        f"[COMPLEX TASK - Provide thorough analysis]\n{context}"
+                    )
+                    response = await self._route_to_gemini(
+                        message, enhanced_context, user_id
+                    )
                     model_used = "gemini-2.0-flash (fallback)"
 
             elapsed_time = time.time() - start_time
@@ -716,7 +828,14 @@ class AIRouter:
 
             # Cache the response (don't cache team responses due to variability)
             if use_cache and model_used.startswith("gemini"):
-                self.cache.set(message, context, context_type, response, model_used, complexity.value)
+                self.cache.set(
+                    message,
+                    context,
+                    context_type,
+                    response,
+                    model_used,
+                    complexity.value,
+                )
 
             # Record analytics
             self.analytics.record(
@@ -725,7 +844,7 @@ class AIRouter:
                 model_used=model_used,
                 response_time=elapsed_time,
                 confidence=confidence,
-                success=True
+                success=True,
             )
 
             return {
@@ -736,7 +855,7 @@ class AIRouter:
                 "confidence": confidence,
                 "reasoning": complexity_result.reasoning,
                 "response_time": f"{elapsed_time:.2f}s",
-                "team_available": team_available
+                "team_available": team_available,
             }
 
         except Exception as e:
@@ -758,7 +877,7 @@ class AIRouter:
                     model_used="gemini-2.0-flash (error fallback)",
                     response_time=elapsed_time,
                     confidence=confidence,
-                    success=True
+                    success=True,
                 )
 
                 return {
@@ -767,14 +886,18 @@ class AIRouter:
                     "model_used": "gemini-2.0-flash (error fallback)",
                     "complexity": complexity.value,
                     "confidence": confidence,
-                    "error_recovered": True
+                    "error_recovered": True,
                 }
             except Exception as fallback_error:
                 elapsed_time = time.time() - start_time
-                logger.warning(f"All AI services failed, using demo mode: {fallback_error}")
+                logger.warning(
+                    f"All AI services failed, using demo mode: {fallback_error}"
+                )
 
                 # Use demo mode as ultimate fallback - never error out to user
-                demo_response = DemoResponseGenerator.get_response(message, context_type)
+                demo_response = DemoResponseGenerator.get_response(
+                    message, context_type
+                )
 
                 # Record as partial success (demo mode worked)
                 self.analytics.record(
@@ -783,7 +906,7 @@ class AIRouter:
                     model_used="demo-mode",
                     response_time=elapsed_time,
                     confidence=0.5,
-                    success=True
+                    success=True,
                 )
 
                 return {
@@ -793,29 +916,33 @@ class AIRouter:
                     "complexity": complexity.value,
                     "confidence": 0.5,
                     "demo_mode": True,
-                    "note": "No AI services available - running in demo mode"
+                    "note": "No AI services available - running in demo mode",
                 }
 
     def get_router_stats(self) -> Dict[str, Any]:
         """Get router statistics including cache, circuit breaker, and analytics"""
         # Get AI service availability
         ai_config = _get_ai_config()
-        ai_status = ai_config.get_ai_status_summary() if ai_config else {
-            "any_available": False,
-            "primary_service": None,
-            "available_services": []
-        }
+        ai_status = (
+            ai_config.get_ai_status_summary()
+            if ai_config
+            else {
+                "any_available": False,
+                "primary_service": None,
+                "available_services": [],
+            }
+        )
 
         return {
             "cache": self.cache.get_stats(),
             "circuit_breaker": {
                 "state": self.circuit_breaker.state,
-                "failure_count": self.circuit_breaker.failure_count
+                "failure_count": self.circuit_breaker.failure_count,
             },
             "analytics": self.analytics.get_summary(),
             "ai_team_available": self.ai_team_available,
             "ai_services": ai_status,
-            "demo_mode": not ai_status.get("any_available", False)
+            "demo_mode": not ai_status.get("any_available", False),
         }
 
     def is_demo_mode(self) -> bool:
@@ -825,7 +952,9 @@ class AIRouter:
             return not ai_config.has_any_ai_service()
         return True  # If config unavailable, assume demo mode
 
-    async def _route_to_gemini(self, message: str, context: str, user_id: Optional[int]) -> str:
+    async def _route_to_gemini(
+        self, message: str, context: str, user_id: Optional[int]
+    ) -> str:
         """Route to best available AI service (Gemini preferred, with fallbacks)"""
 
         # Add CMMS context for better responses
@@ -833,19 +962,28 @@ class AIRouter:
 You help with work orders, equipment diagnosis, inventory management, and troubleshooting.
 Be concise, professional, and action-oriented. Prioritize safety.
 
-""" + (context or "")
+""" + (
+            context or ""
+        )
 
         # Try Gemini first (fastest)
         gemini = _get_gemini_service()
         if gemini:
             try:
                 # Check if Gemini has a valid API key
-                if hasattr(gemini, 'using_service_account') and gemini.using_service_account:
+                if (
+                    hasattr(gemini, "using_service_account")
+                    and gemini.using_service_account
+                ):
                     logger.info("⚡ Routing to Gemini (service account)")
-                    return await gemini.generate_response(message, cmms_context, user_id)
-                elif hasattr(gemini, 'default_api_key') and gemini.default_api_key:
+                    return await gemini.generate_response(
+                        message, cmms_context, user_id
+                    )
+                elif hasattr(gemini, "default_api_key") and gemini.default_api_key:
                     logger.info("⚡ Routing to Gemini (API key)")
-                    return await gemini.generate_response(message, cmms_context, user_id)
+                    return await gemini.generate_response(
+                        message, cmms_context, user_id
+                    )
             except Exception as e:
                 logger.warning(f"Gemini failed, trying fallback: {e}")
 
@@ -853,9 +991,11 @@ Be concise, professional, and action-oriented. Prioritize safety.
         openai = _get_openai_service()
         if openai:
             try:
-                if hasattr(openai, 'default_api_key') and openai.default_api_key:
+                if hasattr(openai, "default_api_key") and openai.default_api_key:
                     logger.info("⚡ Routing to OpenAI (fallback)")
-                    return await openai.generate_response(message, cmms_context, user_id)
+                    return await openai.generate_response(
+                        message, cmms_context, user_id
+                    )
             except Exception as e:
                 logger.warning(f"OpenAI failed: {e}")
 
@@ -863,7 +1003,9 @@ Be concise, professional, and action-oriented. Prioritize safety.
         logger.info("🎭 No AI service available - using demo mode")
         return DemoResponseGenerator.get_response(message, "general")
 
-    async def _route_to_specialists(self, message: str, context: str, specialists: List[str]) -> str:
+    async def _route_to_specialists(
+        self, message: str, context: str, specialists: List[str]
+    ) -> str:
         """Route to specific specialist agents - uses FAST MODE for quick responses"""
         logger.info(f"🎯 Routing to specialists (fast mode): {specialists}")
 
@@ -873,7 +1015,7 @@ Be concise, professional, and action-oriented. Prioritize safety.
             required_agents=specialists,
             max_iterations=2,  # Quick specialist response
             project_context="ChatterFix",
-            fast_mode=True  # Skip refinement for faster specialist responses
+            fast_mode=True,  # Skip refinement for faster specialist responses
         )
 
         if result.get("success"):
@@ -882,7 +1024,9 @@ Be concise, professional, and action-oriented. Prioritize safety.
             # Fallback
             return await self._route_to_gemini(message, context, None)
 
-    async def _route_to_team(self, message: str, context: str, context_type: str, fast_mode: bool = False) -> str:
+    async def _route_to_team(
+        self, message: str, context: str, context_type: str, fast_mode: bool = False
+    ) -> str:
         """
         Route to full AI team for complex collaborative task
 
@@ -919,7 +1063,7 @@ Collaborate as a team to provide the best possible guidance.
             required_agents=None,  # Use all available agents
             max_iterations=2 if fast_mode else 3,  # Fewer iterations in fast mode
             project_context="ChatterFix",
-            fast_mode=fast_mode
+            fast_mode=fast_mode,
         )
 
         if result.get("success"):
@@ -945,7 +1089,7 @@ async def smart_ai_response(
     context_type: str = "general",
     user_id: Optional[int] = None,
     force_team: bool = False,
-    fast_mode: bool = False
+    fast_mode: bool = False,
 ) -> Dict[str, Any]:
     """
     Convenience function to get smart AI response
@@ -964,5 +1108,5 @@ async def smart_ai_response(
         context_type=context_type,
         user_id=user_id,
         force_team=force_team,
-        fast_mode=fast_mode
+        fast_mode=fast_mode,
     )

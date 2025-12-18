@@ -3,12 +3,15 @@ from app.core.firestore_db import get_firestore_manager
 from app.models.part import Part
 from datetime import datetime, timezone
 
+
 class PartService:
     def __init__(self):
         self.firestore_manager = get_firestore_manager()
 
     async def get_parts(self, limit: int = 50) -> List[Part]:
-        parts_data = await self.firestore_manager.get_collection("parts", limit=limit, order_by="name")
+        parts_data = await self.firestore_manager.get_collection(
+            "parts", limit=limit, order_by="name"
+        )
         return [Part(**part) for part in parts_data]
 
     async def get_part(self, part_id: str) -> Optional[Part]:
@@ -27,11 +30,14 @@ class PartService:
         part = await self.get_part(part_id)
         if not part:
             return False
-        
+
         new_stock = part.current_stock + quantity_change
         if new_stock < 0:
-            return False # Or raise an error
-            
-        return await self.firestore_manager.update_document("parts", part_id, {"current_stock": new_stock})
+            return False  # Or raise an error
+
+        return await self.firestore_manager.update_document(
+            "parts", part_id, {"current_stock": new_stock}
+        )
+
 
 part_service = PartService()

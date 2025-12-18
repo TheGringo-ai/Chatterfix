@@ -12,12 +12,13 @@ Premium Module Pricing:
 import os
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from functools import wraps
 from enum import Enum
 
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
@@ -25,12 +26,15 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # License server configuration
-LICENSE_SERVER = os.getenv("CHATTERFIX_LICENSE_SERVER", "https://licensing.chatterfix.com")
+LICENSE_SERVER = os.getenv(
+    "CHATTERFIX_LICENSE_SERVER", "https://licensing.chatterfix.com"
+)
 LICENSE_API_KEY = os.getenv("CHATTERFIX_LICENSE_API_KEY")
 
 
 class PremiumModule(str, Enum):
     """Available premium modules"""
+
     IOT_ADVANCED = "iot_advanced"
     QUALITY_FIX = "quality_fix"
     SAFETY_FIX = "safety_fix"
@@ -39,6 +43,7 @@ class PremiumModule(str, Enum):
 
 class LicenseTier(str, Enum):
     """License tier definitions"""
+
     CORE = "core"
     IOT_ADVANCED = "iot_advanced"
     QUALITY_FIX = "quality_fix"
@@ -60,9 +65,9 @@ PREMIUM_MODULE_PRICING = {
             "Voice-integrated sensor queries",
             "Custom dashboard builder",
             "Historical trend analysis",
-            "MQTT, Modbus, HTTP API support"
+            "MQTT, Modbus, HTTP API support",
         ],
-        "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced"
+        "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced",
     },
     PremiumModule.QUALITY_FIX: {
         "name": "QualityFix",
@@ -78,9 +83,9 @@ PREMIUM_MODULE_PRICING = {
             "Environmental monitoring",
             "CAPA records management",
             "ISO 22000/FSSC 22000 compliance",
-            "AI-powered quality insights"
+            "AI-powered quality insights",
         ],
-        "upgrade_url": "https://chatterfix.com/upgrade/quality-fix"
+        "upgrade_url": "https://chatterfix.com/upgrade/quality-fix",
     },
     PremiumModule.SAFETY_FIX: {
         "name": "SafetyFix",
@@ -96,9 +101,9 @@ PREMIUM_MODULE_PRICING = {
             "Risk assessment tools",
             "Safety training tracking",
             "Near-miss reporting",
-            "Cost-benefit safety analytics"
+            "Cost-benefit safety analytics",
         ],
-        "upgrade_url": "https://chatterfix.com/upgrade/safety-fix"
+        "upgrade_url": "https://chatterfix.com/upgrade/safety-fix",
     },
     PremiumModule.ENTERPRISE: {
         "name": "Enterprise Bundle",
@@ -113,10 +118,10 @@ PREMIUM_MODULE_PRICING = {
             "Custom integrations",
             "Dedicated success manager",
             "Unlimited API calls",
-            "Multi-site management"
+            "Multi-site management",
         ],
-        "upgrade_url": "https://chatterfix.com/upgrade/enterprise"
-    }
+        "upgrade_url": "https://chatterfix.com/upgrade/enterprise",
+    },
 }
 
 
@@ -146,7 +151,10 @@ class PremiumLicense:
             return True
 
         # Check tier-based access
-        if module == PremiumModule.IOT_ADVANCED and self.tier == LicenseTier.IOT_ADVANCED:
+        if (
+            module == PremiumModule.IOT_ADVANCED
+            and self.tier == LicenseTier.IOT_ADVANCED
+        ):
             return True
         if module == PremiumModule.QUALITY_FIX and self.tier == LicenseTier.QUALITY_FIX:
             return True
@@ -205,7 +213,10 @@ class PremiumLicensingManager:
     def _init_firestore_service(self):
         """Initialize Firestore licensing service if available"""
         try:
-            from app.services.firestore_licensing_service import firestore_license_service
+            from app.services.firestore_licensing_service import (
+                firestore_license_service,
+            )
+
             self._firestore_service = firestore_license_service
             logger.info("Premium licensing using Firestore backend")
         except ImportError:
@@ -215,9 +226,11 @@ class PremiumLicensingManager:
         """Get customer license with caching - uses Firestore when available"""
 
         # Check cache first
-        if (customer_id in self.license_cache and
-            customer_id in self.last_cache_update and
-            datetime.now() - self.last_cache_update[customer_id] < self.cache_ttl):
+        if (
+            customer_id in self.license_cache
+            and customer_id in self.last_cache_update
+            and datetime.now() - self.last_cache_update[customer_id] < self.cache_ttl
+        ):
             return self.license_cache[customer_id]
 
         # Try Firestore service first if available
@@ -255,36 +268,49 @@ class PremiumLicensingManager:
 
             # Fallback to demo/development license with full access
             logger.info(f"Using demo license with full access for {customer_id}")
-            return PremiumLicense(customer_id, {
-                "tier": LicenseTier.ENTERPRISE,
-                "enabled_modules": [
-                    PremiumModule.IOT_ADVANCED.value,
-                    PremiumModule.QUALITY_FIX.value,
-                    PremiumModule.SAFETY_FIX.value
-                ],
-                "is_demo": True,
-                "is_trial": True
-            })
+            return PremiumLicense(
+                customer_id,
+                {
+                    "tier": LicenseTier.ENTERPRISE,
+                    "enabled_modules": [
+                        PremiumModule.IOT_ADVANCED.value,
+                        PremiumModule.QUALITY_FIX.value,
+                        PremiumModule.SAFETY_FIX.value,
+                    ],
+                    "is_demo": True,
+                    "is_trial": True,
+                },
+            )
 
     async def _fetch_license_from_server(self, customer_id: str) -> Dict:
         """Fetch license data from remote license server"""
 
         if not LICENSE_API_KEY:
             # Development mode - return all modules enabled for testing
-            logger.warning("No license API key - returning development license with all modules")
+            logger.warning(
+                "No license API key - returning development license with all modules"
+            )
             return {
                 "tier": LicenseTier.ENTERPRISE,
                 "enabled_modules": [
                     PremiumModule.IOT_ADVANCED.value,
                     PremiumModule.QUALITY_FIX.value,
-                    PremiumModule.SAFETY_FIX.value
+                    PremiumModule.SAFETY_FIX.value,
                 ],
-                "features": ["voice", "vision", "iot", "quality", "safety", "analytics", "alerts"],
+                "features": [
+                    "voice",
+                    "vision",
+                    "iot",
+                    "quality",
+                    "safety",
+                    "analytics",
+                    "alerts",
+                ],
                 "sensor_limit": 100,
                 "api_calls_per_month": 50000,
                 "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
                 "is_trial": True,
-                "trial_days_remaining": 30
+                "trial_days_remaining": 30,
             }
 
         if not HTTPX_AVAILABLE:
@@ -295,7 +321,7 @@ class PremiumLicensingManager:
             response = await client.get(
                 f"{LICENSE_SERVER}/api/v1/licenses/{customer_id}",
                 headers={"Authorization": f"Bearer {LICENSE_API_KEY}"},
-                timeout=5.0
+                timeout=5.0,
             )
 
             if response.status_code == 200:
@@ -306,7 +332,9 @@ class PremiumLicensingManager:
                 response.raise_for_status()
                 return {"tier": LicenseTier.CORE}
 
-    async def check_module_access(self, customer_id: str, module: PremiumModule) -> bool:
+    async def check_module_access(
+        self, customer_id: str, module: PremiumModule
+    ) -> bool:
         """Check if customer has access to a specific premium module"""
         license_obj = await self.get_customer_license(customer_id)
 
@@ -324,29 +352,37 @@ class PremiumLicensingManager:
 
         # Add options for modules not yet enabled
         if not license_obj.has_iot_access:
-            upgrade_options.append({
-                "module": PremiumModule.IOT_ADVANCED.value,
-                **PREMIUM_MODULE_PRICING[PremiumModule.IOT_ADVANCED]
-            })
+            upgrade_options.append(
+                {
+                    "module": PremiumModule.IOT_ADVANCED.value,
+                    **PREMIUM_MODULE_PRICING[PremiumModule.IOT_ADVANCED],
+                }
+            )
 
         if not license_obj.has_quality_access:
-            upgrade_options.append({
-                "module": PremiumModule.QUALITY_FIX.value,
-                **PREMIUM_MODULE_PRICING[PremiumModule.QUALITY_FIX]
-            })
+            upgrade_options.append(
+                {
+                    "module": PremiumModule.QUALITY_FIX.value,
+                    **PREMIUM_MODULE_PRICING[PremiumModule.QUALITY_FIX],
+                }
+            )
 
         if not license_obj.has_safety_access:
-            upgrade_options.append({
-                "module": PremiumModule.SAFETY_FIX.value,
-                **PREMIUM_MODULE_PRICING[PremiumModule.SAFETY_FIX]
-            })
+            upgrade_options.append(
+                {
+                    "module": PremiumModule.SAFETY_FIX.value,
+                    **PREMIUM_MODULE_PRICING[PremiumModule.SAFETY_FIX],
+                }
+            )
 
         # Always show enterprise option if not already enterprise
         if not license_obj.has_enterprise_access:
-            upgrade_options.append({
-                "module": PremiumModule.ENTERPRISE.value,
-                **PREMIUM_MODULE_PRICING[PremiumModule.ENTERPRISE]
-            })
+            upgrade_options.append(
+                {
+                    "module": PremiumModule.ENTERPRISE.value,
+                    **PREMIUM_MODULE_PRICING[PremiumModule.ENTERPRISE],
+                }
+            )
 
         return {
             "customer_id": customer_id,
@@ -355,7 +391,7 @@ class PremiumLicensingManager:
             "is_trial": license_obj.is_trial,
             "trial_days_remaining": license_obj.trial_days_remaining,
             "upgrade_options": upgrade_options,
-            "contact_sales": "sales@chatterfix.com"
+            "contact_sales": "sales@chatterfix.com",
         }
 
     async def get_license_status(self, customer_id: str) -> Dict:
@@ -370,7 +406,7 @@ class PremiumLicensingManager:
                 "iot_advanced": license_obj.has_iot_access,
                 "quality_fix": license_obj.has_quality_access,
                 "safety_fix": license_obj.has_safety_access,
-                "enterprise": license_obj.has_enterprise_access
+                "enterprise": license_obj.has_enterprise_access,
             },
             "features_enabled": {
                 "voice_commands": True,
@@ -382,18 +418,18 @@ class PremiumLicensingManager:
                 "haccp_compliance": license_obj.has_quality_access,
                 "safety_management": license_obj.has_safety_access,
                 "incident_tracking": license_obj.has_safety_access,
-                "enterprise_features": license_obj.has_enterprise_access
+                "enterprise_features": license_obj.has_enterprise_access,
             },
             "limits": {
                 "sensors": license_obj.sensor_limit,
-                "api_calls_per_month": license_obj.api_limit
+                "api_calls_per_month": license_obj.api_limit,
             },
             "trial_info": {
                 "is_trial": license_obj.is_trial,
-                "days_remaining": license_obj.trial_days_remaining
+                "days_remaining": license_obj.trial_days_remaining,
             },
             "expires_at": license_obj.expires_at,
-            "upgrade_options": upgrade_info["upgrade_options"]
+            "upgrade_options": upgrade_info["upgrade_options"],
         }
 
 
@@ -414,15 +450,15 @@ def get_customer_id_from_user(user: Any) -> str:
         return "demo_customer_1"
 
     # Try to get organization_id first (multi-tenant)
-    if hasattr(user, 'organization_id') and user.organization_id:
+    if hasattr(user, "organization_id") and user.organization_id:
         return user.organization_id
 
     # Fall back to customer_id
-    if hasattr(user, 'customer_id') and user.customer_id:
+    if hasattr(user, "customer_id") and user.customer_id:
         return user.customer_id
 
     # Fall back to user id
-    if hasattr(user, 'id') and user.id:
+    if hasattr(user, "id") and user.id:
         return user.id
 
     return "demo_customer_1"
@@ -430,100 +466,132 @@ def get_customer_id_from_user(user: Any) -> str:
 
 # ============== LICENSING DECORATORS ==============
 
+
 def require_iot_license(func):
     """Decorator to protect IoT Advanced features"""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         customer_id = get_current_customer_id()
 
-        if not await premium_licensing_manager.check_module_access(customer_id, PremiumModule.IOT_ADVANCED):
-            upgrade_info = await premium_licensing_manager.get_upgrade_options(customer_id)
+        if not await premium_licensing_manager.check_module_access(
+            customer_id, PremiumModule.IOT_ADVANCED
+        ):
+            upgrade_info = await premium_licensing_manager.get_upgrade_options(
+                customer_id
+            )
             return {
                 "error": "IoT Advanced Module Required",
                 "message": "This feature requires ChatterFix IoT Advanced Module",
                 "module": "iot_advanced",
                 "price": "$199/month + $25/sensor",
                 "upgrade_url": "https://chatterfix.com/upgrade/iot-advanced",
-                "upgrade_options": upgrade_info["upgrade_options"]
+                "upgrade_options": upgrade_info["upgrade_options"],
             }
 
         return await func(*args, **kwargs)
+
     return wrapper
 
 
 def require_quality_license(func):
     """Decorator to protect QualityFix features"""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         customer_id = get_current_customer_id()
 
-        if not await premium_licensing_manager.check_module_access(customer_id, PremiumModule.QUALITY_FIX):
-            upgrade_info = await premium_licensing_manager.get_upgrade_options(customer_id)
+        if not await premium_licensing_manager.check_module_access(
+            customer_id, PremiumModule.QUALITY_FIX
+        ):
+            upgrade_info = await premium_licensing_manager.get_upgrade_options(
+                customer_id
+            )
             return {
                 "error": "QualityFix Module Required",
                 "message": "This feature requires ChatterFix QualityFix Module for HACCP, ISO, and food safety compliance",
                 "module": "quality_fix",
                 "price": "$99/month",
                 "upgrade_url": "https://chatterfix.com/upgrade/quality-fix",
-                "upgrade_options": upgrade_info["upgrade_options"]
+                "upgrade_options": upgrade_info["upgrade_options"],
             }
 
         return await func(*args, **kwargs)
+
     return wrapper
 
 
 def require_safety_license(func):
     """Decorator to protect SafetyFix features"""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         customer_id = get_current_customer_id()
 
-        if not await premium_licensing_manager.check_module_access(customer_id, PremiumModule.SAFETY_FIX):
-            upgrade_info = await premium_licensing_manager.get_upgrade_options(customer_id)
+        if not await premium_licensing_manager.check_module_access(
+            customer_id, PremiumModule.SAFETY_FIX
+        ):
+            upgrade_info = await premium_licensing_manager.get_upgrade_options(
+                customer_id
+            )
             return {
                 "error": "SafetyFix Module Required",
                 "message": "This feature requires ChatterFix SafetyFix Module for OSHA compliance and safety management",
                 "module": "safety_fix",
                 "price": "$99/month",
                 "upgrade_url": "https://chatterfix.com/upgrade/safety-fix",
-                "upgrade_options": upgrade_info["upgrade_options"]
+                "upgrade_options": upgrade_info["upgrade_options"],
             }
 
         return await func(*args, **kwargs)
+
     return wrapper
 
 
 def require_enterprise_license(func):
     """Decorator to protect Enterprise features"""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         customer_id = get_current_customer_id()
 
-        if not await premium_licensing_manager.check_module_access(customer_id, PremiumModule.ENTERPRISE):
-            upgrade_info = await premium_licensing_manager.get_upgrade_options(customer_id)
+        if not await premium_licensing_manager.check_module_access(
+            customer_id, PremiumModule.ENTERPRISE
+        ):
+            upgrade_info = await premium_licensing_manager.get_upgrade_options(
+                customer_id
+            )
             return {
                 "error": "Enterprise License Required",
                 "message": "This feature requires ChatterFix Enterprise License",
                 "module": "enterprise",
                 "price": "$299/technician/month",
                 "upgrade_url": "https://chatterfix.com/upgrade/enterprise",
-                "upgrade_options": upgrade_info["upgrade_options"]
+                "upgrade_options": upgrade_info["upgrade_options"],
             }
 
         return await func(*args, **kwargs)
+
     return wrapper
 
 
 def require_any_premium_license(func):
     """Decorator that allows access if user has ANY premium module"""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         customer_id = get_current_customer_id()
         license_obj = await premium_licensing_manager.get_customer_license(customer_id)
 
-        if not (license_obj.has_iot_access or license_obj.has_quality_access or
-                license_obj.has_safety_access or license_obj.has_enterprise_access):
-            upgrade_info = await premium_licensing_manager.get_upgrade_options(customer_id)
+        if not (
+            license_obj.has_iot_access
+            or license_obj.has_quality_access
+            or license_obj.has_safety_access
+            or license_obj.has_enterprise_access
+        ):
+            upgrade_info = await premium_licensing_manager.get_upgrade_options(
+                customer_id
+            )
             return {
                 "error": "Premium Module Required",
                 "message": "This feature requires a ChatterFix Premium Module",
@@ -531,35 +599,45 @@ def require_any_premium_license(func):
                     {"name": "IoT Advanced", "price": "$199/month"},
                     {"name": "QualityFix", "price": "$99/month"},
                     {"name": "SafetyFix", "price": "$99/month"},
-                    {"name": "Enterprise Bundle", "price": "$299/technician/month"}
+                    {"name": "Enterprise Bundle", "price": "$299/technician/month"},
                 ],
-                "upgrade_options": upgrade_info["upgrade_options"]
+                "upgrade_options": upgrade_info["upgrade_options"],
             }
 
         return await func(*args, **kwargs)
+
     return wrapper
 
 
 # ============== ASYNC LICENSE CHECK FUNCTIONS ==============
 
+
 async def check_iot_access(customer_id: str) -> bool:
     """Check if customer has IoT Advanced access"""
-    return await premium_licensing_manager.check_module_access(customer_id, PremiumModule.IOT_ADVANCED)
+    return await premium_licensing_manager.check_module_access(
+        customer_id, PremiumModule.IOT_ADVANCED
+    )
 
 
 async def check_quality_access(customer_id: str) -> bool:
     """Check if customer has QualityFix access"""
-    return await premium_licensing_manager.check_module_access(customer_id, PremiumModule.QUALITY_FIX)
+    return await premium_licensing_manager.check_module_access(
+        customer_id, PremiumModule.QUALITY_FIX
+    )
 
 
 async def check_safety_access(customer_id: str) -> bool:
     """Check if customer has SafetyFix access"""
-    return await premium_licensing_manager.check_module_access(customer_id, PremiumModule.SAFETY_FIX)
+    return await premium_licensing_manager.check_module_access(
+        customer_id, PremiumModule.SAFETY_FIX
+    )
 
 
 async def check_enterprise_access(customer_id: str) -> bool:
     """Check if customer has Enterprise access"""
-    return await premium_licensing_manager.check_module_access(customer_id, PremiumModule.ENTERPRISE)
+    return await premium_licensing_manager.check_module_access(
+        customer_id, PremiumModule.ENTERPRISE
+    )
 
 
 async def get_license_status(customer_id: str) -> Dict:
@@ -574,6 +652,7 @@ async def get_upgrade_options(customer_id: str) -> Dict:
 
 # ============== MODULE INFO HELPERS ==============
 
+
 def get_module_info(module: PremiumModule) -> Dict:
     """Get information about a specific premium module"""
     return PREMIUM_MODULE_PRICING.get(module, {})
@@ -582,12 +661,11 @@ def get_module_info(module: PremiumModule) -> Dict:
 def get_all_premium_modules() -> Dict:
     """Get information about all premium modules"""
     return {
-        module.value: {
-            "module_id": module.value,
-            **info
-        }
+        module.value: {"module_id": module.value, **info}
         for module, info in PREMIUM_MODULE_PRICING.items()
     }
 
 
-logger.info("Premium Licensing System initialized - IoT Advanced, QualityFix, SafetyFix modules available")
+logger.info(
+    "Premium Licensing System initialized - IoT Advanced, QualityFix, SafetyFix modules available"
+)

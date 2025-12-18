@@ -3,15 +3,13 @@ LineSmart Integration Router - Training Data Service Integration
 Connects LineSmart training service with AI Team and Fix it Fred
 """
 
-import asyncio
 import json
 import logging
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 # Import AI team client for training data analysis

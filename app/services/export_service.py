@@ -47,9 +47,13 @@ class ExportService:
             logger.error(f"Export error: {e}")
             raise
 
-    async def export_work_orders(self, format: str, filters: Dict = None) -> Dict[str, Any]:
+    async def export_work_orders(
+        self, format: str, filters: Dict = None
+    ) -> Dict[str, Any]:
         """Export work orders report"""
-        work_orders = await self.firestore_manager.get_collection("work_orders", order_by="-created_date")
+        work_orders = await self.firestore_manager.get_collection(
+            "work_orders", order_by="-created_date"
+        )
         if format == "json":
             return self._export_json(work_orders, "work_orders")
         elif format == "csv":
@@ -71,13 +75,15 @@ class ExportService:
         else:
             raise ValueError(f"Unsupported format: {format}")
 
-    async def export_maintenance_history(self, format: str, days: int = 30) -> Dict[str, Any]:
+    async def export_maintenance_history(
+        self, format: str, days: int = 30
+    ) -> Dict[str, Any]:
         """Export maintenance history report"""
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
         history = await self.firestore_manager.get_collection(
-            "maintenance_history", 
+            "maintenance_history",
             filters=[{"field": "created_date", "operator": ">=", "value": start_date}],
-            order_by="-created_date"
+            order_by="-created_date",
         )
         if format == "json":
             return self._export_json(history, "maintenance_history")
@@ -96,7 +102,7 @@ class ExportService:
             "filename": f"{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
             "content_type": "application/json",
         }
-    
+
     # Other export helper methods (_export_kpi_csv, _export_list_csv, etc.) remain the same
     # as they already operate on dictionaries and lists of dictionaries.
 

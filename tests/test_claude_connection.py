@@ -6,15 +6,17 @@ Quick script to verify Anthropic API key is working correctly
 import os
 from anthropic import Anthropic
 
+
 def test_claude_connection():
     """Test connection to Claude API"""
+    import pytest
 
     # Load API key from environment
     api_key = os.getenv("ANTHROPIC_API_KEY")
 
     if not api_key:
         print("❌ ANTHROPIC_API_KEY not found in environment")
-        return False
+        pytest.skip("ANTHROPIC_API_KEY not found in environment")
 
     print(f"🔑 API Key found: {api_key[:20]}...")
 
@@ -31,9 +33,9 @@ def test_claude_connection():
             messages=[
                 {
                     "role": "user",
-                    "content": "Say 'ChatterFix Claude API connection successful!' if you can read this."
+                    "content": "Say 'ChatterFix Claude API connection successful!' if you can read this.",
                 }
-            ]
+            ],
         )
 
         response_text = message.content[0].text
@@ -41,14 +43,18 @@ def test_claude_connection():
 
         print("🎉 Connection test PASSED!")
         print(f"📊 Model used: {message.model}")
-        print(f"📊 Tokens used: {message.usage.input_tokens} input, {message.usage.output_tokens} output")
+        print(
+            f"📊 Tokens used: {message.usage.input_tokens} input, {message.usage.output_tokens} output"
+        )
 
-        return True
+        assert message is not None, "Claude should return a message"
+        assert response_text, "Claude should return a non-empty response"
 
     except Exception as e:
         print(f"\n❌ Connection test FAILED!")
         print(f"Error: {str(e)}")
-        return False
+        pytest.fail(f"Claude API connection failed: {str(e)}")
+
 
 if __name__ == "__main__":
     print("=" * 60)
@@ -57,6 +63,7 @@ if __name__ == "__main__":
 
     # Load .env file
     from dotenv import load_dotenv
+
     load_dotenv()
 
     success = test_claude_connection()

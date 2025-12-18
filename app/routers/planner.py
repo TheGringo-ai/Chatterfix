@@ -17,31 +17,51 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def planner_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def planner_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Render planner dashboard"""
     is_demo = current_user is None
-    return templates.TemplateResponse("planner_dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "planner_dashboard.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/advanced", response_class=HTMLResponse)
-async def advanced_scheduler_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def advanced_scheduler_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Render advanced scheduler dashboard with enterprise features"""
     is_demo = current_user is None
-    return templates.TemplateResponse("advanced_scheduler.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "advanced_scheduler.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/mobile", response_class=HTMLResponse)
-async def mobile_scheduler_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def mobile_scheduler_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Render mobile-responsive scheduler for field technicians"""
     is_demo = current_user is None
-    return templates.TemplateResponse("mobile_scheduler.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "mobile_scheduler.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/analytics", response_class=HTMLResponse)
-async def scheduler_analytics_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def scheduler_analytics_dashboard(
+    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
+):
     """Render comprehensive scheduler analytics and reporting dashboard"""
     is_demo = current_user is None
-    return templates.TemplateResponse("scheduler_analytics.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
+    return templates.TemplateResponse(
+        "scheduler_analytics.html",
+        {"request": request, "current_user": current_user, "is_demo": is_demo},
+    )
 
 
 @router.get("/pm-schedule")
@@ -99,18 +119,17 @@ async def get_urgent_count():
     try:
         backlog = planner_service.get_work_order_backlog()
         urgent_count = backlog.get("by_priority", {}).get("urgent", 0)
-        
-        return JSONResponse(content={
-            "urgent_count": urgent_count,
-            "status": "success"
-        })
+
+        return JSONResponse(content={"urgent_count": urgent_count, "status": "success"})
     except Exception as e:
         # Fallback count for production stability
-        return JSONResponse(content={
-            "urgent_count": 2,  # Safe fallback
-            "status": "fallback",
-            "error": str(e)
-        })
+        return JSONResponse(
+            content={
+                "urgent_count": 2,  # Safe fallback
+                "status": "fallback",
+                "error": str(e),
+            }
+        )
 
 
 @router.get("/summary")
@@ -131,30 +150,34 @@ async def get_planner_summary():
             "conflict_count": len(conflicts) if isinstance(conflicts, list) else 0,
             "compliance_overdue": compliance.get("overdue", 0),
             "compliance_due_soon": compliance.get("due_soon", 0),
-            
             # Additional metrics for dashboard
-            "work_orders_logged": backlog.get("total_backlog", 0),  # Fix for undefined display
+            "work_orders_logged": backlog.get(
+                "total_backlog", 0
+            ),  # Fix for undefined display
             "due_today_count": backlog.get("due_today_count", 0),
-            "high_priority_count": backlog.get("by_priority", {}).get("high", 0) + backlog.get("by_priority", {}).get("urgent", 0),
+            "high_priority_count": backlog.get("by_priority", {}).get("high", 0)
+            + backlog.get("by_priority", {}).get("urgent", 0),
         }
-        
+
         return JSONResponse(content=summary)
-        
+
     except Exception as e:
         # Return mock data if there's any issue
-        return JSONResponse(content={
-            "backlog_count": 6,
-            "overdue_count": 2,
-            "technician_count": 4,
-            "average_capacity": 70.0,
-            "conflict_count": 3,
-            "compliance_overdue": 2,
-            "compliance_due_soon": 1,
-            "work_orders_logged": 6,
-            "due_today_count": 1,
-            "high_priority_count": 4,
-            "error": f"Using fallback data: {str(e)}"
-        })
+        return JSONResponse(
+            content={
+                "backlog_count": 6,
+                "overdue_count": 2,
+                "technician_count": 4,
+                "average_capacity": 70.0,
+                "conflict_count": 3,
+                "compliance_overdue": 2,
+                "compliance_due_soon": 1,
+                "work_orders_logged": 6,
+                "due_today_count": 1,
+                "high_priority_count": 4,
+                "error": f"Using fallback data: {str(e)}",
+            }
+        )
 
 
 # ========== WORK ORDER MANAGEMENT ENDPOINTS ==========
@@ -165,15 +188,26 @@ from typing import Optional
 
 class WorkOrderUpdate(BaseModel):
     """Pydantic model for work order updates"""
+
     title: Optional[str] = Field(None, description="Work order title")
-    description: Optional[str] = Field(None, description="Work order description") 
-    priority: Optional[str] = Field(None, description="Priority level: urgent, high, medium, low")
-    status: Optional[str] = Field(None, description="Status: pending, in_progress, on_hold, completed")
+    description: Optional[str] = Field(None, description="Work order description")
+    priority: Optional[str] = Field(
+        None, description="Priority level: urgent, high, medium, low"
+    )
+    status: Optional[str] = Field(
+        None, description="Status: pending, in_progress, on_hold, completed"
+    )
     due_date: Optional[str] = Field(None, description="Due date (YYYY-MM-DD)")
-    scheduled_date: Optional[str] = Field(None, description="Scheduled date (YYYY-MM-DD)")
-    estimated_duration: Optional[int] = Field(None, description="Estimated duration in hours")
+    scheduled_date: Optional[str] = Field(
+        None, description="Scheduled date (YYYY-MM-DD)"
+    )
+    estimated_duration: Optional[int] = Field(
+        None, description="Estimated duration in hours"
+    )
     assigned_to: Optional[str] = Field(None, description="Assigned technician ID")
-    parts_required: Optional[List[str]] = Field(None, description="List of required parts")
+    parts_required: Optional[List[str]] = Field(
+        None, description="List of required parts"
+    )
 
 
 @router.get("/work-orders")
@@ -181,19 +215,23 @@ async def get_all_work_orders():
     """Get all work orders from backlog"""
     try:
         backlog_data = planner_service.get_work_order_backlog()
-        return JSONResponse(content={
-            "work_orders": backlog_data.get("work_orders", []),
-            "total_count": backlog_data.get("total_backlog", 0),
-            "overdue_count": backlog_data.get("overdue_count", 0),
-            "due_today_count": backlog_data.get("due_today_count", 0),
-            "by_priority": backlog_data.get("by_priority", {}),
-        })
+        return JSONResponse(
+            content={
+                "work_orders": backlog_data.get("work_orders", []),
+                "total_count": backlog_data.get("total_backlog", 0),
+                "overdue_count": backlog_data.get("overdue_count", 0),
+                "due_today_count": backlog_data.get("due_today_count", 0),
+                "by_priority": backlog_data.get("by_priority", {}),
+            }
+        )
     except Exception as e:
-        return JSONResponse(content={
-            "error": f"Failed to fetch work orders: {str(e)}",
-            "work_orders": [],
-            "total_count": 0
-        })
+        return JSONResponse(
+            content={
+                "error": f"Failed to fetch work orders: {str(e)}",
+                "work_orders": [],
+                "total_count": 0,
+            }
+        )
 
 
 @router.get("/work-orders/{work_order_id}")
@@ -202,44 +240,52 @@ async def get_work_order_detail(work_order_id: str):
     try:
         backlog_data = planner_service.get_work_order_backlog()
         work_orders = backlog_data.get("work_orders", [])
-        
+
         # Find the specific work order
         work_order = None
         for wo in work_orders:
             if wo.get("id") == work_order_id:
                 work_order = wo
                 break
-        
+
         if not work_order:
             raise HTTPException(status_code=404, detail="Work order not found")
-        
+
         # Add additional mock data for editing interface
-        work_order.update({
-            "description": f"Detailed description for {work_order.get('title', 'work order')}",
-            "scheduled_date": work_order.get("due_date"),  # Default to due date
-            "assigned_to": "tech_001",  # Default assignment
-            "parts_required": ["Part-A", "Part-B"] if "urgent" in work_order.get("priority", "") else ["Standard-Part"],
-            "tools_required": ["Wrench Set", "Multimeter", "Safety Equipment"],
-            "procedures": [
-                "1. Review safety protocols",
-                "2. Gather required tools and parts", 
-                "3. Perform maintenance tasks",
-                "4. Test functionality",
-                "5. Update work order status"
-            ],
-            "asset_details": {
-                "location": "Building A - Floor 2",
-                "serial_number": f"SN-{work_order_id[-3:]}",
-                "last_maintenance": "2024-11-01"
+        work_order.update(
+            {
+                "description": f"Detailed description for {work_order.get('title', 'work order')}",
+                "scheduled_date": work_order.get("due_date"),  # Default to due date
+                "assigned_to": "tech_001",  # Default assignment
+                "parts_required": (
+                    ["Part-A", "Part-B"]
+                    if "urgent" in work_order.get("priority", "")
+                    else ["Standard-Part"]
+                ),
+                "tools_required": ["Wrench Set", "Multimeter", "Safety Equipment"],
+                "procedures": [
+                    "1. Review safety protocols",
+                    "2. Gather required tools and parts",
+                    "3. Perform maintenance tasks",
+                    "4. Test functionality",
+                    "5. Update work order status",
+                ],
+                "asset_details": {
+                    "location": "Building A - Floor 2",
+                    "serial_number": f"SN-{work_order_id[-3:]}",
+                    "last_maintenance": "2024-11-01",
+                },
             }
-        })
-        
+        )
+
         return JSONResponse(content=work_order)
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get work order: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get work order: {str(e)}"
+        )
 
 
 @router.put("/work-orders/{work_order_id}")
@@ -249,65 +295,77 @@ async def update_work_order(work_order_id: str, updates: WorkOrderUpdate):
         # Get current work order data
         backlog_data = planner_service.get_work_order_backlog()
         work_orders = backlog_data.get("work_orders", [])
-        
+
         # Find the work order to update
         work_order_found = False
         for wo in work_orders:
             if wo.get("id") == work_order_id:
                 work_order_found = True
                 break
-        
+
         if not work_order_found:
             raise HTTPException(status_code=404, detail="Work order not found")
-        
+
         # In a real system, this would update the database
         # For now, we'll return a success response with the updated data
         update_data = updates.dict(exclude_unset=True)
-        
-        return JSONResponse(content={
-            "status": "success",
-            "message": f"Work order {work_order_id} updated successfully",
-            "work_order_id": work_order_id,
-            "updates_applied": update_data,
-            "updated_fields": list(update_data.keys())
-        })
-        
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": f"Work order {work_order_id} updated successfully",
+                "work_order_id": work_order_id,
+                "updates_applied": update_data,
+                "updated_fields": list(update_data.keys()),
+            }
+        )
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update work order: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update work order: {str(e)}"
+        )
 
 
 @router.post("/work-orders/{work_order_id}/assign")
-async def assign_work_order(work_order_id: str, technician_id: str = Query(..., description="Technician ID")):
+async def assign_work_order(
+    work_order_id: str, technician_id: str = Query(..., description="Technician ID")
+):
     """Assign work order to a specific technician"""
     try:
         # Get capacity data to validate technician exists
         capacity_data = planner_service.get_resource_capacity()
         technicians = capacity_data.get("technicians", [])
-        
+
         # Check if technician exists and is available
         technician_found = False
         for tech in technicians:
             if tech.get("id") == technician_id and tech.get("status") == "active":
                 technician_found = True
                 break
-        
+
         if not technician_found:
-            raise HTTPException(status_code=400, detail="Technician not found or unavailable")
-        
-        return JSONResponse(content={
-            "status": "success",
-            "message": f"Work order {work_order_id} assigned to technician {technician_id}",
-            "work_order_id": work_order_id,
-            "assigned_to": technician_id,
-            "assignment_date": datetime.now().strftime("%Y-%m-%d %H:%M")
-        })
-        
+            raise HTTPException(
+                status_code=400, detail="Technician not found or unavailable"
+            )
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": f"Work order {work_order_id} assigned to technician {technician_id}",
+                "work_order_id": work_order_id,
+                "assigned_to": technician_id,
+                "assignment_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            }
+        )
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to assign work order: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to assign work order: {str(e)}"
+        )
 
 
 @router.get("/technicians")
@@ -316,28 +374,34 @@ async def get_available_technicians():
     try:
         capacity_data = planner_service.get_resource_capacity()
         technicians = capacity_data.get("technicians", [])
-        
+
         # Filter active technicians and add availability info
         available_technicians = []
         for tech in technicians:
             if tech.get("status") == "active":
-                available_technicians.append({
-                    "id": tech.get("id"),
-                    "name": tech.get("name"), 
-                    "capacity_percentage": tech.get("capacity_percentage", 0),
-                    "available_hours": tech.get("available_hours", 0),
-                    "active_work_orders": tech.get("active_work_orders", 0),
-                    "urgent_count": tech.get("urgent_count", 0),
-                    "status": tech.get("status")
-                })
-        
-        return JSONResponse(content={
-            "technicians": available_technicians,
-            "total_available": len(available_technicians)
-        })
-        
+                available_technicians.append(
+                    {
+                        "id": tech.get("id"),
+                        "name": tech.get("name"),
+                        "capacity_percentage": tech.get("capacity_percentage", 0),
+                        "available_hours": tech.get("available_hours", 0),
+                        "active_work_orders": tech.get("active_work_orders", 0),
+                        "urgent_count": tech.get("urgent_count", 0),
+                        "status": tech.get("status"),
+                    }
+                )
+
+        return JSONResponse(
+            content={
+                "technicians": available_technicians,
+                "total_available": len(available_technicians),
+            }
+        )
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get technicians: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get technicians: {str(e)}"
+        )
 
 
 # ========== ADVANCED SCHEDULER ENDPOINTS ==========

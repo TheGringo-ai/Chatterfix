@@ -1,12 +1,9 @@
-import base64
 import json
 import logging
 import os
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
-from app.core.firestore_db import get_db_connection
 
 # Import Google Generative AI with error handling
 try:

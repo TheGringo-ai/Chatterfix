@@ -2,6 +2,7 @@
 HTTP Client for OCR Service
 Handles communication with the OCR microservice
 """
+
 import logging
 import os
 from typing import Optional
@@ -14,7 +15,9 @@ class OCRHTTPClient:
     """HTTP client for communicating with the OCR Service"""
 
     def __init__(self):
-        self.base_url = os.getenv("OCR_SERVICE_URL", "http://localhost:8081").rstrip('/')
+        self.base_url = os.getenv("OCR_SERVICE_URL", "http://localhost:8081").rstrip(
+            "/"
+        )
         self.timeout = httpx.Timeout(60.0)
         self.client = httpx.AsyncClient(
             timeout=self.timeout,

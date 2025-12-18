@@ -5,7 +5,7 @@ Comprehensive RBAC permissions following Least Privilege principle
 """
 
 from enum import Enum
-from typing import Dict, List, Set
+from typing import Dict, List
 
 
 class Permission(Enum):

@@ -16,17 +16,14 @@ logger = logging.getLogger(__name__)
 try:
     from app.modules.premium_licensing import (
         premium_licensing_manager,
-        PremiumModule,
-        LicenseTier,
         PremiumLicense,
         require_iot_license,
         require_enterprise_license,
         check_iot_access,
         get_license_status,
         get_current_customer_id,
-        get_customer_id_from_user,
-        PREMIUM_MODULE_PRICING
     )
+
     PREMIUM_LICENSING_AVAILABLE = True
 except ImportError:
     PREMIUM_LICENSING_AVAILABLE = False
@@ -36,6 +33,7 @@ except ImportError:
 # Backwards compatibility aliases
 class LicenseLevel:
     """License tier definitions (backwards compatibility)"""
+
     CORE = "core"
     IOT_ADVANCED = "iot_advanced"
     QUALITY_FIX = "quality_fix"
@@ -49,10 +47,11 @@ if PREMIUM_LICENSING_AVAILABLE:
     ChatterFixLicense = PremiumLicense
 else:
     # Fallback implementation for backwards compatibility
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     class ChatterFixLicense:
         """Fallback license class"""
+
         def __init__(self, customer_id: str, license_data: Dict):
             self.customer_id = customer_id
             self.tier = license_data.get("tier", LicenseLevel.CORE)
@@ -77,21 +76,25 @@ else:
                 return False
             try:
                 return datetime.now() > datetime.fromisoformat(self.expires_at)
-            except:
+            except Exception:
                 return False
 
     class FallbackLicensingManager:
         """Fallback licensing manager"""
+
         async def get_customer_license(self, customer_id: str) -> ChatterFixLicense:
             # Development mode - return full access
-            return ChatterFixLicense(customer_id, {
-                "tier": LicenseLevel.ENTERPRISE,
-                "features": ["voice", "vision", "iot", "quality", "safety"],
-                "sensor_limit": 100,
-                "api_calls_per_month": 50000,
-                "is_trial": True,
-                "trial_days_remaining": 30
-            })
+            return ChatterFixLicense(
+                customer_id,
+                {
+                    "tier": LicenseLevel.ENTERPRISE,
+                    "features": ["voice", "vision", "iot", "quality", "safety"],
+                    "sensor_limit": 100,
+                    "api_calls_per_month": 50000,
+                    "is_trial": True,
+                    "trial_days_remaining": 30,
+                },
+            )
 
         async def check_feature_access(self, customer_id: str, feature: str) -> bool:
             return True  # Allow all in fallback mode
@@ -105,12 +108,14 @@ else:
         @wraps(func)
         async def wrapper(*args, **kwargs):
             return await func(*args, **kwargs)
+
         return wrapper
 
     def require_enterprise_license(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             return await func(*args, **kwargs)
+
         return wrapper
 
     async def check_iot_access(customer_id: str) -> bool:
@@ -120,8 +125,12 @@ else:
         return {
             "customer_id": customer_id,
             "tier": "enterprise",
-            "modules_enabled": {"iot_advanced": True, "quality_fix": True, "safety_fix": True},
-            "is_trial": True
+            "modules_enabled": {
+                "iot_advanced": True,
+                "quality_fix": True,
+                "safety_fix": True,
+            },
+            "is_trial": True,
         }
 
 
@@ -137,25 +146,24 @@ async def validate_sensor_count(customer_id: str, sensor_count: int) -> Dict:
         return {
             "valid": False,
             "message": "Sensor monitoring requires IoT Advanced Module",
-            "upgrade_required": True
+            "upgrade_required": True,
         }
     elif sensor_limit == -1:
-        return {
-            "valid": True,
-            "message": "Unlimited sensors available"
-        }
+        return {"valid": True, "message": "Unlimited sensors available"}
     elif sensor_count <= sensor_limit:
         return {
             "valid": True,
             "message": f"Sensors: {sensor_count}/{sensor_limit}",
-            "remaining": sensor_limit - sensor_count
+            "remaining": sensor_limit - sensor_count,
         }
     else:
         return {
             "valid": False,
             "message": f"Sensor limit exceeded: {sensor_count}/{sensor_limit}",
-            "upgrade_required": True
+            "upgrade_required": True,
         }
 
 
-logger.info("IoT Advanced Licensing initialized (using unified premium licensing system)")
+logger.info(
+    "IoT Advanced Licensing initialized (using unified premium licensing system)"
+)

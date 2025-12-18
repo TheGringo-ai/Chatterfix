@@ -3,14 +3,11 @@ CEO Dashboard Router - AI Team Platform Command Center
 Provides comprehensive control over applications, users, and cloud services
 """
 
-from fastapi import APIRouter, Request, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-import json
 from datetime import datetime, timedelta
 import logging
-import os
-import shutil
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -29,7 +26,7 @@ PLATFORM_DATA = {
             "revenue": 47000,
             "uptime": 99.8,
             "icon": "fas fa-cogs",
-            "gradient": "linear-gradient(135deg, #667eea, #764ba2)"
+            "gradient": "linear-gradient(135deg, #667eea, #764ba2)",
         },
         "fixitfred": {
             "name": "Fix-it-Fred AI",
@@ -39,7 +36,7 @@ PLATFORM_DATA = {
             "success_rate": 97.3,
             "time_saved": 2340,
             "icon": "fas fa-robot",
-            "gradient": "linear-gradient(135deg, #4facfe, #00f2fe)"
+            "gradient": "linear-gradient(135deg, #4facfe, #00f2fe)",
         },
         "linesmart": {
             "name": "LineSmart Training",
@@ -49,7 +46,7 @@ PLATFORM_DATA = {
             "completion_rate": 89,
             "satisfaction": 4.8,
             "icon": "fas fa-graduation-cap",
-            "gradient": "linear-gradient(135deg, #f093fb, #f5576c)"
+            "gradient": "linear-gradient(135deg, #f093fb, #f5576c)",
         },
         "memory": {
             "name": "AI Memory Core",
@@ -59,24 +56,29 @@ PLATFORM_DATA = {
             "patterns": 2394,
             "mistakes_prevented": 847,
             "icon": "fas fa-brain",
-            "gradient": "linear-gradient(135deg, #2c3e50, #34495e)"
-        }
+            "gradient": "linear-gradient(135deg, #2c3e50, #34495e)",
+        },
     },
     "ai_team": {
-        "claude": {"name": "Claude Sonnet 4", "role": "Lead Architect", "status": "online"},
+        "claude": {
+            "name": "Claude Sonnet 4",
+            "role": "Lead Architect",
+            "status": "online",
+        },
         "chatgpt": {"name": "ChatGPT 4", "role": "Senior Dev", "status": "online"},
         "gemini": {"name": "Gemini 2.5", "role": "Creative Lead", "status": "online"},
         "grok": {"name": "Grok 3", "role": "Strategist", "status": "online"},
-        "fred": {"name": "Fix-it-Fred", "role": "Autonomous", "status": "online"}
+        "fred": {"name": "Fix-it-Fred", "role": "Autonomous", "status": "online"},
     },
     "platform_stats": {
         "applications": 4,
         "ai_members": 5,
         "uptime": 99.9,
         "mistakes_prevented": 47,
-        "estimated_value": 250000000
-    }
+        "estimated_value": 250000000,
+    },
 }
+
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def ceo_dashboard(request: Request):
@@ -88,15 +90,16 @@ async def ceo_dashboard(request: Request):
             "request": request,
             "platform_data": PLATFORM_DATA,
             "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "page_title": "AI Team Platform - CEO Command Center"
+            "page_title": "AI Team Platform - CEO Command Center",
         }
-        
+
         logger.info("Rendering CEO dashboard")
         return templates.TemplateResponse("ceo_dashboard.html", context)
-        
+
     except Exception as e:
         logger.error(f"Error rendering CEO dashboard: {str(e)}")
         raise HTTPException(status_code=500, detail="Dashboard unavailable")
+
 
 @router.get("/api/platform-stats")
 async def get_platform_stats():
@@ -107,11 +110,12 @@ async def get_platform_stats():
         return {
             "status": "success",
             "data": PLATFORM_DATA["platform_stats"],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         logger.error(f"Error fetching platform stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Stats unavailable")
+
 
 @router.get("/api/applications")
 async def get_applications():
@@ -120,13 +124,14 @@ async def get_applications():
     """
     try:
         return {
-            "status": "success", 
+            "status": "success",
             "applications": PLATFORM_DATA["applications"],
-            "count": len(PLATFORM_DATA["applications"])
+            "count": len(PLATFORM_DATA["applications"]),
         }
     except Exception as e:
         logger.error(f"Error fetching applications: {str(e)}")
         raise HTTPException(status_code=500, detail="Applications unavailable")
+
 
 @router.get("/api/ai-team")
 async def get_ai_team_status():
@@ -137,11 +142,12 @@ async def get_ai_team_status():
         return {
             "status": "success",
             "ai_team": PLATFORM_DATA["ai_team"],
-            "total_members": len(PLATFORM_DATA["ai_team"])
+            "total_members": len(PLATFORM_DATA["ai_team"]),
         }
     except Exception as e:
         logger.error(f"Error fetching AI team status: {str(e)}")
         raise HTTPException(status_code=500, detail="AI team status unavailable")
+
 
 @router.post("/api/deploy-application")
 async def deploy_application(deployment_config: dict):
@@ -152,12 +158,12 @@ async def deploy_application(deployment_config: dict):
         app_type = deployment_config.get("type")
         deployment_target = deployment_config.get("target", "cloud_run")
         ai_team_config = deployment_config.get("ai_team", [])
-        
+
         # Simulate deployment process
         deployment_id = f"deploy_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
+
         logger.info(f"Starting deployment: {deployment_id} for {app_type}")
-        
+
         return {
             "status": "success",
             "deployment_id": deployment_id,
@@ -165,12 +171,13 @@ async def deploy_application(deployment_config: dict):
             "target": deployment_target,
             "ai_team": ai_team_config,
             "estimated_completion": "5-10 minutes",
-            "message": f"Deployment {deployment_id} initiated successfully"
+            "message": f"Deployment {deployment_id} initiated successfully",
         }
-        
+
     except Exception as e:
         logger.error(f"Error initiating deployment: {str(e)}")
         raise HTTPException(status_code=500, detail="Deployment failed")
+
 
 @router.get("/api/deployment-status/{deployment_id}")
 async def get_deployment_status(deployment_id: str):
@@ -186,14 +193,15 @@ async def get_deployment_status(deployment_id: str):
             "progress": 25,
             "logs": [
                 "✅ Infrastructure provisioning complete",
-                "🤖 AI team assembled successfully", 
+                "🤖 AI team assembled successfully",
                 "⚡ Code generation in progress",
-                "🔄 Running automated tests"
-            ]
+                "🔄 Running automated tests",
+            ],
         }
     except Exception as e:
         logger.error(f"Error fetching deployment status: {str(e)}")
         raise HTTPException(status_code=500, detail="Status unavailable")
+
 
 @router.post("/api/manage-application/{app_id}")
 async def manage_application(app_id: str, action: dict):
@@ -202,25 +210,26 @@ async def manage_application(app_id: str, action: dict):
     """
     try:
         action_type = action.get("type")
-        
+
         if app_id not in PLATFORM_DATA["applications"]:
             raise HTTPException(status_code=404, detail="Application not found")
-        
+
         app_name = PLATFORM_DATA["applications"][app_id]["name"]
-        
+
         logger.info(f"Managing {app_name}: {action_type}")
-        
+
         return {
             "status": "success",
             "app_id": app_id,
             "app_name": app_name,
             "action": action_type,
-            "message": f"{action_type} action completed for {app_name}"
+            "message": f"{action_type} action completed for {app_name}",
         }
-        
+
     except Exception as e:
         logger.error(f"Error managing application {app_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Management action failed")
+
 
 @router.get("/api/user-management")
 async def get_user_management_data():
@@ -236,20 +245,17 @@ async def get_user_management_data():
             "applications": {
                 "chatterfix": {"users": 1247, "active": 298},
                 "linesmart": {"users": 342, "active": 89},
-                "memory": {"users": 0, "active": 0}  # System service
+                "memory": {"users": 0, "active": 0},  # System service
             },
-            "user_roles": {
-                "admin": 12,
-                "manager": 87, 
-                "user": 1148
-            }
+            "user_roles": {"admin": 12, "manager": 87, "user": 1148},
         }
-        
+
         return {"status": "success", "data": user_data}
-        
+
     except Exception as e:
         logger.error(f"Error fetching user management data: {str(e)}")
         raise HTTPException(status_code=500, detail="User data unavailable")
+
 
 @router.get("/api/cloud-services")
 async def get_cloud_services_status():
@@ -261,30 +267,27 @@ async def get_cloud_services_status():
             "google_cloud": {
                 "status": "online",
                 "services": ["Cloud Run", "Firestore", "Cloud Storage"],
-                "monthly_cost": 1247.50
+                "monthly_cost": 1247.50,
             },
             "aws": {
-                "status": "online", 
-                "services": ["Lambda", "S3", "RDS"],
-                "monthly_cost": 892.30
-            },
-            "docker": {
                 "status": "online",
-                "containers": 12,
-                "images": 8
+                "services": ["Lambda", "S3", "RDS"],
+                "monthly_cost": 892.30,
             },
+            "docker": {"status": "online", "containers": 12, "images": 8},
             "cdn": {
                 "status": "online",
                 "bandwidth": "2.4TB",
-                "cache_hit_rate": "94.2%"
-            }
+                "cache_hit_rate": "94.2%",
+            },
         }
-        
+
         return {"status": "success", "data": cloud_data}
-        
+
     except Exception as e:
         logger.error(f"Error fetching cloud services status: {str(e)}")
         raise HTTPException(status_code=500, detail="Cloud data unavailable")
+
 
 @router.post("/api/chat/send")
 async def send_chat_message(message_data: dict):
@@ -295,27 +298,28 @@ async def send_chat_message(message_data: dict):
         user_message = message_data.get("message", "")
         user_id = message_data.get("user_id", "ceo")
         session_id = message_data.get("session_id", "default")
-        
+
         if not user_message.strip():
             raise HTTPException(status_code=400, detail="Message cannot be empty")
-        
+
         # Log the message
         logger.info(f"CEO Chat: {user_id} - {user_message[:100]}...")
-        
+
         # Generate AI response based on message content
         ai_response = await generate_ceo_chat_response(user_message)
-        
+
         return {
             "status": "success",
             "user_message": user_message,
             "ai_response": ai_response,
             "timestamp": datetime.now().isoformat(),
-            "session_id": session_id
+            "session_id": session_id,
         }
-        
+
     except Exception as e:
         logger.error(f"Error processing chat message: {str(e)}")
         raise HTTPException(status_code=500, detail="Chat processing failed")
+
 
 @router.get("/api/chat/history/{session_id}")
 async def get_chat_history(session_id: str):
@@ -329,19 +333,16 @@ async def get_chat_history(session_id: str):
                 "id": "msg_1",
                 "sender": "ai",
                 "message": "Welcome to the CEO Command Center! I'm here to help you manage your AI team platform.",
-                "timestamp": (datetime.now() - timedelta(minutes=5)).isoformat()
+                "timestamp": (datetime.now() - timedelta(minutes=5)).isoformat(),
             }
         ]
-        
-        return {
-            "status": "success",
-            "session_id": session_id,
-            "history": history
-        }
-        
+
+        return {"status": "success", "session_id": session_id, "history": history}
+
     except Exception as e:
         logger.error(f"Error fetching chat history: {str(e)}")
         raise HTTPException(status_code=500, detail="History unavailable")
+
 
 @router.post("/api/chat/voice-command")
 async def process_voice_command(audio_data: dict):
@@ -351,29 +352,28 @@ async def process_voice_command(audio_data: dict):
     try:
         # Placeholder for voice processing - would integrate with speech-to-text
         command_text = audio_data.get("transcription", "")
-        
+
         if not command_text:
             raise HTTPException(status_code=400, detail="No transcription provided")
-        
+
         # Process the voice command
         ai_response = await generate_ceo_chat_response(command_text)
-        
+
         return {
             "status": "success",
             "command": command_text,
             "response": ai_response,
-            "processed_at": datetime.now().isoformat()
+            "processed_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error processing voice command: {str(e)}")
         raise HTTPException(status_code=500, detail="Voice processing failed")
 
+
 @router.post("/api/chat/upload")
 async def upload_file_for_chat(
-    file: UploadFile = File(...),
-    user_id: str = "ceo",
-    session_id: str = "default"
+    file: UploadFile = File(...), user_id: str = "ceo", session_id: str = "default"
 ):
     """
     Upload and process files for CEO chat (images, documents, audio)
@@ -383,29 +383,35 @@ async def upload_file_for_chat(
         file_size = 0
         content = await file.read()
         file_size = len(content)
-        
+
         if file_size > 10 * 1024 * 1024:  # 10MB
-            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB")
-        
+            raise HTTPException(
+                status_code=413, detail="File too large. Maximum size is 10MB"
+            )
+
         # Create uploads directory if it doesn't exist
         upload_dir = Path("uploads/ceo_chat")
         upload_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_extension = Path(file.filename).suffix
         unique_filename = f"{user_id}_{session_id}_{timestamp}_{file.filename}"
         file_path = upload_dir / unique_filename
-        
+
         # Save file
         with open(file_path, "wb") as buffer:
             buffer.write(content)
-        
+
         # Process file based on type
-        analysis = await analyze_uploaded_file(file.filename, file.content_type, file_path)
-        
-        logger.info(f"CEO Chat File Upload: {user_id} - {file.filename} ({file_size} bytes)")
-        
+        analysis = await analyze_uploaded_file(
+            file.filename, file.content_type, file_path
+        )
+
+        logger.info(
+            f"CEO Chat File Upload: {user_id} - {file.filename} ({file_size} bytes)"
+        )
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -413,16 +419,19 @@ async def upload_file_for_chat(
             "file_type": file.content_type,
             "saved_path": str(file_path),
             "analysis": analysis,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error uploading file: {str(e)}")
         raise HTTPException(status_code=500, detail="File upload failed")
 
-async def analyze_uploaded_file(filename: str, content_type: str, file_path: Path) -> str:
+
+async def analyze_uploaded_file(
+    filename: str, content_type: str, file_path: Path
+) -> str:
     """
     Analyze uploaded files and provide insights
     """
@@ -430,36 +439,37 @@ async def analyze_uploaded_file(filename: str, content_type: str, file_path: Pat
         if content_type.startswith("image/"):
             # Image analysis
             return f"📸 Image '{filename}' uploaded successfully. The AI team can analyze this image for content, text extraction, or visual insights."
-            
+
         elif content_type.startswith("audio/"):
             # Audio analysis
             return f"🎵 Audio file '{filename}' uploaded. The AI team can transcribe this audio or analyze audio content."
-            
+
         elif content_type.startswith("video/"):
             # Video analysis
             return f"🎥 Video file '{filename}' uploaded. The AI team can analyze video content, extract frames, or provide video insights."
-            
+
         elif content_type == "application/pdf":
             # PDF analysis
             return f"📄 PDF document '{filename}' uploaded. The AI team can extract text, analyze content, or provide document insights."
-            
+
         elif content_type.startswith("text/"):
             # Text file analysis
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
                     word_count = len(content.split())
                     return f"📝 Text file '{filename}' uploaded ({word_count} words). Content preview: {content[:200]}{'...' if len(content) > 200 else ''}"
-            except:
+            except Exception:
                 return f"📝 Text file '{filename}' uploaded. The AI team can analyze this document."
-                
+
         else:
             # Other file types
             return f"📎 File '{filename}' uploaded successfully. The AI team can process this file type."
-            
+
     except Exception as e:
         logger.error(f"Error analyzing file {filename}: {str(e)}")
         return f"File '{filename}' uploaded successfully for processing."
+
 
 async def generate_ceo_chat_response(message: str) -> str:
     """
@@ -467,9 +477,12 @@ async def generate_ceo_chat_response(message: str) -> str:
     """
     try:
         message_lower = message.lower().strip()
-        
+
         # Deployment commands
-        if any(keyword in message_lower for keyword in ['deploy', 'spin up', 'create app', 'new application']):
+        if any(
+            keyword in message_lower
+            for keyword in ["deploy", "spin up", "create app", "new application"]
+        ):
             return """🚀 **Application Deployment Initiated**
 
 I'll coordinate with the AI team to deploy your new application:
@@ -494,7 +507,10 @@ Estimated completion: **5-10 minutes**
 You'll receive real-time updates during deployment."""
 
         # Status/health commands
-        elif any(keyword in message_lower for keyword in ['status', 'health', 'check', 'monitor']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["status", "health", "check", "monitor"]
+        ):
             return """📊 **Platform Health Report**
 
 **✅ All Systems Operational**
@@ -521,7 +537,10 @@ You'll receive real-time updates during deployment."""
 Everything is running smoothly! 🎯"""
 
         # Analytics/metrics commands
-        elif any(keyword in message_lower for keyword in ['analytics', 'metrics', 'performance', 'revenue']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["analytics", "metrics", "performance", "revenue"]
+        ):
             return """📈 **Platform Performance Metrics**
 
 **💰 Financial Overview:**
@@ -551,7 +570,10 @@ Everything is running smoothly! 🎯"""
 Would you like me to generate detailed reports or focus on specific metrics?"""
 
         # AI team commands
-        elif any(keyword in message_lower for keyword in ['ai team', 'team members', 'developers']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["ai team", "team members", "developers"]
+        ):
             return """🤖 **AI Team Status & Capabilities**
 
 **Current Team Members:**
@@ -589,7 +611,10 @@ Would you like me to generate detailed reports or focus on specific metrics?"""
 **Team Coordination:** All members can collaborate on complex projects. Ready for deployment! 🚀"""
 
         # Help/commands
-        elif any(keyword in message_lower for keyword in ['help', 'commands', 'what can you do']):
+        elif any(
+            keyword in message_lower
+            for keyword in ["help", "commands", "what can you do"]
+        ):
             return """💡 **CEO Command Center - Available Commands**
 
 **🚀 Deployment & Management:**
@@ -647,6 +672,7 @@ Would you like me to take a specific action, or would you like me to clarify wha
         logger.error(f"Error generating CEO chat response: {str(e)}")
         return "I apologize, but I encountered an error processing your request. The AI team has been notified and is working on a resolution. Please try again in a moment."
 
+
 # Health check endpoint for CEO dashboard
 @router.get("/health")
 async def ceo_dashboard_health():
@@ -659,5 +685,5 @@ async def ceo_dashboard_health():
         "version": "1.0.0",
         "chat_enabled": True,
         "ai_team_coordination": True,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }

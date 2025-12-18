@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.core.db_adapter import get_db_adapter
-from app.core.firestore_db import get_db_connection, get_firestore_manager
+from app.core.firestore_db import get_db_connection
 from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)

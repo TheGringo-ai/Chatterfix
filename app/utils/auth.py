@@ -19,7 +19,8 @@ try:
 except ImportError:
     PASSLIB_AVAILABLE = False
 
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import PyJWTError
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,9 @@ import os
 
 SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY")
 if not SECRET_KEY:
-    logger.warning("SECRET_KEY not set in environment - using fallback for development only")
+    logger.warning(
+        "SECRET_KEY not set in environment - using fallback for development only"
+    )
     if os.getenv("ENVIRONMENT", "development") == "production":
         raise ValueError("SECRET_KEY environment variable is required in production")
     SECRET_KEY = "dev-only-secret-key-not-for-production"
@@ -48,7 +51,6 @@ rate_limit_storage: Dict[str, Dict] = {}
 class SecurityError(Exception):
     """Custom exception for security-related errors"""
 
-    pass
 
 
 def hash_password(password: str) -> str:
@@ -220,10 +222,10 @@ def verify_token(token: str) -> dict:
     except jwt.ExpiredSignatureError:
         logger.warning("Token has expired")
         raise SecurityError("Token has expired")
-    except jwt.JWTClaimsError:
+    except jwt.InvalidClaimError:
         logger.warning("Token has invalid claims")
         raise SecurityError("Token has invalid claims")
-    except JWTError as e:
+    except PyJWTError as e:
         logger.warning(f"Token verification failed: {e}")
         raise SecurityError("Invalid token")
     except Exception as e:
@@ -461,7 +463,9 @@ def create_secure_api_key(user_id: int, purpose: str = "general") -> str:
     random_part = secrets.token_urlsafe(32)
 
     # Create checksum for validation
-    checksum = hashlib.md5(f"{user_id}{purpose}{random_part}".encode(), usedforsecurity=False).hexdigest()[:8]
+    checksum = hashlib.md5(
+        f"{user_id}{purpose}{random_part}".encode(), usedforsecurity=False
+    ).hexdigest()[:8]
 
     api_key = f"{prefix}_{random_part}_{checksum}"
 

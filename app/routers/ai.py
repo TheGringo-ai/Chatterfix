@@ -8,12 +8,17 @@ from pydantic import BaseModel
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
-from app.auth import get_current_active_user, get_optional_current_user
+from app.auth import get_current_active_user
 from app.models.user import User
-from typing import Optional, Union
+from typing import Union
 import json
 from app.services.ai_assistant import chatterfix_ai
-from app.services.computer_vision import analyze_asset_condition, recognize_part, extract_text_from_image, detect_equipment_issues
+from app.services.computer_vision import (
+    analyze_asset_condition,
+    recognize_part,
+    extract_text_from_image,
+    detect_equipment_issues,
+)
 from app.services.voice_commands import (
     get_voice_command_suggestions,
     process_voice_command,
@@ -24,18 +29,27 @@ try:
     from app.services.platform_knowledge import (
         get_platform_context,
         get_ai_team_context,
-        get_cached_platform_context
+        get_cached_platform_context,
     )
+
     PLATFORM_KNOWLEDGE_AVAILABLE = True
 except ImportError:
     PLATFORM_KNOWLEDGE_AVAILABLE = False
-    def get_platform_context(include_full=False): return ""
-    def get_ai_team_context(task_type="general"): return ""
-    def get_cached_platform_context(): return ""
+
+    def get_platform_context(include_full=False):
+        return ""
+
+    def get_ai_team_context(task_type="general"):
+        return ""
+
+    def get_cached_platform_context():
+        return ""
+
 
 # Server-side Speech-to-Text
 try:
     from app.services.speech_to_text_service import get_speech_service, AudioEncoding
+
     SPEECH_SERVICE_AVAILABLE = True
 except ImportError:
     SPEECH_SERVICE_AVAILABLE = False
@@ -43,6 +57,7 @@ except ImportError:
 # Import AI Memory Service
 try:
     from app.services.ai_memory_integration import get_ai_memory_service
+
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
@@ -118,7 +133,7 @@ async def chat(request: ChatRequest):
             user_id=request.user_id,
             context_type=context_type,
             force_team=request.force_team,
-            fast_mode=request.fast_mode
+            fast_mode=request.fast_mode,
         )
         return JSONResponse({"response": response})
     except Exception as e:
@@ -144,13 +159,13 @@ async def chat_with_team(request: ChatRequest):
             context=request.context,
             user_id=request.user_id,
             context_type=request.context_type,
-            fast_mode=request.fast_mode
+            fast_mode=request.fast_mode,
         )
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse(
             {"success": False, "response": f"Error: {str(e)}", "model_used": "error"},
-            status_code=500
+            status_code=500,
         )
 
 
@@ -170,27 +185,39 @@ async def get_ai_team_status():
         health = await client.health_check()
         models = await client.get_available_models()
 
-        return JSONResponse({
-            "success": True,
-            "team_available": health.get("status") == "healthy",
-            "health": health,
-            "models": models.get("models", []),
-            "total_models": models.get("total", 0),
-            "capabilities": [
-                "analysis", "reasoning", "planning",
-                "coding", "debugging", "architecture",
-                "creativity", "design", "innovation",
-                "fast-coding", "optimization", "strategy"
-            ]
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "team_available": health.get("status") == "healthy",
+                "health": health,
+                "models": models.get("models", []),
+                "total_models": models.get("total", 0),
+                "capabilities": [
+                    "analysis",
+                    "reasoning",
+                    "planning",
+                    "coding",
+                    "debugging",
+                    "architecture",
+                    "creativity",
+                    "design",
+                    "innovation",
+                    "fast-coding",
+                    "optimization",
+                    "strategy",
+                ],
+            }
+        )
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "team_available": False,
-            "error": str(e),
-            "models": [],
-            "total_models": 0
-        })
+        return JSONResponse(
+            {
+                "success": False,
+                "team_available": False,
+                "error": str(e),
+                "models": [],
+                "total_models": 0,
+            }
+        )
 
 
 @router.get("/router/stats")
@@ -208,15 +235,9 @@ async def get_router_stats():
         from app.services.ai_router import ai_router
 
         stats = ai_router.get_router_stats()
-        return JSONResponse({
-            "success": True,
-            **stats
-        })
+        return JSONResponse({"success": True, **stats})
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/router/clear-cache")
@@ -231,18 +252,11 @@ async def clear_router_cache():
 
         # Clear cache by creating a new one
         ai_router.cache = type(ai_router.cache)(
-            max_size=ai_router.cache.max_size,
-            ttl=ai_router.cache.ttl
+            max_size=ai_router.cache.max_size, ttl=ai_router.cache.ttl
         )
-        return JSONResponse({
-            "success": True,
-            "message": "Cache cleared successfully"
-        })
+        return JSONResponse({"success": True, "message": "Cache cleared successfully"})
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/router/reset-circuit-breaker")
@@ -257,15 +271,11 @@ async def reset_circuit_breaker():
 
         ai_router.circuit_breaker.failure_count = 0
         ai_router.circuit_breaker.state = "closed"
-        return JSONResponse({
-            "success": True,
-            "message": "Circuit breaker reset to closed state"
-        })
+        return JSONResponse(
+            {"success": True, "message": "Circuit breaker reset to closed state"}
+        )
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/analyze-image")
@@ -443,18 +453,23 @@ async def inspect_equipment_endpoint(image: UploadFile = File(...)):
         with open(temp_path, "rb") as f:
             image_data = f.read()
         result = await detect_equipment_issues(image_data)
-        
+
         # Add emergency voice feedback for critical issues
         if result.get("success") and result.get("overall_condition_score", 10) < 3.0:
-            urgent_issues = [issue for issue in result.get("detected_issues", []) 
-                           if issue.get("severity") in ["critical", "high", "severe"]]
-            
+            urgent_issues = [
+                issue
+                for issue in result.get("detected_issues", [])
+                if issue.get("severity") in ["critical", "high", "severe"]
+            ]
+
             if urgent_issues:
-                result["emergency_voice_feedback"] = f"CRITICAL ALERT: {len(urgent_issues)} high-priority issues detected. " + \
-                    f"Overall condition score {result['overall_condition_score']} out of 10. " + \
-                    f"Immediate maintenance required. Safety precautions advised."
+                result["emergency_voice_feedback"] = (
+                    f"CRITICAL ALERT: {len(urgent_issues)} high-priority issues detected. "
+                    + f"Overall condition score {result['overall_condition_score']} out of 10. "
+                    + f"Immediate maintenance required. Safety precautions advised."
+                )
                 result["immediate_actions_required"] = True
-        
+
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -464,83 +479,89 @@ async def inspect_equipment_endpoint(image: UploadFile = File(...)):
 
 @router.post("/emergency-workflow")
 async def emergency_workflow(
-    voice_text: str = Form(...), 
+    voice_text: str = Form(...),
     image: UploadFile = File(None),
-    technician_id: int = Form(1)
+    technician_id: int = Form(1),
 ):
     """Complete emergency workflow: Voice + Vision + AI Analysis + Work Order Creation"""
     try:
         # Step 1: Process voice command for context and urgency
         voice_result = await process_voice_command(voice_text, technician_id)
-        
+
         workflow_result = {
             "voice_analysis": voice_result,
             "visual_analysis": None,
             "integrated_response": None,
             "emergency_actions": [],
-            "voice_feedback": "Voice command processed."
+            "voice_feedback": "Voice command processed.",
         }
-        
+
         # Step 2: Process image if provided
         if image and image.filename:
             temp_path = f"temp_{image.filename}"
             with open(temp_path, "wb") as buffer:
                 shutil.copyfileobj(image.file, buffer)
-            
+
             try:
                 with open(temp_path, "rb") as f:
                     image_data = f.read()
-                
+
                 # Comprehensive visual analysis
                 visual_result = await detect_equipment_issues(image_data)
                 part_result = await recognize_part(image_data=image_data)
                 text_result = await extract_text_from_image(image_data)
-                
+
                 workflow_result["visual_analysis"] = {
                     "equipment_condition": visual_result,
                     "part_recognition": part_result,
-                    "text_extraction": text_result
+                    "text_extraction": text_result,
                 }
-                
+
             finally:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
-        
+
         # Step 3: Integrate voice + vision for emergency response
         if workflow_result["visual_analysis"]:
-            condition_score = workflow_result["visual_analysis"]["equipment_condition"].get("overall_condition_score", 10)
-            
+            condition_score = workflow_result["visual_analysis"][
+                "equipment_condition"
+            ].get("overall_condition_score", 10)
+
             # Emergency integration logic
             if condition_score < 3.0 and voice_result.get("success"):
                 # Critical emergency detected
                 workflow_result["emergency_actions"] = [
                     "IMMEDIATE: Stop equipment operation",
-                    "SAFETY: Implement lockout/tagout procedures", 
+                    "SAFETY: Implement lockout/tagout procedures",
                     "PARTS: Order replacement components automatically",
                     "NOTIFY: Alert maintenance supervisor and safety team",
-                    "DOCUMENT: Auto-generate emergency work order"
+                    "DOCUMENT: Auto-generate emergency work order",
                 ]
-                
-                workflow_result["voice_feedback"] = f"EMERGENCY PROTOCOL ACTIVATED. Critical equipment condition detected with score {condition_score} out of 10. " + \
-                    f"Work order {voice_result.get('work_order_id', 'EMERGENCY')} created with highest priority. " + \
-                    "Immediate shutdown and maintenance required. All safety teams have been notified."
-                
+
+                workflow_result["voice_feedback"] = (
+                    f"EMERGENCY PROTOCOL ACTIVATED. Critical equipment condition detected with score {condition_score} out of 10. "
+                    + f"Work order {voice_result.get('work_order_id', 'EMERGENCY')} created with highest priority. "
+                    + "Immediate shutdown and maintenance required. All safety teams have been notified."
+                )
+
                 workflow_result["integrated_response"] = {
                     "priority": "CRITICAL",
                     "estimated_repair_time": "4-6 hours",
                     "safety_level": "EXTREME CAUTION",
-                    "business_impact": "PRODUCTION LINE STOPPAGE PREVENTED"
+                    "business_impact": "PRODUCTION LINE STOPPAGE PREVENTED",
                 }
-        
+
         return JSONResponse(workflow_result)
-        
+
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "emergency_actions": ["Contact maintenance team immediately"],
-            "voice_feedback": f"Emergency workflow error: {str(e)}"
-        })
+        return JSONResponse(
+            {
+                "success": False,
+                "error": str(e),
+                "emergency_actions": ["Contact maintenance team immediately"],
+                "voice_feedback": f"Emergency workflow error: {str(e)}",
+            }
+        )
         shutil.copyfileobj(image.file, buffer)
 
     try:
@@ -563,28 +584,21 @@ async def voice_suggestions():
 
 # ============ AI MEMORY ENDPOINTS ============
 
+
 @router.get("/memory/stats")
 async def get_memory_stats():
     """Get AI memory system statistics"""
     if not MEMORY_AVAILABLE:
-        return JSONResponse({
-            "error": "Memory service not available",
-            "available": False
-        })
+        return JSONResponse(
+            {"error": "Memory service not available", "available": False}
+        )
 
     try:
         memory = get_ai_memory_service()
         stats = await memory.get_memory_stats()
-        return JSONResponse({
-            "success": True,
-            "available": True,
-            **stats
-        })
+        return JSONResponse({"success": True, "available": True, **stats})
     except Exception as e:
-        return JSONResponse({
-            "error": str(e),
-            "available": False
-        }, status_code=500)
+        return JSONResponse({"error": str(e), "available": False}, status_code=500)
 
 
 @router.get("/memory/mistakes")
@@ -596,15 +610,11 @@ async def get_recent_mistakes():
     try:
         memory = get_ai_memory_service()
         mistakes = await memory.firestore.get_collection(
-            "mistake_patterns",
-            limit=20,
-            order_by="-timestamp"
+            "mistake_patterns", limit=20, order_by="-timestamp"
         )
-        return JSONResponse({
-            "success": True,
-            "count": len(mistakes),
-            "mistakes": mistakes
-        })
+        return JSONResponse(
+            {"success": True, "count": len(mistakes), "mistakes": mistakes}
+        )
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -618,15 +628,11 @@ async def get_solutions():
     try:
         memory = get_ai_memory_service()
         solutions = await memory.firestore.get_collection(
-            "solution_knowledge_base",
-            limit=20,
-            order_by="-timestamp"
+            "solution_knowledge_base", limit=20, order_by="-timestamp"
         )
-        return JSONResponse({
-            "success": True,
-            "count": len(solutions),
-            "solutions": solutions
-        })
+        return JSONResponse(
+            {"success": True, "count": len(solutions), "solutions": solutions}
+        )
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -649,11 +655,13 @@ async def capture_solution(
             code_template=code_template,
             success_rate=1.0,
         )
-        return JSONResponse({
-            "success": True,
-            "solution_id": solution_id,
-            "message": "Solution captured to knowledge base"
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "solution_id": solution_id,
+                "message": "Solution captured to knowledge base",
+            }
+        )
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -673,27 +681,29 @@ async def search_memory(query: str = Form(...)):
         # Find relevant solutions
         solutions = await memory.find_solutions(query)
 
-        return JSONResponse({
-            "success": True,
-            "query": query,
-            "warnings": [
-                {
-                    "type": "past_mistake",
-                    "description": m.get("description"),
-                    "prevention": m.get("prevention_strategy"),
-                    "severity": m.get("severity")
-                }
-                for m in similar_mistakes
-            ],
-            "solutions": [
-                {
-                    "problem": s.get("problem_pattern"),
-                    "solution": s.get("solution_steps"),
-                    "success_rate": s.get("success_rate")
-                }
-                for s in solutions
-            ]
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "query": query,
+                "warnings": [
+                    {
+                        "type": "past_mistake",
+                        "description": m.get("description"),
+                        "prevention": m.get("prevention_strategy"),
+                        "severity": m.get("severity"),
+                    }
+                    for m in similar_mistakes
+                ],
+                "solutions": [
+                    {
+                        "problem": s.get("problem_pattern"),
+                        "solution": s.get("solution_steps"),
+                        "success_rate": s.get("success_rate"),
+                    }
+                    for s in solutions
+                ],
+            }
+        )
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -701,6 +711,7 @@ async def search_memory(query: str = Form(...)):
 # ============ SERVER-SIDE SPEECH-TO-TEXT ENDPOINTS ============
 # These endpoints provide reliable speech recognition independent of browser
 # Optimized for factory floor environments with noise handling
+
 
 @router.post("/speech/transcribe")
 async def transcribe_audio(
@@ -716,11 +727,14 @@ async def transcribe_audio(
     Optimized for manufacturing environments with custom vocabulary.
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Speech-to-Text service not available",
-            "message": "Install google-cloud-speech and configure credentials"
-        }, status_code=503)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "Speech-to-Text service not available",
+                "message": "Install google-cloud-speech and configure credentials",
+            },
+            status_code=503,
+        )
 
     try:
         speech_service = get_speech_service()
@@ -742,25 +756,24 @@ async def transcribe_audio(
             language_code=language_code,
         )
 
-        return JSONResponse({
-            "success": True,
-            "transcript": result.transcript,
-            "confidence": result.confidence,
-            "language": result.language_code,
-            "is_final": result.is_final,
-            "alternatives": result.alternatives,
-            "words": result.words,
-            "processing_time_ms": result.processing_time_ms,
-            "audio_duration_ms": result.audio_duration_ms,
-            "noise_level": result.noise_level,
-            "timestamp": result.timestamp,
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "transcript": result.transcript,
+                "confidence": result.confidence,
+                "language": result.language_code,
+                "is_final": result.is_final,
+                "alternatives": result.alternatives,
+                "words": result.words,
+                "processing_time_ms": result.processing_time_ms,
+                "audio_duration_ms": result.audio_duration_ms,
+                "noise_level": result.noise_level,
+                "timestamp": result.timestamp,
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/speech/transcribe-base64")
@@ -776,10 +789,10 @@ async def transcribe_audio_base64(
     Useful for mobile apps and web applications that capture audio as base64.
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Speech-to-Text service not available"
-        }, status_code=503)
+        return JSONResponse(
+            {"success": False, "error": "Speech-to-Text service not available"},
+            status_code=503,
+        )
 
     try:
         speech_service = get_speech_service()
@@ -798,23 +811,22 @@ async def transcribe_audio_base64(
             language_code=language_code,
         )
 
-        return JSONResponse({
-            "success": True,
-            "transcript": result.transcript,
-            "confidence": result.confidence,
-            "language": result.language_code,
-            "is_final": result.is_final,
-            "alternatives": result.alternatives,
-            "words": result.words,
-            "processing_time_ms": result.processing_time_ms,
-            "noise_level": result.noise_level,
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "transcript": result.transcript,
+                "confidence": result.confidence,
+                "language": result.language_code,
+                "is_final": result.is_final,
+                "alternatives": result.alternatives,
+                "words": result.words,
+                "processing_time_ms": result.processing_time_ms,
+                "noise_level": result.noise_level,
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/speech/transcribe-and-execute")
@@ -836,10 +848,10 @@ async def transcribe_and_execute_command(
     Perfect for technicians on the factory floor with dirty hands.
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Speech-to-Text service not available"
-        }, status_code=503)
+        return JSONResponse(
+            {"success": False, "error": "Speech-to-Text service not available"},
+            status_code=503,
+        )
 
     try:
         speech_service = get_speech_service()
@@ -861,25 +873,29 @@ async def transcribe_and_execute_command(
             # Execute the voice command
             execution_result = await process_voice_command(command, technician_id)
 
-        return JSONResponse({
-            "success": True,
-            "transcription": transcription_result["transcription"],
-            "has_wake_word": transcription_result["has_wake_word"],
-            "command": command,
-            "command_type": command_type,
-            "execution_result": execution_result,
-            "voice_feedback": _generate_voice_feedback(
-                transcription_result,
-                execution_result
-            )
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "transcription": transcription_result["transcription"],
+                "has_wake_word": transcription_result["has_wake_word"],
+                "command": command,
+                "command_type": command_type,
+                "execution_result": execution_result,
+                "voice_feedback": _generate_voice_feedback(
+                    transcription_result, execution_result
+                ),
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "voice_feedback": f"Sorry, I couldn't process that command. Error: {str(e)}"
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": str(e),
+                "voice_feedback": f"Sorry, I couldn't process that command. Error: {str(e)}",
+            },
+            status_code=500,
+        )
 
 
 @router.post("/speech/detect-wake-word")
@@ -894,31 +910,36 @@ async def detect_wake_word(
     Useful for implementing always-listening mode.
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "detected": False,
-            "error": "Speech-to-Text service not available"
-        }, status_code=503)
+        return JSONResponse(
+            {
+                "success": False,
+                "detected": False,
+                "error": "Speech-to-Text service not available",
+            },
+            status_code=503,
+        )
 
     try:
         speech_service = get_speech_service()
         audio_data = await audio.read()
 
-        detected, wake_word, confidence = await speech_service.detect_wake_word(audio_data)
+        detected, wake_word, confidence = await speech_service.detect_wake_word(
+            audio_data
+        )
 
-        return JSONResponse({
-            "success": True,
-            "detected": detected,
-            "wake_word": wake_word,
-            "confidence": confidence,
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "detected": detected,
+                "wake_word": wake_word,
+                "confidence": confidence,
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "detected": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse(
+            {"success": False, "detected": False, "error": str(e)}, status_code=500
+        )
 
 
 @router.get("/speech/status")
@@ -929,27 +950,23 @@ async def get_speech_service_status():
     Returns service availability, supported encodings, languages, etc.
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "available": False,
-            "error": "Speech-to-Text service module not installed",
-            "install_command": "pip install google-cloud-speech"
-        })
+        return JSONResponse(
+            {
+                "available": False,
+                "error": "Speech-to-Text service module not installed",
+                "install_command": "pip install google-cloud-speech",
+            }
+        )
 
     try:
         speech_service = get_speech_service()
         status = speech_service.get_service_status()
         status["supported_languages"] = speech_service.get_supported_languages()
 
-        return JSONResponse({
-            "success": True,
-            **status
-        })
+        return JSONResponse({"success": True, **status})
 
     except Exception as e:
-        return JSONResponse({
-            "available": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"available": False, "error": str(e)}, status_code=500)
 
 
 @router.get("/speech/languages")
@@ -958,25 +975,18 @@ async def get_supported_languages():
     Get list of supported languages for speech recognition
     """
     if not SPEECH_SERVICE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Speech-to-Text service not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Speech-to-Text service not available"}
+        )
 
     try:
         speech_service = get_speech_service()
         languages = speech_service.get_supported_languages()
 
-        return JSONResponse({
-            "success": True,
-            "languages": languages
-        })
+        return JSONResponse({"success": True, "languages": languages})
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 def _generate_voice_feedback(transcription_result: dict, execution_result: dict) -> str:
@@ -1016,6 +1026,7 @@ def _generate_voice_feedback(transcription_result: dict, execution_result: dict)
 # Import Voice/Vision Memory service
 try:
     from app.services.voice_vision_memory import get_voice_vision_memory
+
     VOICE_VISION_MEMORY_AVAILABLE = True
 except ImportError:
     VOICE_VISION_MEMORY_AVAILABLE = False
@@ -1029,25 +1040,18 @@ async def get_voice_analytics(technician_id: str = None, days: int = 30):
     Returns success rates, command distribution, and noise levels.
     """
     if not VOICE_VISION_MEMORY_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Voice/Vision memory service not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Voice/Vision memory service not available"}
+        )
 
     try:
         memory = get_voice_vision_memory()
         analytics = await memory.get_voice_analytics(technician_id, days)
 
-        return JSONResponse({
-            "success": True,
-            **analytics
-        })
+        return JSONResponse({"success": True, **analytics})
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.get("/learning/suggestions/{technician_id}")
@@ -1058,26 +1062,22 @@ async def get_command_suggestions(technician_id: str, context: str = ""):
     Returns most-used commands and context-aware suggestions.
     """
     if not VOICE_VISION_MEMORY_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "suggestions": []
-        })
+        return JSONResponse({"success": False, "suggestions": []})
 
     try:
         memory = get_voice_vision_memory()
         suggestions = await memory.get_command_suggestions(technician_id, context)
 
-        return JSONResponse({
-            "success": True,
-            "technician_id": technician_id,
-            "suggestions": suggestions
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "technician_id": technician_id,
+                "suggestions": suggestions,
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.get("/learning/technician/{technician_id}")
@@ -1088,31 +1088,23 @@ async def get_technician_profile(technician_id: str):
     Returns command history, success rates, and preferences.
     """
     if not VOICE_VISION_MEMORY_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Voice/Vision memory service not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Voice/Vision memory service not available"}
+        )
 
     try:
         memory = get_voice_vision_memory()
         profile = await memory.get_technician_profile(technician_id)
 
         if profile:
-            return JSONResponse({
-                "success": True,
-                "profile": profile
-            })
+            return JSONResponse({"success": True, "profile": profile})
         else:
-            return JSONResponse({
-                "success": False,
-                "error": "Technician not found"
-            }, status_code=404)
+            return JSONResponse(
+                {"success": False, "error": "Technician not found"}, status_code=404
+            )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.get("/learning/equipment/{equipment_type}")
@@ -1123,30 +1115,25 @@ async def get_equipment_learning(equipment_type: str):
     Returns recognition hints, common issues, and condition trends.
     """
     if not VOICE_VISION_MEMORY_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Voice/Vision memory service not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Voice/Vision memory service not available"}
+        )
 
     try:
         memory = get_voice_vision_memory()
         data = await memory.get_equipment_recognition_data(equipment_type)
 
-        return JSONResponse({
-            "success": True,
-            "equipment_type": equipment_type,
-            "learning_data": data
-        })
+        return JSONResponse(
+            {"success": True, "equipment_type": equipment_type, "learning_data": data}
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 # ============ AI WIDGET ENDPOINTS ============
 # Endpoints specifically for the AI assistant widget with microphone and camera
+
 
 class VoiceCommandRequest(BaseModel):
     command: str
@@ -1156,9 +1143,11 @@ class VoiceCommandRequest(BaseModel):
     equipment_name: str = None
     issue_description: str = None
 
+
 class ImageAnalysisRequest(BaseModel):
     image: str  # base64 encoded image
     context: str = "general"
+
 
 @router.post("/process-command")
 async def process_voice_command_endpoint(request: VoiceCommandRequest):
@@ -1181,7 +1170,9 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
         response_text = None
 
         # === NAVIGATION COMMANDS (no AI needed) ===
-        if any(word in command_lower for word in ["go to", "show me", "open", "navigate"]):
+        if any(
+            word in command_lower for word in ["go to", "show me", "open", "navigate"]
+        ):
             if "analytics" in command_lower or "dashboard" in command_lower:
                 action = "navigate"
                 target = "/analytics/dashboard"
@@ -1209,10 +1200,15 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
                 response_text = "Opening the purchasing dashboard."
 
         # === WORK ORDER CREATION ===
-        elif any(phrase in command_lower for phrase in ["create work order", "new work order", "make work order"]):
+        elif any(
+            phrase in command_lower
+            for phrase in ["create work order", "new work order", "make work order"]
+        ):
             action = "modal"
             modal = "create-work-order"
-            response_text = "I'll help you create a new work order. Opening the form now."
+            response_text = (
+                "I'll help you create a new work order. Opening the form now."
+            )
 
         # === AI-POWERED RESPONSES (call the real AI) ===
         else:
@@ -1229,13 +1225,19 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
 
             # Determine the best context type for routing
             ai_context_type = request.context_type
-            if "troubleshoot" in command_lower or "fix" in command_lower or "repair" in command_lower:
+            if (
+                "troubleshoot" in command_lower
+                or "fix" in command_lower
+                or "repair" in command_lower
+            ):
                 ai_context_type = "troubleshooting"
             elif "diagnose" in command_lower or "what's wrong" in command_lower:
                 ai_context_type = "equipment_diagnosis"
             elif "manual" in command_lower or "documentation" in command_lower:
                 ai_context_type = "documentation"
-            elif "part" in command_lower and ("find" in command_lower or "where" in command_lower):
+            elif "part" in command_lower and (
+                "find" in command_lower or "where" in command_lower
+            ):
                 ai_context_type = "inventory"
 
             # Call the REAL AI assistant for intelligent response
@@ -1243,27 +1245,34 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
                 message=request.command,
                 context=context,
                 context_type=ai_context_type,
-                fast_mode=True  # Use fast mode for widget responsiveness
+                fast_mode=True,  # Use fast mode for widget responsiveness
             )
 
-        return JSONResponse({
-            "success": True,
-            "response": response_text,
-            "action": action,
-            "target": target,
-            "modal": modal,
-            "command": request.command,
-            "context_type": request.context_type
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "response": response_text,
+                "action": action,
+                "target": target,
+                "modal": modal,
+                "command": request.command,
+                "context_type": request.context_type,
+            }
+        )
 
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).error(f"AI command processing error: {e}")
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "response": "I encountered an issue processing your request. Please try again or rephrase your question."
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": str(e),
+                "response": "I encountered an issue processing your request. Please try again or rephrase your question.",
+            },
+            status_code=500,
+        )
+
 
 @router.post("/analyze-image")
 async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
@@ -1274,7 +1283,9 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
         import io
 
         # Decode base64 image
-        image_data = request.image.split(',')[1] if ',' in request.image else request.image
+        image_data = (
+            request.image.split(",")[1] if "," in request.image else request.image
+        )
         image_bytes = base64.b64decode(image_data)
 
         # Convert to PIL Image
@@ -1284,7 +1295,10 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
         detailed_results = {}
 
         # Analyze based on context
-        if request.context == "equipment_inspection" or request.context == "equipment_diagnosis":
+        if (
+            request.context == "equipment_inspection"
+            or request.context == "equipment_diagnosis"
+        ):
             # Use computer vision for equipment analysis
             try:
                 issues_result = await detect_equipment_issues(image_bytes)
@@ -1302,13 +1316,17 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
                             analysis += f"  {idx}. {issue.get('type', 'Unknown')}: {issue.get('description', '')} (Severity: {issue.get('severity', 'unknown')})\n"
 
                         if len(detected_issues) > 3:
-                            analysis += f"  ... and {len(detected_issues) - 3} more issues\n"
+                            analysis += (
+                                f"  ... and {len(detected_issues) - 3} more issues\n"
+                            )
                     else:
                         analysis += "• No significant issues detected\n"
 
                     detailed_results = issues_result
                 else:
-                    analysis = "Equipment diagnosis completed. Image captured successfully."
+                    analysis = (
+                        "Equipment diagnosis completed. Image captured successfully."
+                    )
 
             except Exception as e:
                 print(f"Equipment diagnosis error: {e}")
@@ -1321,20 +1339,26 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
 
                 if part_info.get("success"):
                     analysis = f"Part Recognition Results:\n"
-                    analysis += f"• Part Number: {part_info.get('part_number', 'Unknown')}\n"
-                    analysis += f"• Description: {part_info.get('description', 'N/A')}\n"
+                    analysis += (
+                        f"• Part Number: {part_info.get('part_number', 'Unknown')}\n"
+                    )
+                    analysis += (
+                        f"• Description: {part_info.get('description', 'N/A')}\n"
+                    )
 
-                    if part_info.get('manufacturer'):
+                    if part_info.get("manufacturer"):
                         analysis += f"• Manufacturer: {part_info.get('manufacturer')}\n"
 
-                    if part_info.get('in_inventory'):
+                    if part_info.get("in_inventory"):
                         analysis += f"• Stock Status: Available in inventory\n"
                     else:
                         analysis += f"• Stock Status: Not found in inventory\n"
 
                     detailed_results = part_info
                 else:
-                    analysis = "Part recognition completed. Unable to identify specific part."
+                    analysis = (
+                        "Part recognition completed. Unable to identify specific part."
+                    )
 
             except Exception as e:
                 print(f"Part recognition error: {e}")
@@ -1370,29 +1394,36 @@ async def analyze_image_widget_endpoint(request: ImageAnalysisRequest):
             # General image analysis
             analysis = "Image captured and analyzed successfully. Ready for further processing."
 
-        return JSONResponse({
-            "success": True,
-            "analysis": analysis,
-            "context": request.context,
-            "image_size": f"{image.size[0]}x{image.size[1]}",
-            "detailed_results": detailed_results
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "analysis": analysis,
+                "context": request.context,
+                "image_size": f"{image.size[0]}x{image.size[1]}",
+                "detailed_results": detailed_results,
+            }
+        )
 
     except Exception as e:
         print(f"Image analysis error: {e}")
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "analysis": "Image analysis failed. Please try again."
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": str(e),
+                "analysis": "Image analysis failed. Please try again.",
+            },
+            status_code=500,
+        )
 
 
 # =============================================================================
 # CODE-AWARE AI TEAM REVIEW SYSTEM
 # =============================================================================
 
+
 class CodeReviewRequest(BaseModel):
     """Request for AI Team code review with actual code analysis"""
+
     files: list[str] = []  # List of file paths or patterns to review
     focus_areas: list[str] = ["security", "performance", "bugs", "best_practices"]
     max_file_size: int = 10000  # Max chars per file
@@ -1415,7 +1446,6 @@ async def ai_team_code_review(request: CodeReviewRequest):
         focus_areas: What to look for (security, performance, bugs, best_practices)
         review_type: comprehensive, security, performance, or quick
     """
-    import glob as glob_module
     from pathlib import Path
 
     try:
@@ -1427,13 +1457,19 @@ async def ai_team_code_review(request: CodeReviewRequest):
                 memory = get_ai_memory_service()
 
                 # Get recent mistakes to warn about
-                similar_mistakes = await memory.find_similar_mistakes("code review security performance bugs")
+                similar_mistakes = await memory.find_similar_mistakes(
+                    "code review security performance bugs"
+                )
 
                 # Get successful solutions for reference
-                past_solutions = await memory.find_solutions("code fix security vulnerability")
+                past_solutions = await memory.find_solutions(
+                    "code fix security vulnerability"
+                )
 
                 if similar_mistakes:
-                    past_context += "\n\n=== PAST MISTAKES TO AVOID (from AI Memory) ===\n"
+                    past_context += (
+                        "\n\n=== PAST MISTAKES TO AVOID (from AI Memory) ===\n"
+                    )
                     for m in similar_mistakes[:3]:
                         past_context += f"- {m.get('description', 'Unknown')}: {m.get('prevention_strategy', 'N/A')}\n"
 
@@ -1446,17 +1482,15 @@ async def ai_team_code_review(request: CodeReviewRequest):
         except Exception as mem_error:
             past_context = f"\n(Memory query failed: {mem_error})\n"
         # Get project root dynamically (works locally and on Cloud Run)
-        project_root = Path(__file__).parent.parent.parent  # ai.py -> routers -> app -> project
+        project_root = Path(
+            __file__
+        ).parent.parent.parent  # ai.py -> routers -> app -> project
         code_snippets = []
         files_reviewed = []
 
         # Default files if none specified
         if not request.files:
-            request.files = [
-                "app/routers/*.py",
-                "app/services/*.py",
-                "main.py"
-            ]
+            request.files = ["app/routers/*.py", "app/services/*.py", "main.py"]
 
         # Collect code from files
         for file_pattern in request.files:
@@ -1473,27 +1507,38 @@ async def ai_team_code_review(request: CodeReviewRequest):
                         content = file_path.read_text()
                         # Truncate if too large
                         if len(content) > request.max_file_size:
-                            content = content[:request.max_file_size] + "\n... (truncated)"
+                            content = (
+                                content[: request.max_file_size] + "\n... (truncated)"
+                            )
 
                         relative_path = str(file_path.relative_to(project_root))
-                        code_snippets.append(f"### FILE: {relative_path}\n```python\n{content}\n```")
+                        code_snippets.append(
+                            f"### FILE: {relative_path}\n```python\n{content}\n```"
+                        )
                         files_reviewed.append(relative_path)
                     except Exception as e:
                         code_snippets.append(f"### FILE: {file_path} - ERROR: {e}")
 
         if not code_snippets:
-            return JSONResponse({
-                "success": False,
-                "error": "No files found matching the specified patterns",
-                "patterns_searched": request.files
-            }, status_code=400)
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "No files found matching the specified patterns",
+                    "patterns_searched": request.files,
+                },
+                status_code=400,
+            )
 
         # Build comprehensive prompt for AI Team
         focus_str = ", ".join(request.focus_areas)
         code_context = "\n\n".join(code_snippets[:5])  # Limit to 5 files for context
 
         # Get platform context for AI Team
-        platform_context = await get_ai_team_context("code_review") if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+        platform_context = (
+            await get_ai_team_context("code_review")
+            if PLATFORM_KNOWLEDGE_AVAILABLE
+            else ""
+        )
 
         review_prompt = f"""You are an EXPERT code reviewer for ChatterFix CMMS. Your job is to find REAL issues in code.
 
@@ -1544,10 +1589,12 @@ If you cannot find VERIFIED issues, say "No verified issues found" - this is bet
             context=f"Code review of {len(files_reviewed)} files: {', '.join(files_reviewed[:5])}",
             user_id=0,
             context_type="code_review",
-            fast_mode=request.review_type == "quick"
+            fast_mode=request.review_type == "quick",
         )
 
-        ai_analysis = result.get("response", result.get("final_answer", "No analysis generated"))
+        ai_analysis = result.get(
+            "response", result.get("final_answer", "No analysis generated")
+        )
 
         # === MEMORY INTEGRATION: Capture review findings ===
         try:
@@ -1561,39 +1608,52 @@ If you cannot find VERIFIED issues, say "No verified issues found" - this is bet
                     model="ai_team",
                     context=f"review_type={request.review_type}, focus={request.focus_areas}",
                     success=True,
-                    metadata={"files": files_reviewed, "focus_areas": request.focus_areas}
+                    metadata={
+                        "files": files_reviewed,
+                        "focus_areas": request.focus_areas,
+                    },
                 )
 
                 # If issues found, capture as potential mistakes to track
-                if "security" in ai_analysis.lower() or "vulnerability" in ai_analysis.lower():
+                if (
+                    "security" in ai_analysis.lower()
+                    or "vulnerability" in ai_analysis.lower()
+                ):
                     await memory.capture_mistake(
                         mistake_type="security_review",
                         description=f"Security issues found in: {', '.join(files_reviewed[:3])}",
-                        context={"files": files_reviewed, "review_type": request.review_type},
+                        context={
+                            "files": files_reviewed,
+                            "review_type": request.review_type,
+                        },
                         error_message=ai_analysis[:500],
-                        severity="high"
+                        severity="high",
                     )
         except Exception as mem_error:
             pass  # Don't fail the review if memory capture fails
 
-        return JSONResponse({
-            "success": True,
-            "review_type": request.review_type,
-            "files_reviewed": files_reviewed,
-            "focus_areas": request.focus_areas,
-            "ai_team_analysis": ai_analysis,
-            "models_used": result.get("models_used", []),
-            "confidence": result.get("confidence", 0.0),
-            "memory_stats": memory_stats if memory_stats else {"status": "not_available"}
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "review_type": request.review_type,
+                "files_reviewed": files_reviewed,
+                "focus_areas": request.focus_areas,
+                "ai_team_analysis": ai_analysis,
+                "models_used": result.get("models_used", []),
+                "confidence": result.get("confidence", 0.0),
+                "memory_stats": (
+                    memory_stats if memory_stats else {"status": "not_available"}
+                ),
+            }
+        )
 
     except Exception as e:
         import traceback
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }, status_code=500)
+
+        return JSONResponse(
+            {"success": False, "error": str(e), "traceback": traceback.format_exc()},
+            status_code=500,
+        )
 
 
 @router.get("/code-review/quick")
@@ -1607,7 +1667,7 @@ async def quick_code_review():
     request = CodeReviewRequest(
         files=["main.py", "app/routers/work_orders.py", "app/routers/auth.py"],
         focus_areas=["security", "bugs"],
-        review_type="quick"
+        review_type="quick",
     )
     return await ai_team_code_review(request)
 
@@ -1616,8 +1676,10 @@ async def quick_code_review():
 # AI TEAM CODE EDITING WITH BRANCH ISOLATION (SAFEGUARDS)
 # =============================================================================
 
+
 class CodeFixRequest(BaseModel):
     """Request for AI Team to fix code with branch isolation"""
+
     files: list[str] = []  # Files to fix
     fix_type: str = "auto"  # auto, security, performance, bugs, refactor
     description: str = ""  # Optional description of what to fix
@@ -1630,9 +1692,13 @@ class CodeFixRequest(BaseModel):
 # FEATURE REQUEST SYSTEM - Cost-Effective Development
 # =============================================================================
 
+
 class FeatureRequest(BaseModel):
     """Request for AI to implement a feature"""
-    feature: str  # Description of what you want (e.g., "add status field to work orders")
+
+    feature: (
+        str  # Description of what you want (e.g., "add status field to work orders")
+    )
     target_files: list[str] = []  # Specific files to modify (optional)
     budget_mode: bool = True  # Use single cheap model (Gemini) - DEFAULT ON
     create_branch: bool = True  # Create isolated branch for changes
@@ -1667,21 +1733,24 @@ async def implement_feature(request: FeatureRequest):
             ["git", "status", "--porcelain"],
             cwd=project_root,
             capture_output=True,
-            text=True
+            text=True,
         )
         if status_result.stdout.strip():
-            return JSONResponse({
-                "success": False,
-                "error": "Uncommitted changes detected. Commit or stash first.",
-                "safeguard": "Protecting your work"
-            }, status_code=400)
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "Uncommitted changes detected. Commit or stash first.",
+                    "safeguard": "Protecting your work",
+                },
+                status_code=400,
+            )
 
         # Get current branch
         current_branch_result = subprocess.run(
             ["git", "branch", "--show-current"],
             cwd=project_root,
             capture_output=True,
-            text=True
+            text=True,
         )
         original_branch = current_branch_result.stdout.strip()
 
@@ -1691,15 +1760,27 @@ async def implement_feature(request: FeatureRequest):
             # Smart file detection based on feature description
             feature_lower = request.feature.lower()
             if "work order" in feature_lower:
-                target_files = ["app/routers/work_orders.py", "app/templates/work_orders.html"]
+                target_files = [
+                    "app/routers/work_orders.py",
+                    "app/templates/work_orders.html",
+                ]
             elif "asset" in feature_lower:
                 target_files = ["app/routers/assets.py", "app/templates/assets.html"]
             elif "inventory" in feature_lower or "part" in feature_lower:
-                target_files = ["app/routers/inventory.py", "app/templates/inventory.html"]
+                target_files = [
+                    "app/routers/inventory.py",
+                    "app/templates/inventory.html",
+                ]
             elif "training" in feature_lower:
-                target_files = ["app/routers/training.py", "app/templates/training.html"]
+                target_files = [
+                    "app/routers/training.py",
+                    "app/templates/training.html",
+                ]
             elif "dashboard" in feature_lower:
-                target_files = ["app/routers/dashboard.py", "app/templates/dashboard.html"]
+                target_files = [
+                    "app/routers/dashboard.py",
+                    "app/templates/dashboard.html",
+                ]
             else:
                 target_files = ["app/routers/work_orders.py"]  # Default
 
@@ -1712,7 +1793,9 @@ async def implement_feature(request: FeatureRequest):
                 code_context.append(f"### {file_pattern}\n```python\n{content}\n```")
 
         # Get platform context for AI Team
-        platform_context = get_cached_platform_context() if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+        platform_context = (
+            get_cached_platform_context() if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+        )
 
         # Build feature implementation prompt
         feature_prompt = f"""You are implementing a feature for ChatterFix CMMS.
@@ -1755,6 +1838,7 @@ IMPORTANT: If old_code doesn't match exactly, the change will fail. Be precise!"
         if request.budget_mode:
             # Use just Gemini (cheapest)
             from app.services.gemini_service import gemini_service
+
             ai_response = await gemini_service.generate_response(feature_prompt)
         else:
             # Full AI Team (more expensive but better quality)
@@ -1763,45 +1847,52 @@ IMPORTANT: If old_code doesn't match exactly, the change will fail. Be precise!"
                 context=f"Implementing: {request.feature}",
                 user_id=0,
                 context_type="feature_implementation",
-                fast_mode=True
+                fast_mode=True,
             )
             ai_response = result.get("response", result.get("final_answer", ""))
 
         # Parse and apply changes
         import re
+
         json_match = re.search(r'\{[\s\S]*"changes"[\s\S]*\}', ai_response)
 
         if not json_match:
-            return JSONResponse({
-                "success": False,
-                "error": "AI could not generate structured changes",
-                "ai_response": ai_response[:1000],
-                "suggestion": "Try rephrasing your feature request"
-            })
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "AI could not generate structured changes",
+                    "ai_response": ai_response[:1000],
+                    "suggestion": "Try rephrasing your feature request",
+                }
+            )
 
         try:
             change_data = json.loads(json_match.group())
             changes = change_data.get("changes", [])
         except json.JSONDecodeError:
-            return JSONResponse({
-                "success": False,
-                "error": "Could not parse AI response",
-                "ai_response": ai_response[:1000]
-            })
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "Could not parse AI response",
+                    "ai_response": ai_response[:1000],
+                }
+            )
 
         if not changes:
-            return JSONResponse({
-                "success": True,
-                "message": "No changes needed or AI was unsure",
-                "ai_response": ai_response[:1000]
-            })
+            return JSONResponse(
+                {
+                    "success": True,
+                    "message": "No changes needed or AI was unsure",
+                    "ai_response": ai_response[:1000],
+                }
+            )
 
         # Create branch if requested
         if request.create_branch:
             subprocess.run(
                 ["git", "checkout", "-b", branch_name],
                 cwd=project_root,
-                capture_output=True
+                capture_output=True,
             )
 
         # Apply changes
@@ -1820,16 +1911,20 @@ IMPORTANT: If old_code doesn't match exactly, the change will fail. Be precise!"
                 if old_code in content:
                     new_content = content.replace(old_code, new_code, 1)
                     file_path.write_text(new_content)
-                    applied_changes.append({
-                        "file": file_rel_path,
-                        "explanation": change.get("explanation", ""),
-                        "status": "applied"
-                    })
+                    applied_changes.append(
+                        {
+                            "file": file_rel_path,
+                            "explanation": change.get("explanation", ""),
+                            "status": "applied",
+                        }
+                    )
                 else:
-                    applied_changes.append({
-                        "file": file_rel_path,
-                        "status": "skipped - old code not found"
-                    })
+                    applied_changes.append(
+                        {
+                            "file": file_rel_path,
+                            "status": "skipped - old code not found",
+                        }
+                    )
 
         # Commit if changes were made
         if applied_changes and request.create_branch:
@@ -1843,32 +1938,38 @@ Review before merging!"""
             subprocess.run(["git", "commit", "-m", commit_msg], cwd=project_root)
             subprocess.run(["git", "checkout", original_branch], cwd=project_root)
 
-        return JSONResponse({
-            "success": True,
-            "feature": request.feature,
-            "branch": branch_name if request.create_branch else None,
-            "budget_mode": request.budget_mode,
-            "estimated_cost": "$0.01-0.02" if request.budget_mode else "$0.08-0.15",
-            "changes_applied": applied_changes,
-            "summary": change_data.get("summary", ""),
-            "next_steps": [
-                f"Review: git diff {original_branch}..{branch_name}",
-                f"Merge: git merge {branch_name}",
-                f"Delete: git branch -D {branch_name}"
-            ] if request.create_branch else ["Changes applied to current branch"]
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "feature": request.feature,
+                "branch": branch_name if request.create_branch else None,
+                "budget_mode": request.budget_mode,
+                "estimated_cost": "$0.01-0.02" if request.budget_mode else "$0.08-0.15",
+                "changes_applied": applied_changes,
+                "summary": change_data.get("summary", ""),
+                "next_steps": (
+                    [
+                        f"Review: git diff {original_branch}..{branch_name}",
+                        f"Merge: git merge {branch_name}",
+                        f"Delete: git branch -D {branch_name}",
+                    ]
+                    if request.create_branch
+                    else ["Changes applied to current branch"]
+                ),
+            }
+        )
 
     except Exception as e:
         import traceback
+
         try:
             subprocess.run(["git", "checkout", original_branch], cwd=project_root)
-        except:
+        except Exception:
             pass
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }, status_code=500)
+        return JSONResponse(
+            {"success": False, "error": str(e), "traceback": traceback.format_exc()},
+            status_code=500,
+        )
 
 
 @router.post("/code-fix")
@@ -1890,7 +1991,6 @@ async def ai_team_code_fix(request: CodeFixRequest):
         dry_run: Preview changes without making them
     """
     import subprocess
-    import time
     from pathlib import Path
     from datetime import datetime
 
@@ -1905,7 +2005,7 @@ async def ai_team_code_fix(request: CodeFixRequest):
             ["git", "branch", "--show-current"],
             cwd=project_root,
             capture_output=True,
-            text=True
+            text=True,
         )
         original_branch = current_branch_result.stdout.strip()
 
@@ -1914,49 +2014,61 @@ async def ai_team_code_fix(request: CodeFixRequest):
             ["git", "status", "--porcelain"],
             cwd=project_root,
             capture_output=True,
-            text=True
+            text=True,
         )
         if status_result.stdout.strip():
-            return JSONResponse({
-                "success": False,
-                "error": "Uncommitted changes detected. Please commit or stash changes first.",
-                "safeguard": "Protecting your uncommitted work"
-            }, status_code=400)
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "Uncommitted changes detected. Please commit or stash changes first.",
+                    "safeguard": "Protecting your uncommitted work",
+                },
+                status_code=400,
+            )
 
         # DRY RUN MODE - Just analyze and show what would change
         if request.dry_run:
             # Get AI Team analysis
             review_request = CodeReviewRequest(
                 files=request.files if request.files else ["app/routers/*.py"],
-                focus_areas=["bugs", "security"] if request.fix_type == "auto" else [request.fix_type],
-                review_type="comprehensive"
+                focus_areas=(
+                    ["bugs", "security"]
+                    if request.fix_type == "auto"
+                    else [request.fix_type]
+                ),
+                review_type="comprehensive",
             )
             review_result = await ai_team_code_review(review_request)
             review_data = json.loads(review_result.body)
 
-            return JSONResponse({
-                "success": True,
-                "mode": "dry_run",
-                "message": "This is a preview. No changes were made.",
-                "branch_would_be": branch_name,
-                "files_to_review": review_data.get("files_reviewed", []),
-                "ai_analysis": review_data.get("ai_team_analysis", ""),
-                "next_step": "Run again with dry_run=false to apply fixes"
-            })
+            return JSONResponse(
+                {
+                    "success": True,
+                    "mode": "dry_run",
+                    "message": "This is a preview. No changes were made.",
+                    "branch_would_be": branch_name,
+                    "files_to_review": review_data.get("files_reviewed", []),
+                    "ai_analysis": review_data.get("ai_team_analysis", ""),
+                    "next_step": "Run again with dry_run=false to apply fixes",
+                }
+            )
 
         # SAFEGUARD 3: Create isolated branch
         create_branch_result = subprocess.run(
             ["git", "checkout", "-b", branch_name],
             cwd=project_root,
             capture_output=True,
-            text=True
+            text=True,
         )
         if create_branch_result.returncode != 0:
-            return JSONResponse({
-                "success": False,
-                "error": f"Failed to create branch: {create_branch_result.stderr}",
-                "safeguard": "Branch creation failed - no changes made"
-            }, status_code=500)
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": f"Failed to create branch: {create_branch_result.stderr}",
+                    "safeguard": "Branch creation failed - no changes made",
+                },
+                status_code=500,
+            )
 
         # Collect files to fix
         files_to_fix = []
@@ -1975,11 +2087,14 @@ async def ai_team_code_fix(request: CodeFixRequest):
             # Return to original branch
             subprocess.run(["git", "checkout", original_branch], cwd=project_root)
             subprocess.run(["git", "branch", "-D", branch_name], cwd=project_root)
-            return JSONResponse({
-                "success": False,
-                "error": "No files found to fix",
-                "safeguard": "Returned to original branch, no changes made"
-            }, status_code=400)
+            return JSONResponse(
+                {
+                    "success": False,
+                    "error": "No files found to fix",
+                    "safeguard": "Returned to original branch, no changes made",
+                },
+                status_code=400,
+            )
 
         # Get AI Team to analyze and suggest fixes
         fixes_made = []
@@ -1988,7 +2103,11 @@ async def ai_team_code_fix(request: CodeFixRequest):
                 original_content = file_path.read_text()
 
                 # Get platform context
-                platform_ctx = get_cached_platform_context() if PLATFORM_KNOWLEDGE_AVAILABLE else ""
+                platform_ctx = (
+                    get_cached_platform_context()
+                    if PLATFORM_KNOWLEDGE_AVAILABLE
+                    else ""
+                )
 
                 # Build fix prompt
                 fix_prompt = f"""You are an EXPERT code fixer for ChatterFix CMMS. Only fix VERIFIED issues.
@@ -2044,13 +2163,14 @@ BE CONSERVATIVE. Only suggest fixes you are 100% confident about. No fixes is be
                     context=f"Fixing {file_path.name}",
                     user_id=0,
                     context_type="code_fix",
-                    fast_mode=True
+                    fast_mode=True,
                 )
 
                 ai_response = result.get("response", result.get("final_answer", ""))
 
                 # Try to parse JSON from response
                 import re
+
                 json_match = re.search(r'\{[\s\S]*"fixes"[\s\S]*\}', ai_response)
                 if json_match:
                     try:
@@ -2066,41 +2186,58 @@ BE CONSERVATIVE. Only suggest fixes you are 100% confident about. No fixes is be
                             new_code = fix.get("new_code", "")
 
                             if old_code and new_code and old_code in modified_content:
-                                modified_content = modified_content.replace(old_code, new_code, 1)
-                                applied_fixes.append({
-                                    "old": old_code[:100] + "..." if len(old_code) > 100 else old_code,
-                                    "new": new_code[:100] + "..." if len(new_code) > 100 else new_code,
-                                    "reason": fix.get("reason", "")
-                                })
+                                modified_content = modified_content.replace(
+                                    old_code, new_code, 1
+                                )
+                                applied_fixes.append(
+                                    {
+                                        "old": (
+                                            old_code[:100] + "..."
+                                            if len(old_code) > 100
+                                            else old_code
+                                        ),
+                                        "new": (
+                                            new_code[:100] + "..."
+                                            if len(new_code) > 100
+                                            else new_code
+                                        ),
+                                        "reason": fix.get("reason", ""),
+                                    }
+                                )
 
                         if applied_fixes and modified_content != original_content:
                             # Write the modified file
                             file_path.write_text(modified_content)
-                            fixes_made.append({
-                                "file": str(file_path.relative_to(project_root)),
-                                "fixes_applied": len(applied_fixes),
-                                "details": applied_fixes
-                            })
+                            fixes_made.append(
+                                {
+                                    "file": str(file_path.relative_to(project_root)),
+                                    "fixes_applied": len(applied_fixes),
+                                    "details": applied_fixes,
+                                }
+                            )
 
                     except json.JSONDecodeError:
                         pass  # Could not parse AI response as JSON
 
             except Exception as e:
-                fixes_made.append({
-                    "file": str(file_path.relative_to(project_root)),
-                    "error": str(e)
-                })
+                fixes_made.append(
+                    {"file": str(file_path.relative_to(project_root)), "error": str(e)}
+                )
 
         # If no fixes were made, clean up
         if not any(f.get("fixes_applied", 0) > 0 for f in fixes_made):
             subprocess.run(["git", "checkout", original_branch], cwd=project_root)
             subprocess.run(["git", "branch", "-D", branch_name], cwd=project_root)
-            return JSONResponse({
-                "success": True,
-                "message": "No fixable issues found or AI Team was too conservative",
-                "files_analyzed": [str(f.relative_to(project_root)) for f in files_to_fix],
-                "safeguard": "No changes made, returned to original branch"
-            })
+            return JSONResponse(
+                {
+                    "success": True,
+                    "message": "No fixable issues found or AI Team was too conservative",
+                    "files_analyzed": [
+                        str(f.relative_to(project_root)) for f in files_to_fix
+                    ],
+                    "safeguard": "No changes made, returned to original branch",
+                }
+            )
 
         # Commit the changes
         subprocess.run(["git", "add", "-A"], cwd=project_root)
@@ -2113,10 +2250,7 @@ Description: {request.description or 'Automated fixes by AI Team'}
 🤖 Generated by ChatterFix AI Team
 Review carefully before merging!"""
 
-        subprocess.run(
-            ["git", "commit", "-m", commit_message],
-            cwd=project_root
-        )
+        subprocess.run(["git", "commit", "-m", commit_message], cwd=project_root)
 
         # SAFEGUARD 4: Return to original branch (keep AI branch for review)
         subprocess.run(["git", "checkout", original_branch], cwd=project_root)
@@ -2127,57 +2261,71 @@ Review carefully before merging!"""
             try:
                 # Push branch
                 subprocess.run(
-                    ["git", "push", "-u", "origin", branch_name],
-                    cwd=project_root
+                    ["git", "push", "-u", "origin", branch_name], cwd=project_root
                 )
                 # Create PR using gh CLI
                 pr_result = subprocess.run(
-                    ["gh", "pr", "create",
-                     "--title", f"AI Team: {request.fix_type} fixes",
-                     "--body", f"## AI Team Code Fixes\n\n{commit_message}\n\n**Review carefully before merging!**",
-                     "--head", branch_name],
+                    [
+                        "gh",
+                        "pr",
+                        "create",
+                        "--title",
+                        f"AI Team: {request.fix_type} fixes",
+                        "--body",
+                        f"## AI Team Code Fixes\n\n{commit_message}\n\n**Review carefully before merging!**",
+                        "--head",
+                        branch_name,
+                    ],
                     cwd=project_root,
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
                 if pr_result.returncode == 0:
                     pr_url = pr_result.stdout.strip()
             except Exception as e:
                 pr_url = f"PR creation failed: {e}"
 
-        return JSONResponse({
-            "success": True,
-            "branch": branch_name,
-            "original_branch": original_branch,
-            "fixes_made": fixes_made,
-            "total_files_modified": len([f for f in fixes_made if f.get('fixes_applied', 0) > 0]),
-            "pr_url": pr_url,
-            "safeguards_applied": [
-                "Changes made in isolated branch",
-                "Original branch preserved",
-                "Must manually merge after review"
-            ],
-            "next_steps": [
-                f"Review changes: git diff {original_branch}..{branch_name}",
-                f"Merge if approved: git merge {branch_name}",
-                f"Or delete if rejected: git branch -D {branch_name}"
-            ]
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "branch": branch_name,
+                "original_branch": original_branch,
+                "fixes_made": fixes_made,
+                "total_files_modified": len(
+                    [f for f in fixes_made if f.get("fixes_applied", 0) > 0]
+                ),
+                "pr_url": pr_url,
+                "safeguards_applied": [
+                    "Changes made in isolated branch",
+                    "Original branch preserved",
+                    "Must manually merge after review",
+                ],
+                "next_steps": [
+                    f"Review changes: git diff {original_branch}..{branch_name}",
+                    f"Merge if approved: git merge {branch_name}",
+                    f"Or delete if rejected: git branch -D {branch_name}",
+                ],
+            }
+        )
 
     except Exception as e:
         import traceback
+
         # Try to return to original branch on error
         try:
             subprocess.run(["git", "checkout", original_branch], cwd=project_root)
-        except:
+        except Exception:
             pass
 
-        return JSONResponse({
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "safeguard": "Error occurred - attempted to return to original branch"
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+                "safeguard": "Error occurred - attempted to return to original branch",
+            },
+            status_code=500,
+        )
 
 
 @router.get("/code-fix/branches")
@@ -2194,36 +2342,33 @@ async def list_ai_team_branches():
         project_root = Path(__file__).parent.parent.parent
 
         result = subprocess.run(
-            ["git", "branch", "-a"],
-            cwd=project_root,
-            capture_output=True,
-            text=True
+            ["git", "branch", "-a"], cwd=project_root, capture_output=True, text=True
         )
 
         branches = result.stdout.strip().split("\n")
         ai_branches = [b.strip().replace("* ", "") for b in branches if "ai-team/" in b]
 
-        return JSONResponse({
-            "success": True,
-            "ai_team_branches": ai_branches,
-            "count": len(ai_branches),
-            "instructions": {
-                "review": "git diff main..{branch_name}",
-                "merge": "git merge {branch_name}",
-                "delete": "git branch -D {branch_name}"
+        return JSONResponse(
+            {
+                "success": True,
+                "ai_team_branches": ai_branches,
+                "count": len(ai_branches),
+                "instructions": {
+                    "review": "git diff main..{branch_name}",
+                    "merge": "git merge {branch_name}",
+                    "delete": "git branch -D {branch_name}",
+                },
             }
-        })
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 # =============================================================================
 # PLATFORM KNOWLEDGE ENDPOINTS
 # =============================================================================
+
 
 @router.get("/platform/knowledge")
 async def get_platform_knowledge_endpoint():
@@ -2234,33 +2379,31 @@ async def get_platform_knowledge_endpoint():
     that are injected into all AI Team prompts.
     """
     if not PLATFORM_KNOWLEDGE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Platform knowledge module not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Platform knowledge module not available"}
+        )
 
     try:
         from app.services.platform_knowledge import get_platform_knowledge
 
         knowledge = get_platform_knowledge()
 
-        return JSONResponse({
-            "success": True,
-            "platform": knowledge["name"],
-            "tagline": knowledge["tagline"],
-            "mission": knowledge["mission"].strip(),
-            "ceo_vision": knowledge["ceo_vision"].strip(),
-            "differentiators": knowledge["differentiators"],
-            "capabilities": list(knowledge["capabilities"].keys()),
-            "modules": list(knowledge["modules"].keys()),
-            "ai_guidelines": knowledge["ai_guidelines"].strip()
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "platform": knowledge["name"],
+                "tagline": knowledge["tagline"],
+                "mission": knowledge["mission"].strip(),
+                "ceo_vision": knowledge["ceo_vision"].strip(),
+                "differentiators": knowledge["differentiators"],
+                "capabilities": list(knowledge["capabilities"].keys()),
+                "modules": list(knowledge["modules"].keys()),
+                "ai_guidelines": knowledge["ai_guidelines"].strip(),
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.post("/platform/knowledge/store")
@@ -2272,34 +2415,34 @@ async def store_platform_knowledge_endpoint():
     permanently stored and can be queried.
     """
     if not PLATFORM_KNOWLEDGE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Platform knowledge module not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Platform knowledge module not available"}
+        )
 
     try:
-        from app.services.platform_knowledge import store_platform_knowledge_to_firestore
+        from app.services.platform_knowledge import (
+            store_platform_knowledge_to_firestore,
+        )
 
         result = await store_platform_knowledge_to_firestore()
 
         if result:
-            return JSONResponse({
-                "success": True,
-                "message": "Platform knowledge stored to Firestore successfully",
-                "collection": "system_knowledge",
-                "document_id": "chatterfix_platform"
-            })
+            return JSONResponse(
+                {
+                    "success": True,
+                    "message": "Platform knowledge stored to Firestore successfully",
+                    "collection": "system_knowledge",
+                    "document_id": "chatterfix_platform",
+                }
+            )
         else:
-            return JSONResponse({
-                "success": False,
-                "error": "Failed to store platform knowledge"
-            }, status_code=500)
+            return JSONResponse(
+                {"success": False, "error": "Failed to store platform knowledge"},
+                status_code=500,
+            )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @router.get("/platform/context/{task_type}")
@@ -2317,24 +2460,22 @@ async def get_task_context(task_type: str = "general"):
     - safety: Focus on safety-first approach
     """
     if not PLATFORM_KNOWLEDGE_AVAILABLE:
-        return JSONResponse({
-            "success": False,
-            "error": "Platform knowledge module not available"
-        })
+        return JSONResponse(
+            {"success": False, "error": "Platform knowledge module not available"}
+        )
 
     try:
         context = await get_ai_team_context(task_type)
 
-        return JSONResponse({
-            "success": True,
-            "task_type": task_type,
-            "context": context,
-            "context_length": len(context),
-            "usage": "This context is automatically injected into AI Team prompts"
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "task_type": task_type,
+                "context": context,
+                "context_length": len(context),
+                "usage": "This context is automatically injected into AI Team prompts",
+            }
+        )
 
     except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": str(e)
-        }, status_code=500)
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)

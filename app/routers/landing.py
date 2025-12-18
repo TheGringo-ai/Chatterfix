@@ -146,10 +146,12 @@ async def handle_landing_signup(
         if firebase_auth_service.is_available:
             try:
                 # Create Firebase Auth user
-                user_record = await firebase_auth_service.create_user_with_email_password(
-                    email=signup_data.email,
-                    password=password,
-                    display_name=signup_data.fullName
+                user_record = (
+                    await firebase_auth_service.create_user_with_email_password(
+                        email=signup_data.email,
+                        password=password,
+                        display_name=signup_data.fullName,
+                    )
                 )
                 user_id = user_record.uid
 
@@ -166,34 +168,41 @@ async def handle_landing_signup(
 
                 # Update user profile in Firestore with full details
                 if firebase_auth_service.db:
-                    user_ref = firebase_auth_service.db.collection("users").document(user_id)
-                    user_ref.set({
-                        "uid": user_id,
-                        "email": signup_data.email,
-                        "full_name": signup_data.fullName,
-                        "display_name": signup_data.fullName,
-                        "phone": signup_data.phone,
-                        "role": "owner",  # Owner of the organization
-                        "status": "active",
-                        "organization_id": org_id,
-                        "organization_name": signup_data.company,
-                        "organization_role": "owner",
-                        "company": {
-                            "name": signup_data.company,
-                            "industry": signup_data.industry,
-                            "size": signup_data.company_size,
+                    user_ref = firebase_auth_service.db.collection("users").document(
+                        user_id
+                    )
+                    user_ref.set(
+                        {
+                            "uid": user_id,
+                            "email": signup_data.email,
+                            "full_name": signup_data.fullName,
+                            "display_name": signup_data.fullName,
+                            "phone": signup_data.phone,
+                            "role": "owner",  # Owner of the organization
+                            "status": "active",
+                            "organization_id": org_id,
+                            "organization_name": signup_data.company,
+                            "organization_role": "owner",
+                            "company": {
+                                "name": signup_data.company,
+                                "industry": signup_data.industry,
+                                "size": signup_data.company_size,
+                            },
+                            "created_at": datetime.now().isoformat(),
                         },
-                        "created_at": datetime.now().isoformat(),
-                    }, merge=True)
+                        merge=True,
+                    )
 
-                logger.info(f"Created Firebase user {user_id} with organization {org_id}")
+                logger.info(
+                    f"Created Firebase user {user_id} with organization {org_id}"
+                )
 
             except Exception as firebase_error:
                 logger.error(f"Firebase signup failed: {firebase_error}")
                 # Fall back to basic Firestore storage
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Account creation failed: {str(firebase_error)}"
+                    detail=f"Account creation failed: {str(firebase_error)}",
                 )
         else:
             # Fallback: Create user in Firestore only (no Firebase Auth)

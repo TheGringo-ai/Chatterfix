@@ -9,9 +9,12 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_active_user, require_permission, get_current_user_from_cookie
+from app.auth import (
+    get_current_active_user,
+    require_permission,
+    get_current_user_from_cookie,
+)
 from app.models.user import User
-from typing import Optional
 from app.core.firestore_db import get_firestore_manager
 from app.services.gemini_service import gemini_service
 from app.services.media_service import media_service
@@ -60,7 +63,15 @@ async def assets_list(request: Request):
     }
 
     return templates.TemplateResponse(
-        "assets_list.html", {"request": request, "assets": assets, "stats": stats, "user": current_user, "current_user": current_user, "is_demo": False}
+        "assets_list.html",
+        {
+            "request": request,
+            "assets": assets,
+            "stats": stats,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": False,
+        },
     )
 
 
@@ -72,13 +83,17 @@ async def asset_detail(request: Request, asset_id: str):
 
     # Redirect to login if not authenticated
     if not current_user:
-        return RedirectResponse(url=f"/auth/login?next=/assets/{asset_id}", status_code=302)
+        return RedirectResponse(
+            url=f"/auth/login?next=/assets/{asset_id}", status_code=302
+        )
 
     firestore_manager = get_firestore_manager()
 
     # Multi-tenant: get asset and validate ownership
     if current_user.organization_id:
-        asset = await firestore_manager.get_org_document("assets", asset_id, current_user.organization_id)
+        asset = await firestore_manager.get_org_document(
+            "assets", asset_id, current_user.organization_id
+        )
     else:
         asset = await firestore_manager.get_document("assets", asset_id)
     if not asset:
@@ -86,11 +101,23 @@ async def asset_detail(request: Request, asset_id: str):
 
     # Get related data in parallel
     children, media, parts, history, work_orders = await asyncio.gather(
-        firestore_manager.get_collection("assets", filters=[{"field": "parent_asset_id", "operator": "==", "value": asset_id}]),
-        firestore_manager.get_collection("asset_media", filters=[{"field": "asset_id", "operator": "==", "value": asset_id}], order_by="-uploaded_date"),
+        firestore_manager.get_collection(
+            "assets",
+            filters=[{"field": "parent_asset_id", "operator": "==", "value": asset_id}],
+        ),
+        firestore_manager.get_collection(
+            "asset_media",
+            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            order_by="-uploaded_date",
+        ),
         firestore_manager.get_asset_parts(asset_id),
-        firestore_manager.get_collection("maintenance_history", filters=[{"field": "asset_id", "operator": "==", "value": asset_id}], order_by="-created_date", limit=50),
-        firestore_manager.get_asset_work_orders(asset_id)
+        firestore_manager.get_collection(
+            "maintenance_history",
+            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            order_by="-created_date",
+            limit=50,
+        ),
+        firestore_manager.get_asset_work_orders(asset_id),
     )
 
     # Simplified cost analytics
@@ -103,7 +130,7 @@ async def asset_detail(request: Request, asset_id: str):
         "total_cost": total_cost,
         "labor_cost": labor_cost,
         "parts_cost": parts_cost,
-        "total_downtime": total_downtime
+        "total_downtime": total_downtime,
     }
 
     return templates.TemplateResponse(
@@ -141,23 +168,35 @@ async def create_asset(
     warranty_expiry: str = Form(None),
     purchase_cost: float = Form(None),
     files: List[UploadFile] = File(None),
-    current_user: User = Depends(require_permission("create_asset"))
+    current_user: User = Depends(require_permission("create_asset")),
 ):
     """Create a new asset"""
     firestore_manager = get_firestore_manager()
 
     asset_data = {
-        "name": name, "description": description, "asset_tag": asset_tag,
-        "serial_number": serial_number, "model": model, "manufacturer": manufacturer,
-        "location": location, "department": department, "parent_asset_id": parent_asset_id,
-        "status": status, "criticality": criticality, "purchase_date": purchase_date,
-        "warranty_expiry": warranty_expiry, "purchase_cost": purchase_cost,
-        "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+        "name": name,
+        "description": description,
+        "asset_tag": asset_tag,
+        "serial_number": serial_number,
+        "model": model,
+        "manufacturer": manufacturer,
+        "location": location,
+        "department": department,
+        "parent_asset_id": parent_asset_id,
+        "status": status,
+        "criticality": criticality,
+        "purchase_date": purchase_date,
+        "warranty_expiry": warranty_expiry,
+        "purchase_cost": purchase_cost,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
     }
 
     # Multi-tenant: associate asset with user's organization
     if current_user.organization_id:
-        asset_id = await firestore_manager.create_org_document("assets", asset_data, current_user.organization_id)
+        asset_id = await firestore_manager.create_org_document(
+            "assets", asset_data, current_user.organization_id
+        )
     else:
         asset_id = await firestore_manager.create_document("assets", asset_data)
 
@@ -173,12 +212,19 @@ async def create_asset(
                     shutil.copyfileobj(file.file, buffer)
 
                 rel_path = f"/static/uploads/assets/{asset_id}/{file.filename}"
-                file_type = "image" if file.content_type and file.content_type.startswith("image/") else "document"
+                file_type = (
+                    "image"
+                    if file.content_type and file.content_type.startswith("image/")
+                    else "document"
+                )
 
                 media_data = {
-                    "asset_id": asset_id, "file_path": rel_path, "file_type": file_type,
-                    "title": file.filename, "description": "Uploaded during creation",
-                    "uploaded_date": datetime.now(timezone.utc)
+                    "asset_id": asset_id,
+                    "file_path": rel_path,
+                    "file_type": file_type,
+                    "title": file.filename,
+                    "description": "Uploaded during creation",
+                    "uploaded_date": datetime.now(timezone.utc),
                 }
                 await firestore_manager.create_document("asset_media", media_data)
 
@@ -192,7 +238,7 @@ async def upload_media(
     file_type: str = Form("image"),
     title: str = Form(""),
     description: str = Form(""),
-    current_user: User = Depends(require_permission("update_asset"))
+    current_user: User = Depends(require_permission("update_asset")),
 ):
     """Upload photo, video, or document"""
     asset_dir = os.path.join(UPLOAD_DIR, str(asset_id))
@@ -203,12 +249,16 @@ async def upload_media(
         shutil.copyfileobj(file.file, buffer)
 
     rel_path = f"/static/uploads/assets/{asset_id}/{file.filename}"
-    
+
     firestore_manager = get_firestore_manager()
     media_data = {
-        "asset_id": asset_id, "file_path": rel_path, "file_type": file_type,
-        "title": title, "description": description, "uploaded_by": current_user.uid,
-        "uploaded_date": datetime.now(timezone.utc)
+        "asset_id": asset_id,
+        "file_path": rel_path,
+        "file_type": file_type,
+        "title": title,
+        "description": description,
+        "uploaded_by": current_user.uid,
+        "uploaded_date": datetime.now(timezone.utc),
     }
     await firestore_manager.create_document("asset_media", media_data)
 
@@ -224,37 +274,47 @@ async def log_maintenance(
     downtime_hours: float = Form(0),
     labor_cost: float = Form(0),
     parts_cost: float = Form(0),
-    current_user: User = Depends(require_permission("log_maintenance"))
+    current_user: User = Depends(require_permission("log_maintenance")),
 ):
     """Log a maintenance event"""
     total_cost = labor_cost + parts_cost
     firestore_manager = get_firestore_manager()
 
     history_data = {
-        "asset_id": asset_id, "maintenance_type": maintenance_type, "description": description,
-        "technician": technician, "downtime_hours": downtime_hours, "labor_cost": labor_cost,
-        "parts_cost": parts_cost, "total_cost": total_cost, "created_date": datetime.now(timezone.utc)
+        "asset_id": asset_id,
+        "maintenance_type": maintenance_type,
+        "description": description,
+        "technician": technician,
+        "downtime_hours": downtime_hours,
+        "labor_cost": labor_cost,
+        "parts_cost": parts_cost,
+        "total_cost": total_cost,
+        "created_date": datetime.now(timezone.utc),
     }
     await firestore_manager.create_document("maintenance_history", history_data)
-    
+
     # This should be a transaction in a real app
     asset = await firestore_manager.get_document("assets", asset_id)
     if asset:
         new_downtime = asset.get("total_downtime_hours", 0) + downtime_hours
         new_cost = asset.get("total_maintenance_cost", 0) + total_cost
         await firestore_manager.update_document(
-            "assets", asset_id, {
+            "assets",
+            asset_id,
+            {
                 "total_downtime_hours": new_downtime,
                 "total_maintenance_cost": new_cost,
-                "last_service_date": datetime.now(timezone.utc)
-            }
+                "last_service_date": datetime.now(timezone.utc),
+            },
         )
 
     return RedirectResponse(f"/assets/{asset_id}", status_code=303)
 
 
 @router.get("/{asset_id}/ai-health")
-async def ai_health_analysis(asset_id: str, current_user: User = Depends(get_current_active_user)):
+async def ai_health_analysis(
+    asset_id: str, current_user: User = Depends(get_current_active_user)
+):
     """AI-powered health analysis"""
     if not gemini_service.is_available():
         return JSONResponse({"health_score": 0, "analysis": "AI unavailable"})
@@ -262,7 +322,12 @@ async def ai_health_analysis(asset_id: str, current_user: User = Depends(get_cur
     firestore_manager = get_firestore_manager()
     asset, history = await asyncio.gather(
         firestore_manager.get_document("assets", asset_id),
-        firestore_manager.get_collection("maintenance_history", filters=[{"field": "asset_id", "operator": "==", "value": asset_id}], order_by="-created_date", limit=10)
+        firestore_manager.get_collection(
+            "maintenance_history",
+            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            order_by="-created_date",
+            limit=10,
+        ),
     )
     if not asset:
         return JSONResponse({"error": "Asset not found"}, status_code=404)
@@ -282,7 +347,9 @@ async def ai_health_analysis(asset_id: str, current_user: User = Depends(get_cur
     """
 
     try:
-        response = await gemini_service.generate_response(context, user_id=current_user.uid)
+        response = await gemini_service.generate_response(
+            context, user_id=current_user.uid
+        )
         # Try to parse as JSON
         import re
 
@@ -307,7 +374,9 @@ async def ai_health_analysis(asset_id: str, current_user: User = Depends(get_cur
 
 
 @router.get("/{asset_id}/ai-recommendations")
-async def ai_recommendations(asset_id: str, current_user: User = Depends(get_current_active_user)):
+async def ai_recommendations(
+    asset_id: str, current_user: User = Depends(get_current_active_user)
+):
     """AI predictive maintenance recommendations"""
     if not gemini_service.is_available():
         return JSONResponse({"recommendations": []})
@@ -315,7 +384,7 @@ async def ai_recommendations(asset_id: str, current_user: User = Depends(get_cur
     firestore_manager = get_firestore_manager()
     asset, parts = await asyncio.gather(
         firestore_manager.get_document("assets", asset_id),
-        firestore_manager.get_asset_parts(asset_id)
+        firestore_manager.get_asset_parts(asset_id),
     )
     if not asset:
         return JSONResponse({"error": "Asset not found"}, status_code=404)
@@ -332,7 +401,9 @@ async def ai_recommendations(asset_id: str, current_user: User = Depends(get_cur
     """
 
     try:
-        response = await gemini_service.generate_response(prompt, user_id=current_user.uid)
+        response = await gemini_service.generate_response(
+            prompt, user_id=current_user.uid
+        )
         return JSONResponse({"recommendations": response})
     except Exception:
         return JSONResponse(
@@ -354,7 +425,9 @@ async def ai_recommendations(asset_id: str, current_user: User = Depends(get_cur
 
 
 @router.post("/scan-barcode")
-async def scan_asset_barcode(file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)):
+async def scan_asset_barcode(
+    file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
+):
     """Scan barcode to find asset and related information"""
     try:
         if not file.filename:
@@ -379,20 +452,27 @@ async def scan_asset_barcode(file: UploadFile = File(...), current_user: User = 
         if asset:
             work_orders, parts = await asyncio.gather(
                 db_adapter.get_asset_work_orders(asset["id"]),
-                db_adapter.get_asset_parts(asset["id"])
+                db_adapter.get_asset_parts(asset["id"]),
             )
             return JSONResponse(
                 {
-                    "success": True, "barcode_data": barcode_data, "asset": asset,
-                    "work_orders": work_orders[:5], "parts": parts,
+                    "success": True,
+                    "barcode_data": barcode_data,
+                    "asset": asset,
+                    "work_orders": work_orders[:5],
+                    "parts": parts,
                     "scan_result": "asset_found",
                 }
             )
         else:
             return JSONResponse(
                 {
-                    "success": True, "barcode_data": barcode_data, "asset": None,
-                    "work_orders": [], "parts": [], "scan_result": "no_asset_found",
+                    "success": True,
+                    "barcode_data": barcode_data,
+                    "asset": None,
+                    "work_orders": [],
+                    "parts": [],
+                    "scan_result": "no_asset_found",
                     "message": f"No asset found with identifier: {barcode_data}",
                 }
             )
@@ -402,7 +482,9 @@ async def scan_asset_barcode(file: UploadFile = File(...), current_user: User = 
 
 
 @router.post("/lookup-by-tag")
-async def lookup_asset_by_tag(asset_tag: str = Form(...), current_user: User = Depends(get_current_active_user)):
+async def lookup_asset_by_tag(
+    asset_tag: str = Form(...), current_user: User = Depends(get_current_active_user)
+):
     """Quick lookup of asset by tag/barcode"""
     try:
         db_adapter = get_db_adapter()
@@ -411,12 +493,13 @@ async def lookup_asset_by_tag(asset_tag: str = Form(...), current_user: User = D
         if asset:
             work_orders_count, parts_count = await asyncio.gather(
                 db_adapter.count_asset_work_orders(asset["id"]),
-                db_adapter.count_asset_parts(asset["id"])
+                db_adapter.count_asset_parts(asset["id"]),
             )
 
             return JSONResponse(
                 {
-                    "success": True, "asset": asset,
+                    "success": True,
+                    "asset": asset,
                     "work_orders_count": work_orders_count,
                     "parts_count": parts_count,
                 }
@@ -432,7 +515,9 @@ async def lookup_asset_by_tag(asset_tag: str = Form(...), current_user: User = D
 
 
 @router.get("/{asset_id}/generate-qr")
-async def generate_asset_qr_code(asset_id: str, current_user: User = Depends(get_current_active_user)):
+async def generate_asset_qr_code(
+    asset_id: str, current_user: User = Depends(get_current_active_user)
+):
     """Generate QR code for asset"""
     try:
         db_adapter = get_db_adapter()

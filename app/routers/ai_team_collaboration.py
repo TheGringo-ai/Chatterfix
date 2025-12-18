@@ -3,17 +3,14 @@ AI Team Collaboration Router for FastAPI
 Integrates the gRPC AI Team service with the web interface
 """
 
-import asyncio
 import json
 import logging
-import os
 
 # Import our AI team client
-import sys
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -146,9 +143,7 @@ async def search_knowledge(q: str, content_types: str = None, limit: int = 20):
         if content_types:
             content_type_list = [t.strip() for t in content_types.split(",")]
 
-        results = await client.search_memory(
-            query=q, max_results=limit
-        )
+        results = await client.search_memory(query=q, max_results=limit)
 
         return results
     except Exception as e:
@@ -171,10 +166,7 @@ async def rebuild_knowledge_index():
 @router.get("/dashboard", response_class=HTMLResponse)
 async def ai_team_dashboard(request: Request):
     """Enhanced AI team collaboration dashboard with memory system"""
-    return templates.TemplateResponse(
-        "ai_team_dashboard.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("ai_team_dashboard.html", {"request": request})
 
 
 # Keep old inline HTML as backup reference (commented out)
@@ -741,7 +733,9 @@ async def startup_event():
         if health.get("status") == "healthy" or health.get("healthy", False):
             logger.info("✅ AI Team HTTP client connected successfully")
         else:
-            logger.warning(f"⚠️ AI Team service not available: {health.get('status', 'unknown')}")
+            logger.warning(
+                f"⚠️ AI Team service not available: {health.get('status', 'unknown')}"
+            )
     except Exception as e:
         logger.error(f"Failed to initialize AI Team HTTP client: {e}")
 

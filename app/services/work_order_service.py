@@ -41,9 +41,7 @@ class WorkOrderService:
 
         # Optional: filter by assigned user
         if user_id:
-            filters.append(
-                {"field": "assigned_to", "operator": "==", "value": user_id}
-            )
+            filters.append({"field": "assigned_to", "operator": "==", "value": user_id})
 
         work_orders_data = await self.firestore_manager.get_collection(
             "work_orders",
@@ -130,7 +128,9 @@ class WorkOrderService:
             wo_data["description"] = sanitize_html_input(wo_data["description"])
 
         wo_data["updated_at"] = datetime.now(timezone.utc)
-        return await self.firestore_manager.update_document("work_orders", wo_id, wo_data)
+        return await self.firestore_manager.update_document(
+            "work_orders", wo_id, wo_data
+        )
 
     async def delete_work_order(
         self, wo_id: str, organization_id: Optional[str] = None

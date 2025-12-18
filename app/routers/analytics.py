@@ -14,34 +14,41 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user, check_permission, get_optional_current_user
+from app.auth import (
+    get_optional_current_user,
+)
 from app.models.user import User
 from typing import Optional as OptionalType
+
 try:
     # Try to import database dependencies - fallback to mock if not available
     from app.database import get_db
     from app.models import PredictiveAlert, WorkOrder
     from sqlalchemy import and_, func
     from sqlalchemy.orm import Session
+
     DATABASE_AVAILABLE = True
 except ImportError:
     # Fallback for environments without SQLAlchemy
     DATABASE_AVAILABLE = False
     Session = None
     get_db = lambda: None
-    
+
     # Mock types for when SQLAlchemy is not available
     class PredictiveAlert:
         pass
-    
+
     class WorkOrder:
         pass
+
+
 # Use primary analytics service that queries Firestore
 # Falls back to demo data when no real data exists
 try:
     from app.services.analytics_service import analytics_service
 except ImportError:
     from app.services.analytics_service_firestore import FirestoreAnalyticsService
+
     analytics_service = FirestoreAnalyticsService()
 from app.services.export_service import export_service
 from app.services.linesmart_intelligence import linesmart_intelligence
@@ -74,7 +81,9 @@ class ExportRequest(BaseModel):
 
 
 # Role-based Access Control for Sales/Admin Features
-def check_admin_or_sales_role(current_user: OptionalType[User] = Depends(get_optional_current_user)):
+def check_admin_or_sales_role(
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Verify user has Admin or Sales role access - allows demo users for viewing"""
     # Allow demo/unauthenticated access for viewing dashboards
     if current_user is None:
@@ -139,7 +148,7 @@ async def get_crisis_management_metrics(
 ) -> Dict[str, Any]:
     """
     Calculate emergency crisis scenarios and $125k+ savings potential
-    
+
     This endpoint demonstrates how ChatterFix prevents catastrophic equipment failures
     and generates massive ROI through predictive maintenance capabilities.
     """
@@ -152,7 +161,7 @@ async def get_crisis_management_metrics(
                 "downtime_hours": 24,
                 "frequency_prevented_yearly": 2,
                 "chatterfix_early_warning_days": 7,
-                "total_annual_savings": 250000
+                "total_annual_savings": 250000,
             },
             "hvac_system_collapse": {
                 "scenario": "Facility-wide HVAC system failure",
@@ -160,7 +169,7 @@ async def get_crisis_management_metrics(
                 "downtime_hours": 16,
                 "frequency_prevented_yearly": 3,
                 "chatterfix_early_warning_days": 5,
-                "total_annual_savings": 255000
+                "total_annual_savings": 255000,
             },
             "hydraulic_catastrophe": {
                 "scenario": "Hydraulic system catastrophic failure",
@@ -168,7 +177,7 @@ async def get_crisis_management_metrics(
                 "downtime_hours": 20,
                 "frequency_prevented_yearly": 2,
                 "chatterfix_early_warning_days": 10,
-                "total_annual_savings": 190000
+                "total_annual_savings": 190000,
             },
             "electrical_emergency": {
                 "scenario": "Electrical system emergency shutdown",
@@ -176,13 +185,15 @@ async def get_crisis_management_metrics(
                 "downtime_hours": 36,
                 "frequency_prevented_yearly": 1,
                 "chatterfix_early_warning_days": 14,
-                "total_annual_savings": 150000
-            }
+                "total_annual_savings": 150000,
+            },
         }
-        
+
         # Calculate total crisis prevention value
-        total_crisis_value = sum(scenario["total_annual_savings"] for scenario in crisis_scenarios.values())
-        
+        total_crisis_value = sum(
+            scenario["total_annual_savings"] for scenario in crisis_scenarios.values()
+        )
+
         active_predictions = 0
         if DATABASE_AVAILABLE and db:
             active_predictions = (
@@ -191,12 +202,13 @@ async def get_crisis_management_metrics(
                     and_(
                         PredictiveAlert.severity.in_(["High", "Critical"]),
                         PredictiveAlert.status == "active",
-                        PredictiveAlert.created_at >= datetime.now() - timedelta(days=7)
+                        PredictiveAlert.created_at
+                        >= datetime.now() - timedelta(days=7),
                     )
                 )
                 .count()
             )
-        
+
         return {
             "crisis_scenarios": crisis_scenarios,
             "total_annual_crisis_prevention_value": total_crisis_value,
@@ -208,12 +220,12 @@ async def get_crisis_management_metrics(
                 "production_continuity": "99.7% uptime maintained",
                 "emergency_response_time": "Reduced from 4 hours to 15 minutes",
                 "insurance_claims_prevented": "$845,000 in potential claims",
-                "regulatory_compliance": "100% compliance maintained"
+                "regulatory_compliance": "100% compliance maintained",
             },
             "competitive_advantage": "Traditional CMMS cannot predict these scenarios",
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error calculating crisis management metrics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -226,7 +238,7 @@ async def get_predictive_alerts_metrics(
 ) -> Dict[str, Any]:
     """
     Get real-time AI predictions and alert intelligence
-    
+
     Showcases the power of ChatterFix's AI-driven predictive maintenance system
     with real-time alerts and intelligent failure predictions.
     """
@@ -235,10 +247,12 @@ async def get_predictive_alerts_metrics(
         if DATABASE_AVAILABLE and db:
             recent_alerts = (
                 db.query(PredictiveAlert)
-                .filter(PredictiveAlert.created_at >= datetime.now() - timedelta(days=30))
+                .filter(
+                    PredictiveAlert.created_at >= datetime.now() - timedelta(days=30)
+                )
                 .all()
             )
-        
+
         # Categorize alerts by severity and accuracy
         alert_analytics = {
             "total_predictions": len(recent_alerts),
@@ -249,25 +263,25 @@ async def get_predictive_alerts_metrics(
                 "Critical": len([a for a in recent_alerts if a.severity == "Critical"]),
                 "High": len([a for a in recent_alerts if a.severity == "High"]),
                 "Medium": len([a for a in recent_alerts if a.severity == "Medium"]),
-                "Low": len([a for a in recent_alerts if a.severity == "Low"])
+                "Low": len([a for a in recent_alerts if a.severity == "Low"]),
             },
             "prediction_types": {
                 "equipment_failure": 45,
                 "performance_degradation": 32,
                 "safety_risk": 18,
-                "efficiency_loss": 28
-            }
+                "efficiency_loss": 28,
+            },
         }
-        
+
         # AI system health status
         ai_system_status = {
             "predictor_service": get_predictor_health(),
             "model_confidence": 94.2,
             "data_quality_score": 97.8,
             "learning_rate": "Continuous",
-            "last_model_update": "2024-12-10T15:30:00Z"
+            "last_model_update": "2024-12-10T15:30:00Z",
         }
-        
+
         # Live prediction examples for demo
         live_predictions = [
             {
@@ -275,34 +289,36 @@ async def get_predictive_alerts_metrics(
                 "prediction": "Bearing replacement needed in 12 days",
                 "confidence": 92.1,
                 "potential_cost_savings": 45000,
-                "recommended_action": "Schedule maintenance during next planned shutdown"
+                "recommended_action": "Schedule maintenance during next planned shutdown",
             },
             {
                 "asset_id": "HVAC_MAIN",
                 "prediction": "Filter efficiency dropping, replace in 5 days",
                 "confidence": 87.3,
                 "potential_cost_savings": 8500,
-                "recommended_action": "Order replacement filters immediately"
+                "recommended_action": "Order replacement filters immediately",
             },
             {
                 "asset_id": "MOTOR_305",
                 "prediction": "Vibration anomaly detected, inspect within 3 days",
                 "confidence": 95.7,
                 "potential_cost_savings": 125000,
-                "recommended_action": "Priority inspection - potential critical failure"
-            }
+                "recommended_action": "Priority inspection - potential critical failure",
+            },
         ]
-        
+
         return {
             "alert_analytics": alert_analytics,
             "ai_system_status": ai_system_status,
             "live_predictions": live_predictions,
-            "total_potential_savings": sum(p["potential_cost_savings"] for p in live_predictions),
+            "total_potential_savings": sum(
+                p["potential_cost_savings"] for p in live_predictions
+            ),
             "predictive_maintenance_roi": "943% average return",
             "competitive_differentiator": "Only ChatterFix provides this level of AI prediction accuracy",
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting predictive alerts: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -315,7 +331,7 @@ async def get_customer_savings_breakdown(
 ) -> Dict[str, Any]:
     """
     Per-customer ROI breakdown for sales presentations
-    
+
     Provides detailed savings analysis for each customer organization,
     perfect for showing prospects their potential ROI.
     """
@@ -328,10 +344,10 @@ async def get_customer_savings_breakdown(
                 .group_by(User.company_name)
                 .all()
             )
-        
+
         customer_savings = []
         total_savings_all_customers = 0
-        
+
         # Use mock data if database is not available
         if not customers:
             customers = [("Genesis Manufacturing", 25), ("Global Parts Inc.", 15)]
@@ -341,7 +357,7 @@ async def get_customer_savings_breakdown(
             base_savings = user_count * 15000  # $15k per user annually
             equipment_factor = min(user_count * 0.5, 3.0)  # Scale with equipment count
             total_customer_savings = int(base_savings * equipment_factor)
-            
+
             # Simulate specific savings categories
             customer_data = {
                 "company_name": customer_name,
@@ -351,41 +367,54 @@ async def get_customer_savings_breakdown(
                     "downtime_prevention": int(total_customer_savings * 0.45),
                     "maintenance_optimization": int(total_customer_savings * 0.25),
                     "parts_inventory_reduction": int(total_customer_savings * 0.15),
-                    "labor_efficiency": int(total_customer_savings * 0.15)
+                    "labor_efficiency": int(total_customer_savings * 0.15),
                 },
-                "roi_percentage": min(943, int((total_customer_savings / (user_count * 999 * 12)) * 100)) if user_count > 0 else 943,
+                "roi_percentage": (
+                    min(
+                        943,
+                        int((total_customer_savings / (user_count * 999 * 12)) * 100),
+                    )
+                    if user_count > 0
+                    else 943
+                ),
                 "implementation_date": "2024-01-15",
                 "payback_period_months": 3.2,
                 "testimonial": f"ChatterFix saved us ${total_customer_savings:,} in our first year!",
                 "success_metrics": {
                     "uptime_improvement": f"+{4.5 + (user_count * 0.1):.1f}%",
                     "maintenance_efficiency": f"+{25 + (user_count * 2):.0f}%",
-                    "cost_reduction": f"-{30 + (user_count * 1):.0f}%"
-                }
+                    "cost_reduction": f"-{30 + (user_count * 1):.0f}%",
+                },
             }
-            
+
             customer_savings.append(customer_data)
             total_savings_all_customers += total_customer_savings
-        
+
         # Sort by savings (highest first)
         customer_savings.sort(key=lambda x: x["annual_savings"], reverse=True)
-        
+
         return {
             "customer_count": len(customer_savings),
             "total_savings_all_customers": total_savings_all_customers,
-            "average_savings_per_customer": int(total_savings_all_customers / len(customer_savings)) if customer_savings else 0,
-            "customer_savings_details": customer_savings[:10],  # Top 10 for sales presentation
+            "average_savings_per_customer": (
+                int(total_savings_all_customers / len(customer_savings))
+                if customer_savings
+                else 0
+            ),
+            "customer_savings_details": customer_savings[
+                :10
+            ],  # Top 10 for sales presentation
             "industry_averages": {
                 "manufacturing": "$125,000 annual savings",
                 "facilities_management": "$85,000 annual savings",
                 "healthcare": "$95,000 annual savings",
-                "education": "$45,000 annual savings"
+                "education": "$45,000 annual savings",
             },
             "success_rate": "98.5% customer satisfaction",
             "renewal_rate": "96.8% annual renewal rate",
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error calculating customer savings: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -397,7 +426,7 @@ async def get_competitive_advantage(
 ) -> Dict[str, Any]:
     """
     Competitive analysis: ChatterFix vs Traditional CMMS
-    
+
     Provides compelling comparison data for sales presentations,
     highlighting ChatterFix's unique AI-powered advantages.
     """
@@ -407,50 +436,50 @@ async def get_competitive_advantage(
                 "ai_predictive_maintenance": {
                     "chatterfix": "94.7% accurate failure predictions with 8.5-day lead time",
                     "traditional_cmms": "No predictive capabilities - reactive only",
-                    "advantage": "Prevents 90% of unexpected failures"
+                    "advantage": "Prevents 90% of unexpected failures",
                 },
                 "real_time_intelligence": {
                     "chatterfix": "Real-time AI analysis and automated alerts",
                     "traditional_cmms": "Manual data entry and static reporting",
-                    "advantage": "75% faster issue detection"
+                    "advantage": "75% faster issue detection",
                 },
                 "mobile_first_design": {
                     "chatterfix": "Native mobile apps with offline capability",
                     "traditional_cmms": "Desktop-focused with limited mobile support",
-                    "advantage": "40% higher technician adoption rate"
+                    "advantage": "40% higher technician adoption rate",
                 },
                 "integrated_training": {
                     "chatterfix": "LineSmart AI-powered training platform included",
                     "traditional_cmms": "No training capabilities - separate system needed",
-                    "advantage": "$25,000+ annual training cost savings"
+                    "advantage": "$25,000+ annual training cost savings",
                 },
                 "autonomous_fixing": {
                     "chatterfix": "Fix-it-Fred AI consultant for complex issues",
                     "traditional_cmms": "No AI assistance - manual troubleshooting only",
-                    "advantage": "65% faster problem resolution"
-                }
+                    "advantage": "65% faster problem resolution",
+                },
             },
             "cost_comparison": {
                 "implementation_time": {
                     "chatterfix": "2-4 weeks with AI-guided onboarding",
                     "traditional_cmms": "3-6 months with extensive training required",
-                    "savings": "$45,000 faster time-to-value"
+                    "savings": "$45,000 faster time-to-value",
                 },
                 "annual_licensing": {
                     "chatterfix": "$999/user/year (includes AI features)",
                     "traditional_cmms": "$1,200-$2,500/user/year + add-ons",
-                    "savings": "Up to 60% cost reduction"
+                    "savings": "Up to 60% cost reduction",
                 },
                 "maintenance_costs": {
                     "chatterfix": "$50-125K reduction in annual maintenance costs",
                     "traditional_cmms": "Baseline reactive maintenance costs",
-                    "advantage": "943% ROI through predictive maintenance"
+                    "advantage": "943% ROI through predictive maintenance",
                 },
                 "training_expenses": {
                     "chatterfix": "Included LineSmart platform - no additional cost",
                     "traditional_cmms": "$15,000-$35,000 annual training costs",
-                    "savings": "100% training cost elimination"
-                }
+                    "savings": "100% training cost elimination",
+                },
             },
             "feature_matrix": {
                 "predictive_analytics": {"chatterfix": True, "traditional": False},
@@ -461,20 +490,20 @@ async def get_competitive_advantage(
                 "real_time_monitoring": {"chatterfix": True, "traditional": "Limited"},
                 "customizable_workflows": {"chatterfix": True, "traditional": "Basic"},
                 "enterprise_security": {"chatterfix": True, "traditional": True},
-                "api_integrations": {"chatterfix": True, "traditional": "Limited"}
+                "api_integrations": {"chatterfix": True, "traditional": "Limited"},
             },
             "customer_success_metrics": {
                 "deployment_success_rate": "98.5%",
                 "user_adoption_rate": "94.2%",
                 "customer_satisfaction": "4.8/5.0",
                 "support_resolution_time": "< 2 hours average",
-                "uptime_sla": "99.9% guaranteed"
-            }
+                "uptime_sla": "99.9% guaranteed",
+            },
         }
-        
+
         # Calculate total value proposition
         total_annual_advantage = 250000  # Conservative estimate
-        
+
         return {
             "competitive_analysis": competitive_analysis,
             "total_annual_advantage": total_annual_advantage,
@@ -483,24 +512,24 @@ async def get_competitive_advantage(
                 "Integrated training platform saves $25K+ annually",
                 "AI consultant reduces troubleshooting time by 65%",
                 "Mobile-first design with 40% higher adoption",
-                "943% ROI through predictive maintenance"
+                "943% ROI through predictive maintenance",
             ],
             "sales_talking_points": [
                 "ChatterFix prevents equipment failures before they happen",
                 "Traditional CMMS can only track what already broke",
                 "Our AI learns from every maintenance action across all customers",
                 "Include training and consultation - no additional vendors needed",
-                "Proven ROI with Genesis Manufacturing case study"
+                "Proven ROI with Genesis Manufacturing case study",
             ],
             "risk_mitigation": {
                 "implementation_guarantee": "Full deployment or money back",
                 "roi_guarantee": "200% ROI within 12 months or we pay the difference",
                 "migration_support": "Free data migration from any existing CMMS",
-                "training_included": "Unlimited training and support for first year"
+                "training_included": "Unlimited training and support for first year",
             },
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error generating competitive advantage analysis: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -529,7 +558,7 @@ async def get_roi_metrics(
         high_priority_alerts = 25  # 25 high-priority incidents prevented
         active_tenants = 12  # 12 active enterprise clients
         total_work_orders = 150  # Total work orders in system
-        
+
         if DATABASE_AVAILABLE and db:
             # Calculate downtime savings from high-priority predictive alerts
             high_priority_alerts = (
@@ -538,7 +567,8 @@ async def get_roi_metrics(
                     and_(
                         PredictiveAlert.severity == "High",
                         PredictiveAlert.status == "resolved",
-                        PredictiveAlert.created_at >= datetime.now() - timedelta(days=365),
+                        PredictiveAlert.created_at
+                        >= datetime.now() - timedelta(days=365),
                     )
                 )
                 .count()
@@ -564,11 +594,14 @@ async def get_roi_metrics(
 
         # Get system health status
         predictor_health = get_predictor_health()
-        
-        chatterfix_proactive_cost = (active_tenants * 999 * 12) if active_tenants > 0 else 12 * 999 * 12
-        traditional_reactive_cost = total_work_orders * 2500
-        total_savings = downtime_saved_usd + (traditional_reactive_cost - chatterfix_proactive_cost)
 
+        chatterfix_proactive_cost = (
+            (active_tenants * 999 * 12) if active_tenants > 0 else 12 * 999 * 12
+        )
+        traditional_reactive_cost = total_work_orders * 2500
+        total_savings = downtime_saved_usd + (
+            traditional_reactive_cost - chatterfix_proactive_cost
+        )
 
         return {
             "downtime_saved_usd": downtime_saved_usd,
@@ -602,7 +635,7 @@ async def get_roi_metrics(
 @router.get("/dashboard/summary")
 async def get_dashboard_summary(
     current_user: User = Depends(check_admin_or_sales_role),
-    db: Optional[Session] = Depends(get_db)
+    db: Optional[Session] = Depends(get_db),
 ) -> Dict[str, Any]:
     """Get high-level dashboard summary for quick sales presentations"""
 
@@ -646,7 +679,10 @@ async def roi_dashboard(
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def analytics_dashboard(request: Request, current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def analytics_dashboard(
+    request: Request,
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Render the advanced analytics dashboard - accessible to all users including demo"""
     # Get KPI summary for initial render
     try:
@@ -655,15 +691,24 @@ async def analytics_dashboard(request: Request, current_user: OptionalType[User]
         kpi_data = {}
 
     # Check if user is accessing via demo mode or is unauthenticated
-    is_demo = current_user is None or request.url.path.startswith('/demo')
+    is_demo = current_user is None or request.url.path.startswith("/demo")
 
     return templates.TemplateResponse(
-        "analytics_dashboard.html", {"request": request, "kpi_data": kpi_data, "user": current_user, "is_demo": is_demo}
+        "analytics_dashboard.html",
+        {
+            "request": request,
+            "kpi_data": kpi_data,
+            "user": current_user,
+            "is_demo": is_demo,
+        },
     )
 
 
 @router.get("/kpi/summary")
-async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_kpi_summary(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get comprehensive KPI summary - accessible to demo users"""
     try:
         data = await analytics_service.get_kpi_summary(days)
@@ -673,7 +718,10 @@ async def get_kpi_summary(days: int = Query(30, ge=1, le=365), current_user: Opt
 
 
 @router.get("/kpi/mttr")
-async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_mttr(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get Mean Time To Repair (MTTR) metrics"""
     try:
         data = await analytics_service.calculate_mttr(days)
@@ -683,7 +731,10 @@ async def get_mttr(days: int = Query(30, ge=1, le=365), current_user: OptionalTy
 
 
 @router.get("/kpi/mtbf")
-async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_mtbf(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get Mean Time Between Failures (MTBF) metrics"""
     try:
         data = await analytics_service.calculate_mtbf(days)
@@ -693,7 +744,10 @@ async def get_mtbf(days: int = Query(30, ge=1, le=365), current_user: OptionalTy
 
 
 @router.get("/kpi/utilization")
-async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_asset_utilization(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get asset utilization metrics"""
     try:
         data = await analytics_service.calculate_asset_utilization(days)
@@ -703,7 +757,10 @@ async def get_asset_utilization(days: int = Query(30, ge=1, le=365), current_use
 
 
 @router.get("/kpi/costs")
-async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_cost_tracking(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get cost tracking metrics"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -713,7 +770,10 @@ async def get_cost_tracking(days: int = Query(30, ge=1, le=365), current_user: O
 
 
 @router.get("/kpi/work-orders")
-async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_work_order_metrics(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get work order metrics"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -723,7 +783,10 @@ async def get_work_order_metrics(days: int = Query(30, ge=1, le=365), current_us
 
 
 @router.get("/kpi/compliance")
-async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_compliance_metrics(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get compliance and PM adherence metrics"""
     try:
         data = await analytics_service.get_compliance_metrics(days)
@@ -736,7 +799,11 @@ async def get_compliance_metrics(days: int = Query(30, ge=1, le=365), current_us
 
 
 @router.get("/trends/{metric}")
-async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_trend_data(
+    metric: str,
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """
     Get historical trend data for a specific metric
 
@@ -762,7 +829,10 @@ async def get_trend_data(metric: str, days: int = Query(30, ge=1, le=365), curre
 
 
 @router.post("/export")
-async def export_report(request: ExportRequest, current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def export_report(
+    request: ExportRequest,
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Export report in specified format"""
     try:
         if request.report_type == "kpi":
@@ -787,7 +857,11 @@ async def export_report(request: ExportRequest, current_user: OptionalType[User]
 
 
 @router.get("/export/kpi/{format}")
-async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def export_kpi_quick(
+    format: str,
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Quick export endpoint for KPI report"""
     valid_formats = ["json", "csv", "excel", "pdf"]
     if format not in valid_formats:
@@ -812,7 +886,9 @@ async def export_kpi_quick(format: str, days: int = Query(30, ge=1, le=365), cur
 
 
 @router.get("/export/work-orders/{format}")
-async def export_work_orders_quick(format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def export_work_orders_quick(
+    format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)
+):
     """Quick export endpoint for work orders"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -836,7 +912,9 @@ async def export_work_orders_quick(format: str, current_user: OptionalType[User]
 
 
 @router.get("/export/assets/{format}")
-async def export_assets_quick(format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def export_assets_quick(
+    format: str, current_user: OptionalType[User] = Depends(get_optional_current_user)
+):
     """Quick export endpoint for assets"""
     valid_formats = ["json", "csv", "excel"]
     if format not in valid_formats:
@@ -863,7 +941,10 @@ async def export_assets_quick(format: str, current_user: OptionalType[User] = De
 
 
 @router.get("/charts/work-order-status")
-async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_work_order_status_chart(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get work order status distribution for pie/doughnut chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -887,7 +968,10 @@ async def get_work_order_status_chart(days: int = Query(30, ge=1, le=365), curre
 
 
 @router.get("/charts/priority-distribution")
-async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_priority_distribution_chart(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get work order priority distribution for chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -910,7 +994,10 @@ async def get_priority_distribution_chart(days: int = Query(30, ge=1, le=365), c
 
 
 @router.get("/charts/cost-trend")
-async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_cost_trend_chart(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get cost trend for line chart"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -928,7 +1015,10 @@ async def get_cost_trend_chart(days: int = Query(30, ge=1, le=365), current_user
 
 
 @router.get("/charts/completion-trend")
-async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_completion_trend_chart(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get work order completion trend for line chart"""
     try:
         data = await analytics_service.get_work_order_metrics(days)
@@ -958,7 +1048,9 @@ async def get_completion_trend_chart(days: int = Query(30, ge=1, le=365), curren
 
 
 @router.get("/charts/asset-health")
-async def get_asset_health_chart(current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_asset_health_chart(
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get asset health distribution for chart"""
     try:
         data = await analytics_service.calculate_asset_utilization(30)
@@ -981,7 +1073,10 @@ async def get_asset_health_chart(current_user: OptionalType[User] = Depends(get_
 
 
 @router.get("/charts/cost-breakdown")
-async def get_cost_breakdown_chart(days: int = Query(30, ge=1, le=365), current_user: OptionalType[User] = Depends(get_optional_current_user)):
+async def get_cost_breakdown_chart(
+    days: int = Query(30, ge=1, le=365),
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
+):
     """Get cost breakdown by maintenance type for chart"""
     try:
         data = await analytics_service.get_cost_tracking(days)
@@ -1025,12 +1120,11 @@ class MicroLearningRequest(BaseModel):
 @router.get("/linesmart/training-dashboard", response_class=HTMLResponse)
 async def linesmart_training_dashboard(
     request: Request,
-    current_user: OptionalType[User] = Depends(get_optional_current_user)
+    current_user: OptionalType[User] = Depends(get_optional_current_user),
 ):
     """LineSmart Training Intelligence Dashboard across all platforms"""
     return templates.TemplateResponse(
-        "linesmart_dashboard.html",
-        {"request": request, "user": current_user}
+        "linesmart_dashboard.html", {"request": request, "user": current_user}
     )
 
 
@@ -1041,10 +1135,12 @@ async def get_workforce_intelligence(
 ) -> Dict[str, Any]:
     """Get workforce intelligence analytics for LineSmart dashboard"""
     try:
-        from app.services.linesmart_intelligence import get_workforce_intelligence_dashboard
-        
+        from app.services.linesmart_intelligence import (
+            get_workforce_intelligence_dashboard,
+        )
+
         dashboard_data = await get_workforce_intelligence_dashboard(timeframe_days)
-        
+
         # Add real-time training metrics
         training_metrics = {
             "active_training_sessions": 12,
@@ -1053,14 +1149,14 @@ async def get_workforce_intelligence(
             "performance_improvements": {
                 "efficiency_boost": "23%",
                 "error_reduction": "18%",
-                "first_time_fix_rate": "91%"
-            }
+                "first_time_fix_rate": "91%",
+            },
         }
-        
+
         dashboard_data["real_time_training"] = training_metrics
-        
+
         return dashboard_data
-        
+
     except Exception as e:
         logger.error(f"Error getting workforce intelligence: {e}")
         raise HTTPException(
@@ -1075,14 +1171,14 @@ async def get_platform_specific_training(
     current_user: OptionalType[User] = Depends(get_optional_current_user),
 ) -> Dict[str, Any]:
     """Get platform-specific training modules and interfaces"""
-    
+
     valid_platforms = ["desktop", "tablet", "mobile"]
     if platform not in valid_platforms:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid platform. Valid options: {valid_platforms}"
+            detail=f"Invalid platform. Valid options: {valid_platforms}",
         )
-    
+
     try:
         # Platform-specific training configurations
         platform_configs = {
@@ -1093,10 +1189,10 @@ async def get_platform_specific_training(
                     "Interactive diagrams",
                     "Detailed progress tracking",
                     "Certificate management",
-                    "Admin dashboard view"
+                    "Admin dashboard view",
                 ],
                 "recommended_duration": 30,
-                "max_complexity": 5
+                "max_complexity": 5,
             },
             "tablet": {
                 "training_type": "hands_on_simulations",
@@ -1105,10 +1201,10 @@ async def get_platform_specific_training(
                     "AR equipment identification",
                     "Field reference guides",
                     "Digital signature capture",
-                    "Offline capability"
+                    "Offline capability",
                 ],
                 "recommended_duration": 20,
-                "max_complexity": 4
+                "max_complexity": 4,
             },
             "mobile": {
                 "training_type": "micro_learning",
@@ -1117,27 +1213,33 @@ async def get_platform_specific_training(
                     "Push notifications",
                     "Voice-guided quizzes",
                     "Photo evidence upload",
-                    "Quick reference cards"
+                    "Quick reference cards",
                 ],
                 "recommended_duration": 5,
-                "max_complexity": 3
-            }
+                "max_complexity": 3,
+            },
         }
-        
+
         config = platform_configs[platform]
-        
+
         # Get available training modules for platform
-        available_modules = await _get_platform_training_modules(platform, technician_id)
-        
+        available_modules = await _get_platform_training_modules(
+            platform, technician_id
+        )
+
         return {
             "platform": platform,
             "configuration": config,
             "available_modules": available_modules,
-            "personalized_recommendations": await _get_personalized_training_recommendations(technician_id, platform),
-            "active_sessions": await _get_active_training_sessions(technician_id, platform),
-            "generated_at": datetime.now().isoformat()
+            "personalized_recommendations": await _get_personalized_training_recommendations(
+                technician_id, platform
+            ),
+            "active_sessions": await _get_active_training_sessions(
+                technician_id, platform
+            ),
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting platform training for {platform}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1152,13 +1254,11 @@ async def start_micro_learning(
     try:
         # Generate micro-learning content based on topic and time available
         micro_content = await _generate_micro_learning_content(
-            request.topic, 
-            request.break_duration, 
-            request.technician_id
+            request.topic, request.break_duration, request.technician_id
         )
-        
+
         session_id = str(uuid.uuid4())
-        
+
         # Track micro-learning session
         session_data = {
             "session_id": session_id,
@@ -1168,20 +1268,22 @@ async def start_micro_learning(
             "content": micro_content,
             "started_at": datetime.now().isoformat(),
             "platform": "mobile",
-            "status": "active"
+            "status": "active",
         }
-        
+
         # Store session (in production, would use database)
-        logger.info(f"Started micro-learning session {session_id} for {request.technician_id}")
-        
+        logger.info(
+            f"Started micro-learning session {session_id} for {request.technician_id}"
+        )
+
         return {
             "session_id": session_id,
             "content": micro_content,
             "estimated_completion": f"{request.break_duration} minutes",
             "mobile_optimized": True,
-            "voice_guidance_available": True
+            "voice_guidance_available": True,
         }
-        
+
     except Exception as e:
         logger.error(f"Error starting micro-learning: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1196,35 +1298,43 @@ async def get_skill_gap_alerts(
     try:
         # Get skill gap analytics from LineSmart Intelligence
         if technician_id:
-            analytics = await linesmart_intelligence.get_skill_gap_analytics(technician_id, 30)
+            analytics = await linesmart_intelligence.get_skill_gap_analytics(
+                technician_id, 30
+            )
         else:
-            analytics = await linesmart_intelligence.get_skill_gap_analytics(timeframe_days=30)
-        
+            analytics = await linesmart_intelligence.get_skill_gap_analytics(
+                timeframe_days=30
+            )
+
         # Generate alerts based on skill gaps
         alerts = []
         skill_gaps = analytics.get("top_skill_gaps", {})
-        
+
         for skill, frequency in skill_gaps.items():
             if frequency >= 3:  # Alert threshold
                 urgency = "high" if frequency >= 5 else "medium"
-                alerts.append({
-                    "alert_id": str(uuid.uuid4()),
-                    "skill_area": skill,
-                    "frequency": frequency,
-                    "urgency": urgency,
-                    "recommended_training": f"Immediate {skill} refresher training",
-                    "estimated_impact": "Reduce repeat issues by 40%",
-                    "suggested_platform": "tablet" if "hands-on" in skill.lower() else "desktop"
-                })
-        
+                alerts.append(
+                    {
+                        "alert_id": str(uuid.uuid4()),
+                        "skill_area": skill,
+                        "frequency": frequency,
+                        "urgency": urgency,
+                        "recommended_training": f"Immediate {skill} refresher training",
+                        "estimated_impact": "Reduce repeat issues by 40%",
+                        "suggested_platform": (
+                            "tablet" if "hands-on" in skill.lower() else "desktop"
+                        ),
+                    }
+                )
+
         return {
             "alert_count": len(alerts),
             "alerts": alerts,
             "analytics_period": "30 days",
             "next_review": (datetime.now() + timedelta(days=7)).isoformat(),
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting skill gap alerts: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1238,24 +1348,36 @@ async def get_training_roi_metrics(
     """Get training ROI metrics for sales and management dashboards"""
     try:
         # Get performance improvement metrics for Genesis project technicians
-        jake_metrics = await linesmart_intelligence.get_performance_improvement_metrics("4", timeframe_days)
-        anna_metrics = await linesmart_intelligence.get_performance_improvement_metrics("5", timeframe_days)
-        
+        jake_metrics = await linesmart_intelligence.get_performance_improvement_metrics(
+            "4", timeframe_days
+        )
+        anna_metrics = await linesmart_intelligence.get_performance_improvement_metrics(
+            "5", timeframe_days
+        )
+
         # Calculate aggregated ROI
         total_time_saved = 0
         if not jake_metrics.get("error") and "roi_indicators" in jake_metrics:
-            total_time_saved += jake_metrics["roi_indicators"].get("estimated_time_savings_hours", 0)
+            total_time_saved += jake_metrics["roi_indicators"].get(
+                "estimated_time_savings_hours", 0
+            )
         if not anna_metrics.get("error") and "roi_indicators" in anna_metrics:
-            total_time_saved += anna_metrics["roi_indicators"].get("estimated_time_savings_hours", 0)
-        
+            total_time_saved += anna_metrics["roi_indicators"].get(
+                "estimated_time_savings_hours", 0
+            )
+
         # Convert time savings to dollar savings (assume $75/hour loaded rate)
         hourly_rate = 75
         dollar_savings = total_time_saved * hourly_rate
-        
+
         # Training cost calculation (example)
         training_investment = 15000  # Annual training platform cost
-        roi_percentage = ((dollar_savings - training_investment) / training_investment * 100) if training_investment > 0 else 0
-        
+        roi_percentage = (
+            ((dollar_savings - training_investment) / training_investment * 100)
+            if training_investment > 0
+            else 0
+        )
+
         return {
             "timeframe_days": timeframe_days,
             "training_investment": f"${training_investment:,}",
@@ -1264,23 +1386,23 @@ async def get_training_roi_metrics(
             "roi_percentage": round(roi_percentage, 1),
             "technician_metrics": {
                 "jake_thompson": jake_metrics,
-                "anna_kowalski": anna_metrics
+                "anna_kowalski": anna_metrics,
             },
             "key_improvements": {
                 "efficiency_improvement": "Average 15% faster job completion",
                 "error_reduction": "23% fewer repeat issues",
                 "first_time_fix_rate": "Improved from 78% to 91%",
-                "skill_gaps_closed": "12 critical gaps addressed"
+                "skill_gaps_closed": "12 critical gaps addressed",
             },
             "business_impact": {
                 "downtime_reduction": "30% less equipment downtime",
                 "customer_satisfaction": "18% improvement in satisfaction scores",
                 "technician_confidence": "92% report increased confidence",
-                "training_completion": "95% completion rate"
+                "training_completion": "95% completion rate",
             },
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Error calculating training ROI: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1294,39 +1416,43 @@ async def create_team_challenge(
     """Create social learning team challenges"""
     try:
         challenge_id = str(uuid.uuid4())
-        
+
         # Example team challenge structure
         challenge = {
             "challenge_id": challenge_id,
             "title": challenge_data.get("title", "Weekly Skills Challenge"),
-            "description": challenge_data.get("description", "Complete training modules to earn points"),
-            "type": challenge_data.get("type", "team_competition"),  # team_competition, individual_goal, mentorship
+            "description": challenge_data.get(
+                "description", "Complete training modules to earn points"
+            ),
+            "type": challenge_data.get(
+                "type", "team_competition"
+            ),  # team_competition, individual_goal, mentorship
             "duration_days": challenge_data.get("duration_days", 7),
             "teams": {
                 "Production Line A": {"members": ["4"], "points": 0},
-                "Production Line B": {"members": ["5"], "points": 0}
+                "Production Line B": {"members": ["5"], "points": 0},
             },
             "reward_structure": {
                 "module_completion": 10,
                 "quiz_perfect_score": 5,
                 "peer_help": 3,
-                "first_place_bonus": 50
+                "first_place_bonus": 50,
             },
             "created_at": datetime.now().isoformat(),
             "created_by": current_user.uid,
-            "status": "active"
+            "status": "active",
         }
-        
+
         logger.info(f"Created social learning challenge: {challenge_id}")
-        
+
         return {
             "challenge_created": True,
             "challenge_id": challenge_id,
             "challenge_details": challenge,
             "participation_url": f"/linesmart/challenge/{challenge_id}",
-            "leaderboard_url": f"/linesmart/leaderboard/{challenge_id}"
+            "leaderboard_url": f"/linesmart/leaderboard/{challenge_id}",
         }
-        
+
     except Exception as e:
         logger.error(f"Error creating team challenge: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1347,20 +1473,20 @@ async def get_ar_training_content(
                     "marker_id": "safety_label",
                     "position": {"x": 0.1, "y": 0.2, "z": 0},
                     "content": "⚠️ LOCKOUT/TAGOUT REQUIRED",
-                    "type": "safety_alert"
+                    "type": "safety_alert",
                 },
                 {
                     "marker_id": "inspection_point_1",
                     "position": {"x": 0.3, "y": 0.4, "z": 0.1},
                     "content": "Check oil level here - should be between MIN/MAX",
-                    "type": "inspection_guide"
+                    "type": "inspection_guide",
                 },
                 {
                     "marker_id": "troubleshooting_access",
                     "position": {"x": 0.5, "y": 0.1, "z": 0.2},
                     "content": "Control panel - check error codes",
-                    "type": "troubleshooting"
-                }
+                    "type": "troubleshooting",
+                },
             ],
             "training_scenarios": [
                 {
@@ -1368,10 +1494,10 @@ async def get_ar_training_content(
                     "title": "Daily Equipment Check",
                     "steps": [
                         "Point device at equipment",
-                        "Follow AR markers for inspection points", 
+                        "Follow AR markers for inspection points",
                         "Complete checklist items",
-                        "Take photos of any issues"
-                    ]
+                        "Take photos of any issues",
+                    ],
                 },
                 {
                     "scenario": "troubleshooting",
@@ -1380,22 +1506,22 @@ async def get_ar_training_content(
                         "Identify error symptoms",
                         "Use AR overlay for component locations",
                         "Follow diagnostic flowchart",
-                        "Document resolution"
-                    ]
-                }
+                        "Document resolution",
+                    ],
+                },
             ],
             "supported_devices": ["tablet", "smartphone", "ar_glasses"],
-            "platform_optimized": True
+            "platform_optimized": True,
         }
-        
+
         return {
             "ar_training_available": True,
             "content": ar_content,
             "device_compatibility": "iOS 11+, Android 7+",
             "download_size": "45MB",
-            "offline_available": True
+            "offline_available": True,
         }
-        
+
     except Exception as e:
         logger.error(f"Error getting AR training content: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1403,7 +1529,10 @@ async def get_ar_training_content(
 
 # Helper functions for LineSmart Training Interface
 
-async def _get_platform_training_modules(platform: str, technician_id: Optional[str]) -> List[Dict]:
+
+async def _get_platform_training_modules(
+    platform: str, technician_id: Optional[str]
+) -> List[Dict]:
     """Get training modules optimized for specific platform"""
     # This would query the actual training database in production
     platform_modules = {
@@ -1414,16 +1543,16 @@ async def _get_platform_training_modules(platform: str, technician_id: Optional[
                 "duration": 45,
                 "type": "interactive_video",
                 "complexity": 4,
-                "completion_rate": "87%"
+                "completion_rate": "87%",
             },
             {
-                "module_id": "desktop_002", 
+                "module_id": "desktop_002",
                 "title": "Electrical Safety Certification",
                 "duration": 60,
                 "type": "certification",
                 "complexity": 5,
-                "completion_rate": "92%"
-            }
+                "completion_rate": "92%",
+            },
         ],
         "tablet": [
             {
@@ -1432,7 +1561,7 @@ async def _get_platform_training_modules(platform: str, technician_id: Optional[
                 "duration": 25,
                 "type": "hands_on_simulation",
                 "complexity": 3,
-                "ar_enabled": True
+                "ar_enabled": True,
             },
             {
                 "module_id": "tablet_002",
@@ -1440,8 +1569,8 @@ async def _get_platform_training_modules(platform: str, technician_id: Optional[
                 "duration": 15,
                 "type": "reference_guide",
                 "complexity": 2,
-                "offline_available": True
-            }
+                "offline_available": True,
+            },
         ],
         "mobile": [
             {
@@ -1450,7 +1579,7 @@ async def _get_platform_training_modules(platform: str, technician_id: Optional[
                 "duration": 5,
                 "type": "micro_learning",
                 "complexity": 1,
-                "voice_guided": True
+                "voice_guided": True,
             },
             {
                 "module_id": "mobile_002",
@@ -1458,19 +1587,21 @@ async def _get_platform_training_modules(platform: str, technician_id: Optional[
                 "duration": 3,
                 "type": "image_quiz",
                 "complexity": 2,
-                "gamified": True
-            }
-        ]
+                "gamified": True,
+            },
+        ],
     }
-    
+
     return platform_modules.get(platform, [])
 
 
-async def _get_personalized_training_recommendations(technician_id: Optional[str], platform: str) -> List[Dict]:
+async def _get_personalized_training_recommendations(
+    technician_id: Optional[str], platform: str
+) -> List[Dict]:
     """Get AI-powered personalized training recommendations"""
     if not technician_id:
         return []
-    
+
     # This would use LineSmart Intelligence to generate recommendations
     recommendations = [
         {
@@ -1479,26 +1610,28 @@ async def _get_personalized_training_recommendations(technician_id: Optional[str
             "reason": "Based on recent work order patterns",
             "priority": "high",
             "estimated_impact": "25% faster diagnosis",
-            "platform_optimized": platform
+            "platform_optimized": platform,
         },
         {
             "recommendation_id": "rec_002",
             "title": "Digital Documentation Best Practices",
             "reason": "Skill gap identified in work order completion",
-            "priority": "medium", 
+            "priority": "medium",
             "estimated_impact": "Improved documentation quality",
-            "platform_optimized": platform
-        }
+            "platform_optimized": platform,
+        },
     ]
-    
+
     return recommendations
 
 
-async def _get_active_training_sessions(technician_id: Optional[str], platform: str) -> List[Dict]:
+async def _get_active_training_sessions(
+    technician_id: Optional[str], platform: str
+) -> List[Dict]:
     """Get active training sessions for technician"""
     if not technician_id:
         return []
-    
+
     # Mock active sessions
     return [
         {
@@ -1507,26 +1640,28 @@ async def _get_active_training_sessions(technician_id: Optional[str], platform: 
             "progress": 65,
             "platform": platform,
             "estimated_completion": "12 minutes",
-            "can_resume": True
+            "can_resume": True,
         }
     ]
 
 
-async def _generate_micro_learning_content(topic: str, duration_minutes: int, technician_id: str) -> Dict:
+async def _generate_micro_learning_content(
+    topic: str, duration_minutes: int, technician_id: str
+) -> Dict:
     """Generate bite-sized learning content for mobile/break time"""
-    
+
     content_templates = {
         "safety": {
             "title": f"Safety Spotlight: {topic}",
             "format": "quick_tips",
             "content": [
                 "🔒 Always lockout/tagout before maintenance",
-                "👥 Use buddy system for electrical work", 
+                "👥 Use buddy system for electrical work",
                 "📋 Complete safety checklist first",
-                "🚨 Know emergency procedures"
+                "🚨 Know emergency procedures",
             ],
             "quiz_question": "What's the first step before starting electrical maintenance?",
-            "voice_script": "Let's review essential safety practices..."
+            "voice_script": "Let's review essential safety practices...",
         },
         "troubleshooting": {
             "title": f"Quick Fix: {topic}",
@@ -1535,10 +1670,10 @@ async def _generate_micro_learning_content(topic: str, duration_minutes: int, te
                 "1️⃣ Identify symptoms",
                 "2️⃣ Check obvious causes first",
                 "3️⃣ Use diagnostic tools",
-                "4️⃣ Document findings"
+                "4️⃣ Document findings",
             ],
             "quiz_question": f"What's the first troubleshooting step for {topic}?",
-            "voice_script": "Here's a quick troubleshooting guide..."
+            "voice_script": "Here's a quick troubleshooting guide...",
         },
         "equipment": {
             "title": f"Equipment Focus: {topic}",
@@ -1546,23 +1681,23 @@ async def _generate_micro_learning_content(topic: str, duration_minutes: int, te
             "content": [
                 "📊 Key specifications",
                 "⚙️ Common issues",
-                "🔧 Maintenance points", 
-                "📱 Reference QR codes"
+                "🔧 Maintenance points",
+                "📱 Reference QR codes",
             ],
             "quiz_question": f"What's the most common issue with {topic}?",
-            "voice_script": "Let's explore this equipment..."
-        }
+            "voice_script": "Let's explore this equipment...",
+        },
     }
-    
+
     # Determine content type based on topic
     content_type = "safety"
     if "troubleshoot" in topic.lower() or "fix" in topic.lower():
         content_type = "troubleshooting"
     elif any(equip in topic.lower() for equip in ["pump", "motor", "valve", "hvac"]):
         content_type = "equipment"
-    
+
     template = content_templates[content_type]
-    
+
     return {
         "content_type": "micro_learning",
         "duration_minutes": duration_minutes,
@@ -1572,8 +1707,8 @@ async def _generate_micro_learning_content(topic: str, duration_minutes: int, te
         "interactive_elements": {
             "quiz_question": template["quiz_question"],
             "voice_guidance": template["voice_script"],
-            "photo_upload_prompt": f"Take a photo showing {topic} in your work area"
+            "photo_upload_prompt": f"Take a photo showing {topic} in your work area",
         },
         "completion_reward": "5 points earned!",
-        "next_recommendation": "Ready for the next challenge?"
+        "next_recommendation": "Ready for the next challenge?",
     }

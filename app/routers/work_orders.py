@@ -44,7 +44,7 @@ async def work_orders_list(request: Request, current_user: User = Depends(get_cu
         organization_id=current_user.organization_id
     )
     return templates.TemplateResponse(
-        "work_orders.html", {"request": request, "work_orders": work_orders, "user": current_user}
+        "work_orders.html", {"request": request, "work_orders": work_orders, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 @router.get("/{wo_id}", response_class=HTMLResponse)
@@ -60,7 +60,7 @@ async def work_order_detail(request: Request, wo_id: str, current_user: User = D
     # Media and other related data would be fetched by the service in a real app
     return templates.TemplateResponse(
         "work_order_detail.html",
-        {"request": request, "wo": work_order, "media": [], "user": current_user},
+        {"request": request, "wo": work_order, "media": [], "user": current_user, "current_user": current_user, "is_demo": False},
     )
 
 @router.post("")
@@ -188,7 +188,7 @@ async def bulk_import_work_orders_page(request: Request, current_user: User = De
     """Render the bulk import page for work orders"""
     return templates.TemplateResponse(
         "work_orders_bulk_import.html",
-        {"request": request, "user": current_user, "pandas_available": PANDAS_AVAILABLE}
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": False, "pandas_available": PANDAS_AVAILABLE}
     )
 
 

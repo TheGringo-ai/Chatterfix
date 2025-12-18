@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
+from app.auth import get_optional_current_user
+from app.models.user import User
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
@@ -11,9 +15,10 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/ar-mode", response_class=HTMLResponse)
-async def ar_dashboard(request: Request):
+async def ar_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render the AR dashboard"""
-    return templates.TemplateResponse("ar/dashboard.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("ar/dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/ar/work-orders", response_class=HTMLResponse)

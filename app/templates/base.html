@@ -45,6 +45,13 @@
             }
         }
     </script>
+    <script>
+        // Navigation routing configuration - set from server-side template
+        // Authenticated users get direct routes, demo users get /demo prefix
+        const NAV_PREFIX = '{{ "/demo" if is_demo else "" }}';
+        const DASHBOARD_PATH = '{{ "/demo" if is_demo else "/dashboard" }}';
+        const IS_DEMO_MODE = {{ 'true' if is_demo else 'false' }};
+    </script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=4">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
@@ -1031,100 +1038,105 @@
         </div>
 
         <!-- Clean Browser-Style Tab Navigation with Scroll -->
+        <!-- Navigation uses different paths based on authentication status:
+             - Authenticated users (is_demo=False): /dashboard, /work-orders, /assets, etc.
+             - Demo users (is_demo=True): /demo, /demo/work-orders, /demo/assets, etc. -->
+        {% set nav_prefix = '/demo' if is_demo else '' %}
+        {% set dashboard_path = '/demo' if is_demo else '/dashboard' %}
         <div class="nav-tabs-wrapper">
             <button class="nav-scroll-btn scroll-left" onclick="scrollNavTabs(-200)" aria-label="Scroll left">
                 <i class="fas fa-chevron-left"></i>
             </button>
             <div class="nav-tabs-container" id="navTabsContainer">
                 <ul class="nav-tabs">
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
-                    <a href="/demo" class="nav-tab-link">
+                <li class="nav-tab {% if request.url and request.url.path and (request.url.path == '/demo' or request.url.path == '/dashboard') %}active{% endif %}">
+                    <a href="{{ dashboard_path }}" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-tachometer-alt"></i>
                         Dashboard
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">
-                    <a href="/demo/work-orders" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/work-orders' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/work-orders" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-wrench"></i>
                         Work Orders
                         <span class="nav-tab-badge" id="urgentWOCount">3</span>
                     </a>
                 </li>
-                
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
-                    <a href="/demo/assets" class="nav-tab-link">
+
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/assets' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/assets" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-industry"></i>
                         Assets
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/demo/planner') %}active{% endif %}">
-                    <a href="/demo/planner" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/planner' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/planner" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-calendar-alt"></i>
                         Planner
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and (request.url.path.startswith('/demo/analytics') or request.url.path.startswith('/analytics')) %}active{% endif %}">
-                    <a href="/demo/analytics" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/analytics' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/analytics" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-chart-line"></i>
                         Analytics
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and (request.url.path.startswith('/demo/team') or request.url.path.startswith('/team')) %}active{% endif %}">
-                    <a href="/demo/team" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/team' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/team" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-users"></i>
                         Team
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/demo/purchasing') %}active{% endif %}">
-                    <a href="/demo/purchasing" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/purchasing' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/purchasing" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-shopping-cart"></i>
                         Purchasing
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/demo/training') %}active{% endif %}">
-                    <a href="/demo/training" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/training' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/training" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-graduation-cap"></i>
                         Training
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path == '/demo/ar-mode' %}active{% endif %}">
-                    <a href="/demo/ar-mode" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/ar-mode' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/ar-mode" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-vr-cardboard"></i>
                         AR Mode
                     </a>
                 </li>
-                
+
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/ai-team') %}active{% endif %}">
                     <a href="/ai-team/dashboard" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-brain"></i>
                         AI Team
                     </a>
                 </li>
-                
+
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/autonomous') %}active{% endif %}">
                     <a href="/autonomous/interface" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-magic"></i>
                         Auto Features
                     </a>
                 </li>
-                
+
                 <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/fix-it-fred') %}active{% endif %}">
                     <a href="/fix-it-fred/interface" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-tools"></i>
                         Fix-it-Fred
                     </a>
                 </li>
-                
-                <li class="nav-tab {% if request.url and request.url.path and request.url.path.startswith('/user-management') %}active{% endif %}">
-                    <a href="/demo/team" class="nav-tab-link">
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/user-management' in request.url.path or '/organization' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/team" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-user-plus"></i>
                         Users
                     </a>
@@ -1139,11 +1151,11 @@
 
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-nav" role="navigation" aria-label="Mobile navigation">
-        <a href="/demo" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo' %}active{% endif %}">
+        <a href="{{ dashboard_path }}" class="mobile-nav-item {% if request.url and request.url.path and (request.url.path == '/demo' or request.url.path == '/dashboard') %}active{% endif %}">
             <i class="fas fa-tachometer-alt"></i>
             <span>Dashboard</span>
         </a>
-        <a href="/demo/work-orders" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/work-orders' %}active{% endif %}">
+        <a href="{{ nav_prefix }}/work-orders" class="mobile-nav-item {% if request.url and request.url.path and ('/work-orders' in request.url.path) %}active{% endif %}">
             <i class="fas fa-wrench"></i>
             <span>Work Orders</span>
             <span class="mobile-badge">3</span>
@@ -1152,7 +1164,7 @@
             <i class="fas fa-plus-circle"></i>
             <span>Create</span>
         </button>
-        <a href="/demo/assets" class="mobile-nav-item {% if request.url and request.url.path and request.url.path == '/demo/assets' %}active{% endif %}">
+        <a href="{{ nav_prefix }}/assets" class="mobile-nav-item {% if request.url and request.url.path and ('/assets' in request.url.path) %}active{% endif %}">
             <i class="fas fa-industry"></i>
             <span>Assets</span>
         </a>
@@ -1712,7 +1724,7 @@
         
         function showAIInsights() {
             // Navigate to analytics with AI focus
-            window.location.href = '/demo/analytics?focus=ai';
+            window.location.href = `${NAV_PREFIX}/analytics?focus=ai`;
         }
         
         function openVoiceAssistant() {
@@ -1839,7 +1851,7 @@
             if (results.workOrders.length > 0) {
                 html += '<div style="padding: 0.5rem 1rem; font-weight: 600; color: var(--accent-color);">Work Orders</div>';
                 results.workOrders.forEach(wo => {
-                    html += `<a href="/demo/work-orders/${wo.id}" class="search-result-item" style="
+                    html += `<a href="${NAV_PREFIX}/work-orders/${wo.id}" class="search-result-item" style="
                         display: block;
                         padding: 0.75rem 1rem;
                         color: var(--text-primary);
@@ -1856,11 +1868,11 @@
                     </a>`;
                 });
             }
-            
+
             if (results.assets.length > 0) {
                 html += '<div style="padding: 0.5rem 1rem; font-weight: 600; color: var(--accent-color); margin-top: 0.5rem;">Assets</div>';
                 results.assets.forEach(asset => {
-                    html += `<a href="/demo/assets/${asset.id}" class="search-result-item" style="
+                    html += `<a href="${NAV_PREFIX}/assets/${asset.id}" class="search-result-item" style="
                         display: block;
                         padding: 0.75rem 1rem;
                         color: var(--text-primary);
@@ -1906,10 +1918,10 @@
                 loadWorkOrderFormData();
             } else {
                 // Fallback - navigate to work orders page
-                window.location.href = '/demo/work-orders';
+                window.location.href = `${NAV_PREFIX}/work-orders`;
             }
         }
-        
+
         function showEmergencyModal() {
             // Open work order modal with emergency priority pre-selected
             // Uses same modal styling as "Create New Work Order" for consistency
@@ -1927,7 +1939,7 @@
                 }, 100);
             } else {
                 // Fallback - navigate to work orders page
-                window.location.href = '/demo/work-orders';
+                window.location.href = `${NAV_PREFIX}/work-orders`;
             }
         }
 
@@ -2293,7 +2305,7 @@
 
         function viewWorkOrder(woId) {
             closeMyWorkOrdersModal();
-            window.location.href = `/demo/work-orders/${woId}`;
+            window.location.href = `${NAV_PREFIX}/work-orders/${woId}`;
         }
 
         // Keyboard shortcut for My Work Orders (Ctrl+M)

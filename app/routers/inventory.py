@@ -36,7 +36,7 @@ async def inventory_list(request: Request, current_user: User = Depends(get_curr
     else:
         parts = await firestore_manager.get_collection("parts", order_by="name")
     return templates.TemplateResponse(
-        "inventory/list.html", {"request": request, "parts": parts, "user": current_user}
+        "inventory/list.html", {"request": request, "parts": parts, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 @router.get("/inventory/add", response_class=HTMLResponse)
@@ -49,7 +49,7 @@ async def add_part_form(request: Request, current_user: User = Depends(require_p
     else:
         vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
-        "inventory/add.html", {"request": request, "vendors": vendors, "user": current_user}
+        "inventory/add.html", {"request": request, "vendors": vendors, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 @router.post("/inventory/add")
@@ -119,7 +119,7 @@ async def part_detail(request: Request, part_id: str, current_user: User = Depen
     part["vendor_name"] = vendor.get("name") if vendor else "N/A"
 
     return templates.TemplateResponse(
-        "inventory/detail.html", {"request": request, "part": part, "media": media, "user": current_user}
+        "inventory/detail.html", {"request": request, "part": part, "media": media, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 @router.post("/inventory/{part_id}/media")
@@ -158,7 +158,7 @@ async def vendor_list(request: Request, current_user: User = Depends(require_per
     else:
         vendors = await firestore_manager.get_collection("vendors", order_by="name")
     return templates.TemplateResponse(
-        "inventory/vendors.html", {"request": request, "vendors": vendors, "user": current_user}
+        "inventory/vendors.html", {"request": request, "vendors": vendors, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 @router.post("/vendors/add")
@@ -277,7 +277,7 @@ async def bulk_import_parts_page(request: Request, current_user: User = Depends(
     """Render the bulk import page for parts"""
     return templates.TemplateResponse(
         "inventory/bulk_import.html",
-        {"request": request, "user": current_user, "pandas_available": PANDAS_AVAILABLE}
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": False, "pandas_available": PANDAS_AVAILABLE}
     )
 
 

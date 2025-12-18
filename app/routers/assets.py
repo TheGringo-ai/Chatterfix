@@ -52,7 +52,7 @@ async def assets_list(request: Request, current_user: User = Depends(get_current
     }
 
     return templates.TemplateResponse(
-        "assets_list.html", {"request": request, "assets": assets, "stats": stats, "user": current_user}
+        "assets_list.html", {"request": request, "assets": assets, "stats": stats, "user": current_user, "current_user": current_user, "is_demo": False}
     )
 
 
@@ -103,6 +103,8 @@ async def asset_detail(request: Request, asset_id: str, current_user: User = Dep
             "work_orders": work_orders,
             "cost_data": cost_data,
             "user": current_user,
+            "current_user": current_user,
+            "is_demo": False,
         },
     )
 

@@ -217,7 +217,9 @@ async def training_center(
                 "available_modules": available_modules,
                 "stats": stats,
                 "user_id": user_id,
-                "user": current_user, # Pass user to template
+                "user": current_user,
+                "current_user": current_user,
+                "is_demo": False,
             },
         )
     except Exception as e:
@@ -236,6 +238,8 @@ async def training_center(
                 },
                 "user_id": user_id,
                 "user": current_user,
+                "current_user": current_user,
+                "is_demo": False,
                 "error": "Failed to load training data",
             },
         )
@@ -300,6 +304,7 @@ async def module_detail(request: Request, module_id: str):
                 # For now, provide simple defaults for role-based fields
                 "role": "technician",
                 "role_config": {"title": "Technician Training"},
+                "is_demo": False,
             },
         )
     except Exception as e:

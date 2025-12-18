@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from app.auth import get_optional_current_user
+from app.models.user import User
 from app.services.advanced_scheduler_service import advanced_scheduler
 from app.services.planner_service import planner_service
 from app.services.pm_automation_engine import pm_automation_engine
@@ -15,27 +17,31 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def planner_dashboard(request: Request):
+async def planner_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render planner dashboard"""
-    return templates.TemplateResponse("planner_dashboard.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("planner_dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/advanced", response_class=HTMLResponse)
-async def advanced_scheduler_dashboard(request: Request):
+async def advanced_scheduler_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render advanced scheduler dashboard with enterprise features"""
-    return templates.TemplateResponse("advanced_scheduler.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("advanced_scheduler.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/mobile", response_class=HTMLResponse)
-async def mobile_scheduler_dashboard(request: Request):
+async def mobile_scheduler_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render mobile-responsive scheduler for field technicians"""
-    return templates.TemplateResponse("mobile_scheduler.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("mobile_scheduler.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/analytics", response_class=HTMLResponse)
-async def scheduler_analytics_dashboard(request: Request):
+async def scheduler_analytics_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render comprehensive scheduler analytics and reporting dashboard"""
-    return templates.TemplateResponse("scheduler_analytics.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("scheduler_analytics.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/pm-schedule")

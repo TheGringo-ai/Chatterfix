@@ -2,11 +2,13 @@ import os
 import shutil
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from app.auth import get_optional_current_user
+from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 from app.services.purchasing_service import purchasing_service
 
@@ -30,15 +32,17 @@ class ApprovalRequest(BaseModel):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def purchasing_main(request: Request):
+async def purchasing_main(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Main purchaser command center - landing page"""
-    return templates.TemplateResponse("purchaser_dashboard.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("purchaser_dashboard.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/tools", response_class=HTMLResponse)
-async def purchasing_tools(request: Request):
+async def purchasing_tools(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Purchasing tools - PO creation, parts, document scanner, barcodes"""
-    return templates.TemplateResponse("enhanced_purchasing.html", {"request": request})
+    is_demo = current_user is None
+    return templates.TemplateResponse("enhanced_purchasing.html", {"request": request, "current_user": current_user, "is_demo": is_demo})
 
 
 @router.get("/purchase-orders")

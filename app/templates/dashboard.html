@@ -686,14 +686,14 @@
                 complex repairs</div>
         </div>
 
-        <div class="capability-card" onclick="window.location.href='/demo/inventory'">
+        <div class="capability-card" onclick="window.location.href='{{ '/demo/inventory' if is_demo else '/inventory' }}'">
             <span class="capability-icon">🔩</span>
             <div class="capability-title">Intelligent Parts</div>
             <div class="capability-description">AI-powered parts suggestions and inventory optimization based on
                 maintenance patterns</div>
         </div>
 
-        <div class="capability-card" onclick="window.location.href='/demo/planner'">
+        <div class="capability-card" onclick="window.location.href='{{ '/demo/planner' if is_demo else '/planner' }}'">
             <span class="capability-icon">📅</span>
             <div class="capability-title">Predictive Scheduling</div>
             <div class="capability-description">Optimize maintenance schedules using machine learning and historical

@@ -15,5 +15,14 @@
     ],
     "deny": [],
     "ask": []
+  },
+  "mcpServers": {
+    "chatterfix": {
+      "command": "python",
+      "args": ["/Users/fredtaylor/ChatterFix/mcp-server/chatterfix_mcp.py"],
+      "env": {
+        "PYTHONPATH": "/Users/fredtaylor/ChatterFix"
+      }
+    }
   }
 }

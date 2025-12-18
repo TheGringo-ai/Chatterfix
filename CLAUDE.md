@@ -205,6 +205,202 @@ async def page(request: Request):
 
 ---
 
+## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)
+
+### **Project Structure**
+```
+ChatterFix/
+├── main.py                    # FastAPI application entry point
+├── deploy.sh                  # Main deployment script
+├── requirements.txt           # Production dependencies
+├── requirements-dev.txt       # Development dependencies
+├── Dockerfile                 # Container build
+├── cloudbuild.yaml           # Google Cloud Build config
+│
+├── app/
+│   ├── auth.py               # Authentication dependencies (cookie + OAuth2)
+│   ├── models/               # Pydantic models
+│   │   ├── user.py           # User model with organization_id
+│   │   └── work_order.py     # Work order model
+│   │
+│   ├── routers/              # API routes (FastAPI routers)
+│   │   ├── auth.py           # /auth/* - Login, logout, Firebase auth
+│   │   ├── signup.py         # /signup - User registration
+│   │   ├── dashboard.py      # /dashboard, /app - Main dashboard
+│   │   ├── work_orders.py    # /work-orders/* - Work order CRUD
+│   │   ├── assets.py         # /assets/* - Asset management
+│   │   ├── inventory.py      # /inventory/*, /vendors/* - Parts & vendors
+│   │   ├── training.py       # /training/* - Training modules
+│   │   ├── demo.py           # /demo/* - Public demo with mock data
+│   │   ├── ai.py             # /ai/* - AI chat endpoints
+│   │   └── organization.py   # /org/* - Team management
+│   │
+│   ├── services/             # Business logic layer
+│   │   ├── auth_service.py   # Token verification, permissions
+│   │   ├── firebase_auth.py  # Firebase Admin SDK integration
+│   │   ├── work_order_service.py
+│   │   ├── organization_service.py
+│   │   └── gemini_service.py # AI/Gemini integration
+│   │
+│   ├── core/                 # Core infrastructure
+│   │   ├── firestore_db.py   # Firestore database operations
+│   │   └── db_adapter.py     # Database abstraction layer
+│   │
+│   ├── templates/            # Jinja2 HTML templates
+│   │   ├── base.html         # Base template with nav
+│   │   ├── login.html        # Login page
+│   │   ├── signup.html       # Signup page
+│   │   ├── dashboard.html    # Main dashboard
+│   │   ├── work_orders.html  # Work orders list
+│   │   ├── index.html        # Landing/home page
+│   │   └── ...               # Feature-specific templates
+│   │
+│   └── static/               # Static assets (CSS, JS, images)
+│
+└── scripts/                  # Utility scripts
+    ├── deploy.sh             # Deployment scripts
+    └── ...                   # Other utilities
+```
+
+### **Database: Firestore Collections**
+```
+Firestore Database (fredfix project)
+├── users/                    # User profiles
+│   └── {uid}/
+│       ├── email: string
+│       ├── full_name: string
+│       ├── role: "owner" | "manager" | "technician" | ...
+│       ├── organization_id: string (FK to organizations)
+│       ├── organization_name: string
+│       └── permissions: string[]
+│
+├── organizations/            # Multi-tenant organizations
+│   └── {org_id}/
+│       ├── name: string
+│       ├── owner_user_id: string
+│       ├── is_demo: boolean        # TRUE for demo orgs
+│       ├── expires_at: timestamp   # For demo cleanup
+│       └── settings: object
+│
+├── work_orders/              # Work orders (org-scoped)
+│   └── {wo_id}/
+│       ├── organization_id: string (REQUIRED for multi-tenant)
+│       ├── title: string
+│       ├── description: string
+│       ├── status: "Open" | "In Progress" | "Completed"
+│       ├── priority: "Low" | "Medium" | "High" | "Critical"
+│       ├── assigned_to_uid: string
+│       └── created_at: timestamp
+│
+├── assets/                   # Equipment/assets (org-scoped)
+│   └── {asset_id}/
+│       ├── organization_id: string
+│       ├── name: string
+│       ├── asset_tag: string
+│       ├── status: "operational" | "warning" | "critical"
+│       └── location: string
+│
+├── parts/                    # Inventory parts (org-scoped)
+│   └── {part_id}/
+│       ├── organization_id: string
+│       ├── name: string
+│       ├── part_number: string
+│       ├── current_stock: number
+│       └── minimum_stock: number
+│
+└── vendors/                  # Vendors (org-scoped)
+    └── {vendor_id}/
+        ├── organization_id: string
+        ├── name: string
+        └── contact_email: string
+```
+
+### **Authentication Flow**
+```
+1. User goes to /auth/login
+2. JavaScript Firebase SDK authenticates with Firebase Auth
+3. JavaScript gets ID token from Firebase
+4. JavaScript POSTs to /auth/firebase-signin with idToken
+5. Server verifies token, creates user in Firestore if new
+6. Server sets session_token cookie (samesite=lax, httponly)
+7. User redirected to /dashboard
+
+For HTML pages: Use get_current_user_from_cookie(request)
+For API endpoints: Use get_current_active_user (OAuth2 Bearer)
+```
+
+### **Multi-Tenant Data Access Pattern**
+```python
+# ALWAYS filter by organization_id for data isolation
+
+# In routers - get user's org from cookie auth
+current_user = await get_current_user_from_cookie(request)
+org_id = current_user.organization_id
+
+# In Firestore queries - use org-scoped methods
+work_orders = await firestore_manager.get_org_work_orders(org_id)
+assets = await firestore_manager.get_org_assets(org_id)
+
+# When creating documents - ALWAYS include organization_id
+await firestore_manager.create_org_document("work_orders", data, org_id)
+```
+
+### **How to Add a New Field (e.g., "tax_rate" to work orders)**
+
+1. **Update the Pydantic model** (`app/models/work_order.py`):
+```python
+class WorkOrder(BaseModel):
+    # ... existing fields ...
+    tax_rate: Optional[float] = 0.0  # Add new field
+```
+
+2. **Update the router form handling** (`app/routers/work_orders.py`):
+```python
+@router.post("")
+async def create_work_order(
+    # ... existing params ...
+    tax_rate: float = Form(0.0),  # Add form field
+):
+    work_order_data = {
+        # ... existing fields ...
+        "tax_rate": tax_rate,  # Include in data
+    }
+```
+
+3. **Update the template** (`app/templates/work_orders.html` or form template):
+```html
+<div class="form-group">
+    <label for="tax_rate">Tax Rate (%)</label>
+    <input type="number" name="tax_rate" step="0.01" value="0">
+</div>
+```
+
+4. **No Firestore schema change needed** - Firestore is schemaless
+
+### **Key Files to Modify for Common Tasks**
+
+| Task | Files to Modify |
+|------|-----------------|
+| Add new page/route | `app/routers/`, `app/templates/`, `main.py` (register router) |
+| Add field to work orders | `app/models/work_order.py`, `app/routers/work_orders.py`, template |
+| Add field to assets | `app/models/asset.py`, `app/routers/assets.py`, template |
+| Change auth behavior | `app/auth.py`, `app/services/auth_service.py` |
+| Add new API endpoint | `app/routers/`, register in `main.py` |
+| Change database queries | `app/core/firestore_db.py` |
+| Modify landing page | `app/templates/public_landing.html` |
+| Add new permission | `app/services/auth_service.py` (get_permissions_for_role) |
+
+### **Environment Variables (Production)**
+```
+GOOGLE_CLOUD_PROJECT=fredfix
+USE_FIRESTORE=true
+ENVIRONMENT=production
+FIREBASE_API_KEY=(from Secret Manager)
+GEMINI_API_KEY=(from Secret Manager)
+```
+
+---
+
 ## 📋 **RECENT SESSION WORK LOG** (December 2024)
 
 ### **Session: Multi-Tenant Architecture & AI Work Order Creation**

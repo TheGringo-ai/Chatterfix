@@ -92,3 +92,6 @@ test_upload.txt
 "Attached HTML and CSS Context"
 venv_debug/
 .pre-commit-config.yaml.lock
+
+# MCP Server (generated/local)
+mcp-server/

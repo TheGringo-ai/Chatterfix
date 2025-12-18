@@ -372,18 +372,27 @@ class FirestoreManager:
             return {"work_orders": [], "assets": [], "ai_interactions": []}
 
     # ==========================================
-    # LEGACY CMMS METHODS (For backward compatibility)
+    # LEGACY CMMS METHODS - DEPRECATED
+    # ==========================================
+    # WARNING: These methods do NOT enforce organization isolation!
+    # They are kept for backward compatibility but should NOT be used
+    # in production code. Use the org-scoped versions instead:
+    #   - create_org_work_order() instead of create_work_order()
+    #   - get_org_work_orders() instead of get_work_orders()
+    #   - get_org_assets() instead of get_assets()
+    #   - get_org_dashboard_data() instead of get_dashboard_data()
     # ==========================================
 
-    # CMMS-specific methods
     async def create_work_order(self, work_order_data: Dict[str, Any]) -> str:
-        """Create a new work order"""
+        """DEPRECATED: Use create_org_work_order() for multi-tenant safety"""
+        logger.warning("DEPRECATED: create_work_order() called - use create_org_work_order() instead for multi-tenant safety")
         return await self.create_document("work_orders", work_order_data)
 
     async def get_work_orders(
         self, status: Optional[str] = None, assigned_to: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Get work orders with optional filtering"""
+        """DEPRECATED: Use get_org_work_orders() for multi-tenant safety - Returns ALL work orders without org filtering!"""
+        logger.warning("DEPRECATED: get_work_orders() called - use get_org_work_orders() instead for multi-tenant safety")
         # Simplified query to avoid composite index requirement
         # Apply single filter only to avoid index conflicts
         filters = []
@@ -402,13 +411,15 @@ class FirestoreManager:
         )
 
     async def create_asset(self, asset_data: Dict[str, Any]) -> str:
-        """Create a new asset"""
+        """DEPRECATED: Use create_org_asset() for multi-tenant safety"""
+        logger.warning("DEPRECATED: create_asset() called - use create_org_asset() instead for multi-tenant safety")
         return await self.create_document("assets", asset_data)
 
     async def get_assets(
         self, status: Optional[str] = None, location: Optional[str] = None
     ) -> List[Dict[str, Any]]:
-        """Get assets with optional filtering"""
+        """DEPRECATED: Use get_org_assets() for multi-tenant safety - Returns ALL assets without org filtering!"""
+        logger.warning("DEPRECATED: get_assets() called - use get_org_assets() instead for multi-tenant safety")
         filters = []
         if status:
             filters.append({"field": "status", "operator": "==", "value": status})
@@ -438,7 +449,8 @@ class FirestoreManager:
         return await self.create_document("ai_interactions", interaction_data)
 
     async def get_dashboard_data(self, user_id: str) -> Dict[str, Any]:
-        """Get dashboard data for a user"""
+        """DEPRECATED: Use get_org_dashboard_data() for multi-tenant safety - Returns ALL data without org filtering!"""
+        logger.warning("DEPRECATED: get_dashboard_data() called - use get_org_dashboard_data() instead for multi-tenant safety")
         try:
             # Get recent work orders (simplified query to avoid index issues)
             work_orders = await self.get_collection(

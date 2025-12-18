@@ -368,89 +368,51 @@ DEMO_STATS = {
 
 @router.get("/demo/assets", response_class=HTMLResponse)
 async def demo_assets(request: Request):
-    """Demo assets page with real Firestore data"""
-    from app.core.firestore_db import get_firestore_manager
+    """Demo assets page - ALWAYS uses mock data for security (never real customer data)"""
+    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
+    stats = {
+        "total": len(DEMO_ASSETS),
+        "active": len([a for a in DEMO_ASSETS if a.get("status") == "Operational"]),
+        "critical": len([a for a in DEMO_ASSETS if a.get("criticality") == "Critical" or a.get("status") == "Down"]),
+        "maintenance_due": len([a for a in DEMO_ASSETS if a.get("status") in ["Maintenance Required", "Down"]]),
+    }
 
-    try:
-        fm = get_firestore_manager()
-        assets = await fm.get_assets()
-
-        # Calculate stats from real data
-        stats = {
-            "total": len(assets),
-            "active": len([a for a in assets if a.get("status") in ["Operational", "Active", "operational"]]),
-            "critical": len([a for a in assets if a.get("criticality") == "Critical" or a.get("status") in ["Critical", "Down"]]),
-            "maintenance_due": len([a for a in assets if a.get("status") in ["Maintenance Required", "Warning", "Needs Attention"]]),
-        }
-
-        return templates.TemplateResponse(
-            "assets_list.html",
-            {
-                "request": request,
-                "assets": assets,
-                "stats": stats,
-                "is_demo": True,
-                "demo_mode": True,
-                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
-            },
-        )
-    except Exception as e:
-        import logging
-        logging.error(f"Error loading demo assets: {e}")
-        # Fallback to mock data if Firestore fails
-        return templates.TemplateResponse(
-            "assets_list.html",
-            {
-                "request": request,
-                "assets": DEMO_ASSETS,
-                "stats": {"total": len(DEMO_ASSETS), "active": 3, "critical": 1, "maintenance_due": 1},
-                "is_demo": True,
-            },
-        )
+    return templates.TemplateResponse(
+        "assets_list.html",
+        {
+            "request": request,
+            "assets": DEMO_ASSETS,
+            "stats": stats,
+            "is_demo": True,
+            "demo_mode": True,
+            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+        },
+    )
 
 
 @router.get("/demo/work-orders", response_class=HTMLResponse)
 async def demo_work_orders(request: Request):
-    """Demo work orders page with real Firestore data"""
-    from app.core.firestore_db import get_firestore_manager
+    """Demo work orders page - ALWAYS uses mock data for security (never real customer data)"""
+    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
+    stats = {
+        "total": len(DEMO_WORK_ORDERS),
+        "in_progress": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "In Progress"]),
+        "scheduled": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Scheduled"]),
+        "overdue": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Overdue"]),
+        "completed": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Completed"]),
+    }
 
-    try:
-        fm = get_firestore_manager()
-        work_orders = await fm.get_work_orders()
-
-        # Calculate stats from real data
-        stats = {
-            "total": len(work_orders),
-            "in_progress": len([w for w in work_orders if w.get("status") in ["In Progress", "active"]]),
-            "scheduled": len([w for w in work_orders if w.get("status") in ["Scheduled", "Open", "pending"]]),
-            "overdue": len([w for w in work_orders if w.get("status") in ["Overdue", "On Hold"]]),
-            "completed": len([w for w in work_orders if w.get("status") in ["Completed", "completed"]]),
-        }
-
-        return templates.TemplateResponse(
-            "work_orders.html",
-            {
-                "request": request,
-                "work_orders": work_orders,
-                "stats": stats,
-                "is_demo": True,
-                "demo_mode": True,
-                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
-            },
-        )
-    except Exception as e:
-        import logging
-        logging.error(f"Error loading demo work orders: {e}")
-        # Fallback to mock data if Firestore fails
-        return templates.TemplateResponse(
-            "work_orders.html",
-            {
-                "request": request,
-                "work_orders": DEMO_WORK_ORDERS,
-                "stats": {"total": len(DEMO_WORK_ORDERS), "in_progress": 2, "scheduled": 1, "overdue": 1},
-                "is_demo": True,
-            },
-        )
+    return templates.TemplateResponse(
+        "work_orders.html",
+        {
+            "request": request,
+            "work_orders": DEMO_WORK_ORDERS,
+            "stats": stats,
+            "is_demo": True,
+            "demo_mode": True,
+            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+        },
+    )
 
 
 @router.get("/demo/team", response_class=HTMLResponse)
@@ -526,73 +488,63 @@ async def debug_planner_template():
 
 @router.get("/demo/purchasing", response_class=HTMLResponse)
 async def demo_purchasing(request: Request):
-    """Demo purchasing page - uses Firestore when available, demo data as fallback"""
-    try:
-        from app.core.firestore_db import get_firestore_manager
+    """Demo purchasing page - ALWAYS uses mock data for security (never real customer data)"""
+    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
+    vendors = [
+        {
+            "id": "vendor_1",
+            "name": "Grundfos Pumps",
+            "contact": "sales@grundfos.com",
+            "phone": "(555) 123-4567",
+        },
+        {
+            "id": "vendor_2",
+            "name": "Schneider Electric",
+            "contact": "orders@schneider.com",
+            "phone": "(555) 234-5678",
+        },
+        {
+            "id": "vendor_3",
+            "name": "ABB Motors",
+            "contact": "support@abb.com",
+            "phone": "(555) 345-6789",
+        },
+    ]
 
-        db = get_firestore_manager()
-
-        # Try to get live vendors and parts data from Firestore
-        vendors = await db.get_collection("vendors", order_by="name")
-        parts = await db.get_collection("parts", order_by="name", limit=50)
-
-    except Exception as e:
-        # Fallback to demo data if Firestore fails
-        vendors = [
-            {
-                "id": "vendor_1",
-                "name": "Grundfos Pumps",
-                "contact": "sales@grundfos.com",
-                "phone": "(555) 123-4567",
-            },
-            {
-                "id": "vendor_2",
-                "name": "Schneider Electric",
-                "contact": "orders@schneider.com",
-                "phone": "(555) 234-5678",
-            },
-            {
-                "id": "vendor_3",
-                "name": "ABB Motors",
-                "contact": "support@abb.com",
-                "phone": "(555) 345-6789",
-            },
-        ]
-
-        parts = [
-            {
-                "id": "part_1",
-                "name": "CR1 Centrifugal Pump",
-                "sku": "GRU-CR1-001",
-                "price": 1250.00,
-                "stock": 15,
-                "vendor": "Grundfos Pumps",
-            },
-            {
-                "id": "part_2",
-                "name": "Variable Frequency Drive",
-                "sku": "SCH-VFD-200",
-                "price": 850.00,
-                "stock": 8,
-                "vendor": "Schneider Electric",
-            },
-            {
-                "id": "part_3",
-                "name": "3-Phase Motor 15HP",
-                "sku": "ABB-MOT-15HP",
-                "price": 950.00,
-                "stock": 12,
-                "vendor": "ABB Motors",
-            },
-            {
-                "id": "part_4",
-                "name": "PLC Control Module",
-                "sku": "SIE-PLC-300",
-                "price": 650.00,
-                "stock": 20,
-                "vendor": "Siemens Controls",
-            },
-        ]
+    parts = [
+        {
+            "id": "part_1",
+            "name": "CR1 Centrifugal Pump",
+            "sku": "GRU-CR1-001",
+            "price": 1250.00,
+            "stock": 15,
+            "vendor": "Grundfos Pumps",
+        },
+        {
+            "id": "part_2",
+            "name": "Variable Frequency Drive",
+            "sku": "SCH-VFD-200",
+            "price": 850.00,
+            "stock": 8,
+            "vendor": "Schneider Electric",
+        },
+        {
+            "id": "part_3",
+            "name": "3-Phase Motor 15HP",
+            "sku": "ABB-MOT-15HP",
+            "price": 950.00,
+            "stock": 12,
+            "vendor": "ABB Motors",
+        },
+        {
+            "id": "part_4",
+            "name": "PLC Control Module",
+            "sku": "SIE-PLC-300",
+            "price": 650.00,
+            "stock": 20,
+            "vendor": "Siemens Controls",
+        },
+    ]
 
     return templates.TemplateResponse(
         "purchasing_pos.html",
@@ -940,48 +892,31 @@ async def demo_diagnostics(request: Request):
 
 @router.get("/demo/inventory", response_class=HTMLResponse)
 async def demo_inventory(request: Request):
-    """Demo intelligent parts/inventory page with real Firestore data"""
-    from app.core.firestore_db import get_firestore_manager
+    """Demo inventory page - ALWAYS uses mock data for security (never real customer data)"""
+    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
+    demo_parts = [
+        {"id": 1, "part_number": "FLT-001", "name": "HVAC Air Filter", "quantity": 15, "reorder_point": 10, "cost": 12.50, "status": "In Stock"},
+        {"id": 2, "part_number": "OIL-COMP", "name": "Compressor Oil 5W-30", "quantity": 3, "reorder_point": 5, "cost": 85.00, "status": "Low Stock"},
+        {"id": 3, "part_number": "BRG-001", "name": "Ball Bearing 6205", "quantity": 25, "reorder_point": 10, "cost": 18.75, "status": "In Stock"},
+        {"id": 4, "part_number": "BLT-002", "name": "Drive Belt A-68", "quantity": 8, "reorder_point": 5, "cost": 32.00, "status": "In Stock"},
+        {"id": 5, "part_number": "SEN-TEMP", "name": "Temperature Sensor PT100", "quantity": 2, "reorder_point": 5, "cost": 145.00, "status": "Low Stock"},
+    ]
 
-    try:
-        fm = get_firestore_manager()
-        parts_docs = list(fm.db.collection("parts").limit(100).stream())
-        parts = [{"id": p.id, **p.to_dict()} for p in parts_docs]
+    low_stock_count = len([p for p in demo_parts if p.get("quantity", 0) <= p.get("reorder_point", 5)])
+    total_value = sum((p.get("quantity", 0) * p.get("cost", 0)) for p in demo_parts)
 
-        # Calculate stats from real data
-        low_stock_count = len([p for p in parts if p.get("quantity", 0) <= p.get("reorder_point", 5)])
-        total_value = sum((p.get("quantity", 0) * p.get("cost", 0)) for p in parts)
-
-        return templates.TemplateResponse(
-            "parts_catalog.html",
-            {
-                "request": request,
-                "parts": parts,
-                "low_stock_count": low_stock_count,
-                "total_value": total_value,
-                "is_demo": True,
-                "demo_mode": True,
-                "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
-            },
-        )
-    except Exception as e:
-        import logging
-        logging.error(f"Error loading demo inventory: {e}")
-        # Fallback to mock data
-        demo_parts = [
-            {"id": 1, "part_number": "FLT-001", "name": "HVAC Air Filter", "quantity": 15, "reorder_point": 10, "cost": 12.50, "status": "In Stock"},
-            {"id": 2, "part_number": "OIL-COMP", "name": "Compressor Oil 5W-30", "quantity": 3, "reorder_point": 5, "cost": 85.00, "status": "Low Stock"},
-        ]
-        return templates.TemplateResponse(
-            "parts_catalog.html",
-            {
-                "request": request,
-                "parts": demo_parts,
-                "low_stock_count": 1,
-                "total_value": 442.50,
-                "is_demo": True,
-            },
-        )
+    return templates.TemplateResponse(
+        "parts_catalog.html",
+        {
+            "request": request,
+            "parts": demo_parts,
+            "low_stock_count": low_stock_count,
+            "total_value": total_value,
+            "is_demo": True,
+            "demo_mode": True,
+            "current_user": {"uid": "demo", "role": "technician", "full_name": "Demo User"},
+        },
+    )
 
 
 @router.get("/demo/reports", response_class=HTMLResponse)

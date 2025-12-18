@@ -120,6 +120,89 @@ async def root():
 ./scripts/start-memory-guardian.sh stop    # Stop monitoring
 ```
 
+#### **LESSON #6: FastAPI Cookie Not Being Set - Response Object Issue**
+**Problem**: Session cookies not being set after login, users redirected to login even when authenticated
+**Root Cause**: In FastAPI, setting cookies on an injected `Response` parameter but returning a DIFFERENT response object (JSONResponse/RedirectResponse) causes Set-Cookie headers to be lost
+**Symptoms**:
+- Login appears successful but user is immediately redirected to login on next page
+- Cookie not visible in browser DevTools
+- Works in some cases but not others (inconsistent behavior)
+**Solution**: Set cookies directly on the response object that is RETURNED, not on injected parameters
+**WRONG Pattern**:
+```python
+async def login(response: Response):  # Injected response
+    response.set_cookie("session_token", token)  # Cookie set here
+    return JSONResponse({"success": True})  # But different response returned - COOKIE LOST!
+```
+**CORRECT Pattern**:
+```python
+async def login():
+    json_response = JSONResponse({"success": True})
+    json_response.set_cookie("session_token", token, path="/", samesite="lax")
+    return json_response  # Same response that has the cookie
+```
+**Prevention**:
+- Always set cookies on the SAME response object being returned
+- Add `path="/"` to ensure cookie is available site-wide
+- Use `samesite="lax"` (not "strict") for cookies needed on navigation
+
+#### **LESSON #7: JavaScript fetch() Not Storing Cookies**
+**Problem**: Browser not storing cookies from fetch() response Set-Cookie headers
+**Root Cause**: fetch() requires `credentials: 'include'` to properly handle cookies
+**Symptoms**:
+- Server sends Set-Cookie header (visible in Network tab)
+- Browser doesn't store the cookie
+- Subsequent requests don't include the cookie
+**Solution**: Add `credentials: 'include'` to all fetch calls that need cookies
+**WRONG Pattern**:
+```javascript
+const response = await fetch('/auth/firebase-signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+});  // Cookie from response NOT stored!
+```
+**CORRECT Pattern**:
+```javascript
+const response = await fetch('/auth/firebase-signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',  // CRITICAL: Allows cookies to be stored
+    body: JSON.stringify({ idToken })
+});  // Cookie properly stored
+```
+**Prevention**:
+- ALWAYS include `credentials: 'include'` in fetch calls for authentication endpoints
+- Test authentication flows in real browsers, not just curl
+
+#### **LESSON #8: Cookie-based vs OAuth2 Authentication for Web Pages**
+**Problem**: Web pages showing "not authenticated" even when user is logged in
+**Root Cause**: Using OAuth2 Bearer token auth (`get_current_active_user`) for HTML pages, but web browsers use cookies, not Authorization headers
+**Symptoms**:
+- API endpoints work fine with Bearer tokens
+- HTML page routes always redirect to login
+- User is logged in (has session_token cookie) but pages don't recognize it
+**Solution**: Create separate cookie-based auth functions for HTML routes
+**Code Pattern**:
+```python
+# For API endpoints - uses Authorization header
+@router.get("/api/data")
+async def get_data(user: User = Depends(get_current_active_user)):
+    ...
+
+# For HTML pages - uses session_token cookie
+@router.get("/page", response_class=HTMLResponse)
+async def page(request: Request):
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/page", status_code=302)
+    ...
+```
+**Prevention**:
+- HTML page routes MUST use cookie-based auth (`get_current_user_from_cookie`)
+- API routes can use OAuth2 (`get_current_active_user`)
+- Never mix them up - browsers don't send Authorization headers automatically
+
 ---
 
 ## 📋 **RECENT SESSION WORK LOG** (December 2024)
@@ -262,15 +345,20 @@ Added conversational AI assistant for creating work orders hands-free:
 
 ## 🎯 NEVER REPEAT THESE MISTAKES:
 - ❌ Deploying without testing dark mode toggle
-- ❌ Using datetime objects in JSON responses  
+- ❌ Using datetime objects in JSON responses
 - ❌ Not testing production after deployment
 - ❌ Deploying with uncommitted changes
 - ❌ Skipping cross-browser testing
 - ❌ Not having fallback data for Firebase failures
-- ❌ **NEW**: Ignoring workflow health warnings or security alerts
-- ❌ **NEW**: Deploying with outdated or vulnerable dependencies
-- ❌ **NEW**: Running workflows without proper timeout configurations
-- ❌ **NEW**: Running heavy development without Memory Guardian active
+- ❌ Ignoring workflow health warnings or security alerts
+- ❌ Deploying with outdated or vulnerable dependencies
+- ❌ Running workflows without proper timeout configurations
+- ❌ Running heavy development without Memory Guardian active
+- ❌ **CRITICAL**: Setting cookies on injected Response but returning different response object
+- ❌ **CRITICAL**: Using fetch() without `credentials: 'include'` for auth endpoints
+- ❌ **CRITICAL**: Using OAuth2 Bearer auth (`get_current_active_user`) for HTML page routes
+- ❌ **CRITICAL**: Using `samesite="strict"` for session cookies (use "lax" instead)
+- ❌ **CRITICAL**: Testing auth only with curl - MUST test in real browser
 - ❌ **NEW**: Ignoring memory warnings (>85% usage)
 
 This file serves as the AI team's persistent memory to prevent repeated mistakes and ensure consistent quality.

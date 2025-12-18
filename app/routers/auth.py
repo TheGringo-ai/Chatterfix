@@ -29,7 +29,6 @@ templates = Jinja2Templates(directory="app/templates")
 @limiter.limit("5/minute")  # Rate limit: 5 login attempts per minute per IP
 async def login(
     request: Request,
-    response: Response,
     username: str = Form(...),
     password: str = Form(...),
 ):
@@ -48,18 +47,19 @@ async def login(
         )
         token = auth_result["idToken"]
 
-        # Set cookie with secure settings
-        response = RedirectResponse(url="/dashboard", status_code=302)
+        # Create redirect response and set cookie directly on it
+        redirect_response = RedirectResponse(url="/dashboard", status_code=302)
         is_production = os.getenv("ENVIRONMENT", "development") == "production"
-        response.set_cookie(
+        redirect_response.set_cookie(
             key="session_token",
             value=token,
             httponly=True,
             secure=is_production,  # HTTPS only in production
             max_age=3600,  # 1 hour
-            samesite="strict",  # Strict CSRF protection
+            samesite="lax",  # Lax allows cookie on same-site navigations
+            path="/",  # Cookie available for all paths
         )
-        return response
+        return redirect_response
 
     except Exception as e:
         logger.warning(f"Login failed for {username}: {e}")
@@ -241,7 +241,7 @@ async def update_firebase_profile(
 
 
 @router.post("/firebase-signin")
-async def firebase_signin(response: Response, request: Request):
+async def firebase_signin(request: Request):
     """Handle Firebase authentication tokens from client-side signup/login"""
     try:
         body = await request.json()
@@ -256,18 +256,8 @@ async def firebase_signin(response: Response, request: Request):
         # Use the ID token as session token (Firebase ID tokens are self-validating)
         session_token = id_token
 
-        # Set session cookie with secure settings
-        is_production = os.getenv("ENVIRONMENT", "development") == "production"
-        response.set_cookie(
-            key="session_token",
-            value=session_token,
-            httponly=True,
-            secure=is_production,  # HTTPS only in production
-            max_age=3600,  # 1 hour
-            samesite="strict",  # Strict CSRF protection
-        )
-
-        return JSONResponse(
+        # Create response with user data
+        json_response = JSONResponse(
             {
                 "success": True,
                 "user": {
@@ -279,6 +269,20 @@ async def firebase_signin(response: Response, request: Request):
                 },
             }
         )
+
+        # Set session cookie directly on the response being returned
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+        json_response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=is_production,  # HTTPS only in production
+            max_age=3600,  # 1 hour
+            samesite="lax",  # Lax allows cookie on same-site navigations
+            path="/",  # Cookie available for all paths
+        )
+
+        return json_response
 
     except HTTPException:
         raise

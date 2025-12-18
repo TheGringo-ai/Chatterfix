@@ -16,8 +16,9 @@ except ImportError:
     pd = None
     PANDAS_AVAILABLE = False
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, require_permission, get_current_user_from_cookie
 from app.models.user import User
+from typing import Optional as OptionalType
 from app.core.firestore_db import get_firestore_manager
 
 router = APIRouter()
@@ -27,8 +28,15 @@ UPLOAD_DIR = "app/static/uploads/parts"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/inventory", response_class=HTMLResponse)
-async def inventory_list(request: Request, current_user: User = Depends(get_current_active_user)):
+async def inventory_list(request: Request):
     """Render the inventory list (filtered by organization)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/inventory", status_code=302)
+
     firestore_manager = get_firestore_manager()
     # Multi-tenant: filter by user's organization
     if current_user.organization_id:
@@ -97,8 +105,15 @@ async def add_part(
     return RedirectResponse(url="/inventory", status_code=303)
 
 @router.get("/inventory/{part_id}", response_class=HTMLResponse)
-async def part_detail(request: Request, part_id: str, current_user: User = Depends(get_current_active_user)):
+async def part_detail(request: Request, part_id: str):
     """Render part details (validates organization ownership)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url=f"/auth/login?next=/inventory/{part_id}", status_code=302)
+
     firestore_manager = get_firestore_manager()
     # Multi-tenant: validate part belongs to user's organization
     if current_user.organization_id:
@@ -153,8 +168,15 @@ async def upload_part_media(
 
 # Vendor Routes
 @router.get("/vendors", response_class=HTMLResponse)
-async def vendor_list(request: Request, current_user: User = Depends(require_permission("manage_vendors"))):
+async def vendor_list(request: Request):
     """Render vendor list (filtered by organization)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/vendors", status_code=302)
+
     firestore_manager = get_firestore_manager()
     # Multi-tenant: filter vendors by user's organization
     if current_user.organization_id:
@@ -277,8 +299,15 @@ async def get_assets_list(current_user: User = Depends(get_current_active_user))
 # ==========================================
 
 @router.get("/bulk-import", response_class=HTMLResponse)
-async def bulk_import_parts_page(request: Request, current_user: User = Depends(get_current_active_user)):
+async def bulk_import_parts_page(request: Request):
     """Render the bulk import page for parts"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/bulk-import", status_code=302)
+
     return templates.TemplateResponse(
         "inventory/bulk_import.html",
         {"request": request, "user": current_user, "current_user": current_user, "is_demo": False, "pandas_available": PANDAS_AVAILABLE}

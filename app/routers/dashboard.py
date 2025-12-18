@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user, get_optional_current_user
+from app.auth import get_current_active_user, get_optional_current_user, get_current_user_from_cookie
 from app.models.user import User
 from app.core.db_adapter import get_db_adapter
 from app.services.dashboard_service import dashboard_service
@@ -34,8 +34,10 @@ class DashboardLayoutUpdate(BaseModel):
 
 
 @router.get("/app", response_class=HTMLResponse)
-async def root_dashboard(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def root_dashboard(request: Request):
     """App route - show landing page or dashboard based on authentication"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
     if not current_user:
         return RedirectResponse(url="/landing", status_code=302)
 
@@ -46,7 +48,7 @@ async def root_dashboard(request: Request, current_user: Optional[User] = Depend
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: Optional[User] = None,
 ):
     """Render the ChatterFix Workforce Intelligence Homepage"""
     user_id = "demo"

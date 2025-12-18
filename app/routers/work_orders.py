@@ -19,7 +19,7 @@ except ImportError:
     pd = None
     PANDAS_AVAILABLE = False
 
-from app.auth import get_current_active_user, require_permission, get_optional_current_user
+from app.auth import get_current_active_user, require_permission, get_optional_current_user, get_current_user_from_cookie
 from app.models.user import User
 from typing import Optional as OptionalType
 from app.models.work_order import WorkOrder
@@ -37,8 +37,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.get("", response_class=HTMLResponse)
-async def work_orders_list(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
+async def work_orders_list(request: Request):
     """Render the work orders list (filtered by organization)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
     # Redirect to login if not authenticated
     if not current_user:
         return RedirectResponse(url="/auth/login?next=/work-orders", status_code=302)

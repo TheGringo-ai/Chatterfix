@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, require_permission, get_current_user_from_cookie
 from app.models.user import User
+from typing import Optional
 from app.core.firestore_db import get_firestore_manager
 from app.services.gemini_service import gemini_service
 from app.services.media_service import media_service
@@ -24,8 +25,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.get("/", response_class=HTMLResponse)
-async def assets_list(request: Request, current_user: User = Depends(get_current_active_user)):
+async def assets_list(request: Request):
     """Display all assets with filtering (filtered by organization)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/assets", status_code=302)
+
     firestore_manager = get_firestore_manager()
     # Multi-tenant: filter by user's organization
     if current_user.organization_id:
@@ -57,8 +65,15 @@ async def assets_list(request: Request, current_user: User = Depends(get_current
 
 
 @router.get("/{asset_id}", response_class=HTMLResponse)
-async def asset_detail(request: Request, asset_id: str, current_user: User = Depends(get_current_active_user)):
+async def asset_detail(request: Request, asset_id: str):
     """Comprehensive asset detail view (validates organization ownership)"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url=f"/auth/login?next=/assets/{asset_id}", status_code=302)
+
     firestore_manager = get_firestore_manager()
 
     # Multi-tenant: get asset and validate ownership

@@ -13,8 +13,9 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, require_permission, get_current_user_from_cookie
 from app.models.user import User
+from typing import Optional as OptionalType
 from app.core.firestore_db import get_firestore_manager
 from app.services.notification_service import notification_service
 from app.services.training_generator import training_generator
@@ -191,10 +192,15 @@ async def update_user_performance_training_hours(
 
 
 @router.get("/", response_class=HTMLResponse)
-async def training_center(
-    request: Request, current_user: User = Depends(get_current_active_user)
-):
+async def training_center(request: Request):
     """Training center dashboard"""
+    # Use cookie-based auth for web pages
+    current_user = await get_current_user_from_cookie(request)
+
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/training/", status_code=302)
+
     user_id = current_user.uid
     firestore_manager = get_firestore_manager()
     try:

@@ -1317,6 +1317,59 @@ async def debug_version():
     return debug_info
 
 
+class EnterpriseInquiryRequest(BaseModel):
+    """Request model for enterprise package inquiries"""
+
+    company: str = Field(..., min_length=1, max_length=200)
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., min_length=5, max_length=150)
+    message: str = Field(default="", max_length=2000)
+
+
+@app.post("/api/enterprise-inquiry", tags=["API"])
+async def enterprise_inquiry(request: EnterpriseInquiryRequest):
+    """
+    Handle enterprise package inquiries.
+    Sends notification email to admin (yoyofred@gringosgambit.com).
+    """
+    try:
+        from app.services.email_service import email_service
+
+        # Send the inquiry email
+        success = await email_service.send_enterprise_inquiry(
+            company_name=request.company,
+            contact_name=request.name,
+            contact_email=request.email,
+            message=request.message,
+        )
+
+        if success:
+            logger.info(
+                f"Enterprise inquiry submitted: {request.company} - {request.email}"
+            )
+            return {
+                "status": "success",
+                "message": "Thank you for your interest! Our team will contact you within 24 hours.",
+            }
+        else:
+            # Email sending failed but we still log the inquiry
+            logger.warning(
+                f"Enterprise inquiry email failed but logged: {request.company}"
+            )
+            return {
+                "status": "success",
+                "message": "Thank you for your interest! Our team will contact you soon.",
+            }
+
+    except Exception as e:
+        logger.error(f"Enterprise inquiry error: {e}")
+        # Still return success to user - we don't want to expose internal errors
+        return {
+            "status": "success",
+            "message": "Thank you for your interest! Our team will be in touch.",
+        }
+
+
 # Main entry point
 if __name__ == "__main__":
     # Cloud Run sets PORT=8080, ignore local CMMS_PORT for Cloud deployment

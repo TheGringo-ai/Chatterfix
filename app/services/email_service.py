@@ -476,6 +476,122 @@ The ChatterFix Team
             logger.error(f"Failed to send team invite email: {e}")
             return False
 
+    async def send_admin_notification(
+        self,
+        subject: str,
+        message: str,
+        notification_type: str = "info",
+    ) -> bool:
+        """Send notification email to admin (yoyofred@gringosgambit.com)"""
+        admin_email = os.getenv("ADMIN_EMAIL", "yoyofred@gringosgambit.com")
+
+        try:
+            type_emoji = {
+                "signup": "🎉",
+                "enterprise": "🏢",
+                "error": "❌",
+                "info": "ℹ️",
+                "alert": "⚠️",
+            }.get(notification_type, "📧")
+
+            body_text = f"""
+{type_emoji} ChatterFix Admin Notification
+
+{message}
+
+---
+This is an automated notification from ChatterFix CMMS.
+"""
+
+            body_html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="color: #2c3e50;">{type_emoji} {subject}</h2>
+
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <pre style="white-space: pre-wrap; font-family: inherit;">{message}</pre>
+    </div>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+        <p>This is an automated notification from ChatterFix CMMS.</p>
+    </div>
+</div>
+</body>
+</html>
+"""
+
+            return await self.send_email(
+                to_email=admin_email,
+                subject=f"[ChatterFix] {subject}",
+                body_text=body_text,
+                body_html=body_html,
+                to_name="ChatterFix Admin",
+            )
+        except Exception as e:
+            logger.error(f"Failed to send admin notification: {e}")
+            return False
+
+    async def send_enterprise_inquiry(
+        self,
+        company_name: str,
+        contact_name: str,
+        contact_email: str,
+        message: str = "",
+    ) -> bool:
+        """Send enterprise package inquiry to admin"""
+        admin_email = os.getenv("ADMIN_EMAIL", "yoyofred@gringosgambit.com")
+
+        try:
+            subject = f"🏢 Enterprise Package Inquiry from {company_name}"
+
+            body_text = f"""
+🏢 NEW ENTERPRISE PACKAGE INQUIRY
+
+Company: {company_name}
+Contact: {contact_name}
+Email: {contact_email}
+
+Message:
+{message if message else 'No additional message provided.'}
+
+---
+Please follow up with this lead promptly.
+"""
+
+            body_html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="color: #2c3e50;">🏢 Enterprise Package Inquiry</h2>
+
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Company:</strong> {company_name}</p>
+        <p><strong>Contact:</strong> {contact_name}</p>
+        <p><strong>Email:</strong> <a href="mailto:{contact_email}">{contact_email}</a></p>
+        <p><strong>Message:</strong></p>
+        <p style="background: white; padding: 10px; border-radius: 3px;">{message if message else 'No additional message provided.'}</p>
+    </div>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+        <p>Please follow up with this lead promptly.</p>
+    </div>
+</div>
+</body>
+</html>
+"""
+
+            return await self.send_email(
+                to_email=admin_email,
+                subject=subject,
+                body_text=body_text,
+                body_html=body_html,
+                to_name="ChatterFix Admin",
+            )
+        except Exception as e:
+            logger.error(f"Failed to send enterprise inquiry: {e}")
+            return False
+
 
 # Global email service instance
 email_service = EmailService()

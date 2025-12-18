@@ -378,10 +378,15 @@ DEMO_USER = {
 
 # ==================== MAIN DEMO ENTRY POINTS ====================
 
-@router.get("/demo", response_class=HTMLResponse)
-@router.get("/demo/", response_class=HTMLResponse)
+@router.get("/demo", response_class=RedirectResponse)
 async def demo_home(request: Request):
     """Demo home - redirect to dashboard"""
+    return RedirectResponse(url="/demo/dashboard", status_code=302)
+
+
+@router.get("/demo/", response_class=RedirectResponse)
+async def demo_home_slash(request: Request):
+    """Demo home with trailing slash - redirect to dashboard"""
     return RedirectResponse(url="/demo/dashboard", status_code=302)
 
 

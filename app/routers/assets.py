@@ -231,6 +231,78 @@ async def create_asset(
     return RedirectResponse(f"/assets/{asset_id}", status_code=303)
 
 
+@router.post("/{asset_id}/update")
+async def update_asset(
+    request: Request,
+    asset_id: str,
+    name: str = Form(...),
+    description: str = Form(""),
+    asset_tag: str = Form(""),
+    serial_number: str = Form(""),
+    model: str = Form(""),
+    manufacturer: str = Form(""),
+    location: str = Form(""),
+    department: str = Form(""),
+    status: str = Form("Active"),
+    criticality: str = Form("Medium"),
+    condition_rating: int = Form(None),
+    purchase_date: str = Form(None),
+    warranty_expiry: str = Form(None),
+    purchase_cost: float = Form(None),
+    current_user: User = Depends(require_permission("update_asset")),
+):
+    """Update an existing asset"""
+    firestore_manager = get_firestore_manager()
+
+    # Verify asset belongs to user's organization
+    if current_user.organization_id:
+        existing_asset = await firestore_manager.get_org_document(
+            "assets", asset_id, current_user.organization_id
+        )
+        if not existing_asset:
+            return JSONResponse(
+                {"error": "Asset not found or access denied"}, status_code=404
+            )
+
+    update_data = {
+        "name": name,
+        "description": description,
+        "asset_tag": asset_tag,
+        "serial_number": serial_number,
+        "model": model,
+        "manufacturer": manufacturer,
+        "location": location,
+        "department": department,
+        "status": status,
+        "criticality": criticality,
+        "purchase_date": purchase_date,
+        "warranty_expiry": warranty_expiry,
+        "purchase_cost": purchase_cost,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if condition_rating is not None:
+        update_data["condition_rating"] = condition_rating
+
+    # Remove None values
+    update_data = {k: v for k, v in update_data.items() if v is not None}
+
+    # Update with org validation
+    if current_user.organization_id:
+        success = await firestore_manager.update_org_document(
+            "assets", asset_id, update_data, current_user.organization_id
+        )
+    else:
+        success = await firestore_manager.update_document(
+            "assets", asset_id, update_data
+        )
+
+    if not success:
+        return JSONResponse({"error": "Failed to update asset"}, status_code=500)
+
+    return RedirectResponse(f"/assets/{asset_id}", status_code=303)
+
+
 @router.post("/{asset_id}/media")
 async def upload_media(
     asset_id: str,

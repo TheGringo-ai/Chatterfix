@@ -20,11 +20,16 @@ templates = Jinja2Templates(directory="app/templates")
 async def planner_dashboard(
     request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
 ):
-    """Render planner dashboard"""
+    """Render planner dashboard with full calendar and drag-drop scheduling"""
     is_demo = current_user is None
     return templates.TemplateResponse(
         "planner_dashboard.html",
-        {"request": request, "current_user": current_user, "is_demo": is_demo},
+        {
+            "request": request,
+            "current_user": current_user,
+            "is_demo": is_demo,
+            "advanced_mode": True,  # Enable FullCalendar drag-drop scheduling
+        },
     )
 
 

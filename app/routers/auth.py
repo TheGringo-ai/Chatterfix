@@ -295,7 +295,7 @@ async def get_auth_config():
     Firebase web authentication is designed to work.
     """
     # Always use Firebase
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms")
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix")
     api_key = os.getenv("FIREBASE_API_KEY", "")
 
     config = {

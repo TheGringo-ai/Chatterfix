@@ -78,7 +78,7 @@ class FirebaseAuthService:
                         cred,
                         {
                             "projectId": os.getenv(
-                                "GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"
+                                "GOOGLE_CLOUD_PROJECT", "fredfix"
                             ),
                         },
                     )
@@ -96,9 +96,9 @@ class FirebaseAuthService:
             if firebase_api_key:
                 firebase_config = {
                     "apiKey": firebase_api_key,
-                    "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
-                    "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
-                    "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
+                    "authDomain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.firebaseapp.com",
+                    "projectId": os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix"),
+                    "storageBucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.appspot.com",
                     "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
                     "appId": os.getenv("FIREBASE_APP_ID", ""),
                     "databaseURL": "",

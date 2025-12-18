@@ -98,9 +98,9 @@ async def signup_page(request: Request):
     firebase_config = (
         {
             "api_key": os.getenv("FIREBASE_API_KEY", ""),
-            "auth_domain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.firebaseapp.com",
-            "project_id": os.getenv("GOOGLE_CLOUD_PROJECT", "chatterfix-cmms"),
-            "storage_bucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'chatterfix-cmms')}.appspot.com",
+            "auth_domain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.firebaseapp.com",
+            "project_id": os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix"),
+            "storage_bucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.appspot.com",
             "messaging_sender_id": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
             "app_id": os.getenv("FIREBASE_APP_ID", ""),
         }

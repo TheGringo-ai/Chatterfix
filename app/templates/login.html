@@ -202,6 +202,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',  // Important: allows cookies to be set
                     body: JSON.stringify({
                         idToken: idToken,
                         email: user.email
@@ -211,8 +212,10 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Redirect to dashboard
-                    window.location.href = '/dashboard';
+                    // Get redirect URL from query params or default to dashboard
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const nextUrl = urlParams.get('next') || '/dashboard';
+                    window.location.href = nextUrl;
                 } else {
                     throw new Error(data.message || 'Server authentication failed');
                 }

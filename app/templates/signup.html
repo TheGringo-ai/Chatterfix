@@ -315,10 +315,11 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ 
+                        credentials: 'include',  // Important: allows cookies to be set
+                        body: JSON.stringify({
                             idToken: idToken,
                             username: username,
-                            full_name: fullName 
+                            full_name: fullName
                         })
                     });
 

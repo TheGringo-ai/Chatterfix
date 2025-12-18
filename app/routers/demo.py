@@ -365,6 +365,90 @@ DEMO_STATS = {
     "average_completion_time": "4.2 days",
 }
 
+# Demo user context for templates
+DEMO_USER = {
+    "uid": "demo-user-001",
+    "id": "demo-user-001",
+    "username": "demo_visitor",
+    "email": "demo@chatterfix.com",
+    "full_name": "Demo Visitor",
+    "role": "technician",
+}
+
+
+# ==================== MAIN DEMO ENTRY POINTS ====================
+
+@router.get("/demo", response_class=HTMLResponse)
+@router.get("/demo/", response_class=HTMLResponse)
+async def demo_home(request: Request):
+    """Demo home - redirect to dashboard"""
+    return RedirectResponse(url="/demo/dashboard", status_code=302)
+
+
+@router.get("/demo/dashboard", response_class=HTMLResponse)
+async def demo_dashboard(request: Request):
+    """Demo dashboard with mock data - SECURITY: Never uses real customer data"""
+    # Calculate stats from mock data
+    active_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Open", "In Progress"]])
+    pending_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Scheduled", "On Hold"]])
+    completed_count = len([wo for wo in DEMO_WORK_ORDERS if wo.get("status") == "Completed"])
+
+    workload = {
+        "stats": {
+            "active": active_count,
+            "pending": pending_count,
+            "completed": completed_count,
+            "total": len(DEMO_WORK_ORDERS),
+        }
+    }
+
+    # Performance metrics
+    total_wos = len(DEMO_WORK_ORDERS)
+    completion_rate = (completed_count / total_wos * 100) if total_wos > 0 else 0
+    performance = {
+        "today": {
+            "completion_rate": round(completion_rate, 1),
+            "total_work_orders": total_wos,
+            "completed_today": completed_count,
+        }
+    }
+
+    # Equipment stats from mock data
+    healthy_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Operational"])
+    warning_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Maintenance Required"])
+    critical_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Down"])
+
+    equipment = {
+        "total_assets": len(DEMO_ASSETS),
+        "healthy": healthy_assets,
+        "warning": warning_assets,
+        "critical": critical_assets,
+        "uptime_percentage": round((healthy_assets / len(DEMO_ASSETS) * 100) if DEMO_ASSETS else 100, 1),
+    }
+
+    notifications = {
+        "unread_count": 3,
+        "recent_interactions": [
+            {"type": "AI", "message": "Predictive maintenance alert for Pump Station", "timestamp": "5 min ago"},
+            {"type": "System", "message": "New work order assigned", "timestamp": "15 min ago"},
+        ],
+    }
+
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "current_user": DEMO_USER,
+            "workload": workload,
+            "performance": performance,
+            "notifications": notifications,
+            "equipment": equipment,
+            "is_demo": True,
+            "demo_mode": True,
+            "demo_banner": "🎭 DEMO MODE - Explore all features with sample data",
+        },
+    )
+
 
 @router.get("/demo/assets", response_class=HTMLResponse)
 async def demo_assets(request: Request):

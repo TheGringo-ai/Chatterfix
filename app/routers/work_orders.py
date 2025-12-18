@@ -37,8 +37,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.get("", response_class=HTMLResponse)
-async def work_orders_list(request: Request, current_user: User = Depends(get_current_active_user)):
+async def work_orders_list(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
     """Render the work orders list (filtered by organization)"""
+    # Redirect to login if not authenticated
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/work-orders", status_code=302)
+
     # Multi-tenant: filter by user's organization
     work_orders = await work_order_service.get_work_orders(
         organization_id=current_user.organization_id

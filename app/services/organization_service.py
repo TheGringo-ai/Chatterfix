@@ -574,10 +574,274 @@ class OrganizationService:
             is_demo=True,
         )
 
+        # Seed demo data so users have something to interact with
+        org_id = org_data.get("id")
+        if org_id:
+            await self._seed_demo_data(org_id, anonymous_uid)
+
         logger.info(
             f"Created demo organization {org_data.get('id')} for anonymous user {anonymous_uid}"
         )
         return org_data
+
+    async def _seed_demo_data(self, org_id: str, owner_uid: str) -> None:
+        """
+        Seed a demo organization with sample data for full interactive experience.
+        Users can create, edit, and delete this data during their demo session.
+        """
+        self._ensure_db()
+        if not self.db:
+            logger.warning("No database connection for seeding demo data")
+            return
+
+        try:
+            now = datetime.now(timezone.utc)
+            batch = self.db.batch()
+
+            # ===== SEED DEMO TECHNICIANS/USERS =====
+            demo_users = [
+                {
+                    "uid": f"demo-tech-1-{org_id[:8]}",
+                    "full_name": "Mike Johnson",
+                    "email": "mike.johnson@demo.chatterfix.com",
+                    "role": "technician",
+                    "department": "Maintenance",
+                    "status": "active",
+                    "organization_id": org_id,
+                    "skills": ["HVAC", "Electrical", "Plumbing"],
+                    "created_at": now.isoformat(),
+                },
+                {
+                    "uid": f"demo-tech-2-{org_id[:8]}",
+                    "full_name": "Sarah Chen",
+                    "email": "sarah.chen@demo.chatterfix.com",
+                    "role": "technician",
+                    "department": "Operations",
+                    "status": "active",
+                    "organization_id": org_id,
+                    "skills": ["Mechanical", "Safety", "Project Management"],
+                    "created_at": now.isoformat(),
+                },
+                {
+                    "uid": f"demo-tech-3-{org_id[:8]}",
+                    "full_name": "Alex Rodriguez",
+                    "email": "alex.rodriguez@demo.chatterfix.com",
+                    "role": "technician",
+                    "department": "Maintenance",
+                    "status": "active",
+                    "organization_id": org_id,
+                    "skills": ["Mechanical", "Pneumatics", "Preventive Maintenance"],
+                    "created_at": now.isoformat(),
+                },
+            ]
+
+            for user in demo_users:
+                user_ref = self.db.collection("users").document(user["uid"])
+                batch.set(user_ref, user)
+
+            # ===== SEED DEMO ASSETS =====
+            demo_assets = [
+                {
+                    "name": "HVAC Unit B-2",
+                    "asset_type": "HVAC System",
+                    "location": "Building B, Floor 2",
+                    "status": "Operational",
+                    "health_score": 85,
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                    "last_maintenance": (now - timedelta(days=30)).isoformat(),
+                    "next_maintenance": (now + timedelta(days=60)).isoformat(),
+                },
+                {
+                    "name": "Compressor C-5",
+                    "asset_type": "Industrial Compressor",
+                    "location": "Production Floor",
+                    "status": "Needs Attention",
+                    "health_score": 62,
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                    "last_maintenance": (now - timedelta(days=90)).isoformat(),
+                    "next_maintenance": (now - timedelta(days=5)).isoformat(),
+                },
+                {
+                    "name": "Production Line A",
+                    "asset_type": "Manufacturing Line",
+                    "location": "Main Production Hall",
+                    "status": "Operational",
+                    "health_score": 92,
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                    "last_maintenance": (now - timedelta(days=15)).isoformat(),
+                    "next_maintenance": (now + timedelta(days=15)).isoformat(),
+                },
+                {
+                    "name": "Cooling Tower #1",
+                    "asset_type": "Cooling System",
+                    "location": "Rooftop",
+                    "status": "Operational",
+                    "health_score": 78,
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                    "last_maintenance": (now - timedelta(days=45)).isoformat(),
+                    "next_maintenance": (now + timedelta(days=45)).isoformat(),
+                },
+            ]
+
+            asset_ids = []
+            for i, asset in enumerate(demo_assets):
+                asset_id = f"ASSET-{org_id[:6]}-{i+1:03d}"
+                asset["id"] = asset_id
+                asset_ids.append(asset_id)
+                asset_ref = self.db.collection("assets").document(asset_id)
+                batch.set(asset_ref, asset)
+
+            # ===== SEED DEMO WORK ORDERS =====
+            demo_work_orders = [
+                {
+                    "title": "Replace HVAC filters in Building B",
+                    "description": "Quarterly filter replacement for optimal air quality and system efficiency. Check for any unusual wear patterns.",
+                    "asset_id": asset_ids[0] if asset_ids else None,
+                    "asset_name": "HVAC Unit B-2",
+                    "priority": "High",
+                    "status": "In Progress",
+                    "work_order_type": "Preventive",
+                    "assigned_to_uid": demo_users[0]["uid"],
+                    "assigned_to_name": demo_users[0]["full_name"],
+                    "organization_id": org_id,
+                    "created_by": owner_uid,
+                    "created_at": (now - timedelta(days=2)).isoformat(),
+                    "due_date": (now + timedelta(days=1)).strftime("%Y-%m-%d"),
+                },
+                {
+                    "title": "Compressor oil change and inspection",
+                    "description": "Emergency maintenance required. Compressor showing signs of oil contamination. Needs immediate attention to prevent equipment damage.",
+                    "asset_id": asset_ids[1] if len(asset_ids) > 1 else None,
+                    "asset_name": "Compressor C-5",
+                    "priority": "Critical",
+                    "status": "Open",
+                    "work_order_type": "Corrective",
+                    "assigned_to_uid": demo_users[1]["uid"],
+                    "assigned_to_name": demo_users[1]["full_name"],
+                    "organization_id": org_id,
+                    "created_by": owner_uid,
+                    "created_at": (now - timedelta(days=5)).isoformat(),
+                    "due_date": (now - timedelta(days=2)).strftime("%Y-%m-%d"),
+                },
+                {
+                    "title": "Production line calibration",
+                    "description": "Monthly calibration to ensure product quality standards. Document all measurement readings.",
+                    "asset_id": asset_ids[2] if len(asset_ids) > 2 else None,
+                    "asset_name": "Production Line A",
+                    "priority": "Medium",
+                    "status": "Scheduled",
+                    "work_order_type": "Preventive",
+                    "assigned_to_uid": demo_users[2]["uid"],
+                    "assigned_to_name": demo_users[2]["full_name"],
+                    "organization_id": org_id,
+                    "created_by": owner_uid,
+                    "created_at": (now - timedelta(days=1)).isoformat(),
+                    "due_date": (now + timedelta(days=14)).strftime("%Y-%m-%d"),
+                },
+                {
+                    "title": "Cooling tower water treatment",
+                    "description": "Quarterly water treatment and chemical balance check. Test Legionella prevention measures.",
+                    "asset_id": asset_ids[3] if len(asset_ids) > 3 else None,
+                    "asset_name": "Cooling Tower #1",
+                    "priority": "Medium",
+                    "status": "Scheduled",
+                    "work_order_type": "Preventive",
+                    "assigned_to_uid": demo_users[0]["uid"],
+                    "assigned_to_name": demo_users[0]["full_name"],
+                    "organization_id": org_id,
+                    "created_by": owner_uid,
+                    "created_at": now.isoformat(),
+                    "due_date": (now + timedelta(days=7)).strftime("%Y-%m-%d"),
+                },
+                {
+                    "title": "Safety inspection - Fire suppression system",
+                    "description": "Annual inspection of fire suppression systems. Verify all sprinklers, alarms, and extinguishers.",
+                    "asset_id": None,
+                    "asset_name": "Facility-wide",
+                    "priority": "High",
+                    "status": "Open",
+                    "work_order_type": "Inspection",
+                    "assigned_to_uid": demo_users[1]["uid"],
+                    "assigned_to_name": demo_users[1]["full_name"],
+                    "organization_id": org_id,
+                    "created_by": owner_uid,
+                    "created_at": now.isoformat(),
+                    "due_date": (now + timedelta(days=3)).strftime("%Y-%m-%d"),
+                },
+            ]
+
+            for i, wo in enumerate(demo_work_orders):
+                wo_id = f"WO-{org_id[:6]}-{i+1:03d}"
+                wo["id"] = wo_id
+                wo_ref = self.db.collection("work_orders").document(wo_id)
+                batch.set(wo_ref, wo)
+
+            # ===== SEED DEMO INVENTORY PARTS =====
+            demo_parts = [
+                {
+                    "name": "HVAC Filter 20x25x1",
+                    "part_number": "FLT-2025-01",
+                    "category": "Filters",
+                    "quantity": 24,
+                    "min_quantity": 10,
+                    "unit_cost": 12.50,
+                    "location": "Warehouse A-3",
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                },
+                {
+                    "name": "Compressor Oil 5W-30",
+                    "part_number": "OIL-5W30-5G",
+                    "category": "Lubricants",
+                    "quantity": 8,
+                    "min_quantity": 4,
+                    "unit_cost": 45.00,
+                    "location": "Warehouse B-1",
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                },
+                {
+                    "name": "V-Belt A68",
+                    "part_number": "BLT-A68",
+                    "category": "Belts & Drives",
+                    "quantity": 6,
+                    "min_quantity": 3,
+                    "unit_cost": 18.75,
+                    "location": "Warehouse A-2",
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                },
+                {
+                    "name": "Bearing 6205-2RS",
+                    "part_number": "BRG-6205-2RS",
+                    "category": "Bearings",
+                    "quantity": 12,
+                    "min_quantity": 6,
+                    "unit_cost": 8.25,
+                    "location": "Warehouse A-1",
+                    "organization_id": org_id,
+                    "created_at": now.isoformat(),
+                },
+            ]
+
+            for i, part in enumerate(demo_parts):
+                part_id = f"PART-{org_id[:6]}-{i+1:03d}"
+                part["id"] = part_id
+                part_ref = self.db.collection("parts").document(part_id)
+                batch.set(part_ref, part)
+
+            # Commit all demo data
+            batch.commit()
+            logger.info(
+                f"Seeded demo data for organization {org_id}: {len(demo_work_orders)} work orders, {len(demo_assets)} assets, {len(demo_parts)} parts"
+            )
+
+        except Exception as e:
+            logger.error(f"Error seeding demo data for org {org_id}: {e}")
 
     async def convert_demo_to_real(
         self,

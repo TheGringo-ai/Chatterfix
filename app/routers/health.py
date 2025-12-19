@@ -266,28 +266,105 @@ async def check_ai_team_health() -> Dict[str, Any]:
 # ========== CLOUD SCHEDULER ENDPOINTS ==========
 # These endpoints are designed to be called by Cloud Scheduler with OIDC authentication
 
+# Expected service account for scheduler (set via environment)
+SCHEDULER_SERVICE_ACCOUNT = os.getenv(
+    "SCHEDULER_SERVICE_ACCOUNT",
+    "pm-scheduler@fredfix.iam.gserviceaccount.com"
+)
+
+# Fallback secret header for testing (should be set in production)
+SCHEDULER_SECRET = os.getenv("SCHEDULER_SECRET", None)
+
+
+async def _verify_oidc_token(token: str) -> dict:
+    """
+    Verify Google OIDC token and return claims.
+
+    In production with Cloud Run, the platform validates the token automatically
+    when IAM invoker permissions are set. This function provides additional
+    verification for defense-in-depth.
+
+    Returns:
+        dict with token claims (email, aud, etc.) or empty dict if invalid
+    """
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+
+        # Verify the token with Google
+        claims = id_token.verify_oauth2_token(
+            token,
+            google_requests.Request(),
+            audience=os.getenv("CLOUD_RUN_SERVICE_URL", "https://chatterfix.com"),
+        )
+        return claims
+    except ImportError:
+        # google-auth not installed, fall back to basic check
+        logger.warning("google-auth not installed, using basic token check")
+        return {"verified": "basic"}
+    except Exception as e:
+        logger.warning(f"OIDC token verification failed: {e}")
+        return {}
+
 
 def _verify_scheduler_auth(authorization: Optional[str]) -> bool:
     """
-    Verify Cloud Scheduler OIDC token.
+    Verify Cloud Scheduler authentication.
 
-    In production, Cloud Scheduler sends an OIDC token in the Authorization header.
-    For local development, we allow requests without auth or with a dev token.
+    Authentication methods (checked in order):
+    1. OIDC token from Cloud Scheduler (preferred in production)
+    2. Secret header X-Scheduler-Secret (fallback for testing)
+    3. Allow all in development mode
+
+    In production, Cloud Run IAM should be configured to only allow
+    the scheduler service account to invoke these endpoints.
     """
     env = os.getenv("ENVIRONMENT", "development").lower()
 
     # In development, allow unauthenticated requests for testing
     if env in ["development", "dev", "local"]:
+        logger.debug("Scheduler auth: allowing in development mode")
         return True
 
-    # In production, require authorization header
-    if not authorization:
+    # Check for OIDC Bearer token (Cloud Scheduler with OIDC auth)
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]  # Remove "Bearer " prefix
+
+        # In production Cloud Run, the platform validates OIDC tokens automatically
+        # when the service account has roles/run.invoker permission.
+        # We trust Cloud Run's authentication here.
+        #
+        # For additional security, you can verify the token claims:
+        # claims = await _verify_oidc_token(token)
+        # if claims.get("email") == SCHEDULER_SERVICE_ACCOUNT:
+        #     return True
+
+        logger.info("Scheduler auth: OIDC token present, trusting Cloud Run IAM")
+        return True
+
+    # Check for secret header (fallback for testing or non-OIDC setups)
+    # This is less secure but useful for manual testing
+    if SCHEDULER_SECRET:
+        # Note: This would need to be passed differently (via custom header)
+        # This is a fallback mechanism
+        logger.warning("Scheduler auth: checking for secret-based auth")
+        return False  # Secret header not in authorization
+
+    logger.warning("Scheduler auth: no valid authentication found")
+    return False
+
+
+def _verify_scheduler_secret(x_scheduler_secret: Optional[str]) -> bool:
+    """
+    Verify scheduler secret header (fallback authentication).
+
+    Use this for manual testing when OIDC is not available.
+    """
+    if not SCHEDULER_SECRET:
         return False
 
-    # Cloud Scheduler sends "Bearer <token>"
-    if authorization.startswith("Bearer "):
-        # In a full implementation, verify the OIDC token with Google
-        # For now, we trust that Cloud Run's built-in auth handles this
+    if x_scheduler_secret and x_scheduler_secret == SCHEDULER_SECRET:
+        logger.info("Scheduler auth: valid secret header")
         return True
 
     return False
@@ -298,6 +375,7 @@ async def scheduled_pm_generation(
     days_ahead: int = Query(30, description="Days to generate PM for"),
     dry_run: bool = Query(False, description="If true, don't create actual work orders"),
     authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
 ):
     """
     Cloud Scheduler endpoint for automated PM work order generation.
@@ -306,25 +384,17 @@ async def scheduled_pm_generation(
     and generates work orders for due maintenance tasks.
 
     Security: Protected by Cloud Run IAM + OIDC token from Cloud Scheduler.
+    Fallback: X-Scheduler-Secret header for manual testing.
 
-    Setup Cloud Scheduler job:
-    ```bash
-    gcloud scheduler jobs create http pm-daily-generation \
-      --location=us-central1 \
-      --schedule="0 6 * * *" \
-      --uri="https://chatterfix.com/scheduled/pm-generation" \
-      --http-method=POST \
-      --oidc-service-account-email=YOUR_SA@PROJECT.iam.gserviceaccount.com \
-      --oidc-token-audience="https://chatterfix.com"
-    ```
+    Schedule: Daily at 2:00 AM UTC (configured in Cloud Scheduler)
     """
     start_time = time.time()
 
-    # Verify scheduler authentication
-    if not _verify_scheduler_auth(authorization):
+    # Verify scheduler authentication (OIDC or secret header)
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
         raise HTTPException(
             status_code=401,
-            detail="Unauthorized - Cloud Scheduler OIDC token required",
+            detail="Unauthorized - Cloud Scheduler OIDC token or valid secret required",
         )
 
     try:
@@ -418,6 +488,7 @@ async def scheduled_pm_generation(
 @router.post("/scheduled/meter-threshold-check")
 async def scheduled_meter_threshold_check(
     authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
 ):
     """
     Cloud Scheduler endpoint for checking meter thresholds and triggering alerts.
@@ -425,22 +496,14 @@ async def scheduled_meter_threshold_check(
     This endpoint checks all asset meters across organizations for threshold
     violations and can trigger condition-based maintenance work orders.
 
-    Setup Cloud Scheduler job (every 4 hours):
-    ```bash
-    gcloud scheduler jobs create http meter-threshold-check \
-      --location=us-central1 \
-      --schedule="0 */4 * * *" \
-      --uri="https://chatterfix.com/scheduled/meter-threshold-check" \
-      --http-method=POST \
-      --oidc-service-account-email=YOUR_SA@PROJECT.iam.gserviceaccount.com
-    ```
+    Schedule: Every 4 hours (configured in Cloud Scheduler)
     """
     start_time = time.time()
 
-    if not _verify_scheduler_auth(authorization):
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
         raise HTTPException(
             status_code=401,
-            detail="Unauthorized - Cloud Scheduler OIDC token required",
+            detail="Unauthorized - Cloud Scheduler OIDC token or valid secret required",
         )
 
     try:

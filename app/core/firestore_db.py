@@ -420,6 +420,422 @@ class FirestoreManager:
             return {"work_orders": [], "assets": [], "ai_interactions": []}
 
     # ==========================================
+    # PM AUTOMATION METHODS (Preventive Maintenance)
+    # ==========================================
+
+    # --- PM Templates ---
+
+    async def create_pm_template(
+        self,
+        template_data: Dict[str, Any],
+        organization_id: Optional[str] = None,
+    ) -> str:
+        """
+        Create a PM template. If organization_id is None, creates a global template.
+        Global templates are available to all organizations.
+        """
+        if organization_id:
+            template_data["organization_id"] = organization_id
+        else:
+            template_data["organization_id"] = None  # Global template
+        return await self.create_document("pm_templates", template_data)
+
+    async def get_pm_templates(
+        self,
+        organization_id: str,
+        maintenance_type: Optional[str] = None,
+        include_global: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get PM templates for an organization.
+        Includes global templates (organization_id=null) if include_global=True.
+        """
+        templates = []
+
+        # Get org-specific templates
+        org_filters = [
+            {"field": "organization_id", "operator": "==", "value": organization_id}
+        ]
+        if maintenance_type:
+            org_filters.append(
+                {"field": "maintenance_type", "operator": "==", "value": maintenance_type}
+            )
+        org_templates = await self.get_collection(
+            "pm_templates", filters=org_filters, order_by="name"
+        )
+        templates.extend(org_templates)
+
+        # Get global templates
+        if include_global:
+            global_filters = [
+                {"field": "organization_id", "operator": "==", "value": None}
+            ]
+            if maintenance_type:
+                global_filters.append(
+                    {"field": "maintenance_type", "operator": "==", "value": maintenance_type}
+                )
+            global_templates = await self.get_collection(
+                "pm_templates", filters=global_filters, order_by="name"
+            )
+            templates.extend(global_templates)
+
+        return templates
+
+    async def get_pm_template(
+        self, template_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get a specific PM template (org-specific or global)"""
+        template = await self.get_document("pm_templates", template_id)
+        if not template:
+            return None
+        # Allow access if it's the org's template or a global template
+        if template.get("organization_id") in [organization_id, None]:
+            return template
+        return None
+
+    async def update_pm_template(
+        self, template_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update a PM template (only org-specific templates can be updated)"""
+        template = await self.get_document("pm_templates", template_id)
+        if not template:
+            return False
+        # Only allow updating org-specific templates, not global ones
+        if template.get("organization_id") != organization_id:
+            logger.warning(
+                f"Cannot update template {template_id} - not owned by org {organization_id}"
+            )
+            return False
+        return await self.update_document("pm_templates", template_id, data)
+
+    async def delete_pm_template(self, template_id: str, organization_id: str) -> bool:
+        """Delete a PM template (only org-specific templates can be deleted)"""
+        template = await self.get_document("pm_templates", template_id)
+        if not template:
+            return False
+        if template.get("organization_id") != organization_id:
+            logger.warning(
+                f"Cannot delete template {template_id} - not owned by org {organization_id}"
+            )
+            return False
+        return await self.delete_document("pm_templates", template_id)
+
+    # --- PM Schedule Rules ---
+
+    async def create_pm_schedule_rule(
+        self, rule_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create a PM schedule rule for an organization"""
+        return await self.create_org_document("pm_schedule_rules", rule_data, organization_id)
+
+    async def get_pm_schedule_rules(
+        self,
+        organization_id: str,
+        asset_id: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        schedule_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get PM schedule rules for an organization with optional filters"""
+        additional_filters = []
+        if asset_id:
+            additional_filters.append(
+                {"field": "asset_id", "operator": "==", "value": asset_id}
+            )
+        if is_active is not None:
+            additional_filters.append(
+                {"field": "is_active", "operator": "==", "value": is_active}
+            )
+        if schedule_type:
+            additional_filters.append(
+                {"field": "schedule_type", "operator": "==", "value": schedule_type}
+            )
+        return await self.get_org_collection(
+            "pm_schedule_rules",
+            organization_id,
+            order_by="next_due",
+            additional_filters=additional_filters if additional_filters else None,
+        )
+
+    async def get_pm_schedule_rule(
+        self, rule_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get a specific PM schedule rule"""
+        return await self.get_org_document("pm_schedule_rules", rule_id, organization_id)
+
+    async def update_pm_schedule_rule(
+        self, rule_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update a PM schedule rule"""
+        return await self.update_org_document(
+            "pm_schedule_rules", rule_id, data, organization_id
+        )
+
+    async def delete_pm_schedule_rule(self, rule_id: str, organization_id: str) -> bool:
+        """Delete a PM schedule rule"""
+        return await self.delete_org_document("pm_schedule_rules", rule_id, organization_id)
+
+    async def get_due_pm_rules(
+        self, organization_id: str, due_before: datetime
+    ) -> List[Dict[str, Any]]:
+        """Get PM rules that are due before a specific date"""
+        return await self.get_org_collection(
+            "pm_schedule_rules",
+            organization_id,
+            additional_filters=[
+                {"field": "is_active", "operator": "==", "value": True},
+                {"field": "next_due", "operator": "<=", "value": due_before},
+            ],
+            order_by="next_due",
+        )
+
+    # --- Asset Meters ---
+
+    async def create_asset_meter(
+        self, meter_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create an asset meter for tracking usage/conditions"""
+        return await self.create_org_document("asset_meters", meter_data, organization_id)
+
+    async def get_asset_meters(
+        self,
+        organization_id: str,
+        asset_id: Optional[str] = None,
+        meter_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get asset meters for an organization"""
+        additional_filters = []
+        if asset_id:
+            additional_filters.append(
+                {"field": "asset_id", "operator": "==", "value": asset_id}
+            )
+        if meter_type:
+            additional_filters.append(
+                {"field": "meter_type", "operator": "==", "value": meter_type}
+            )
+        return await self.get_org_collection(
+            "asset_meters",
+            organization_id,
+            additional_filters=additional_filters if additional_filters else None,
+        )
+
+    async def get_asset_meter(
+        self, meter_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get a specific asset meter"""
+        return await self.get_org_document("asset_meters", meter_id, organization_id)
+
+    async def update_asset_meter(
+        self, meter_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update an asset meter (e.g., update current_value)"""
+        return await self.update_org_document("asset_meters", meter_id, data, organization_id)
+
+    async def update_meter_reading(
+        self,
+        meter_id: str,
+        new_value: float,
+        organization_id: str,
+        reading_source: str = "manual",
+    ) -> Dict[str, Any]:
+        """
+        Update a meter reading and return the updated meter with threshold status.
+        reading_source: 'manual', 'iot', 'api'
+        """
+        meter = await self.get_asset_meter(meter_id, organization_id)
+        if not meter:
+            raise ValueError(f"Meter {meter_id} not found")
+
+        old_value = meter.get("current_value", 0)
+        update_data = {
+            "current_value": new_value,
+            "last_reading_date": datetime.now(timezone.utc),
+            "last_reading_source": reading_source,
+            "previous_value": old_value,
+        }
+
+        await self.update_asset_meter(meter_id, update_data, organization_id)
+
+        # Check thresholds
+        threshold_warning = meter.get("threshold_warning")
+        threshold_critical = meter.get("threshold_critical")
+        threshold_status = "normal"
+
+        if threshold_critical and new_value >= threshold_critical:
+            threshold_status = "critical"
+        elif threshold_warning and new_value >= threshold_warning:
+            threshold_status = "warning"
+
+        return {
+            "meter_id": meter_id,
+            "asset_id": meter.get("asset_id"),
+            "meter_type": meter.get("meter_type"),
+            "old_value": old_value,
+            "new_value": new_value,
+            "unit": meter.get("unit"),
+            "threshold_status": threshold_status,
+            "threshold_warning": threshold_warning,
+            "threshold_critical": threshold_critical,
+        }
+
+    async def delete_asset_meter(self, meter_id: str, organization_id: str) -> bool:
+        """Delete an asset meter"""
+        return await self.delete_org_document("asset_meters", meter_id, organization_id)
+
+    async def get_meters_exceeding_threshold(
+        self, organization_id: str, threshold_type: str = "warning"
+    ) -> List[Dict[str, Any]]:
+        """
+        Get meters that have exceeded their warning or critical threshold.
+        This requires fetching all meters and filtering in code since Firestore
+        doesn't support comparing two fields directly.
+        """
+        meters = await self.get_asset_meters(organization_id)
+        exceeding = []
+
+        for meter in meters:
+            current = meter.get("current_value", 0)
+            if threshold_type == "critical":
+                threshold = meter.get("threshold_critical")
+            else:
+                threshold = meter.get("threshold_warning")
+
+            if threshold and current >= threshold:
+                meter["threshold_exceeded"] = threshold_type
+                exceeding.append(meter)
+
+        return exceeding
+
+    # --- PM Generated Orders (Tracking) ---
+
+    async def create_pm_generated_order(
+        self, order_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create a record of a PM-generated work order"""
+        return await self.create_org_document(
+            "pm_generated_orders", order_data, organization_id
+        )
+
+    async def get_pm_generated_orders(
+        self,
+        organization_id: str,
+        status: Optional[str] = None,
+        rule_id: Optional[str] = None,
+        asset_id: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get PM generated order records"""
+        additional_filters = []
+        if status:
+            additional_filters.append(
+                {"field": "status", "operator": "==", "value": status}
+            )
+        if rule_id:
+            additional_filters.append(
+                {"field": "rule_id", "operator": "==", "value": rule_id}
+            )
+        if asset_id:
+            additional_filters.append(
+                {"field": "asset_id", "operator": "==", "value": asset_id}
+            )
+        return await self.get_org_collection(
+            "pm_generated_orders",
+            organization_id,
+            limit=limit,
+            order_by="-generated_date",
+            additional_filters=additional_filters if additional_filters else None,
+        )
+
+    async def update_pm_generated_order(
+        self, order_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update a PM generated order record (e.g., mark as deferred)"""
+        return await self.update_org_document(
+            "pm_generated_orders", order_id, data, organization_id
+        )
+
+    async def link_pm_order_to_work_order(
+        self, pm_order_id: str, work_order_id: str, organization_id: str
+    ) -> bool:
+        """Link a PM generated order to an actual work order"""
+        return await self.update_pm_generated_order(
+            pm_order_id,
+            {"work_order_id": work_order_id, "status": "work_order_created"},
+            organization_id,
+        )
+
+    # --- PM Dashboard/Analytics Methods ---
+
+    async def get_pm_overview(
+        self, organization_id: str, days_ahead: int = 30
+    ) -> Dict[str, Any]:
+        """Get a comprehensive PM overview for the organization"""
+        try:
+            # Get active schedule rules
+            active_rules = await self.get_pm_schedule_rules(
+                organization_id, is_active=True
+            )
+
+            # Get due rules (next 30 days by default)
+            due_date = datetime.now(timezone.utc) + timedelta(days=days_ahead)
+            due_rules = await self.get_due_pm_rules(organization_id, due_date)
+
+            # Get meters exceeding thresholds
+            warning_meters = await self.get_meters_exceeding_threshold(
+                organization_id, "warning"
+            )
+            critical_meters = await self.get_meters_exceeding_threshold(
+                organization_id, "critical"
+            )
+
+            # Get recent PM generated orders
+            recent_pm_orders = await self.get_pm_generated_orders(
+                organization_id, limit=10
+            )
+
+            # Get templates
+            templates = await self.get_pm_templates(organization_id)
+
+            # Calculate stats
+            overdue_count = sum(
+                1
+                for rule in due_rules
+                if rule.get("next_due")
+                and datetime.fromisoformat(rule["next_due"].replace("Z", "+00:00"))
+                < datetime.now(timezone.utc)
+            )
+
+            return {
+                "summary": {
+                    "total_active_rules": len(active_rules),
+                    "rules_due_soon": len(due_rules),
+                    "overdue_count": overdue_count,
+                    "meters_warning": len(warning_meters),
+                    "meters_critical": len(critical_meters),
+                    "total_templates": len(templates),
+                },
+                "due_rules": due_rules[:10],  # Top 10 due soonest
+                "critical_meters": critical_meters,
+                "warning_meters": warning_meters[:5],  # Top 5 warnings
+                "recent_pm_orders": recent_pm_orders,
+            }
+        except Exception as e:
+            logger.error(f"Error getting PM overview: {e}")
+            return {
+                "summary": {
+                    "total_active_rules": 0,
+                    "rules_due_soon": 0,
+                    "overdue_count": 0,
+                    "meters_warning": 0,
+                    "meters_critical": 0,
+                    "total_templates": 0,
+                },
+                "due_rules": [],
+                "critical_meters": [],
+                "warning_meters": [],
+                "recent_pm_orders": [],
+            }
+
+    # ==========================================
     # LEGACY CMMS METHODS - DEPRECATED
     # ==========================================
     # WARNING: These methods do NOT enforce organization isolation!

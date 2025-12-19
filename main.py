@@ -128,6 +128,7 @@ all_extended_routers = [
     "linesmart_integration",
     "planner",
     "planner_simple",
+    "pm_automation",  # PM Automation API - meter readings, schedule generation, overview
     # NOTE: 'public_demo' REMOVED - security risk, exposed real data without org filtering
     "purchasing",
     "premium_modules",
@@ -435,6 +436,7 @@ router_descriptions = {
     "user_management": "User management dashboard with Firebase Auth",
     "analytics": "Analytics dashboard with KPIs and reporting",
     "planner_simple": "Simple planner for testing",
+    "pm_automation": "PM Automation API - meter readings, schedule generation, work order creation",
     "premium_modules": "Premium Modules API - Licensing for IoT Advanced, QualityFix, SafetyFix",
     "quality_management": "QualityFix Premium Module - HACCP, ISO 22000, Food Safety compliance ($99/mo)",
     "safety_management": "SafetyFix Premium Module - OSHA compliance and incident tracking ($99/mo)",

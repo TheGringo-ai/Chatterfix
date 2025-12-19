@@ -392,6 +392,75 @@ class FirestoreManager:
             "vendors", organization_id, order_by="name", limit=limit
         )
 
+    async def get_org_asset(
+        self, asset_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get a single asset by ID with organization verification.
+
+        Returns None if asset doesn't exist or belongs to different org.
+        """
+        return await self.get_org_document("assets", asset_id, organization_id)
+
+    async def get_org_asset_by_tag(
+        self, asset_tag: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get asset by asset tag/barcode within organization scope."""
+        try:
+            assets = await self.get_org_collection(
+                "assets",
+                organization_id,
+                limit=1,
+                additional_filters=[
+                    {"field": "asset_tag", "operator": "==", "value": asset_tag}
+                ],
+            )
+            return assets[0] if assets else None
+        except Exception as e:
+            logger.error(f"Error getting org asset by tag: {e}")
+            return None
+
+    async def get_org_asset_work_orders(
+        self, asset_id: str, organization_id: str
+    ) -> List[Dict[str, Any]]:
+        """Get work orders for an asset within organization scope."""
+        try:
+            return await self.get_org_collection(
+                "work_orders",
+                organization_id,
+                order_by="-created_at",
+                additional_filters=[
+                    {"field": "asset_id", "operator": "==", "value": str(asset_id)}
+                ],
+            )
+        except Exception as e:
+            logger.error(f"Error getting org asset work orders: {e}")
+            return []
+
+    async def get_org_work_order(
+        self, work_order_id: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get a single work order by ID with organization verification.
+
+        Returns None if work order doesn't exist or belongs to different org.
+        """
+        return await self.get_org_document("work_orders", work_order_id, organization_id)
+
+    async def update_org_work_order(
+        self, work_order_id: str, data: Dict[str, Any], organization_id: str
+    ) -> bool:
+        """Update a work order with organization verification."""
+        return await self.update_org_document(
+            "work_orders", work_order_id, data, organization_id
+        )
+
+    async def delete_org_work_order(
+        self, work_order_id: str, organization_id: str
+    ) -> bool:
+        """Delete a work order with organization verification."""
+        return await self.delete_org_document("work_orders", work_order_id, organization_id)
+
     async def get_org_dashboard_data(
         self, organization_id: str, user_id: str
     ) -> Dict[str, Any]:

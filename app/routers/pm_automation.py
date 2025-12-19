@@ -22,6 +22,7 @@ from app.auth import (
     get_optional_current_user,
     get_current_user_from_cookie,
 )
+from app.core.multi_tenant import require_organization_id
 from app.models.user import User
 from app.services.pm_automation_engine import (
     PMAutomationEngine,
@@ -195,50 +196,6 @@ class APIErrorResponse(BaseModel):
 # ==========================================
 
 
-def _get_organization_id(
-    request_org_id: Optional[str],
-    current_user: Optional[User],
-) -> str:
-    """
-    Resolve organization_id from request or authenticated user.
-
-    Priority:
-    1. Use authenticated user's organization_id if available
-    2. Fall back to explicitly provided organization_id
-    3. Raise 400 if neither available
-
-    TODO: In production, organization_id should ALWAYS come from
-    Auth token claims. Remove explicit organization_id parameter
-    once all clients are updated to use proper authentication.
-    """
-    # Prefer user's org from auth token
-    if current_user and current_user.organization_id:
-        # If request also provides org_id, validate they match
-        if request_org_id and request_org_id != current_user.organization_id:
-            logger.warning(
-                f"User {current_user.uid} tried to access org {request_org_id} "
-                f"but belongs to {current_user.organization_id}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot access resources from another organization",
-            )
-        return current_user.organization_id
-
-    # Fall back to explicit org_id (TODO: remove in production)
-    if request_org_id:
-        logger.warning(
-            "Using explicit organization_id without auth. "
-            "TODO: Require auth token with org claim in production."
-        )
-        return request_org_id
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="organization_id required. Provide via auth token or request body.",
-    )
-
-
 def _get_pm_engine() -> PMAutomationEngine:
     """Get PM automation engine instance."""
     return get_pm_automation_engine()
@@ -280,7 +237,7 @@ async def record_meter_reading(
     Record a meter reading, check thresholds, and optionally create work orders.
     """
     try:
-        org_id = _get_organization_id(request.organization_id, current_user)
+        org_id = require_organization_id(current_user, request.organization_id)
 
         result = await pm_engine.update_meter_reading(
             organization_id=org_id,
@@ -364,7 +321,7 @@ async def generate_pm_schedule(
     Idempotent for same date range - won't create duplicate work orders.
     """
     try:
-        org_id = _get_organization_id(request.organization_id, current_user)
+        org_id = require_organization_id(current_user, request.organization_id)
 
         result = await pm_engine.generate_pm_schedule(
             organization_id=org_id,
@@ -443,7 +400,7 @@ async def get_pm_overview(
     Get PM dashboard overview with Firestore-backed data.
     """
     try:
-        org_id = _get_organization_id(organization_id, current_user)
+        org_id = require_organization_id(current_user, organization_id)
 
         result = await pm_engine.get_pm_schedule_overview(
             organization_id=org_id,
@@ -505,7 +462,7 @@ async def list_templates(
 ) -> JSONResponse:
     """GET /api/pm/templates - List all PM templates."""
     try:
-        org_id = _get_organization_id(organization_id, current_user)
+        org_id = require_organization_id(current_user, organization_id)
 
         templates = await pm_engine.get_maintenance_templates(
             organization_id=org_id,
@@ -550,7 +507,7 @@ async def list_rules(
 ) -> JSONResponse:
     """GET /api/pm/rules - List all PM schedule rules."""
     try:
-        org_id = _get_organization_id(organization_id, current_user)
+        org_id = require_organization_id(current_user, organization_id)
 
         rules = await pm_engine.get_schedule_rules(
             organization_id=org_id,
@@ -599,7 +556,7 @@ async def list_meters(
 ) -> JSONResponse:
     """GET /api/pm/meters - List all asset meters."""
     try:
-        org_id = _get_organization_id(organization_id, current_user)
+        org_id = require_organization_id(current_user, organization_id)
 
         meters = await pm_engine.get_asset_meters(
             organization_id=org_id,

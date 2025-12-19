@@ -7,20 +7,19 @@ from typing import Optional
 import logging
 import os
 
-
+# Import work order service for creating work orders from voice commands
+from app.services.work_order_service import work_order_service
 
 # Import AI Memory Service for capturing interactions
 try:
-    pass
-
+    from app.services.ai_memory_integration import get_ai_memory_service
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
 
 # Import Voice/Vision Memory for learning from interactions
 try:
-    pass
-
+    from app.services.voice_vision_memory import VoiceVisionMemory
     VOICE_MEMORY_AVAILABLE = True
 except ImportError:
     VOICE_MEMORY_AVAILABLE = False
@@ -52,7 +51,7 @@ async def process_voice_command(voice_text: str, technician_id: Optional[str] = 
             "description": f"{voice_text}\n\nAI Analysis:\n{ai_analysis}",
             "priority": priority,
             "status": "Open",
-            "assigned_to_uid": technician_id,
+            "assigned_to_uid": str(technician_id) if technician_id else None,
             "work_order_type": "Voice Command",
         }
 

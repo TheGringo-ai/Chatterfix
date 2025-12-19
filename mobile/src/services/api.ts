@@ -280,6 +280,124 @@ class ApiService {
     return response.data;
   }
 
+  // ========== Voice Commands ==========
+
+  /**
+   * Process a voice command and execute appropriate action
+   * Can create work orders, navigate, or get AI responses
+   */
+  async processVoiceCommand(command: string, contextType: string = 'general'): Promise<any> {
+    const response = await this.client.post('/ai/process-command', {
+      command,
+      source: 'mobile_app',
+      context_type: contextType,
+    });
+    return response.data;
+  }
+
+  /**
+   * Create a work order directly from voice text
+   */
+  async createWorkOrderFromVoice(voiceText: string, technicianId?: string): Promise<any> {
+    const formData = new FormData();
+    formData.append('voice_text', voiceText);
+    if (technicianId) {
+      formData.append('technician_id', technicianId);
+    }
+
+    const response = await this.client.post('/ai/voice-command', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  /**
+   * Get voice command suggestions and golden workflows
+   */
+  async getVoiceCommandSuggestions(): Promise<any> {
+    const response = await this.client.get('/ai/voice-suggestions');
+    return response.data;
+  }
+
+  /**
+   * Get speech service status (check if voice is available)
+   */
+  async getSpeechServiceStatus(): Promise<any> {
+    const response = await this.client.get('/ai/transcription-status');
+    return response.data;
+  }
+
+  // ========== OCR & Image Analysis ==========
+
+  /**
+   * Analyze an image for equipment condition, parts, or text
+   * @param imageBase64 Base64 encoded image data
+   * @param context Analysis context: 'equipment_inspection', 'part_recognition', 'text_extraction'
+   */
+  async analyzeImage(imageBase64: string, context: string = 'equipment_inspection'): Promise<any> {
+    const response = await this.client.post('/ai/analyze-image', {
+      image: imageBase64,
+      context,
+    });
+    return response.data;
+  }
+
+  /**
+   * Extract text from an image using OCR
+   * @param imageUri Local image URI or base64 data
+   */
+  async extractTextFromImage(imageBase64: string): Promise<any> {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: `data:image/jpeg;base64,${imageBase64}`,
+      type: 'image/jpeg',
+      name: 'image.jpg',
+    } as any);
+
+    const response = await this.client.post('/ai/extract-text', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  /**
+   * Recognize a part from an image
+   * @param imageBase64 Base64 encoded image
+   */
+  async recognizePart(imageBase64: string): Promise<any> {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: `data:image/jpeg;base64,${imageBase64}`,
+      type: 'image/jpeg',
+      name: 'part.jpg',
+    } as any);
+
+    const response = await this.client.post('/ai/recognize-part', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
+  /**
+   * Analyze equipment condition from image
+   */
+  async analyzeEquipmentCondition(imageBase64: string, assetId?: string): Promise<any> {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: `data:image/jpeg;base64,${imageBase64}`,
+      type: 'image/jpeg',
+      name: 'equipment.jpg',
+    } as any);
+    if (assetId) {
+      formData.append('asset_id', assetId);
+    }
+
+    const response = await this.client.post('/ai/analyze-condition', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
   // ========== Push Notifications ==========
 
   async registerPushToken(token: string, userId: number): Promise<any> {

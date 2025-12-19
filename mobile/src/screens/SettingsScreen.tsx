@@ -2,36 +2,45 @@
  * Settings Screen - App configuration and user preferences
  */
 
-import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { signOut } from 'firebase/auth';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../services/firebase';
 
 export default function SettingsScreen() {
-  const [pushNotifications, setPushNotifications] = useState(true);
+  const { user } = useAuth();
+  const navigation = useNavigation();
   const [offlineMode, setOfflineMode] = useState(true);
   const [locationTracking, setLocationTracking] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [syncOnWifi, setSyncOnWifi] = useState(false);
 
-  const handleClearCache = () => {
+  const handleSignOut = () => {
     Alert.alert(
-      'Clear Cache',
-      'This will clear all cached data. Are you sure?',
+      'Sign Out',
+      'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Clear',
+          text: 'Sign Out',
           style: 'destructive',
-          onPress: () => {
-            // Clear cache logic
-            Alert.alert('Success', 'Cache cleared successfully');
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              // Navigation will automatically update due to auth state change
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out');
+            }
           },
         },
       ]
@@ -78,8 +87,8 @@ export default function SettingsScreen() {
           <Text style={styles.avatarText}>👤</Text>
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>Technician User</Text>
-          <Text style={styles.userEmail}>tech@chatterfix.com</Text>
+          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'user@chatterfix.com'}</Text>
         </View>
       </View>
 
@@ -167,7 +176,7 @@ export default function SettingsScreen() {
       </View>
 
       {/* Sign Out */}
-      <TouchableOpacity style={styles.signOutButton}>
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
         <Text style={styles.signOutText}>🚪 Sign Out</Text>
       </TouchableOpacity>
 

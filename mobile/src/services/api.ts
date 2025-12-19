@@ -3,8 +3,8 @@
  * Handles all API communication with the backend
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 
 // Configure base URL
 // In production, this should be set via environment variables or app configuration
@@ -17,16 +17,16 @@ const getApiBaseUrl = (): string => {
     // @ts-ignore
     return process.env.REACT_NATIVE_API_BASE_URL;
   }
-  
+
   // Default fallback - update this for your deployment
-  return 'https://chatterfix-cmms-xaxnqgz3cq-uc.a.run.app';
+  return 'https://chatterfix.com'; // Production URL
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
 // Storage keys
 const STORAGE_KEYS = {
-  AUTH_TOKEN: '@chatterfix_auth_token',
+  AUTH_TOKEN: 'authToken', // Changed to match Firebase token storage
   USER_DATA: '@chatterfix_user_data',
   OFFLINE_QUEUE: '@chatterfix_offline_queue',
   CACHED_DATA: '@chatterfix_cached_data',
@@ -35,16 +35,22 @@ const STORAGE_KEYS = {
 class ApiService {
   private client: AxiosInstance;
   private isOnline: boolean = true;
+  private retryQueue: Array<{ resolve: Function; reject: Function; config: any }> = [];
 
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 15000, // Increased timeout for mobile
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
+    this.setupInterceptors();
+    this.setupNetworkMonitoring();
+  }
+
+  private setupInterceptors() {
     // Request interceptor
     this.client.interceptors.request.use(
       async (config) => {
@@ -65,10 +71,52 @@ class ApiService {
           // Network error - switch to offline mode
           this.isOnline = false;
           console.log('Network error - switching to offline mode');
+
+          // Queue the request for retry when back online
+          return new Promise((resolve, reject) => {
+            this.retryQueue.push({ resolve, reject, config: error.config });
+          });
         }
+
+        // Handle 401 unauthorized (token expired)
+        if (error.response?.status === 401) {
+          await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+          // Could trigger re-authentication here
+        }
+
         return Promise.reject(error);
       }
     );
+  }
+
+  private setupNetworkMonitoring() {
+    // Simple network monitoring - in production, use NetInfo from @react-native-community/netinfo
+    const checkOnlineStatus = async () => {
+      try {
+        await this.client.get('/health', { timeout: 5000 });
+        if (!this.isOnline) {
+          this.isOnline = true;
+          this.processRetryQueue();
+        }
+      } catch {
+        this.isOnline = false;
+      }
+    };
+
+    // Check every 30 seconds
+    setInterval(checkOnlineStatus, 30000);
+  }
+
+  private async processRetryQueue() {
+    while (this.retryQueue.length > 0) {
+      const { resolve, reject, config } = this.retryQueue.shift()!;
+      try {
+        const response = await this.client.request(config);
+        resolve(response);
+      } catch (error) {
+        reject(error);
+      }
+    }
   }
 
   // Set online status
@@ -76,23 +124,34 @@ class ApiService {
     this.isOnline = isOnline;
   }
 
+  // Get online status
+  getOnlineStatus(): boolean {
+    return this.isOnline;
+  }
+
+  // Force retry queued requests
+  async retryQueuedRequests() {
+    if (this.isOnline) {
+      await this.processRetryQueue();
+    }
+  }
+
   // ========== Authentication ==========
 
-  async login(email: string, password: string): Promise<any> {
-    const response = await this.client.post('/auth/login', { email, password });
-    if (response.data.token) {
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.USER_DATA,
-        JSON.stringify(response.data.user)
-      );
-    }
-    return response.data;
+  // Note: Authentication is now handled by Firebase
+  // These methods are kept for backward compatibility but use Firebase tokens
+
+  async setAuthToken(token: string): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
   }
 
   async logout(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
+  }
+
+  async getStoredToken(): Promise<string | null> {
+    return await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   // ========== KPI & Analytics ==========

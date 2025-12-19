@@ -1,22 +1,24 @@
-/**
- * ChatterFix CMMS Mobile Application
- * Main entry point
- */
-
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StyleSheet, View, Text } from 'react-native';
 
-// Import screens (to be created)
-import DashboardScreen from './src/screens/DashboardScreen';
-import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
+// Import authentication context
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+
+// Import screens
 import AssetsScreen from './src/screens/AssetsScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import LoginScreen from './src/screens/LoginScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
+
+// Import components
+import OfflineIndicator from './src/components/OfflineIndicator';
 
 // Create navigation stacks
 const Stack = createNativeStackNavigator();
@@ -35,20 +37,22 @@ const queryClient = new QueryClient({
 // Tab Navigator
 function MainTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: '#3498db',
-        tabBarInactiveTintColor: '#7f8c8d',
-        tabBarStyle: {
-          backgroundColor: '#1a1a2e',
-          borderTopColor: '#2d2d4a',
-        },
-        headerStyle: {
-          backgroundColor: '#1e3c72',
-        },
-        headerTintColor: '#fff',
-      }}
-    >
+    <View style={{ flex: 1 }}>
+      <OfflineIndicator />
+      <Tab.Navigator
+        screenOptions={{
+          tabBarActiveTintColor: '#3498db',
+          tabBarInactiveTintColor: '#7f8c8d',
+          tabBarStyle: {
+            backgroundColor: '#1a1a2e',
+            borderTopColor: '#2d2d4a',
+          },
+          headerStyle: {
+            backgroundColor: '#1e3c72',
+          },
+          headerTintColor: '#fff',
+        }}
+      >
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
@@ -89,22 +93,60 @@ function MainTabs() {
   );
 }
 
+// Auth Navigator
+function AuthStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Root Navigator Component
+function RootNavigator() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3498db" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      {isAuthenticated ? (
+        <Stack.Screen name="Main" component={MainTabs} />
+      ) : (
+        <Stack.Screen name="Auth" component={AuthStack} />
+      )}
+    </Stack.Navigator>
+  );
+}
+
 // Main App Component
 export default function App() {
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="Main" component={MainTabs} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </NavigationContainer>
+        </QueryClientProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

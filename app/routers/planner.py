@@ -821,15 +821,25 @@ async def get_scheduler_analytics():
 
 
 # ========== PM AUTOMATION ENGINE ENDPOINTS ==========
+# All PM endpoints now use Firestore and require organization_id for multi-tenant support
+
+
+def _get_org_id(current_user: Optional[User], demo_org_id: str = "demo_org") -> str:
+    """Helper to get organization_id from user or return demo org."""
+    if current_user and current_user.organization_id:
+        return current_user.organization_id
+    return demo_org_id
 
 
 @router.get("/pm-automation/overview")
 async def get_pm_automation_overview(
-    days_ahead: int = Query(30, description="Days to look ahead")
+    days_ahead: int = Query(30, description="Days to look ahead"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Get comprehensive PM automation overview"""
+    """Get comprehensive PM automation overview for the user's organization"""
     try:
-        overview = await pm_automation_engine.get_pm_schedule_overview(days_ahead)
+        org_id = _get_org_id(current_user)
+        overview = await pm_automation_engine.get_pm_schedule_overview(org_id, days_ahead)
         return JSONResponse(content=overview)
 
     except Exception as e:
@@ -842,9 +852,13 @@ async def get_pm_automation_overview(
 async def generate_pm_schedule(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    create_work_orders: bool = Query(True, description="Create actual work orders"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Generate PM work orders for the specified period"""
     try:
+        org_id = _get_org_id(current_user)
+
         # Parse dates or use defaults
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
@@ -856,41 +870,12 @@ async def generate_pm_schedule(
         else:
             end_dt = start_dt + timedelta(days=30)
 
-        # Generate PM schedule
-        generated_orders = await pm_automation_engine.generate_pm_schedule(
-            start_dt, end_dt
+        # Generate PM schedule (now returns dict, creates actual WOs if requested)
+        result = await pm_automation_engine.generate_pm_schedule(
+            org_id, start_dt, end_dt, create_work_orders=create_work_orders
         )
 
-        # Serialize work orders
-        serialized_orders = []
-        for order in generated_orders:
-            serialized_orders.append(
-                {
-                    "id": order.work_order_id,
-                    "asset_id": order.asset_id,
-                    "template_id": order.template_id,
-                    "title": order.title,
-                    "description": order.description,
-                    "priority": order.priority.name,
-                    "due_date": order.due_date.isoformat(),
-                    "estimated_duration": order.estimated_duration,
-                    "required_skills": order.required_skills,
-                    "required_parts": order.required_parts,
-                    "required_tools": order.required_tools,
-                    "generated_date": order.generated_date.isoformat(),
-                    "trigger_reason": order.trigger_reason,
-                    "can_be_deferred": order.can_be_deferred,
-                    "deferral_count": order.deferral_count,
-                }
-            )
-
-        return JSONResponse(
-            content={
-                "generated_orders": serialized_orders,
-                "total_count": len(serialized_orders),
-                "period": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
-            }
-        )
+        return JSONResponse(content=result)
 
     except Exception as e:
         raise HTTPException(
@@ -902,10 +887,16 @@ async def generate_pm_schedule(
 async def update_meter_reading(
     meter_id: str = Query(..., description="Meter ID to update"),
     new_value: float = Query(..., description="New meter reading value"),
+    reading_source: str = Query("manual", description="Source: manual, iot, api"),
+    create_work_orders: bool = Query(True, description="Create WOs for triggered maintenance"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Update a meter reading and check for triggered maintenance"""
     try:
-        result = await pm_automation_engine.update_meter_reading(meter_id, new_value)
+        org_id = _get_org_id(current_user)
+        result = await pm_automation_engine.update_meter_reading(
+            org_id, meter_id, new_value, reading_source, create_work_orders
+        )
         return JSONResponse(content=result)
 
     except Exception as e:
@@ -915,36 +906,16 @@ async def update_meter_reading(
 
 
 @router.get("/pm-automation/templates")
-async def get_maintenance_templates():
-    """Get all available maintenance templates"""
+async def get_maintenance_templates(
+    maintenance_type: Optional[str] = Query(None, description="Filter by type"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Get all available maintenance templates for the organization"""
     try:
-        templates = {}
-        for template_id, template in pm_automation_engine.maintenance_templates.items():
-            templates[template_id] = {
-                "template_id": template.template_id,
-                "name": template.name,
-                "description": template.description,
-                "maintenance_type": template.maintenance_type.value,
-                "triggers": [
-                    {
-                        "trigger_type": trigger.trigger_type.value,
-                        "threshold_value": trigger.threshold_value,
-                        "warning_threshold": trigger.warning_threshold,
-                        "description": trigger.description,
-                        "unit": trigger.unit,
-                    }
-                    for trigger in template.triggers
-                ],
-                "required_skills": template.required_skills,
-                "estimated_duration": template.estimated_duration,
-                "required_parts": template.required_parts,
-                "required_tools": template.required_tools,
-                "safety_requirements": template.safety_requirements,
-                "procedures": template.procedures,
-                "criticality": template.criticality,
-                "can_be_deferred": template.can_be_deferred,
-                "max_deferral_days": template.max_deferral_days,
-            }
+        org_id = _get_org_id(current_user)
+        templates = await pm_automation_engine.get_maintenance_templates(
+            org_id, maintenance_type=maintenance_type
+        )
 
         return JSONResponse(
             content={"templates": templates, "total_count": len(templates)}
@@ -958,55 +929,102 @@ async def get_maintenance_templates():
 
 @router.get("/pm-automation/asset-meters")
 async def get_asset_meters(
-    asset_id: Optional[str] = Query(None, description="Filter by asset ID")
+    asset_id: Optional[str] = Query(None, description="Filter by asset ID"),
+    meter_type: Optional[str] = Query(None, description="Filter by meter type"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Get asset meter readings and status"""
+    """Get asset meter readings and status for the organization"""
     try:
-        if asset_id:
-            if asset_id not in pm_automation_engine.asset_meters:
-                return JSONResponse(content={"error": "Asset not found"})
+        org_id = _get_org_id(current_user)
+        meters = await pm_automation_engine.get_asset_meters(
+            org_id, asset_id=asset_id, meter_type=meter_type
+        )
 
-            meters_data = {asset_id: []}
-            for meter in pm_automation_engine.asset_meters[asset_id]:
-                meters_data[asset_id].append(
-                    {
-                        "meter_id": meter.meter_id,
-                        "asset_id": meter.asset_id,
-                        "meter_type": meter.meter_type,
-                        "current_value": meter.current_value,
-                        "last_reading_date": meter.last_reading_date.isoformat(),
-                        "reading_frequency": meter.reading_frequency,
-                        "unit": meter.unit,
-                        "is_automated": meter.is_automated,
-                    }
-                )
-        else:
-            meters_data = {}
-            for asset_id, meters in pm_automation_engine.asset_meters.items():
-                meters_data[asset_id] = []
-                for meter in meters:
-                    meters_data[asset_id].append(
-                        {
-                            "meter_id": meter.meter_id,
-                            "asset_id": meter.asset_id,
-                            "meter_type": meter.meter_type,
-                            "current_value": meter.current_value,
-                            "last_reading_date": meter.last_reading_date.isoformat(),
-                            "reading_frequency": meter.reading_frequency,
-                            "unit": meter.unit,
-                            "is_automated": meter.is_automated,
-                        }
-                    )
+        # Group by asset_id for backward compatibility
+        meters_data = {}
+        for meter in meters:
+            aid = meter.get("asset_id", "unknown")
+            if aid not in meters_data:
+                meters_data[aid] = []
+            meters_data[aid].append(meter)
 
         return JSONResponse(
             content={
                 "asset_meters": meters_data,
                 "total_assets": len(meters_data),
-                "total_meters": sum(len(meters) for meters in meters_data.values()),
+                "total_meters": len(meters),
             }
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get asset meters: {str(e)}"
+        )
+
+
+@router.get("/pm-automation/schedule-rules")
+async def get_schedule_rules(
+    asset_id: Optional[str] = Query(None, description="Filter by asset ID"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Get PM schedule rules for the organization"""
+    try:
+        org_id = _get_org_id(current_user)
+        rules = await pm_automation_engine.get_schedule_rules(
+            org_id, asset_id=asset_id, is_active=is_active
+        )
+
+        return JSONResponse(
+            content={"rules": rules, "total_count": len(rules)}
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get schedule rules: {str(e)}"
+        )
+
+
+@router.post("/pm-automation/seed-templates")
+async def seed_pm_templates(
+    global_templates: bool = Query(False, description="Create global templates (admin only)"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Seed default PM templates for the organization (or globally for admin)"""
+    try:
+        if global_templates:
+            # Only allow global template creation for demo or admin
+            org_id = None
+        else:
+            org_id = _get_org_id(current_user)
+
+        result = await pm_automation_engine.seed_default_templates(org_id)
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to seed templates: {str(e)}"
+        )
+
+
+@router.post("/pm-automation/seed-demo-data")
+async def seed_pm_demo_data(
+    asset_ids: Optional[str] = Query(None, description="Comma-separated asset IDs"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """Seed demo PM data (templates, rules, meters) for the organization"""
+    try:
+        org_id = _get_org_id(current_user)
+
+        # Parse asset_ids if provided
+        asset_list = None
+        if asset_ids:
+            asset_list = [aid.strip() for aid in asset_ids.split(",")]
+
+        result = await pm_automation_engine.seed_demo_data(org_id, asset_list)
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to seed demo data: {str(e)}"
         )

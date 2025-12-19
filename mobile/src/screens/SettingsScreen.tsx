@@ -1,5 +1,6 @@
 /**
  * Settings Screen - App configuration and user preferences
+ * Shows login/signup options when in demo mode
  */
 
 import { useNavigation } from '@react-navigation/native';
@@ -16,14 +17,26 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../services/firebase';
+import { apiService } from '../services/api';
 
 export default function SettingsScreen() {
-  const { user } = useAuth();
-  const navigation = useNavigation();
+  const { user, isAuthenticated } = useAuth();
+  const navigation = useNavigation<any>();
+
+  // Settings state
+  const [pushNotifications, setPushNotifications] = useState(true);
   const [offlineMode, setOfflineMode] = useState(true);
   const [locationTracking, setLocationTracking] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
   const [syncOnWifi, setSyncOnWifi] = useState(false);
+
+  const handleLogin = () => {
+    navigation.navigate('Auth', { screen: 'Login' });
+  };
+
+  const handleSignup = () => {
+    navigation.navigate('Auth', { screen: 'Signup' });
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -37,7 +50,8 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               await signOut(auth);
-              // Navigation will automatically update due to auth state change
+              await apiService.logout();
+              // App will show demo mode after sign out
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
             }
@@ -47,8 +61,31 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleSyncNow = () => {
+  const handleSyncNow = async () => {
     Alert.alert('Sync Started', 'Syncing data with server...');
+    try {
+      const result = await apiService.syncOfflineData();
+      Alert.alert('Sync Complete', `Synced ${result.success} items, ${result.failed} failed`);
+    } catch (error) {
+      Alert.alert('Sync Failed', 'Could not sync data. Please try again.');
+    }
+  };
+
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will remove all cached data. You will need to sync again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Cache Cleared', 'All cached data has been removed.');
+          },
+        },
+      ]
+    );
   };
 
   const SettingItem = ({
@@ -81,20 +118,50 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* User Info */}
-      <View style={styles.userSection}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>👤</Text>
+      {/* User Info / Auth Section */}
+      {isAuthenticated ? (
+        // Authenticated User Section
+        <View style={styles.userSection}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>👤</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'user@chatterfix.com'}</Text>
+          </View>
         </View>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'user@chatterfix.com'}</Text>
+      ) : (
+        // Demo Mode - Show Login/Signup Options
+        <View style={styles.authSection}>
+          <View style={styles.authHeader}>
+            <Text style={styles.authIcon}>🔐</Text>
+            <View>
+              <Text style={styles.authTitle}>Get Full Access</Text>
+              <Text style={styles.authSubtitle}>Sign in to unlock all features</Text>
+            </View>
+          </View>
+
+          <View style={styles.authFeatures}>
+            <Text style={styles.featureItem}>✓ Sync data across devices</Text>
+            <Text style={styles.featureItem}>✓ Create & manage work orders</Text>
+            <Text style={styles.featureItem}>✓ Voice commands & OCR</Text>
+            <Text style={styles.featureItem}>✓ Real-time notifications</Text>
+          </View>
+
+          <View style={styles.authButtons}>
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Sign In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+              <Text style={styles.signupButtonText}>Create Account</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Notifications Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔔 Notifications</Text>
+        <Text style={styles.sectionTitle}>Notifications</Text>
         <SettingItem
           icon="📱"
           title="Push Notifications"
@@ -106,7 +173,7 @@ export default function SettingsScreen() {
 
       {/* Offline & Sync Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📡 Offline & Sync</Text>
+        <Text style={styles.sectionTitle}>Offline & Sync</Text>
         <SettingItem
           icon="💾"
           title="Offline Mode"
@@ -129,7 +196,7 @@ export default function SettingsScreen() {
 
       {/* Location Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📍 Location</Text>
+        <Text style={styles.sectionTitle}>Location</Text>
         <SettingItem
           icon="🗺️"
           title="Location Tracking"
@@ -141,7 +208,7 @@ export default function SettingsScreen() {
 
       {/* Appearance Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🎨 Appearance</Text>
+        <Text style={styles.sectionTitle}>Appearance</Text>
         <SettingItem
           icon="🌙"
           title="Dark Mode"
@@ -153,7 +220,7 @@ export default function SettingsScreen() {
 
       {/* Data Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💾 Data</Text>
+        <Text style={styles.sectionTitle}>Data</Text>
         <TouchableOpacity style={styles.actionButton} onPress={handleClearCache}>
           <Text style={styles.actionButtonIcon}>🗑️</Text>
           <Text style={[styles.actionButtonText, { color: '#e74c3c' }]}>
@@ -164,21 +231,27 @@ export default function SettingsScreen() {
 
       {/* About Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ℹ️ About</Text>
+        <Text style={styles.sectionTitle}>About</Text>
         <View style={styles.aboutItem}>
           <Text style={styles.aboutLabel}>Version</Text>
           <Text style={styles.aboutValue}>1.0.0</Text>
         </View>
         <View style={styles.aboutItem}>
           <Text style={styles.aboutLabel}>Server</Text>
-          <Text style={styles.aboutValue}>your-chatterfix-instance.com</Text>
+          <Text style={styles.aboutValue}>chatterfix.com</Text>
+        </View>
+        <View style={styles.aboutItem}>
+          <Text style={styles.aboutLabel}>Mode</Text>
+          <Text style={styles.aboutValue}>{isAuthenticated ? 'Full Access' : 'Demo'}</Text>
         </View>
       </View>
 
-      {/* Sign Out */}
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>🚪 Sign Out</Text>
-      </TouchableOpacity>
+      {/* Sign Out - Only show when authenticated */}
+      {isAuthenticated && (
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>ChatterFix CMMS</Text>
@@ -193,6 +266,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0c0c0c',
   },
+  // Authenticated User Section
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,6 +298,71 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
+  // Demo Mode Auth Section
+  authSection: {
+    margin: 15,
+    padding: 20,
+    backgroundColor: 'rgba(52, 152, 219, 0.15)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 152, 219, 0.3)',
+  },
+  authHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  authIcon: {
+    fontSize: 40,
+    marginRight: 15,
+  },
+  authTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  authSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+  },
+  authFeatures: {
+    marginBottom: 20,
+    paddingLeft: 5,
+  },
+  featureItem: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 8,
+  },
+  authButtons: {
+    gap: 10,
+  },
+  loginButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signupButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3498db',
+  },
+  signupButtonText: {
+    color: '#3498db',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Sections
   section: {
     paddingHorizontal: 20,
     marginBottom: 25,

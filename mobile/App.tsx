@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import authentication context
@@ -19,6 +19,7 @@ import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
 
 // Import components
 import OfflineIndicator from './src/components/OfflineIndicator';
+import DemoBanner from './src/components/DemoBanner';
 
 // Create navigation stacks
 const Stack = createNativeStackNavigator();
@@ -34,11 +35,15 @@ const queryClient = new QueryClient({
   },
 });
 
-// Tab Navigator
+// Tab Navigator - Now always accessible (demo mode when not logged in)
 function MainTabs() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <View style={{ flex: 1 }}>
       <OfflineIndicator />
+      {/* Show demo banner when not authenticated */}
+      {!isAuthenticated && <DemoBanner />}
       <Tab.Navigator
         screenOptions={{
           tabBarActiveTintColor: '#3498db',
@@ -90,10 +95,11 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
+    </View>
   );
 }
 
-// Auth Navigator
+// Auth Navigator - For login/signup screens
 function AuthStack() {
   return (
     <Stack.Navigator
@@ -107,30 +113,24 @@ function AuthStack() {
   );
 }
 
-// Root Navigator Component
+// Root Navigator Component - DEMO FIRST approach
 function RootNavigator() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3498db" />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
     >
-      {isAuthenticated ? (
-        <Stack.Screen name="Main" component={MainTabs} />
-      ) : (
-        <Stack.Screen name="Auth" component={AuthStack} />
-      )}
+      {/* Always show MainTabs first - demo mode when not logged in */}
+      <Stack.Screen name="Main" component={MainTabs} />
+      {/* Auth screens available when user wants to login */}
+      <Stack.Screen
+        name="Auth"
+        component={AuthStack}
+        options={{
+          presentation: 'modal', // Slide up as modal
+        }}
+      />
     </Stack.Navigator>
   );
 }

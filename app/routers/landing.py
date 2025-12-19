@@ -95,14 +95,16 @@ async def public_landing(request: Request):
 async def signup_page(request: Request):
     """Serve the signup page for actual registration"""
     # Firebase configuration for client-side auth
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix")
     firebase_config = (
         {
             "api_key": os.getenv("FIREBASE_API_KEY", ""),
-            "auth_domain": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.firebaseapp.com",
-            "project_id": os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix"),
-            "storage_bucket": f"{os.getenv('GOOGLE_CLOUD_PROJECT', 'fredfix')}.appspot.com",
+            "auth_domain": f"{project_id}.firebaseapp.com",
+            "project_id": project_id,
+            "storage_bucket": os.getenv("FIREBASE_STORAGE_BUCKET", f"{project_id}.firebasestorage.app"),
             "messaging_sender_id": os.getenv("FIREBASE_MESSAGING_SENDER_ID", ""),
             "app_id": os.getenv("FIREBASE_APP_ID", ""),
+            "measurement_id": os.getenv("FIREBASE_MEASUREMENT_ID", ""),
         }
         if os.getenv("FIREBASE_API_KEY")
         else None

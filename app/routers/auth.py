@@ -315,6 +315,10 @@ async def get_auth_config():
     # Always use Firebase
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "fredfix")
     api_key = os.getenv("FIREBASE_API_KEY", "")
+    storage_bucket = os.getenv("FIREBASE_STORAGE_BUCKET", f"{project_id}.firebasestorage.app")
+    messaging_sender_id = os.getenv("FIREBASE_MESSAGING_SENDER_ID", "")
+    app_id = os.getenv("FIREBASE_APP_ID", "")
+    measurement_id = os.getenv("FIREBASE_MEASUREMENT_ID", "")
 
     config = {
         "use_firebase": True,
@@ -322,7 +326,10 @@ async def get_auth_config():
             "apiKey": api_key,
             "authDomain": f"{project_id}.firebaseapp.com",
             "projectId": project_id,
-            "storageBucket": f"{project_id}.appspot.com",
+            "storageBucket": storage_bucket,
+            "messagingSenderId": messaging_sender_id,
+            "appId": app_id,
+            "measurementId": measurement_id,
         },
     }
 

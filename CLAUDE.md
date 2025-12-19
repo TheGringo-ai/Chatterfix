@@ -203,6 +203,88 @@ async def page(request: Request):
 - API routes can use OAuth2 (`get_current_active_user`)
 - Never mix them up - browsers don't send Authorization headers automatically
 
+#### **LESSON #9: Firebase Configuration - Complete Setup Required**
+**Problem**: Firebase authentication or Firestore connections failing in production
+**Root Cause**: Incomplete Firebase configuration - missing fields like `messagingSenderId`, `appId`, `storageBucket`
+**Symptoms**:
+- Firebase SDK initialization errors in browser console
+- "Firebase: No Firebase App" errors
+- Authentication working locally but failing in production
+- Mobile app unable to connect to Firebase
+
+**Solution**: Ensure ALL Firebase configuration fields are present everywhere:
+
+**Required Configuration Fields:**
+```javascript
+const firebaseConfig = {
+  apiKey: "AIzaSy...",                    // From Firebase Console
+  authDomain: "project.firebaseapp.com",  // Your project + .firebaseapp.com
+  projectId: "project-id",                // Your Firebase project ID
+  storageBucket: "project.firebasestorage.app",  // NOTE: New format, not .appspot.com
+  databaseURL: "https://project-default-rtdb.firebaseio.com",  // If using Realtime DB
+  messagingSenderId: "123456789",         // From Cloud Messaging settings
+  appId: "1:123456789:web:abc123",        // From Firebase Console -> Your Apps
+  measurementId: "G-XXXXXXXX"             // From Google Analytics (optional)
+};
+```
+
+**Files That Need Firebase Config:**
+1. `.env` - Backend environment variables
+2. `mobile/src/services/firebase.ts` - Mobile app
+3. `app/routers/auth.py` - `/auth/config` endpoint
+4. `app/routers/landing.py` - Signup page config
+5. GitHub Secrets - For CI/CD deployments
+
+**GitHub Secrets Required:**
+- `FIREBASE_API_KEY`
+- `FIREBASE_APP_ID`
+- `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MEASUREMENT_ID`
+- `GCP_SA_KEY` (Firebase Admin SDK credentials)
+
+**Prevention**:
+- When getting Firebase config from Console, copy ALL fields
+- Keep mobile and web configs in sync
+- Create GitHub secrets for all Firebase values
+- Test both web and mobile auth after config changes
+
+#### **LESSON #10: Pyrebase vs Firebase Admin SDK**
+**Problem**: Pyrebase initialization failing with urllib3 compatibility errors
+**Root Cause**: Pyrebase4 has compatibility issues with newer urllib3 versions
+**Symptoms**:
+- `No module named 'urllib3.contrib.appengine'`
+- `'NoneType' object has no attribute 'initialize_app'`
+
+**Solution**: Don't rely on Pyrebase for authentication. Use this architecture:
+- **Client-side (Web/Mobile)**: Firebase JS SDK for authentication
+- **Server-side**: Firebase Admin SDK for token verification and user management
+
+**Correct Authentication Flow:**
+1. User enters credentials in browser/mobile
+2. Firebase JS SDK authenticates directly with Firebase
+3. Client receives ID token
+4. Client sends token to backend (`/auth/firebase-signin`)
+5. Backend verifies token with Firebase Admin SDK
+6. Backend sets session cookie
+
+**Code Pattern:**
+```python
+# Server only needs Firebase Admin SDK
+from firebase_admin import auth, credentials
+
+# Verify tokens (works without Pyrebase)
+decoded_token = auth.verify_id_token(id_token)
+
+# Create users (works without Pyrebase)
+user = auth.create_user(email=email, password=password)
+```
+
+**Prevention**:
+- Never depend on Pyrebase for core authentication
+- Use Firebase JS SDK on client, Admin SDK on server
+- Pyrebase is optional, only for specific legacy use cases
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)
@@ -402,6 +484,64 @@ GEMINI_API_KEY=(from Secret Manager)
 ---
 
 ## 📋 **RECENT SESSION WORK LOG** (December 2024)
+
+### **Session: Firebase Configuration & Enterprise Package (December 18, 2024)**
+
+#### **1. Enterprise Package Inquiry System (COMPLETED)**
+Added complete enterprise inquiry flow for "Learn More" button:
+
+**Files Modified:**
+- `main.py` - Added `POST /api/enterprise-inquiry` endpoint with Pydantic validation
+- `app/services/email_service.py` - Added `send_enterprise_inquiry()` and `send_admin_notification()` methods
+- `app/templates/base.html` - Added enterprise inquiry modal with form and JavaScript handlers
+
+**Features:**
+- Modal popup with enterprise package features list
+- Contact form (company, name, email, message)
+- Email notifications sent to `yoyofred@gringosgambit.com`
+- Success/error handling with user feedback
+
+#### **2. Firebase Complete Configuration (COMPLETED)**
+Unified Firebase configuration across mobile and web applications:
+
+**Files Modified:**
+- `.env` - Added complete Firebase config (storageBucket, messagingSenderId, appId, measurementId)
+- `mobile/src/services/firebase.ts` - Complete Firebase configuration for mobile app
+- `app/routers/auth.py` - Updated `/auth/config` endpoint with all Firebase fields
+- `app/routers/landing.py` - Updated signup page Firebase config
+
+**Firebase Configuration Values:**
+- Project: `fredfix`
+- Storage Bucket: `fredfix.firebasestorage.app` (new format)
+- Messaging Sender ID: `650169261019`
+- App ID: `1:650169261019:web:b77b48ae85b2cd49eca5fe`
+- Measurement ID: `G-CPFPBM63QZ`
+
+**GitHub Secrets Created:**
+- `FIREBASE_API_KEY`
+- `FIREBASE_APP_ID`
+- `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MEASUREMENT_ID`
+
+#### **3. Asset Editing & Planner Calendar (COMPLETED)**
+- Added `POST /assets/{asset_id}/update` endpoint for editing assets
+- Added edit modal to `asset_detail.html`
+- Fixed planner calendar by passing `advanced_mode: True` to enable FullCalendar
+
+#### **4. Database Verification (COMPLETED)**
+Verified Firestore database structure:
+- **42 collections** with production data
+- Users, work orders, assets, parts, vendors, training modules, etc.
+- Firebase Auth: 10+ registered users
+- All connections tested and verified working
+
+### **Commits This Session:**
+1. `aa514bf1` - feat: Add enterprise package inquiry endpoint and modal
+2. `d3b79867` - fix: Asset editing and planner calendar functionality
+3. `[pending]` - feat: Complete Firebase configuration for mobile and web
+
+---
 
 ### **Session: Multi-Tenant Architecture & AI Work Order Creation**
 

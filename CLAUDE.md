@@ -1,5 +1,30 @@
 # 🚀 ULTIMATE AI DEVELOPMENT PLATFORM - THE MOST ADVANCED SYSTEM KNOWN TO MANKIND
 
+---
+
+## 📚 **START HERE - DOCUMENTATION CENTER**
+
+**AI Team: Before making ANY changes, review the `/documents` folder.**
+
+The `/documents` folder contains all project documentation organized by category:
+
+| Priority | Document | Purpose |
+|----------|----------|---------|
+| 1 | [documents/README.md](./documents/README.md) | **Documentation index - START HERE** |
+| 2 | [documents/CODE_ARCHITECTURE_REVIEW.md](./documents/CODE_ARCHITECTURE_REVIEW.md) | Complete codebase review (A- grade) |
+| 3 | [documents/REVIEW_ACTION_ITEMS.md](./documents/REVIEW_ACTION_ITEMS.md) | Priority tasks and fixes needed |
+| 4 | [documents/CHATTERFIX_COMPLETE_DOCUMENTATION.md](./documents/CHATTERFIX_COMPLETE_DOCUMENTATION.md) | Full system documentation |
+| 5 | This file (CLAUDE.md) | Learned lessons and protocols |
+
+**Key Categories in /documents:**
+- Architecture & Code Review
+- AI Team & Intelligence Systems
+- Deployment & Operations
+- Security Audits
+- Feature Documentation
+
+---
+
 ## 🎯 **CEO MISSION DIRECTIVE - PRIMARY FOCUS**
 
 **CHATTERFIX = TECHNICIAN-FIRST CMMS**

@@ -29,12 +29,12 @@ import os
 
 SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY")
 if not SECRET_KEY:
-    logger.warning(
-        "SECRET_KEY not set in environment - using fallback for development only"
+    # CRITICAL: Always require SECRET_KEY - no fallbacks for security
+    raise ValueError(
+        "SECRET_KEY environment variable is required. "
+        "Set it in .env file or Google Secret Manager. "
+        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
     )
-    if os.getenv("ENVIRONMENT", "development") == "production":
-        raise ValueError("SECRET_KEY environment variable is required in production")
-    SECRET_KEY = "dev-only-secret-key-not-for-production"
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours

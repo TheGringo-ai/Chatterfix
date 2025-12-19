@@ -297,6 +297,58 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(CacheControlMiddleware)
 
+
+# Security Headers Middleware - Prevents XSS, clickjacking, MIME sniffing attacks
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses for production hardening"""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+
+        # Prevent clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+
+        # Enable XSS protection (legacy browsers)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+
+        # Force HTTPS (HSTS) - 1 year with subdomains
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+
+        # Content Security Policy - allow necessary CDNs and Firebase
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+            "https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com "
+            "https://www.googletagmanager.com https://cdn.tailwindcss.com; "
+            "style-src 'self' 'unsafe-inline' "
+            "https://cdn.jsdelivr.net https://fonts.googleapis.com https://cdn.tailwindcss.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https: blob:; "
+            "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com "
+            "https://*.firebaseapp.com https://firestore.googleapis.com wss://*.firebaseio.com; "
+            "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; "
+            "object-src 'none'; "
+            "base-uri 'self';"
+        )
+
+        # Referrer policy for privacy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # Permissions policy (formerly Feature-Policy)
+        response.headers["Permissions-Policy"] = (
+            "camera=(self), microphone=(self), geolocation=(self)"
+        )
+
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Add error tracking middleware
 app.add_middleware(
     ErrorTrackingMiddleware,

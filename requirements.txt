@@ -1,91 +1,77 @@
-# Core FastAPI dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-# websockets>=12.0 - REMOVED: Using FastAPI's built-in WebSocket
-# wsproto>=1.2.0 - REMOVED: WebSocket protocol not needed
-pydantic>=2.5.0
-requests>=2.31.0
-jinja2>=3.1.2
-python-multipart>=0.0.6
-aiofiles>=23.2.1
+# Core FastAPI dependencies - PINNED VERSIONS for reproducible builds
+# Last updated: December 2024
+fastapi==0.124.4
+uvicorn[standard]==0.38.0
+pydantic==2.11.7
+pydantic-settings==2.9.0
+requests==2.32.5
+jinja2==3.1.6
+python-multipart==0.0.20
+aiofiles==25.1.0
 
 # HTTP client for AI Team service
-httpx>=0.25.0
+httpx==0.28.1
 
 # Database - Firebase/Firestore (Primary)
-google-cloud-firestore>=2.13.1
-# google-cloud-storage>=2.13.0 - REMOVED: No cloud storage functionality
-# google-auth>=2.25.2 - REMOVED: Using firebase-admin for auth
-firebase-admin>=6.4.0
-pyrebase4>=4.7.1
+google-cloud-firestore==2.21.0
+firebase-admin==7.1.0
+pyrebase4==4.8.0
 
 # Speech-to-Text for hands-free operation
-google-cloud-speech>=2.23.0
-
-# Database - SQLite (REMOVED: Firestore-only implementation)
-# aiosqlite>=0.19.0 - REMOVED
-# sqlalchemy>=2.0.0 - REMOVED
+google-cloud-speech==2.34.0
 
 # AI & ML
-openai>=1.3.0
-google-generativeai>=0.3.2
-pandas>=2.1.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
-# joblib>=1.3.0 - REMOVED: No ML model persistence implemented
+openai==1.93.4
+google-generativeai==0.8.5
+pandas==2.3.0
+numpy==2.4.2
+scikit-learn==1.8.0
 
 # gRPC & Autogen for AI Team
-grpcio>=1.60.0
-# grpcio-tools>=1.60.0 - REMOVED: Development tools only
-# grpcio-status>=1.60.0 - REMOVED: Advanced gRPC status unused
-# protobuf>=4.25.0 - REMOVED: Not directly imported
-pyautogen>=0.2.0
+grpcio==1.76.0
+pyautogen==0.2.0
 
 # Security & Auth
-bcrypt>=4.1.0
-passlib[bcrypt]>=1.7.4
-PyJWT>=2.8.0  # Replaced python-jose to fix ecdsa vulnerability (CVE-2024-23342)
-cryptography>=41.0.0
-email-validator>=2.1.0  # Required for Pydantic EmailStr in User model
-bleach>=6.0.0
-google-cloud-secret-manager>=2.16.0
+bcrypt==5.0.0
+passlib[bcrypt]==1.7.4
+PyJWT==2.10.1
+cryptography==46.0.3
+email-validator==2.3.0
+bleach==6.3.0
+google-cloud-secret-manager==2.25.0
 
 # Utilities
-python-dotenv>=1.0.0
-psutil>=5.9.0
-slowapi>=0.1.9
-# duckduckgo-search>=3.9.0 - REMOVED: No search implementation found
+python-dotenv==1.2.1
+psutil==7.0.0
+slowapi==0.1.9
 
 # Production
-gunicorn>=21.2.0
+gunicorn==23.0.0
 
 # MCP Server for demo validation
-mcp>=1.0.0
+mcp==1.10.2
 
-# Critical missing dependencies - ADDED for security and functionality
-reportlab>=4.0.0
-sentry-sdk>=1.40.0
-pydantic-settings>=2.1.0
+# Critical dependencies for security and functionality
+reportlab==4.4.6
+sentry-sdk==2.47.0
 
 # Computer Vision & OCR dependencies
-pyzbar>=0.1.9
-qrcode[pil]>=7.4.2
-opencv-python-headless>=4.8.0
-pytesseract>=0.3.10
-pillow>=10.0.0
-easyocr>=1.7.0
-tensorflow>=2.14.0
+pyzbar==0.1.9
+qrcode[pil]==8.2
+opencv-python-headless==4.11.0.88
+pytesseract==0.3.13
+pillow==11.3.0
+easyocr==1.7.2
+tensorflow==2.20.0
 
-# Development dependencies (optional)
-# pytest>=7.4.0
-# pytest-asyncio>=0.21.0
-# pytest-cov>=4.1.0
-# black>=23.0.0
-# flake8>=6.0.0
-# mypy>=1.6.0
-# isort>=5.12.0
-# bandit>=1.7.5
-# safety>=2.3.0
-# pre-commit>=3.5.0
-# setuptools - REMOVED: Already in system
-# packaging>=23.0 - REMOVED: Not directly used
+# Development dependencies (install with: pip install -r requirements-dev.txt)
+# pytest==9.0.2
+# pytest-asyncio==1.3.0
+# pytest-cov==7.0.0
+# black==25.12.0
+# flake8==7.3.0
+# mypy==1.17.1
+# isort==6.0.1
+# bandit==1.9.2
+# safety==3.7.0
+# pre-commit==4.2.0

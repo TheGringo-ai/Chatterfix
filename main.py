@@ -114,6 +114,7 @@ critical_routers = [
 # List of all extended routers
 all_extended_routers = [
     "ai",  # AI endpoints with memory integration
+    "ai_team",  # AI Team Intelligence - context sharing, consensus, monitoring
     "ai_team_collaboration",
     "analytics",
     "assets",

@@ -75,6 +75,14 @@
       ]
     },
     {
+      "collectionGroup": "pm_generated_orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "organization_id", "order": "ASCENDING" },
+        { "fieldPath": "idempotency_key", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "pm_templates",
       "queryScope": "COLLECTION",
       "fields": [

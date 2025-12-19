@@ -634,11 +634,64 @@ class PMAutomationEngine:
         else:
             return "production_equipment"
 
+    def _generate_idempotency_key(
+        self, organization_id: str, rule_id: str, due_date: str
+    ) -> str:
+        """
+        Generate an idempotency key to prevent duplicate work orders.
+
+        Format: {organization_id}_{rule_id}_{YYYYMMDD}
+
+        This ensures that:
+        - Same rule for same org on same day = same key
+        - Running schedule generation multiple times won't create duplicates
+        """
+        # Parse due_date and extract YYYYMMDD
+        try:
+            if isinstance(due_date, str):
+                dt = datetime.fromisoformat(due_date.replace("Z", "+00:00"))
+            else:
+                dt = due_date
+            date_str = dt.strftime("%Y%m%d")
+        except Exception:
+            # Fallback to today if parsing fails
+            date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+        return f"{organization_id}_{rule_id}_{date_str}"
+
     async def _create_work_order_from_pm(
         self, pm_order: Dict[str, Any], organization_id: str
     ) -> Optional[str]:
-        """Create an actual work order in Firestore from PM order data."""
+        """
+        Create an actual work order in Firestore from PM order data.
+
+        Uses idempotency key to prevent duplicate work orders:
+        - If a PM order with the same key exists, returns existing work_order_id
+        - Otherwise creates new work order and PM tracking record
+        """
         try:
+            rule_id = pm_order.get("rule_id", "unknown")
+            due_date = pm_order.get("due_date", "")
+
+            # Generate idempotency key
+            idempotency_key = self._generate_idempotency_key(
+                organization_id, rule_id, due_date
+            )
+
+            # Check for existing PM order with same idempotency key
+            existing_order = await self.firestore_manager.get_pm_order_by_idempotency_key(
+                idempotency_key, organization_id
+            )
+
+            if existing_order:
+                existing_wo_id = existing_order.get("work_order_id")
+                logger.info(
+                    f"Idempotency check: PM order already exists for key {idempotency_key}, "
+                    f"returning existing work order {existing_wo_id}"
+                )
+                return existing_wo_id
+
+            # No duplicate found, create new work order
             work_order_data = {
                 "title": pm_order.get("title"),
                 "description": pm_order.get("description", ""),
@@ -666,10 +719,11 @@ class PMAutomationEngine:
                 work_order_data, organization_id
             )
 
-            # Track in pm_generated_orders
+            # Track in pm_generated_orders with idempotency key
             await self.firestore_manager.create_pm_generated_order(
                 {
                     "work_order_id": wo_id,
+                    "idempotency_key": idempotency_key,  # Store key for future duplicate checks
                     "template_id": pm_order.get("template_id"),
                     "rule_id": pm_order.get("rule_id"),
                     "asset_id": pm_order.get("asset_id"),
@@ -681,7 +735,10 @@ class PMAutomationEngine:
                 organization_id,
             )
 
-            logger.info(f"Created PM work order {wo_id} for org {organization_id}")
+            logger.info(
+                f"Created PM work order {wo_id} for org {organization_id} "
+                f"with idempotency key {idempotency_key}"
+            )
             return wo_id
 
         except Exception as e:

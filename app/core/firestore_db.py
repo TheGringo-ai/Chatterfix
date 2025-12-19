@@ -763,6 +763,31 @@ class FirestoreManager:
             organization_id,
         )
 
+    async def get_pm_order_by_idempotency_key(
+        self, idempotency_key: str, organization_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Check if a PM order already exists with the given idempotency key.
+
+        Idempotency keys follow the format: {organization_id}_{rule_id}_{YYYYMMDD}
+        This prevents duplicate work orders from being created for the same rule on the same day.
+
+        Returns the existing PM order if found, None otherwise.
+        """
+        try:
+            results = await self.get_org_collection(
+                "pm_generated_orders",
+                organization_id,
+                limit=1,
+                additional_filters=[
+                    {"field": "idempotency_key", "operator": "==", "value": idempotency_key}
+                ],
+            )
+            return results[0] if results else None
+        except Exception as e:
+            logger.error(f"Error checking idempotency key {idempotency_key}: {e}")
+            return None
+
     # --- PM Dashboard/Analytics Methods ---
 
     async def get_pm_overview(

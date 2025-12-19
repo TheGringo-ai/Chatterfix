@@ -1,14 +1,19 @@
+import logging
 import os
 import psutil
 import time
-from datetime import datetime
-from typing import Dict, Any
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 import httpx
 
+from app.core.firestore_db import get_firestore_manager
+from app.services.pm_automation_engine import get_pm_automation_engine
+
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Read version from VERSION.txt
 APP_VERSION = "unknown"
@@ -256,3 +261,252 @@ async def check_ai_team_health() -> Dict[str, Any]:
         ai_info["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
 
     return ai_info
+
+
+# ========== CLOUD SCHEDULER ENDPOINTS ==========
+# These endpoints are designed to be called by Cloud Scheduler with OIDC authentication
+
+
+def _verify_scheduler_auth(authorization: Optional[str]) -> bool:
+    """
+    Verify Cloud Scheduler OIDC token.
+
+    In production, Cloud Scheduler sends an OIDC token in the Authorization header.
+    For local development, we allow requests without auth or with a dev token.
+    """
+    env = os.getenv("ENVIRONMENT", "development").lower()
+
+    # In development, allow unauthenticated requests for testing
+    if env in ["development", "dev", "local"]:
+        return True
+
+    # In production, require authorization header
+    if not authorization:
+        return False
+
+    # Cloud Scheduler sends "Bearer <token>"
+    if authorization.startswith("Bearer "):
+        # In a full implementation, verify the OIDC token with Google
+        # For now, we trust that Cloud Run's built-in auth handles this
+        return True
+
+    return False
+
+
+@router.post("/scheduled/pm-generation")
+async def scheduled_pm_generation(
+    days_ahead: int = Query(30, description="Days to generate PM for"),
+    dry_run: bool = Query(False, description="If true, don't create actual work orders"),
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Cloud Scheduler endpoint for automated PM work order generation.
+
+    This endpoint iterates through all organizations with active PM rules
+    and generates work orders for due maintenance tasks.
+
+    Security: Protected by Cloud Run IAM + OIDC token from Cloud Scheduler.
+
+    Setup Cloud Scheduler job:
+    ```bash
+    gcloud scheduler jobs create http pm-daily-generation \
+      --location=us-central1 \
+      --schedule="0 6 * * *" \
+      --uri="https://chatterfix.com/scheduled/pm-generation" \
+      --http-method=POST \
+      --oidc-service-account-email=YOUR_SA@PROJECT.iam.gserviceaccount.com \
+      --oidc-token-audience="https://chatterfix.com"
+    ```
+    """
+    start_time = time.time()
+
+    # Verify scheduler authentication
+    if not _verify_scheduler_auth(authorization):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized - Cloud Scheduler OIDC token required",
+        )
+
+    try:
+        firestore_manager = get_firestore_manager()
+        pm_engine = get_pm_automation_engine()
+
+        # Get all organizations
+        orgs = await firestore_manager.get_collection("organizations")
+        logger.info(f"PM generation starting for {len(orgs)} organizations")
+
+        results = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "organizations_processed": 0,
+            "total_work_orders_created": 0,
+            "total_pm_orders_generated": 0,
+            "errors": [],
+            "details": [],
+        }
+
+        end_date = datetime.now(timezone.utc) + timedelta(days=days_ahead)
+
+        for org in orgs:
+            org_id = org.get("id")
+            org_name = org.get("name", "Unknown")
+
+            # Skip demo organizations
+            if org.get("is_demo"):
+                continue
+
+            try:
+                # Check if org has active PM rules
+                rules = await firestore_manager.get_pm_schedule_rules(
+                    org_id, is_active=True
+                )
+
+                if not rules:
+                    continue  # No PM rules configured
+
+                # Generate PM schedule
+                result = await pm_engine.generate_pm_schedule(
+                    org_id,
+                    start_date=datetime.now(timezone.utc),
+                    end_date=end_date,
+                    create_work_orders=not dry_run,
+                )
+
+                results["organizations_processed"] += 1
+                results["total_pm_orders_generated"] += result.get("generated_count", 0)
+                results["total_work_orders_created"] += result.get(
+                    "work_orders_created", 0
+                )
+
+                results["details"].append(
+                    {
+                        "organization_id": org_id,
+                        "organization_name": org_name,
+                        "active_rules": len(rules),
+                        "pm_orders_generated": result.get("generated_count", 0),
+                        "work_orders_created": result.get("work_orders_created", 0),
+                    }
+                )
+
+                logger.info(
+                    f"PM generation for {org_name}: {result.get('generated_count', 0)} orders"
+                )
+
+            except Exception as e:
+                error_msg = f"Error processing org {org_name} ({org_id}): {str(e)}"
+                logger.error(error_msg)
+                results["errors"].append(error_msg)
+
+        results["execution_time_ms"] = round((time.time() - start_time) * 1000, 2)
+        results["dry_run"] = dry_run
+        results["days_ahead"] = days_ahead
+
+        logger.info(
+            f"PM generation complete: {results['total_work_orders_created']} WOs created "
+            f"for {results['organizations_processed']} orgs in {results['execution_time_ms']}ms"
+        )
+
+        return JSONResponse(content=results)
+
+    except Exception as e:
+        logger.error(f"PM generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"PM generation failed: {str(e)}",
+        )
+
+
+@router.post("/scheduled/meter-threshold-check")
+async def scheduled_meter_threshold_check(
+    authorization: Optional[str] = Header(None),
+):
+    """
+    Cloud Scheduler endpoint for checking meter thresholds and triggering alerts.
+
+    This endpoint checks all asset meters across organizations for threshold
+    violations and can trigger condition-based maintenance work orders.
+
+    Setup Cloud Scheduler job (every 4 hours):
+    ```bash
+    gcloud scheduler jobs create http meter-threshold-check \
+      --location=us-central1 \
+      --schedule="0 */4 * * *" \
+      --uri="https://chatterfix.com/scheduled/meter-threshold-check" \
+      --http-method=POST \
+      --oidc-service-account-email=YOUR_SA@PROJECT.iam.gserviceaccount.com
+    ```
+    """
+    start_time = time.time()
+
+    if not _verify_scheduler_auth(authorization):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized - Cloud Scheduler OIDC token required",
+        )
+
+    try:
+        firestore_manager = get_firestore_manager()
+
+        # Get all organizations
+        orgs = await firestore_manager.get_collection("organizations")
+
+        results = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "organizations_checked": 0,
+            "critical_alerts": 0,
+            "warning_alerts": 0,
+            "details": [],
+        }
+
+        for org in orgs:
+            org_id = org.get("id")
+            org_name = org.get("name", "Unknown")
+
+            if org.get("is_demo"):
+                continue
+
+            try:
+                # Check for meters exceeding thresholds
+                critical = await firestore_manager.get_meters_exceeding_threshold(
+                    org_id, "critical"
+                )
+                warning = await firestore_manager.get_meters_exceeding_threshold(
+                    org_id, "warning"
+                )
+
+                if critical or warning:
+                    results["organizations_checked"] += 1
+                    results["critical_alerts"] += len(critical)
+                    results["warning_alerts"] += len(warning)
+
+                    results["details"].append(
+                        {
+                            "organization_id": org_id,
+                            "organization_name": org_name,
+                            "critical_meters": len(critical),
+                            "warning_meters": len(warning),
+                            "critical_details": [
+                                {
+                                    "meter_id": m.get("id"),
+                                    "asset_id": m.get("asset_id"),
+                                    "meter_type": m.get("meter_type"),
+                                    "current_value": m.get("current_value"),
+                                    "threshold": m.get("threshold_critical"),
+                                }
+                                for m in critical
+                            ],
+                        }
+                    )
+
+            except Exception as e:
+                logger.error(f"Error checking meters for {org_name}: {str(e)}")
+
+        results["execution_time_ms"] = round((time.time() - start_time) * 1000, 2)
+
+        return JSONResponse(content=results)
+
+    except Exception as e:
+        logger.error(f"Meter threshold check failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Meter threshold check failed: {str(e)}",
+        )

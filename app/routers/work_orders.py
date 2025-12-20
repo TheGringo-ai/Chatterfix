@@ -33,6 +33,7 @@ from app.models.user import User
 from typing import Optional as OptionalType
 from app.services.work_order_service import work_order_service
 from app.services.notification_service import NotificationService
+from app.utils.sanitization import sanitize_text, sanitize_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -108,15 +109,31 @@ async def create_work_order(
     current_user: User = Depends(require_permission("create_work_order_request")),
 ):
     """Create a new work order"""
+    # Sanitize user inputs to prevent XSS/injection
+    safe_title = sanitize_text(title, max_length=200)
+    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True)
+
+    # Validate priority against whitelist
+    allowed_priorities = {"Low", "Medium", "High", "Critical"}
+    safe_priority = priority if priority in allowed_priorities else "Medium"
+
+    # Validate status against whitelist
+    allowed_statuses = {"Open", "In Progress", "On Hold", "Completed", "Cancelled"}
+    safe_status = status if status in allowed_statuses else "Open"
+
+    # Validate work order type against whitelist
+    allowed_types = {"Corrective", "Preventive", "Emergency", "Inspection", "General"}
+    safe_type = work_order_type if work_order_type in allowed_types else "Corrective"
+
     work_order_data = {
-        "title": title,
-        "description": description,
-        "priority": priority,
-        "status": status,
-        "assigned_to_uid": assigned_to_uid,
-        "asset_id": asset_id,
-        "work_order_type": work_order_type,
-        "due_date": due_date,
+        "title": safe_title,
+        "description": safe_description,
+        "priority": safe_priority,
+        "status": safe_status,
+        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else None,
+        "asset_id": sanitize_identifier(asset_id) if asset_id else None,
+        "work_order_type": safe_type,
+        "due_date": due_date,  # Validated by Pydantic/date parsing
     }
     # Multi-tenant: associate work order with user's organization
     wo_id = await work_order_service.create_work_order(
@@ -147,12 +164,24 @@ async def update_work_order(
     current_user: User = Depends(require_permission("update_status")),
 ):
     """Update an existing work order"""
+    # Sanitize user inputs to prevent XSS/injection
+    safe_title = sanitize_text(title, max_length=200)
+    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True)
+
+    # Validate priority against whitelist
+    allowed_priorities = {"Low", "Medium", "High", "Critical"}
+    safe_priority = priority if priority in allowed_priorities else "Medium"
+
+    # Validate status against whitelist
+    allowed_statuses = {"Open", "In Progress", "On Hold", "Completed", "Cancelled"}
+    safe_status = status if status in allowed_statuses else "Open"
+
     update_data = {
-        "title": title,
-        "description": description,
-        "priority": priority,
-        "status": status,
-        "assigned_to_uid": assigned_to_uid,
+        "title": safe_title,
+        "description": safe_description,
+        "priority": safe_priority,
+        "status": safe_status,
+        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else None,
         "due_date": due_date,
     }
     # Multi-tenant: validate work order belongs to user's organization

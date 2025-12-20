@@ -1,11 +1,23 @@
 /**
  * API Service for ChatterFix Mobile App
  * Handles all API communication with the backend
+ *
+ * Features:
+ * - Context-aware voice commands with asset/GPS context
+ * - Proper error handling for file upload validation (413, 400)
+ * - Offline queue with automatic retry
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import Constants from 'expo-constants';
+import {
+  VoiceCommandPayload,
+  VoiceCommandResponse,
+  UploadError,
+  GeoLocation,
+  AssetContext,
+} from '../types/voice';
 
 // Get API base URL from Expo Constants (set in app.config.ts)
 const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'https://chatterfix.com';
@@ -64,10 +76,47 @@ class ApiService {
           });
         }
 
+        const status = error.response?.status;
+        const data = error.response?.data as any;
+
         // Handle 401 unauthorized (token expired)
-        if (error.response?.status === 401) {
+        if (status === 401) {
           await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           // Could trigger re-authentication here
+        }
+
+        // Handle 413 Payload Too Large (file upload size limit)
+        if (status === 413) {
+          const uploadError: UploadError = {
+            code: 'FILE_TOO_LARGE',
+            message: data?.detail || 'File too large. Maximum size is 10 MB.',
+            max_size_mb: 10,
+          };
+          return Promise.reject(uploadError);
+        }
+
+        // Handle 400 Bad Request (invalid file type, extension, etc.)
+        if (status === 400 && data?.detail) {
+          const detail = data.detail.toLowerCase();
+          let uploadError: UploadError;
+
+          if (detail.includes('extension') || detail.includes('file type')) {
+            uploadError = {
+              code: 'INVALID_EXTENSION',
+              message: data.detail,
+            };
+          } else if (detail.includes('content type') || detail.includes('mime')) {
+            uploadError = {
+              code: 'INVALID_TYPE',
+              message: data.detail,
+            };
+          } else {
+            uploadError = {
+              code: 'UPLOAD_FAILED',
+              message: data.detail,
+            };
+          }
+          return Promise.reject(uploadError);
         }
 
         return Promise.reject(error);
@@ -311,6 +360,100 @@ class ApiService {
   async getSpeechServiceStatus(): Promise<any> {
     const response = await this.client.get('/ai/transcription-status');
     return response.data;
+  }
+
+  /**
+   * Process voice command with full context awareness
+   *
+   * This is the new context-aware endpoint that resolves "this", "here", "it"
+   * based on the technician's current asset (from QR scan) and GPS location.
+   *
+   * @param payload Voice command with context data
+   * @returns VoiceCommandResponse with resolved asset and action result
+   */
+  async processVoiceCommandWithContext(
+    payload: VoiceCommandPayload
+  ): Promise<VoiceCommandResponse> {
+    const response = await this.client.post('/ai/voice-command-context', payload);
+    return response.data;
+  }
+
+  /**
+   * Send audio file with context for server-side transcription
+   *
+   * Use this when you have raw audio and want the server to transcribe it.
+   * Includes asset context and GPS location for deictic resolution.
+   *
+   * @param audioUri Local URI to the audio file
+   * @param currentAsset Current asset from QR scan/NFC (optional)
+   * @param location GPS coordinates (optional)
+   * @param technicianId Technician's user ID
+   */
+  async sendVoiceAudioWithContext(
+    audioUri: string,
+    technicianId: string,
+    currentAsset?: AssetContext,
+    location?: GeoLocation
+  ): Promise<VoiceCommandResponse> {
+    const formData = new FormData();
+
+    // Append audio file
+    formData.append('audio', {
+      uri: audioUri,
+      type: 'audio/m4a',
+      name: 'voice_command.m4a',
+    } as any);
+
+    // Append technician ID
+    formData.append('technician_id', technicianId);
+
+    // Append asset context if available (from QR scan, NFC, etc.)
+    if (currentAsset) {
+      formData.append('current_asset', JSON.stringify(currentAsset));
+    }
+
+    // Append GPS location if available
+    if (location) {
+      formData.append('location', JSON.stringify(location));
+    }
+
+    const response = await this.client.post('/ai/voice-audio-context', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000, // Longer timeout for audio upload + transcription
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Check if an upload error is a file validation error
+   * Use this to show appropriate user-friendly messages
+   */
+  isUploadError(error: any): error is UploadError {
+    return (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      ['FILE_TOO_LARGE', 'INVALID_TYPE', 'INVALID_EXTENSION', 'UPLOAD_FAILED'].includes(
+        error.code
+      )
+    );
+  }
+
+  /**
+   * Get user-friendly message for upload errors
+   */
+  getUploadErrorMessage(error: UploadError): string {
+    switch (error.code) {
+      case 'FILE_TOO_LARGE':
+        return `File is too large. Please use a file under ${error.max_size_mb || 10} MB.`;
+      case 'INVALID_EXTENSION':
+        return 'This file type is not supported. Please use images, PDFs, videos, or audio files.';
+      case 'INVALID_TYPE':
+        return 'The file content does not match its extension. Please try a different file.';
+      default:
+        return error.message || 'Failed to upload file. Please try again.';
+    }
   }
 
   // ========== OCR & Image Analysis ==========

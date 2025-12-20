@@ -1,14 +1,31 @@
 """
 Voice Commands Service
-AI-powered voice command processing with Grok integration
+AI-powered voice command processing with context awareness and Grok integration
+
+Features:
+- Context-aware command resolution (QR scan, GPS, camera)
+- Input sanitization for security
+- Deictic reference resolution ("this", "here", "it")
+- Integration with AI Memory System
 """
 
-from typing import Optional
 import logging
 import os
+import time
+from typing import Any, Dict, List, Optional
+
+import bleach
 
 # Import work order service for creating work orders from voice commands
 from app.services.work_order_service import work_order_service
+
+# Import models
+from app.models.voice_context import (
+    AssetContext,
+    GeoLocation,
+    VoiceCommandRequest,
+    VoiceCommandResponse,
+)
 
 # Import AI Memory Service for capturing interactions
 try:
@@ -24,47 +41,331 @@ try:
 except ImportError:
     VOICE_MEMORY_AVAILABLE = False
 
+# Import asset service for context resolution
+try:
+    from app.core.firestore_db import get_firestore_manager
+    FIRESTORE_AVAILABLE = True
+except ImportError:
+    FIRESTORE_AVAILABLE = False
+
+# Import geolocation service
+try:
+    from app.services.geolocation_service import GeolocationService
+    GEO_AVAILABLE = True
+except ImportError:
+    GEO_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 XAI_API_KEY = os.getenv("XAI_API_KEY")
 DATABASE_PATH = os.getenv("CMMS_DB_PATH", "./data/cmms.db")
 
+# Deictic reference triggers - words that need context to resolve
+DEICTIC_TRIGGERS = ["this", "it", "here", "that", "these", "those"]
+CONTEXT_ACTION_TRIGGERS = ["broken", "leak", "fix", "repair", "inspect", "check", "record"]
 
-async def process_voice_command(voice_text: str, technician_id: Optional[str] = None):
+
+def sanitize_input(text: str) -> str:
     """
-    Process voice commands with AI intelligence and create a work order.
+    Sanitize voice input to prevent injection attacks.
+
+    Strips HTML/script tags and dangerous characters while
+    preserving the natural language content.
+    """
+    if not text:
+        return ""
+
+    # Remove HTML tags and scripts
+    cleaned = bleach.clean(text, tags=[], attributes={}, strip=True)
+
+    # Remove null bytes and control characters (except newlines/tabs)
+    cleaned = ''.join(char for char in cleaned if ord(char) >= 32 or char in '\n\r\t')
+
+    # Limit length to prevent DoS
+    cleaned = cleaned[:2000]
+
+    return cleaned.strip()
+
+
+async def resolve_asset_context(
+    asset_id: Optional[str] = None,
+    asset_context: Optional[AssetContext] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Resolve asset details from asset ID or context.
+
+    Returns asset info dict or None if not found.
+    """
+    if not FIRESTORE_AVAILABLE:
+        return None
+
+    try:
+        target_id = asset_id or (asset_context.asset_id if asset_context else None)
+        if not target_id:
+            return None
+
+        firestore = get_firestore_manager()
+        asset = await firestore.get_document("assets", target_id)
+
+        if asset:
+            return {
+                "id": target_id,
+                "name": asset.get("name", "Unknown Asset"),
+                "type": asset.get("asset_type", "equipment"),
+                "location": asset.get("location", ""),
+                "status": asset.get("status", "operational"),
+            }
+    except Exception as e:
+        logger.warning(f"Failed to resolve asset context: {e}")
+
+    return None
+
+
+async def resolve_location_context(
+    location: Optional[GeoLocation] = None,
+    radius_meters: float = 15.0,
+) -> List[Dict[str, Any]]:
+    """
+    Find nearby assets based on GPS location.
+
+    Returns list of nearby assets sorted by distance.
+    """
+    if not location or not GEO_AVAILABLE:
+        return []
+
+    try:
+        geo_service = GeolocationService()
+        # Check if technician is within property boundaries
+        within_property = await geo_service.is_within_property(
+            location.latitude, location.longitude
+        )
+
+        if not within_property:
+            logger.info("Technician outside property boundaries, skipping location context")
+            return []
+
+        # Get nearby assets (implementation would query assets with geo data)
+        # For now, return empty - this would integrate with asset geo-tagging
+        return []
+
+    except Exception as e:
+        logger.warning(f"Failed to resolve location context: {e}")
+
+    return []
+
+
+def build_context_prompt(
+    voice_text: str,
+    resolved_asset: Optional[Dict[str, Any]] = None,
+    nearby_assets: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """
+    Build context-enriched prompt for AI processing.
+
+    Appends context information that helps AI models understand
+    deictic references like "this", "here", "it".
+    """
+    voice_lower = voice_text.lower()
+    context_clues = []
+
+    # Check if the command contains context-dependent words
+    has_deictic = any(trigger in voice_lower for trigger in DEICTIC_TRIGGERS)
+    has_action = any(trigger in voice_lower for trigger in CONTEXT_ACTION_TRIGGERS)
+
+    if not (has_deictic or has_action):
+        # No context needed
+        return voice_text
+
+    # Add asset context if available (highest priority - from QR/NFC scan)
+    if resolved_asset:
+        context_clues.append(
+            f"CURRENT_ASSET: Technician is inspecting '{resolved_asset['name']}' "
+            f"(ID: {resolved_asset['id']}, Type: {resolved_asset['type']})"
+        )
+        if resolved_asset.get('location'):
+            context_clues.append(f"ASSET_LOCATION: {resolved_asset['location']}")
+
+    # Add nearby assets if available (fallback - from GPS)
+    elif nearby_assets:
+        asset_names = ", ".join([a['name'] for a in nearby_assets[:3]])
+        context_clues.append(f"NEARBY_ASSETS: Technician is near: {asset_names}")
+
+    # Build final prompt with context
+    if context_clues:
+        context_block = " | ".join(context_clues)
+        return f"{voice_text}\n\n[CONTEXT: {context_block}]"
+
+    return voice_text
+
+
+async def process_voice_command_with_context(
+    request: VoiceCommandRequest,
+) -> VoiceCommandResponse:
+    """
+    Process voice commands with full context awareness.
+
+    This is the primary entry point for context-aware voice processing.
+    Resolves "this", "here", "it" using scanned assets or geolocation.
+    """
+    start_time = time.time()
+
+    # 1. Sanitize input
+    sanitized_text = sanitize_input(request.voice_text)
+    if not sanitized_text:
+        return VoiceCommandResponse(
+            success=False,
+            original_text=request.voice_text,
+            processed_text="",
+            response_text="I couldn't understand your command. Please try again."
+        )
+
+    # 2. Resolve asset context (from QR scan, NFC, or manual selection)
+    resolved_asset = None
+    if request.current_asset:
+        resolved_asset = await resolve_asset_context(
+            asset_context=request.current_asset
+        )
+
+    # 3. Resolve location context (fallback if no asset scanned)
+    nearby_assets = []
+    if not resolved_asset and request.location:
+        nearby_assets = await resolve_location_context(request.location)
+
+    # 4. Build context-enriched prompt
+    processed_text = build_context_prompt(
+        sanitized_text,
+        resolved_asset,
+        nearby_assets,
+    )
+
+    # 5. Log contextual interaction
+    logger.info(
+        f"Voice Command: '{sanitized_text[:50]}...' | "
+        f"Asset: {resolved_asset['name'] if resolved_asset else 'None'} | "
+        f"Nearby: {len(nearby_assets)} assets"
+    )
+
+    # 6. Process the command (create work order, navigate, etc.)
+    action_result = await _execute_voice_action(
+        processed_text,
+        sanitized_text,
+        request.technician_id,
+        resolved_asset,
+    )
+
+    # 7. Calculate processing time
+    processing_time = int((time.time() - start_time) * 1000)
+
+    return VoiceCommandResponse(
+        success=action_result.get("success", False),
+        original_text=request.voice_text,
+        processed_text=processed_text,
+        context_used=bool(resolved_asset or nearby_assets),
+        resolved_asset_id=resolved_asset["id"] if resolved_asset else None,
+        resolved_asset_name=resolved_asset["name"] if resolved_asset else None,
+        action=action_result.get("action"),
+        action_result=action_result.get("result"),
+        response_text=action_result.get("message"),
+        processing_time_ms=processing_time,
+    )
+
+
+async def _execute_voice_action(
+    processed_text: str,
+    original_text: str,
+    technician_id: Optional[str],
+    resolved_asset: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Execute the action based on the voice command.
     """
     try:
-        ai_analysis = "AI Analysis: Processing voice command"
-        if XAI_API_KEY:
-            # ... (Grok AI analysis logic remains the same)
-            pass
-
+        # Detect priority
         priority = "Medium"
-        if any(
-            word in voice_text.lower() for word in ["urgent", "emergency", "critical"]
-        ):
+        text_lower = original_text.lower()
+        if any(word in text_lower for word in ["urgent", "emergency", "critical"]):
             priority = "High"
+        elif any(word in text_lower for word in ["low", "minor", "when possible"]):
+            priority = "Low"
 
+        # Build work order title
+        if resolved_asset:
+            title = f"{resolved_asset['name']}: {original_text[:40]}"
+        else:
+            title = f"Voice Command: {original_text[:50]}"
+
+        # Create work order data
         work_order_data = {
-            "title": f"Voice Command: {voice_text[:50]}",
-            "description": f"{voice_text}\n\nAI Analysis:\n{ai_analysis}",
+            "title": title,
+            "description": f"{original_text}\n\n---\nProcessed Context:\n{processed_text}",
             "priority": priority,
             "status": "Open",
             "assigned_to_uid": str(technician_id) if technician_id else None,
-            "work_order_type": "Voice Command",
+            "work_order_type": detect_work_order_type(original_text),
+            "asset_id": resolved_asset["id"] if resolved_asset else None,
+            "asset_name": resolved_asset["name"] if resolved_asset else None,
         }
 
+        # Create the work order
         work_order_id = await work_order_service.create_work_order(work_order_data)
+
+        # Build response message
+        if resolved_asset:
+            message = f"Work order created for {resolved_asset['name']}"
+        else:
+            message = "Work order created successfully"
 
         return {
             "success": True,
-            "work_order_id": work_order_id,
-            "message": "Voice command processed and work order created",
+            "action": "create_work_order",
+            "result": {"work_order_id": work_order_id},
+            "message": message,
         }
+
     except Exception as e:
-        logger.error(f"Voice command processing failed: {e}")
-        return {"success": False, "error": str(e)}
+        logger.error(f"Voice action execution failed: {e}")
+        return {
+            "success": False,
+            "action": "error",
+            "message": f"Failed to process command: {str(e)}",
+        }
+
+
+# Legacy function for backwards compatibility
+async def process_voice_command(
+    voice_text: str,
+    technician_id: Optional[str] = None,
+    current_asset_id: Optional[str] = None,
+    location: Optional[Dict[str, float]] = None,
+):
+    """
+    Process voice commands with AI intelligence and create a work order.
+
+    This is the legacy function maintained for backwards compatibility.
+    New code should use process_voice_command_with_context() with VoiceCommandRequest.
+    """
+    # Sanitize input
+    sanitized_text = sanitize_input(voice_text)
+
+    # Build request object
+    request = VoiceCommandRequest(
+        voice_text=sanitized_text,
+        technician_id=technician_id,
+        current_asset=AssetContext(asset_id=current_asset_id) if current_asset_id else None,
+        location=GeoLocation(**location) if location else None,
+    )
+
+    # Process with new context-aware function
+    response = await process_voice_command_with_context(request)
+
+    # Return legacy format
+    return {
+        "success": response.success,
+        "work_order_id": response.action_result.get("work_order_id") if response.action_result else None,
+        "message": response.response_text,
+        "context_used": response.context_used,
+        "resolved_asset": response.resolved_asset_name,
+    }
 
 
 def process_voice_shortcuts(voice_text: str):

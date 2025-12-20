@@ -1,6 +1,11 @@
 /**
  * Voice Commands Screen
  * Hands-free work order creation and AI interaction for technicians
+ *
+ * Context-Aware Features:
+ * - Automatically includes scanned asset from QR/NFC
+ * - Includes GPS location for "here" context
+ * - Resolves "this", "it", "here" to actual assets
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -17,7 +22,11 @@ import {
 } from 'react-native';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
+import * as Location from 'expo-location';
 import { apiService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useAssetContext } from '../contexts/AssetContext';
+import { GeoLocation, VoiceCommandPayload } from '../types/voice';
 
 interface CommandResult {
   id: string;
@@ -44,13 +53,37 @@ export default function VoiceCommandsScreen() {
   const [commandHistory, setCommandHistory] = useState<CommandResult[]>([]);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<GeoLocation | null>(null);
+
+  // Get context from providers
+  const { user } = useAuth();
+  const { currentAsset, hasAssetContext } = useAssetContext();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     checkPermissions();
+    requestLocationPermission();
   }, []);
+
+  // Request location permission for "here" context
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({});
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          accuracy: location.coords.accuracy || undefined,
+          altitude: location.coords.altitude || undefined,
+        });
+      }
+    } catch (error) {
+      console.log('Location permission denied or error:', error);
+    }
+  };
 
   useEffect(() => {
     if (isRecording) {
@@ -130,12 +163,77 @@ export default function VoiceCommandsScreen() {
       setRecording(null);
 
       if (uri) {
-        // For now, simulate transcription - in production, send to speech-to-text API
-        // The backend handles the actual transcription
-        await processVoiceCommand('Create a work order for pump maintenance on unit 5');
+        // Send audio with context to backend for transcription + processing
+        try {
+          const response = await apiService.sendVoiceAudioWithContext(
+            uri,
+            user?.uid || 'anonymous',
+            currentAsset || undefined,
+            currentLocation || undefined
+          );
+
+          // Process the response
+          const result: CommandResult = {
+            id: Date.now().toString(),
+            command: response.original_text || 'Voice command',
+            response: response.response_text || 'Command processed',
+            action: response.action,
+            success: response.success,
+            timestamp: new Date(),
+          };
+
+          setTranscript(response.original_text || '');
+          setCommandHistory(prev => [result, ...prev]);
+
+          // Speak the response
+          if (response.response_text) {
+            Speech.speak(response.response_text, {
+              language: 'en-US',
+              pitch: 1,
+              rate: 0.9,
+            });
+          }
+
+          // Show context info if used
+          if (response.context_used && response.resolved_asset_name) {
+            Alert.alert(
+              'Context Applied',
+              `Resolved to: ${response.resolved_asset_name}`,
+              [{ text: 'OK' }]
+            );
+          }
+
+          // Handle work order creation
+          if (response.action === 'create_work_order' && response.action_result?.work_order_id) {
+            Alert.alert(
+              'Work Order Created',
+              `Work order #${response.action_result.work_order_id} has been created.`,
+              [{ text: 'View', onPress: () => {} }, { text: 'OK' }]
+            );
+          }
+        } catch (error: any) {
+          // Handle upload errors gracefully
+          if (apiService.isUploadError(error)) {
+            const message = apiService.getUploadErrorMessage(error);
+            Alert.alert('Upload Error', message);
+            Speech.speak(message, { language: 'en-US' });
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to stop recording:', error);
+      const result: CommandResult = {
+        id: Date.now().toString(),
+        command: 'Voice command',
+        response: 'Failed to process recording. Please try again.',
+        success: false,
+        timestamp: new Date(),
+      };
+      setCommandHistory(prev => [result, ...prev]);
+      Speech.speak('Failed to process recording.', { language: 'en-US' });
+    } finally {
       setIsProcessing(false);
       setTranscript('');
     }
@@ -145,49 +243,69 @@ export default function VoiceCommandsScreen() {
     try {
       setTranscript(command);
 
-      const response = await apiService.processVoiceCommand(command, 'general');
+      // Build context-aware payload
+      const payload: VoiceCommandPayload = {
+        voice_text: command,
+        technician_id: user?.uid,
+        current_asset: currentAsset || undefined,
+        location: currentLocation || undefined,
+      };
+
+      // Use context-aware API
+      const response = await apiService.processVoiceCommandWithContext(payload);
 
       const result: CommandResult = {
         id: Date.now().toString(),
         command,
-        response: response.response || response.message || 'Command processed',
+        response: response.response_text || 'Command processed',
         action: response.action,
-        success: true,
+        success: response.success,
         timestamp: new Date(),
       };
 
       setCommandHistory(prev => [result, ...prev]);
 
       // Speak the response
-      if (response.response) {
-        Speech.speak(response.response, {
+      if (response.response_text) {
+        Speech.speak(response.response_text, {
           language: 'en-US',
           pitch: 1,
           rate: 0.9,
         });
       }
 
+      // Show context resolution info
+      if (response.context_used && response.resolved_asset_name) {
+        console.log(`Context resolved to: ${response.resolved_asset_name}`);
+      }
+
       // Handle specific actions
-      if (response.action === 'create_work_order' && response.work_order_id) {
+      if (response.action === 'create_work_order' && response.action_result?.work_order_id) {
         Alert.alert(
           'Work Order Created',
-          `Work order #${response.work_order_id} has been created successfully.`,
+          `Work order #${response.action_result.work_order_id} has been created for ${response.resolved_asset_name || 'equipment'}.`,
           [{ text: 'View', onPress: () => {} }, { text: 'OK' }]
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing command:', error);
+
+      // Handle upload/API errors
+      let errorMessage = 'Sorry, I could not process that command. Please try again.';
+      if (apiService.isUploadError(error)) {
+        errorMessage = apiService.getUploadErrorMessage(error);
+      }
 
       const result: CommandResult = {
         id: Date.now().toString(),
         command,
-        response: 'Sorry, I could not process that command. Please try again.',
+        response: errorMessage,
         success: false,
         timestamp: new Date(),
       };
 
       setCommandHistory(prev => [result, ...prev]);
-      Speech.speak('Sorry, I could not process that command.', { language: 'en-US' });
+      Speech.speak(errorMessage, { language: 'en-US' });
     } finally {
       setIsProcessing(false);
       setTranscript('');
@@ -219,6 +337,23 @@ export default function VoiceCommandsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Voice Commands</Text>
         <Text style={styles.subtitle}>Hands-free work order management</Text>
+
+        {/* Context Indicator - Shows when asset is scanned */}
+        {hasAssetContext && currentAsset && (
+          <View style={styles.contextBanner}>
+            <Text style={styles.contextIcon}>📍</Text>
+            <View style={styles.contextInfo}>
+              <Text style={styles.contextLabel}>Current Asset</Text>
+              <Text style={styles.contextValue}>
+                {currentAsset.asset_name || currentAsset.asset_id}
+              </Text>
+            </View>
+            <Text style={styles.contextSource}>
+              {currentAsset.source === 'qr_scan' ? 'QR' :
+               currentAsset.source === 'nfc_tap' ? 'NFC' : 'Selected'}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Main Microphone Button */}
@@ -481,5 +616,46 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Context Banner Styles
+  contextBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e3c72',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#4a90d9',
+  },
+  contextIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  contextInfo: {
+    flex: 1,
+  },
+  contextLabel: {
+    color: '#88a8d9',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  contextValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  contextSource: {
+    color: '#4a90d9',
+    fontSize: 12,
+    fontWeight: '600',
+    backgroundColor: 'rgba(74, 144, 217, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
 });

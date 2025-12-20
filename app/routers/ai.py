@@ -3,7 +3,7 @@ import shutil
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.core.firestore_db import get_db_connection
 
@@ -13,6 +13,7 @@ from app.models.user import User
 from typing import Union
 import json
 from app.services.ai_assistant import chatterfix_ai
+from app.utils.sanitization import sanitize_text
 from app.services.computer_vision import (
     analyze_asset_condition,
     recognize_part,
@@ -72,6 +73,22 @@ class ChatRequest(BaseModel):
     context_type: str = "general"  # general, equipment_diagnosis, troubleshooting, etc.
     force_team: bool = False  # Force full AI team collaboration
     fast_mode: bool = False  # Skip AI team refinement for ~50% faster responses
+
+    @field_validator('message')
+    @classmethod
+    def sanitize_message(cls, v: str) -> str:
+        """Sanitize message input to prevent XSS/injection"""
+        return sanitize_text(v, max_length=5000, preserve_newlines=True)
+
+    @field_validator('context_type')
+    @classmethod
+    def validate_context_type(cls, v: str) -> str:
+        """Validate context_type against whitelist"""
+        allowed_types = {
+            "general", "equipment_diagnosis", "troubleshooting",
+            "work_order_creation", "inventory", "maintenance", "training"
+        }
+        return v if v in allowed_types else "general"
 
 
 @router.post("/chat")

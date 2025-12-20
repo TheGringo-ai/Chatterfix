@@ -241,21 +241,38 @@ jobs:
         run: |
           pip install google-generativeai openai pydantic requests bandit
 
-      - name: AI Code Review
+      - name: Get changed files
+        id: changed
         run: |
-          # Run AI pre-commit review script
-          python scripts/ai-precommit-review.py --verbose || echo "AI review completed with warnings"
+          FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(py|js|ts|tsx)$' | tr '\n' ' ')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "Changed files: $FILES"
 
-      - name: Generate AI Insights
+      - name: AI Code Review
+        id: ai_review
         run: |
-          echo "## 🤖 AI Code Review Results" > ai-insights.md
+          echo "## 🤖 AI Team Code Review" > ai-insights.md
           echo "" >> ai-insights.md
-          echo "Automated code review completed. See workflow logs for details." >> ai-insights.md
+          echo "**PR:** #${{ github.event.pull_request.number }}" >> ai-insights.md
+          echo "**Commit:** \`${{ github.sha }}\`" >> ai-insights.md
           echo "" >> ai-insights.md
-          echo "### Checks Performed" >> ai-insights.md
-          echo "- ✅ Security pattern analysis" >> ai-insights.md
-          echo "- ✅ Known mistake pattern detection" >> ai-insights.md
-          echo "- ✅ Best practices validation" >> ai-insights.md
+
+          # Run AI pre-commit review and capture output
+          echo "### Pattern Analysis" >> ai-insights.md
+          echo "\`\`\`" >> ai-insights.md
+          python scripts/ai-precommit-review.py --verbose ${{ steps.changed.outputs.files }} 2>&1 | tee -a ai-insights.md || true
+          echo "\`\`\`" >> ai-insights.md
+          echo "" >> ai-insights.md
+
+          # Run bandit security scan
+          echo "### Security Scan (Bandit)" >> ai-insights.md
+          echo "\`\`\`" >> ai-insights.md
+          bandit -r app/ -ll -q 2>&1 | head -30 | tee -a ai-insights.md || echo "No high-severity issues" >> ai-insights.md
+          echo "\`\`\`" >> ai-insights.md
+          echo "" >> ai-insights.md
+
+          echo "---" >> ai-insights.md
+          echo "*🤖 AI Team: Claude (Architect) • Gemini (Innovation) • Grok (Strategy) • ChatGPT (Development)*" >> ai-insights.md
 
       - name: Comment AI insights on PR
         uses: actions/github-script@v7
@@ -264,12 +281,30 @@ jobs:
             const fs = require('fs');
             const insights = fs.readFileSync('ai-insights.md', 'utf8');
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Check for existing AI comment and update instead of creating new
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🤖 AI Development Insights\n\n${insights}`
+              issue_number: context.issue.number,
             });
+
+            const aiComment = comments.find(c => c.body.includes('🤖 AI Team Code Review'));
+
+            if (aiComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: aiComment.id,
+                body: insights
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: insights
+              });
+            }
 
   # performance-monitoring:
   #   Disabled - Performance monitoring is optional and can be run manually

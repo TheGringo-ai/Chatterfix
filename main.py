@@ -122,6 +122,7 @@ all_extended_routers = [
     "autonomous_intelligence_dashboard",
     "ceo_dashboard",
     "demo",
+    "factory",  # FactoryFix - Machine monitoring, IoT ingestor, production tracking
     "fix_it_fred",
     "import_service",  # Smart Data Ingestion - CSV/Excel/PDF import with AI mapping
     "inventory",
@@ -135,6 +136,7 @@ all_extended_routers = [
     # NOTE: 'public_demo' REMOVED - security risk, exposed real data without org filtering
     "purchasing",
     "premium_modules",
+    "quality",  # QualityFix - Visual QA, Non-Conformance, CAPA, inspections
     "quality_management",
     "safety_management",
     "team",

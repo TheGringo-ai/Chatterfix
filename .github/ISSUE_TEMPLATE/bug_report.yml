@@ -1,0 +1,76 @@
+name: Bug Report
+description: Report a bug or issue with ChatterFix
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the details below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened? What did you expect to happen?
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to...
+        2. Click on...
+        3. See error...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: What part of ChatterFix is affected?
+      options:
+        - Work Orders
+        - Assets
+        - Inventory
+        - Dashboard
+        - Authentication
+        - Voice Commands
+        - Mobile App
+        - API
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (blocking work)
+        - High (major feature broken)
+        - Medium (feature partially broken)
+        - Low (minor issue)
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, device, etc.
+      placeholder: |
+        - Browser: Chrome 120
+        - Device: iPhone 15 / Desktop
+        - URL: chatterfix.com or localhost
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Add screenshots if helpful

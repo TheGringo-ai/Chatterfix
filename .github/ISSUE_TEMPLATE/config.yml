@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/TheGringo-ai/Chatterfix/blob/main/documents/README.md
+    about: Check the documentation for answers
+  - name: ChatterFix Website
+    url: https://chatterfix.com
+    about: Visit the live application

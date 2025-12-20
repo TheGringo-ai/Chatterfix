@@ -126,6 +126,7 @@ all_extended_routers = [
     "inventory",
     "iot",
     "linesmart_integration",
+    "logistics",  # Pallet inspection and warehouse safety
     "planner",
     "planner_simple",
     "pm_automation",  # PM Automation API - meter readings, schedule generation, overview

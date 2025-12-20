@@ -218,6 +218,30 @@ export default function SettingsScreen() {
         />
       </View>
 
+      {/* Glasses Mode Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Glasses Mode</Text>
+        <View style={styles.glassesModeInfo}>
+          <Text style={styles.glassesModeIcon}>👓</Text>
+          <View style={styles.glassesModeText}>
+            <Text style={styles.glassesModeTitle}>Smart Glasses HUD</Text>
+            <Text style={styles.glassesModeDesc}>
+              Audio-only interface for Brilliant Labs glasses or testing hands-free operation
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.glassesButton}
+          onPress={() => navigation.navigate('GlassesHUD' as never)}
+        >
+          <Text style={styles.glassesButtonIcon}>🕶️</Text>
+          <Text style={styles.glassesButtonText}>Enter Glasses Mode</Text>
+        </TouchableOpacity>
+        <Text style={styles.glassesModeHint}>
+          Long-press anywhere to exit
+        </Text>
+      </View>
+
       {/* Data Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Data</Text>
@@ -454,5 +478,57 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.4)',
     marginBottom: 4,
+  },
+  // Glasses Mode Section
+  glassesModeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  glassesModeIcon: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  glassesModeText: {
+    flex: 1,
+  },
+  glassesModeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  glassesModeDesc: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  glassesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00FF41',
+    borderRadius: 12,
+    padding: 15,
+    marginTop: 5,
+  },
+  glassesButtonIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  glassesButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  glassesModeHint: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.4)',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import authentication context
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { AssetProvider } from './src/contexts/AssetContext';
 
 // Import screens
 import AssetsScreen from './src/screens/AssetsScreen';
@@ -18,6 +19,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import VoiceCommandsScreen from './src/screens/VoiceCommandsScreen';
 import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
+import GlassesHUDScreen from './src/screens/GlassesHUDScreen';
 
 // Import components
 import OfflineIndicator from './src/components/OfflineIndicator';
@@ -153,6 +155,16 @@ function RootNavigator() {
           presentation: 'modal', // Slide up as modal
         }}
       />
+      {/* Glasses HUD - Full screen immersive mode */}
+      <Stack.Screen
+        name="GlassesHUD"
+        component={GlassesHUDScreen}
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 }
@@ -162,12 +174,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <StatusBar style="light" />
-            <RootNavigator />
-          </NavigationContainer>
-        </QueryClientProvider>
+        <AssetProvider>
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </NavigationContainer>
+          </QueryClientProvider>
+        </AssetProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

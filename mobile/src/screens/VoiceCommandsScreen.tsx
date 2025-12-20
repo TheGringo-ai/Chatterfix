@@ -26,7 +26,8 @@ import * as Location from 'expo-location';
 import { apiService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useAssetContext } from '../contexts/AssetContext';
-import { GeoLocation, VoiceCommandPayload } from '../types/voice';
+import { FeedbackService } from '../services/FeedbackService';
+import { GeoLocation, VoiceCommandPayload, VoiceCommandResponse } from '../types/voice';
 
 interface CommandResult {
   id: string;
@@ -54,6 +55,8 @@ export default function VoiceCommandsScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [currentLocation, setCurrentLocation] = useState<GeoLocation | null>(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [pendingResponse, setPendingResponse] = useState<VoiceCommandResponse | null>(null);
 
   // Get context from providers
   const { user } = useAuth();
@@ -157,6 +160,7 @@ export default function VoiceCommandsScreen() {
       setIsRecording(false);
       setIsProcessing(true);
       setTranscript('Processing...');
+      await FeedbackService.announceProcessing();
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
@@ -172,51 +176,54 @@ export default function VoiceCommandsScreen() {
             currentLocation || undefined
           );
 
-          // Process the response
-          const result: CommandResult = {
-            id: Date.now().toString(),
-            command: response.original_text || 'Voice command',
-            response: response.response_text || 'Command processed',
-            action: response.action,
-            success: response.success,
-            timestamp: new Date(),
-          };
-
           setTranscript(response.original_text || '');
-          setCommandHistory(prev => [result, ...prev]);
 
-          // Speak the response
-          if (response.response_text) {
-            Speech.speak(response.response_text, {
-              language: 'en-US',
-              pitch: 1,
-              rate: 0.9,
-            });
-          }
-
-          // Show context info if used
+          // Announce context resolution if used
           if (response.context_used && response.resolved_asset_name) {
-            Alert.alert(
-              'Context Applied',
-              `Resolved to: ${response.resolved_asset_name}`,
-              [{ text: 'OK' }]
+            await FeedbackService.announceContext(
+              response.resolved_asset_name,
+              currentAsset?.source || 'manual_selection'
             );
           }
 
-          // Handle work order creation
-          if (response.action === 'create_work_order' && response.action_result?.work_order_id) {
-            Alert.alert(
-              'Work Order Created',
-              `Work order #${response.action_result.work_order_id} has been created.`,
-              [{ text: 'View', onPress: () => {} }, { text: 'OK' }]
+          // CONFIDENCE LOOP: Ask for confirmation on work order creation
+          if (response.action === 'create_work_order') {
+            setPendingResponse(response);
+            setAwaitingConfirmation(true);
+            setTranscript(`Create work order for ${response.resolved_asset_name || 'equipment'}?`);
+
+            // Ask for voice confirmation
+            await FeedbackService.askConfirmation(
+              response.original_text,
+              response.resolved_asset_name
             );
+
+            // Show confirmation UI
+            Alert.alert(
+              'Confirm Work Order',
+              `Create work order: "${response.original_text}"${response.resolved_asset_name ? `\n\nAsset: ${response.resolved_asset_name}` : ''}`,
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                  onPress: () => handleConfirmation(false),
+                },
+                {
+                  text: 'Create',
+                  onPress: () => handleConfirmation(true),
+                },
+              ]
+            );
+          } else {
+            // No confirmation needed - execute immediately
+            await executeCommand(response);
           }
         } catch (error: any) {
           // Handle upload errors gracefully
           if (apiService.isUploadError(error)) {
             const message = apiService.getUploadErrorMessage(error);
+            await FeedbackService.announceError(message);
             Alert.alert('Upload Error', message);
-            Speech.speak(message, { language: 'en-US' });
           } else {
             throw error;
           }
@@ -224,6 +231,7 @@ export default function VoiceCommandsScreen() {
       }
     } catch (error) {
       console.error('Failed to stop recording:', error);
+      await FeedbackService.announceError("Failed to process recording. Please try again.");
       const result: CommandResult = {
         id: Date.now().toString(),
         command: 'Voice command',
@@ -232,10 +240,60 @@ export default function VoiceCommandsScreen() {
         timestamp: new Date(),
       };
       setCommandHistory(prev => [result, ...prev]);
-      Speech.speak('Failed to process recording.', { language: 'en-US' });
     } finally {
       setIsProcessing(false);
-      setTranscript('');
+      if (!awaitingConfirmation) {
+        setTranscript('');
+      }
+    }
+  };
+
+  // Handle confirmation response (Yes/No)
+  const handleConfirmation = async (confirmed: boolean) => {
+    setAwaitingConfirmation(false);
+    setTranscript('');
+
+    if (confirmed && pendingResponse) {
+      if (pendingResponse.action === 'create_work_order') {
+        await FeedbackService.glassesMode.confirmYes();
+        await executeCommand(pendingResponse);
+      }
+    } else {
+      await FeedbackService.glassesMode.confirmNo();
+      const result: CommandResult = {
+        id: Date.now().toString(),
+        command: pendingResponse?.original_text || 'Voice command',
+        response: 'Cancelled by user',
+        success: false,
+        timestamp: new Date(),
+      };
+      setCommandHistory(prev => [result, ...prev]);
+    }
+
+    setPendingResponse(null);
+  };
+
+  // Execute a confirmed command
+  const executeCommand = async (response: VoiceCommandResponse) => {
+    const result: CommandResult = {
+      id: Date.now().toString(),
+      command: response.original_text || 'Voice command',
+      response: response.response_text || 'Command processed',
+      action: response.action,
+      success: response.success,
+      timestamp: new Date(),
+    };
+
+    setCommandHistory(prev => [result, ...prev]);
+
+    // Announce success with work order ID
+    if (response.action === 'create_work_order' && response.action_result?.work_order_id) {
+      await FeedbackService.announceSuccess(
+        response.response_text || 'Work order created',
+        response.action_result.work_order_id
+      );
+    } else if (response.response_text) {
+      await FeedbackService.announceSuccess(response.response_text);
     }
   };
 

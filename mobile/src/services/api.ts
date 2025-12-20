@@ -5,24 +5,10 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import Constants from 'expo-constants';
 
-// Configure base URL
-// In production, this should be set via environment variables or app configuration
-// For Expo: Use Constants.expoConfig?.extra?.apiBaseUrl
-// For React Native CLI: Use react-native-config
-const getApiBaseUrl = (): string => {
-  // Check for environment-based configuration first
-  // @ts-ignore - This would be set by react-native-config or similar
-  if (typeof process !== 'undefined' && process.env?.REACT_NATIVE_API_BASE_URL) {
-    // @ts-ignore
-    return process.env.REACT_NATIVE_API_BASE_URL;
-  }
-
-  // Default fallback - update this for your deployment
-  return 'https://chatterfix.com'; // Production URL
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Get API base URL from Expo Constants (set in app.config.ts)
+const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'https://chatterfix.com';
 
 // Storage keys
 const STORAGE_KEYS = {

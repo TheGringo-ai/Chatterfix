@@ -11,10 +11,12 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 // Import screens
 import AssetsScreen from './src/screens/AssetsScreen';
+import CameraScreen from './src/screens/CameraScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SignupScreen from './src/screens/SignupScreen';
+import VoiceCommandsScreen from './src/screens/VoiceCommandsScreen';
 import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
 
 // Import components
@@ -74,6 +76,26 @@ function MainTabs() {
           tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 24 }}>📋</Text>
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Voice"
+        component={VoiceCommandsScreen}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>🎤</Text>
+          ),
+          tabBarLabel: 'Voice',
+        }}
+      />
+      <Tab.Screen
+        name="Camera"
+        component={CameraScreen}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>📷</Text>
+          ),
+          tabBarLabel: 'Scan',
         }}
       />
       <Tab.Screen

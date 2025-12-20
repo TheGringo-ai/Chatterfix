@@ -21,7 +21,7 @@ from app.models.logistics import (
     SafetyIncident,
     SafetyStatus,
 )
-from app.services.auth_service import get_current_user_optional
+from app.auth import get_optional_current_user
 from app.services.gemini_service import GeminiService
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ async def inspect_pallet_load(
     file: UploadFile = File(..., description="Photo of the pallet/load to inspect"),
     location_aisle: Optional[str] = Form(None, description="Aisle or location identifier"),
     notes: Optional[str] = Form(None, description="Additional context from driver"),
-    current_user: Optional[dict] = Depends(get_current_user_optional),
+    current_user = Depends(get_optional_current_user),
 ):
     """
     Analyzes a photo of a pallet/load for safety hazards before moving.
@@ -93,7 +93,7 @@ async def inspect_pallet_load(
 
         try:
             # Analyze image with Gemini Vision
-            user_id = current_user.get("uid") if current_user else None
+            user_id = current_user.uid if current_user else None
             raw_response = await gemini_service.analyze_image(
                 image_path=tmp_path,
                 prompt=SAFETY_INSPECTOR_PROMPT,
@@ -128,7 +128,7 @@ async def inspect_pallet_load(
             description=f"Automated inspection failed: {str(e)}. Manual inspection required.",
             recommended_action="STOP. Perform manual safety check before moving this load.",
             location_aisle=location_aisle,
-            inspector_id=current_user.get("uid") if current_user else None
+            inspector_id=current_user.uid if current_user else None
         )
 
 
@@ -227,7 +227,7 @@ async def _log_safety_incident(
 async def get_safety_incidents(
     status: Optional[str] = None,
     limit: int = 50,
-    current_user: Optional[dict] = Depends(get_current_user_optional),
+    current_user = Depends(get_optional_current_user),
 ):
     """
     Get recent safety incidents for reporting and ROI tracking.
@@ -269,7 +269,7 @@ async def get_safety_incidents(
 
 @router.get("/stats")
 async def get_safety_stats(
-    current_user: Optional[dict] = Depends(get_current_user_optional),
+    current_user = Depends(get_optional_current_user),
 ):
     """
     Get safety statistics for the ROI dashboard.

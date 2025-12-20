@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 // Import authentication context
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { AssetProvider } from './src/contexts/AssetContext';
+import { FieldModeProvider } from './src/contexts/FieldModeContext';
 
 // Import screens
 import AssetsScreen from './src/screens/AssetsScreen';
@@ -174,14 +175,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AssetProvider>
-          <QueryClientProvider client={queryClient}>
-            <NavigationContainer>
-              <StatusBar style="light" />
-              <RootNavigator />
-            </NavigationContainer>
-          </QueryClientProvider>
-        </AssetProvider>
+        <FieldModeProvider>
+          <AssetProvider>
+            <QueryClientProvider client={queryClient}>
+              <NavigationContainer>
+                <StatusBar style="light" />
+                <RootNavigator />
+              </NavigationContainer>
+            </QueryClientProvider>
+          </AssetProvider>
+        </FieldModeProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

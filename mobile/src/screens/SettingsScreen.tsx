@@ -16,11 +16,13 @@ import {
     View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useFieldMode } from '../contexts/FieldModeContext';
 import { auth } from '../services/firebase';
 import { apiService } from '../services/api';
 
 export default function SettingsScreen() {
   const { user, isAuthenticated } = useAuth();
+  const { isFieldMode, toggleFieldMode, theme } = useFieldMode();
   const navigation = useNavigation<any>();
 
   // Settings state
@@ -216,6 +218,31 @@ export default function SettingsScreen() {
           value={darkMode}
           onValueChange={setDarkMode}
         />
+      </View>
+
+      {/* Field Mode Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Field Mode</Text>
+        <View style={styles.fieldModeCard}>
+          <Text style={styles.fieldModeIcon}>☀️</Text>
+          <View style={styles.fieldModeInfo}>
+            <Text style={styles.fieldModeTitle}>Outdoor / Field Mode</Text>
+            <Text style={styles.fieldModeDesc}>
+              High contrast for sunlight, simplified cards with big START buttons, no animations
+            </Text>
+          </View>
+          <Switch
+            value={isFieldMode}
+            onValueChange={toggleFieldMode}
+            trackColor={{ false: '#767577', true: '#ff6600' }}
+            thumbColor={isFieldMode ? '#fff' : '#f4f3f4'}
+          />
+        </View>
+        {isFieldMode && (
+          <View style={styles.fieldModeActive}>
+            <Text style={styles.fieldModeActiveText}>FIELD MODE ACTIVE</Text>
+          </View>
+        )}
       </View>
 
       {/* Glasses Mode Section */}
@@ -530,5 +557,44 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  // Field Mode Styles
+  fieldModeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+  },
+  fieldModeIcon: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  fieldModeInfo: {
+    flex: 1,
+  },
+  fieldModeTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  fieldModeDesc: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  fieldModeActive: {
+    backgroundColor: '#ff6600',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  fieldModeActiveText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 2,
   },
 });

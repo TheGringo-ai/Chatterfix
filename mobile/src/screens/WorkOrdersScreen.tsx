@@ -1,5 +1,9 @@
 /**
  * Work Orders Screen - List and manage work orders
+ *
+ * Supports two modes:
+ * - Standard Mode: Full details, dark theme (office/manager)
+ * - Field Mode: Simplified cards, high contrast (outdoor/technician)
  */
 
 import React, { useState } from 'react';
@@ -11,9 +15,11 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/api';
+import { useFieldMode } from '../contexts/FieldModeContext';
 
 interface WorkOrder {
   id: number;
@@ -29,6 +35,7 @@ interface WorkOrder {
 export default function WorkOrdersScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<string | null>(null);
+  const { isFieldMode, theme } = useFieldMode();
 
   const {
     data: workOrders,
@@ -39,6 +46,25 @@ export default function WorkOrdersScreen() {
     queryKey: ['work-orders'],
     queryFn: () => apiService.getWorkOrders(),
   });
+
+  // Handle starting a work order (Field Mode action)
+  const handleStartWorkOrder = (workOrder: WorkOrder) => {
+    Alert.alert(
+      'Start Work Order',
+      `Begin work on: ${workOrder.title}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'START',
+          style: 'default',
+          onPress: () => {
+            // TODO: Update work order status to "In Progress"
+            Alert.alert('Started', `Work order ${workOrder.id} is now in progress.`);
+          },
+        },
+      ]
+    );
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
@@ -77,7 +103,46 @@ export default function WorkOrdersScreen() {
     return matchesSearch && matchesFilter;
   });
 
-  const renderWorkOrder = ({ item }: { item: WorkOrder }) => (
+  // Field Mode: Simplified card with BIG START button
+  const renderFieldModeCard = ({ item }: { item: WorkOrder }) => (
+    <View style={[styles.fieldCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+      {/* Priority indicator strip */}
+      <View style={[styles.fieldPriorityStrip, { backgroundColor: getPriorityColor(item.priority) }]} />
+
+      <View style={styles.fieldCardContent}>
+        {/* Asset/Title - Big and readable */}
+        <Text style={[styles.fieldTitle, { color: theme.textPrimary }]} numberOfLines={1}>
+          {item.title}
+        </Text>
+
+        {/* Problem summary */}
+        <Text style={[styles.fieldDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+          {item.description || 'No description'}
+        </Text>
+
+        {/* BIG GREEN START BUTTON */}
+        {item.status?.toLowerCase() !== 'completed' && (
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => handleStartWorkOrder(item)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.startButtonText}>START</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Completed indicator */}
+        {item.status?.toLowerCase() === 'completed' && (
+          <View style={styles.completedBadge}>
+            <Text style={styles.completedText}>DONE</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  // Standard Mode: Full details card
+  const renderStandardCard = ({ item }: { item: WorkOrder }) => (
     <TouchableOpacity style={styles.workOrderCard}>
       <View style={styles.cardHeader}>
         <View
@@ -108,18 +173,29 @@ export default function WorkOrdersScreen() {
     </TouchableOpacity>
   );
 
+  const renderWorkOrder = isFieldMode ? renderFieldModeCard : renderStandardCard;
+
   return (
-    <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search work orders..."
-          placeholderTextColor="#7f8c8d"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Field Mode Indicator */}
+      {isFieldMode && (
+        <View style={styles.fieldModeIndicator}>
+          <Text style={styles.fieldModeText}>FIELD MODE</Text>
+        </View>
+      )}
+
+      {/* Search Bar - Hidden in Field Mode for simplicity */}
+      {!isFieldMode && (
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search work orders..."
+            placeholderTextColor="#7f8c8d"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
 
       {/* Filter Buttons */}
       <View style={styles.filterContainer}>
@@ -323,5 +399,71 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: '#fff',
     fontWeight: '300',
+  },
+  // Field Mode Styles
+  fieldModeIndicator: {
+    backgroundColor: '#ff6600',
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  fieldModeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 2,
+  },
+  fieldCard: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 2,
+    overflow: 'hidden',
+    minHeight: 120,
+  },
+  fieldPriorityStrip: {
+    width: 8,
+  },
+  fieldCardContent: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'space-between',
+  },
+  fieldTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  fieldDescription: {
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  startButton: {
+    backgroundColor: '#00aa00',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  completedBadge: {
+    backgroundColor: '#666666',
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+  },
+  completedText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
 });

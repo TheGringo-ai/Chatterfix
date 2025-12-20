@@ -123,6 +123,7 @@ all_extended_routers = [
     "ceo_dashboard",
     "demo",
     "fix_it_fred",
+    "import_service",  # Smart Data Ingestion - CSV/Excel/PDF import with AI mapping
     "inventory",
     "iot",
     "linesmart_integration",

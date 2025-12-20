@@ -10,3 +10,7 @@ export { backendSync, type SyncResult, type WorkOrderFromVoice } from './backend
 export { authService, type UserData } from './authService';
 export { voiceCommandService, type VoiceCommandResult, type CommandType } from './voiceCommandService';
 export { app, db, auth } from './firebase';
+
+// SafetyFix Services
+export { fallDetection, type FallEvent, type FallDetectionCallbacks } from './FallDetection';
+export { blackBox, type VideoSegment, type BlackBoxRecording, type BlackBoxCallbacks } from './BlackBox';

@@ -128,6 +128,7 @@ all_extended_routers = [
     "iot",
     "linesmart_integration",
     "logistics",  # Pallet inspection and warehouse safety
+    "safety",  # SafetyFix Guardian Angel - PPE detection, fall detection, voice commands
     "planner",
     "planner_simple",
     "pm_automation",  # PM Automation API - meter readings, schedule generation, overview

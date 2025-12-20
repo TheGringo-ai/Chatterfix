@@ -6,110 +6,172 @@ description: Invoke the multi-model AI team to collaborate on a task (usage: /ai
 
 ## Quick usage
 
-Run this command from Claude Code:
-
 ```text
 /ai-team <TASK_DESCRIPTION>
 ```
 
-Any text after `/ai-team` will be passed in as `$ARGUMENTS`.
+Any text after `/ai-team` will be passed as `$ARGUMENTS`.
 
-### Suggested prompt to Claude
+---
 
-Use the AI team workflow below to solve: $ARGUMENTS
+## 🧠 Self-Orchestrating AI Team
 
-Invoke the multi-model AI team for complex problem solving.
+This system automatically decides how to handle your request:
 
-## Available AI Team Members
+### Complexity Routing (Automatic)
 
-Based on the autogen framework in `ai_team/`:
+| Score | Tier | What Happens |
+|-------|------|--------------|
+| 1-3 | SIMPLE | Single fast model (Gemini Flash) |
+| 4-6 | MEDIUM | Two models collaborate |
+| 7-10 | COMPLEX | Full team consensus debate |
 
-1. **Claude (Lead Architect)**
-   - Architecture design
-   - Code analysis
-   - Planning and strategy
+### Task: $ARGUMENTS
 
-2. **ChatGPT (Senior Developer)**
-   - Coding implementation
-   - Debugging
-   - Optimization
+---
 
-3. **Gemini (Creative Innovator)**
-   - UI/UX design
-   - Creative solutions
-   - Innovation
+## Step 1: Index Codebase Context
 
-4. **Grok (Strategic Reasoner)**
-   - Complex reasoning
-   - Analysis
-   - Strategy
+First, gather relevant context from the codebase:
 
-5. **Grok Code (Rapid Coder)**
-   - Fast implementation
-   - Quick fixes
-   - Optimization
+```python
+# Run this to get codebase context
+from app.services.codebase_indexer import get_codebase_indexer
 
-## Collaboration Modes
+indexer = get_codebase_indexer()
+context = indexer.get_context_for_query("$ARGUMENTS")
+print(context)
+```
 
-From `ai_team/collaboration_engine.py`:
+Or manually check relevant files based on the task.
 
-- **parallel**: All agents work simultaneously
-- **sequential**: Agents work in order
-- **devils_advocate**: Critical analysis mode
-- **consensus_building**: Reach agreement
-- **peer_review**: Cross-review solutions
-- **brainstorming**: Generate ideas
-- **critical_analysis**: Deep analysis
+---
 
-## Usage
+## Step 2: Assess Complexity
 
-### For Architecture Decisions
-Use Claude + Grok for architectural analysis and strategic planning.
+Rate the task complexity (1-10):
 
-### For Bug Fixes
-Use ChatGPT + Grok Code for rapid debugging and fixes.
+**Simple (1-3):**
+- Typo fixes, formatting
+- Simple queries ("Where is X?")
+- Single-line changes
 
-### For New Features
-Use all agents in brainstorming mode, then Claude for final design.
+**Medium (4-6):**
+- Write a function
+- Add a field to a model
+- Fix a specific bug
 
-### For Code Reviews
-Use peer_review mode with all available agents.
+**Complex (7-10):**
+- Architecture changes
+- Multi-file refactors
+- Security-critical changes
+- New features
+
+---
+
+## Step 3: Route to Appropriate Team
+
+### For SIMPLE tasks:
+Use a single model (you, Claude) to solve directly.
+
+### For MEDIUM tasks:
+1. Propose solution
+2. Self-review for issues
+3. Implement
+
+### For COMPLEX tasks:
+Run the Consensus Engine:
+
+```python
+from app.services.ai_consensus_engine import get_consensus_engine
+from app.services.codebase_indexer import get_codebase_indexer
+
+indexer = get_codebase_indexer()
+context = indexer.get_context_for_query("$ARGUMENTS")
+
+engine = get_consensus_engine()
+result = await engine.reach_consensus(
+    user_request="$ARGUMENTS",
+    codebase_context=context,
+    min_models=3  # Full team
+)
+
+print(result.final_answer)
+print(result.debate_summary)
+```
+
+---
+
+## AI Team Roles
+
+| Agent | Role | Specialty |
+|-------|------|-----------|
+| **Claude** | Lead Architect | Architecture, planning, analysis |
+| **Gemini** | Creative Innovator | UI/UX, creative solutions |
+| **Grok** | Strategic Reasoner | Complex reasoning, strategy |
+| **ChatGPT** | Senior Developer | Coding, debugging, optimization |
+
+---
+
+## Consensus Debate Flow (Complex Tasks)
+
+```
+┌─────────────────────────────────────────┐
+│  1. PROPOSER (Gemini)                   │
+│     Creates initial solution            │
+└──────────────────┬──────────────────────┘
+                   ▼
+┌─────────────────────────────────────────┐
+│  2. CRITIC (ChatGPT)                    │
+│     Reviews for bugs, security issues   │
+└──────────────────┬──────────────────────┘
+                   ▼
+┌─────────────────────────────────────────┐
+│  3. JUDGE (Grok)                        │
+│     Decides if critique is valid        │
+└──────────────────┬──────────────────────┘
+                   ▼
+┌─────────────────────────────────────────┐
+│  4. SYNTHESIZER (Gemini)                │
+│     Creates final answer                │
+└─────────────────────────────────────────┘
+```
+
+---
 
 ## Memory Integration
 
-The AI team uses the Ultimate Memory System to:
-- Recall past solutions
-- Avoid repeated mistakes
-- Apply learned patterns
-- Track solution success rates
+The AI team uses the knowledge base to:
+- ✅ Recall past solutions from Firestore
+- ✅ Avoid repeated mistakes (CLAUDE.md lessons)
+- ✅ Apply learned patterns
+- ✅ Track solution success rates
 
-## Invoking the Team
+---
 
-For complex tasks, consider invoking through:
-```python
-from ai_team.autogen_framework import AutogenFramework
+## Key Files
 
-framework = AutogenFramework()
-result = await framework.collaborate(
-    task="Your task description",
-    mode="consensus_building",
-    agents=["claude", "chatgpt", "gemini"]
-)
-```
+| File | Purpose |
+|------|---------|
+| `app/services/codebase_indexer.py` | Maps entire codebase |
+| `app/services/ai_consensus_engine.py` | Multi-model debate |
+| `app/services/ai_router.py` | Complexity routing |
+| `app/services/ai_team_intelligence.py` | Learning system |
+| `scripts/ai-precommit-review.py` | Mistake detection |
 
-## Task Routing
+---
 
-The `ai_team/task_routing.py` automatically routes tasks to the best agent based on:
-- Task type (coding, analysis, creative, etc.)
-- Agent capabilities
-- Historical success rates
-- Current workload
+## Examples
 
-## Cross-Application Learning
+**Simple:** "Fix the typo in auth.py line 45"
+→ Route to single model, fix directly
 
-Solutions found here are shared across:
-- ChatterFix CMMS
-- Fix it Fred
-- LineSmart Training
+**Medium:** "Add a 'priority' field to the Asset model"
+→ Two models collaborate, implement with review
 
-This ensures patterns learned in one app benefit all apps.
+**Complex:** "Implement offline mode for the mobile app"
+→ Full team consensus: propose → critique → judge → synthesize
+
+---
+
+## Now executing for: $ARGUMENTS

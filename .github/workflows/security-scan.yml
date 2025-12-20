@@ -27,8 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # NOTE: CodeQL is configured via GitHub's default setup (Settings > Security > Code Scanning)
-      # Do not add CodeQL steps here as it conflicts with the default setup
+      # CodeQL is configured in .github/workflows/codeql.yml
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -28,8 +28,8 @@ numpy==2.2.1
 scikit-learn==1.6.1
 
 # gRPC & Autogen for AI Team
-grpcio==1.76.0
-pyautogen==0.2.0
+grpcio==1.68.1
+pyautogen==0.8.5
 
 # Security & Auth
 bcrypt==5.0.0

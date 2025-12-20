@@ -25,10 +25,10 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
+
       - name: Install security tools
         run: |
           pip install safety bandit semgrep
@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -224,10 +224,10 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          
+
       - name: Install AI tools
         run: |
           pip install -r requirements.txt

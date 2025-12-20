@@ -310,6 +310,301 @@ user = auth.create_user(email=email, password=password)
 - Use Firebase JS SDK on client, Admin SDK on server
 - Pyrebase is optional, only for specific legacy use cases
 
+#### **LESSON #11: Two UX Personas Pattern - Manager vs Field Mode**
+**Problem**: Single UI design doesn't serve both managers and field technicians effectively
+**Root Cause**: Managers need data-rich dashboards with animations; technicians in the field need high-contrast, big-button, distraction-free interfaces
+**Symptoms**:
+- Managers love the "Tony Stark" aesthetic with GSAP animations
+- Technicians in bright sunlight can't see dark mode UI
+- Small touch targets frustrate technicians with gloves
+- Animations waste battery and distract during urgent repairs
+
+**Solution**: Implement dual-mode UX with context-aware switching:
+
+**Mobile Field Mode Context:**
+```typescript
+// mobile/src/contexts/FieldModeContext.tsx
+export const standardTheme = {
+  background: '#1a1a2e',
+  cardBackground: '#16213e',
+  textPrimary: '#ffffff',
+  accent: '#00d4ff',
+  animationsEnabled: true,
+};
+
+export const fieldTheme = {
+  background: '#f5f5f5',      // Light for sunlight visibility
+  cardBackground: '#ffffff',
+  textPrimary: '#000000',     // Maximum contrast
+  accent: '#0066cc',
+  animationsEnabled: false,    // No distractions
+};
+```
+
+**Field Mode Work Order Card:**
+```typescript
+// Simplified card with BIG action button
+<View style={styles.fieldCard}>
+  <View style={[styles.fieldPriorityStrip, { backgroundColor: getPriorityColor(item.priority) }]} />
+  <Text style={styles.fieldTitle}>{item.title}</Text>
+  <TouchableOpacity style={styles.startButton}>
+    <Text style={styles.startButtonText}>START</Text>  {/* BIG green button */}
+  </TouchableOpacity>
+</View>
+```
+
+**Prevention**:
+- Always design for BOTH personas from the start
+- Field Mode: High contrast, large touch targets (48px+), no animations
+- Manager Mode: Rich data visualization, animations, detailed analytics
+- Persist preference to AsyncStorage
+- Consider auto-switching based on time of day or location
+
+#### **LESSON #12: Offline Queue Pattern - Ghost Mode for Dead Zones**
+**Problem**: Voice commands and actions fail in warehouse dead zones with no connectivity
+**Root Cause**: Mobile apps assume constant connectivity; warehouses have RF interference and metal structures
+**Symptoms**:
+- "Network request failed" errors mid-task
+- Lost work orders when connection drops
+- Frustrated technicians abandoning the app
+
+**Solution**: Implement offline queue with automatic sync:
+
+**AsyncStorage Queue Pattern:**
+```typescript
+// mobile/src/services/OfflineQueue.ts
+interface QueuedAction {
+  id: string;
+  type: 'CREATE_WORK_ORDER' | 'UPDATE_STATUS' | 'CHECKOUT_PART';
+  payload: any;
+  timestamp: number;
+  retryCount: number;
+}
+
+export class OfflineQueue {
+  private static QUEUE_KEY = 'offline_action_queue';
+
+  static async enqueue(action: Omit<QueuedAction, 'id' | 'timestamp' | 'retryCount'>) {
+    const queue = await this.getQueue();
+    queue.push({
+      ...action,
+      id: uuid(),
+      timestamp: Date.now(),
+      retryCount: 0,
+    });
+    await AsyncStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+  }
+
+  static async processQueue() {
+    const queue = await this.getQueue();
+    for (const action of queue) {
+      try {
+        await this.executeAction(action);
+        await this.removeFromQueue(action.id);
+      } catch (error) {
+        action.retryCount++;
+        if (action.retryCount > 3) await this.moveToFailedQueue(action);
+      }
+    }
+  }
+}
+```
+
+**Ghost Mode Indicator:**
+```typescript
+// Show "GHOST MODE" banner when offline
+{!isConnected && (
+  <View style={styles.ghostModeBanner}>
+    <Icon name="cloud-off" />
+    <Text>GHOST MODE - Actions queued for sync</Text>
+  </View>
+)}
+```
+
+**Prevention**:
+- Always check `NetInfo.fetch()` before network calls
+- Queue all write operations when offline
+- Sync queue when connectivity returns
+- Show clear visual indicator of offline status
+- Store queue in AsyncStorage (persists across app restarts)
+
+#### **LESSON #13: Vision AI Safety Inspection - Structured JSON Prompts**
+**Problem**: AI vision responses are inconsistent and hard to parse for automated decisions
+**Root Cause**: Open-ended prompts produce varied response formats; safety-critical decisions need structured output
+**Symptoms**:
+- AI returns prose instead of parseable data
+- Inconsistent hazard classifications
+- Missed safety issues due to vague responses
+
+**Solution**: Use expert persona + strict JSON schema in prompts:
+
+**Structured Safety Inspection Prompt:**
+```python
+SAFETY_INSPECTOR_PROMPT = """You are an expert Warehouse Safety Officer with 20 years of experience in OSHA compliance.
+
+Analyze this image for the following hazards:
+1. Leaning or unstable stacks - Any tilt > 3 degrees = DANGER
+2. Torn or loose shrink wrap - Exposed product = WARNING
+3. Broken pallet wood - Cracked boards = DANGER
+4. Liquid leaks - Any puddles = DANGER (slip hazard)
+5. Obstructed aisles - Blocked forklift path = WARNING
+6. Overloaded pallets - Beyond edges = DANGER
+7. Unsecured loads - No strapping = DANGER
+8. Improper stacking - Heavy on light = WARNING
+
+RESPOND ONLY WITH VALID JSON:
+{
+    "status": "SAFE" | "WARNING" | "DANGER",
+    "hazards": ["hazard_type_1", "hazard_type_2"],
+    "confidence": 0.0 to 1.0,
+    "description": "One sentence technical observation",
+    "action": "Direct command to the driver (imperative voice)"
+}
+
+BE STRICT. When in doubt, err on the side of caution."""
+```
+
+**Parse with Fallback:**
+```python
+def _parse_safety_response(raw_response: str) -> InspectionResult:
+    try:
+        # Handle markdown code blocks
+        json_str = raw_response
+        if "```json" in raw_response:
+            json_str = raw_response.split("```json")[1].split("```")[0]
+        data = json.loads(json_str.strip())
+        return InspectionResult(**data)
+    except (json.JSONDecodeError, KeyError):
+        # Fallback: require manual inspection
+        return InspectionResult(
+            status=SafetyStatus.WARNING,
+            confidence_score=0.5,
+            description="AI response unclear. Manual verification required.",
+            recommended_action="Perform visual inspection before moving."
+        )
+```
+
+**Prevention**:
+- Always define exact JSON schema in prompt
+- Use enums for classification (SAFE/WARNING/DANGER)
+- Include confidence score for human override decisions
+- Provide fallback that errs toward safety
+- Log incidents to Firestore for ROI tracking
+
+#### **LESSON #14: macOS EMFILE Fix - Too Many Open Files in Expo**
+**Problem**: Expo/Metro bundler crashes with "EMFILE: too many open files" on macOS
+**Root Cause**: macOS default file descriptor limit (256) is too low for React Native's file watching
+**Symptoms**:
+- `Error: EMFILE: too many open files, watch`
+- Metro bundler crashes immediately after starting
+- Error appears at `FSEvent.FSWatcher._handle.onchange`
+
+**Solution**: Increase file descriptor limit before running Expo:
+
+**Terminal Command (per session):**
+```bash
+# Check current limit
+ulimit -n
+
+# Increase limit for current session
+ulimit -n 65536
+
+# Then start Expo
+npx expo start
+```
+
+**Permanent Fix (~/.zshrc or ~/.bashrc):**
+```bash
+# Add to shell profile
+ulimit -n 65536
+```
+
+**Alternative - Reduce Watchman Load:**
+```bash
+# Clear watchman state
+watchman watch-del-all
+
+# Increase watchman file limit
+echo 999999 | sudo tee -a /proc/sys/fs/inotify/max_user_watches  # Linux
+```
+
+**Prevention**:
+- Add `ulimit -n 65536` to project's development scripts
+- Document in README for new developers
+- Consider using `npx expo start --clear` to reset cache
+- Close unnecessary applications during development
+- Use `npx expo install --fix` to resolve package version conflicts
+
+#### **LESSON #15: Demo Data Generation Pattern - Firestore Seeding**
+**Problem**: Testing voice commands and features requires realistic data that doesn't exist in fresh environments
+**Root Cause**: Empty databases make feature testing impossible; manual data entry is tedious
+**Symptoms**:
+- "No work orders found" when testing voice commands
+- Can't demonstrate features to stakeholders
+- Inconsistent test data across environments
+
+**Solution**: Create comprehensive seeding script with realistic domain data:
+
+**Demo Data Script Pattern:**
+```python
+# scripts/generate_demo_data.py
+from datetime import datetime, timezone, timedelta
+import random
+
+# Domain-specific realistic data
+ASSET_TEMPLATES = [
+    {"name": "Hydraulic Press #1", "type": "Manufacturing", "location": "Building A"},
+    {"name": "HVAC Unit - Roof", "type": "HVAC", "location": "Rooftop"},
+    {"name": "CNC Mill Station 3", "type": "CNC", "location": "Machine Shop"},
+]
+
+WORK_ORDER_TEMPLATES = [
+    {"title": "Replace hydraulic seals", "type": "Preventive", "priority": "Medium"},
+    {"title": "Emergency - Conveyor belt jam", "type": "Emergency", "priority": "Critical"},
+    {"title": "Quarterly PM inspection", "type": "Preventive", "priority": "Low"},
+]
+
+async def generate_demo_data(org_id: str = "demo_org"):
+    db = firestore.AsyncClient()
+
+    # Generate assets with realistic attributes
+    for template in ASSET_TEMPLATES:
+        asset_data = {
+            **template,
+            "organization_id": org_id,
+            "status": random.choice(["operational", "warning", "critical"]),
+            "last_maintenance": (datetime.now(timezone.utc) - timedelta(days=random.randint(1, 90))).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.collection("assets").add(asset_data)
+
+    # Generate work orders linked to assets
+    for template in WORK_ORDER_TEMPLATES:
+        wo_data = {
+            **template,
+            "organization_id": org_id,
+            "status": random.choice(["Open", "In Progress", "Completed"]),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.collection("work_orders").add(wo_data)
+
+# Usage: python scripts/generate_demo_data.py --demo
+```
+
+**Key Principles:**
+- Use `datetime.now(timezone.utc)` NOT deprecated `datetime.utcnow()`
+- Include `organization_id` for multi-tenant isolation
+- Generate interconnected data (WOs linked to assets)
+- Use realistic industry terminology (PM, corrective, emergency)
+- Support `--demo` flag for safe demo environment seeding
+
+**Prevention**:
+- Create seeding script early in development
+- Include variety of statuses (Open, In Progress, Completed)
+- Generate edge cases (overdue, critical priority)
+- Document script usage in README
+- Add `--clear` flag to reset before seeding
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)
@@ -628,6 +923,87 @@ await intelligence.learn_from_error(
 ---
 
 ## 📋 **RECENT SESSION WORK LOG** (December 2024)
+
+### **Session: Field Mode, Vision Logistics & Demo Data (December 19, 2024)**
+
+#### **1. Glasses Mode Implementation (COMPLETED)**
+Completed AR/Smart Glasses HUD screen with offline queue:
+
+**Files Created/Modified:**
+- `mobile/src/screens/GlassesHUDScreen.tsx` - Full HUD with voice commands, offline queue
+- `mobile/src/screens/SettingsScreen.tsx` - Added Glasses Mode styles
+- `mobile/src/navigation/App.tsx` - Added GlassesHUD navigation with fade animation
+
+**Features:**
+- Voice-activated work order display
+- Ghost Mode offline queue (AsyncStorage persistence)
+- Large, high-contrast UI for HUD displays
+- Quick action buttons for common technician tasks
+
+#### **2. Demo Data Generation Script (COMPLETED)**
+Created comprehensive Firestore seeding script for testing:
+
+**File Created:**
+- `scripts/generate_demo_data.py`
+
+**Data Generated:**
+- 24 assets (pumps, motors, HVAC, conveyors, CNC, compressors)
+- 30 work orders (preventive, corrective, emergency types)
+- 28 inventory parts (bearings, seals, filters, belts)
+- 6 vendors with contact information
+
+**Fix Applied:** Changed `datetime.utcnow()` → `datetime.now(timezone.utc)` (deprecation warning)
+
+#### **3. Field Mode UX Implementation (COMPLETED)**
+Implemented dual-persona UX pattern for Manager vs Technician modes:
+
+**Files Created/Modified:**
+- `mobile/src/contexts/FieldModeContext.tsx` - NEW context with theme switching
+- `mobile/src/screens/WorkOrdersScreen.tsx` - Field Mode simplified cards
+- `mobile/src/screens/SettingsScreen.tsx` - Field Mode toggle added
+- `mobile/src/navigation/App.tsx` - FieldModeProvider wrapper
+
+**Features:**
+- High-contrast light theme for outdoor visibility
+- BIG green "START" buttons for work orders
+- Animations disabled in Field Mode
+- Preference persisted to AsyncStorage
+- "FIELD MODE" indicator banner
+
+#### **4. Vision Logistics Module (COMPLETED)**
+Built AI-powered pallet safety inspection system:
+
+**Files Created:**
+- `app/models/logistics.py` - Pydantic models (SafetyStatus, HazardType, InspectionResult)
+- `app/routers/logistics.py` - API endpoints with Gemini Vision integration
+
+**Endpoints:**
+- `POST /api/v1/logistics/inspect-load` - AI safety inspection of pallet images
+- `GET /api/v1/logistics/incidents` - Safety incident history
+- `GET /api/v1/logistics/stats` - ROI dashboard metrics
+
+**Features:**
+- 8 hazard type detection (leaning, torn wrap, damaged pallet, etc.)
+- SAFE/WARNING/DANGER status classification
+- Confidence scoring for human override
+- Automatic incident logging for ROI tracking
+- "Estimated injuries prevented" metric
+
+#### **5. Mobile App Fixes (COMPLETED)**
+Fixed Expo/React Native startup issues:
+
+**Issues Resolved:**
+- EMFILE "too many open files" error → `ulimit -n 65536`
+- Expo package version mismatches → `npm install --save-exact` with specific versions
+- Port 8081 conflicts → `pkill -f "expo"`
+
+**Commits This Session:**
+- `feat: Complete Glasses Mode with offline queue and navigation`
+- `feat: Add demo data generation script`
+- `feat: Implement Field Mode UX for technicians`
+- `feat: Add Vision Logistics pallet inspection module`
+
+---
 
 ### **Session: AI Team Enhancement System (December 18, 2024)**
 

@@ -1352,3 +1352,7 @@ def create_pm_automation_engine(
         New PMAutomationEngine instance
     """
     return PMAutomationEngine(repository)
+
+
+# Alias for backwards compatibility - allows `from ... import pm_automation_engine`
+pm_automation_engine = get_pm_automation_engine()

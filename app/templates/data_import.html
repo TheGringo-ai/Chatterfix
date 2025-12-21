@@ -21,9 +21,9 @@
     <!-- Import Type Selection -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-dark border-secondary">
+            <div class="card glass-panel">
                 <div class="card-body">
-                    <h5 class="card-title mb-3">What are you importing?</h5>
+                    <h5 class="card-title mb-3" style="color: var(--text-primary);">What are you importing?</h5>
                     <div class="btn-group" role="group">
                         <input type="radio" class="btn-check" name="entityType" id="entityAssets" value="asset" checked>
                         <label class="btn btn-outline-primary" for="entityAssets">
@@ -48,9 +48,9 @@
     <!-- Drag and Drop Zone -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-dark border-secondary">
+            <div class="card glass-panel">
                 <div class="card-body p-5">
-                    <div id="dropZone" class="drop-zone text-center p-5 rounded-3 border-dashed">
+                    <div id="dropZone" class="drop-zone text-center p-5 rounded-3 border-dashed" style="color: var(--text-primary);">
                         <div id="dropZoneContent">
                             <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
                             <h4>Drag & Drop Your File Here</h4>
@@ -78,7 +78,7 @@
     <div id="mappingSection" class="d-none">
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card bg-dark border-secondary">
+                <div class="card glass-panel">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0"><i class="fas fa-magic me-2"></i>AI Column Mapping Suggestions</h5>
                     </div>
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-dark table-hover">
+                            <table class="table table-hover" style="color: var(--text-primary);">
                                 <thead>
                                     <tr>
                                         <th>Your Column</th>
@@ -131,7 +131,7 @@
     <div id="pdfResultsSection" class="d-none">
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card bg-dark border-secondary">
+                <div class="card glass-panel">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Extracted Maintenance Schedules</h5>
                     </div>
@@ -163,18 +163,18 @@
     <!-- Download Templates Section -->
     <div class="row">
         <div class="col-12">
-            <div class="card bg-dark border-secondary">
-                <div class="card-header">
+            <div class="card glass-panel">
+                <div class="card-header" style="color: var(--text-primary);">
                     <h5 class="mb-0"><i class="fas fa-download me-2"></i>Download Import Templates</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <div class="card bg-secondary h-100">
-                                <div class="card-body text-center">
+                            <div class="card h-100" style="background: var(--bg-glass); border: var(--card-border);">
+                                <div class="card-body text-center" style="color: var(--text-primary);">
                                     <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
                                     <h6>Asset Template</h6>
-                                    <p class="text-muted small">Equipment, machines, vehicles</p>
+                                    <p class="small" style="color: var(--text-secondary);">Equipment, machines, vehicles</p>
                                     <button class="btn btn-outline-primary btn-sm" onclick="downloadTemplate('asset')">
                                         <i class="fas fa-download me-1"></i>Download CSV
                                     </button>
@@ -182,11 +182,11 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-secondary h-100">
-                                <div class="card-body text-center">
+                            <div class="card h-100" style="background: var(--bg-glass); border: var(--card-border);">
+                                <div class="card-body text-center" style="color: var(--text-primary);">
                                     <i class="fas fa-boxes fa-3x text-success mb-3"></i>
                                     <h6>Parts Template</h6>
-                                    <p class="text-muted small">Inventory, spare parts, consumables</p>
+                                    <p class="small" style="color: var(--text-secondary);">Inventory, spare parts, consumables</p>
                                     <button class="btn btn-outline-success btn-sm" onclick="downloadTemplate('part')">
                                         <i class="fas fa-download me-1"></i>Download CSV
                                     </button>
@@ -194,11 +194,11 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="card bg-secondary h-100">
-                                <div class="card-body text-center">
+                            <div class="card h-100" style="background: var(--bg-glass); border: var(--card-border);">
+                                <div class="card-body text-center" style="color: var(--text-primary);">
                                     <i class="fas fa-users fa-3x text-info mb-3"></i>
                                     <h6>User Template</h6>
-                                    <p class="text-muted small">Technicians, managers, admins</p>
+                                    <p class="small" style="color: var(--text-secondary);">Technicians, managers, admins</p>
                                     <button class="btn btn-outline-info btn-sm" onclick="downloadTemplate('user')">
                                         <i class="fas fa-download me-1"></i>Download CSV
                                     </button>
@@ -214,14 +214,14 @@
 
 <style>
 .drop-zone {
-    border: 3px dashed #6c757d;
+    border: 3px dashed var(--text-secondary);
     transition: all 0.3s ease;
     cursor: pointer;
-    background: rgba(0, 212, 255, 0.02);
+    background: var(--bg-glass);
 }
 
 .drop-zone:hover, .drop-zone.drag-over {
-    border-color: #00d4ff;
+    border-color: var(--accent-color);
     background: rgba(0, 212, 255, 0.1);
 }
 
@@ -238,12 +238,30 @@
 .confidence-low { color: #dc3545; }
 
 .schedule-card {
-    border-left: 4px solid #00d4ff;
+    border-left: 4px solid var(--accent-color);
+    background: var(--bg-glass);
 }
 
 .schedule-card.selected {
     border-left-color: #28a745;
     background: rgba(40, 167, 69, 0.1);
+}
+
+/* Theme-aware table */
+.table th, .table td {
+    color: var(--text-primary);
+    border-color: var(--card-border);
+}
+
+.table thead th {
+    background: var(--bg-glass);
+}
+
+/* Theme-aware select */
+.mapping-select {
+    background: var(--bg-glass) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--card-border) !important;
 }
 </style>
 
@@ -355,9 +373,9 @@ function showMappingResults(data) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><strong>${mapping.source_column}</strong></td>
-            <td><small class="text-muted">${mapping.sample_values.slice(0, 2).join(', ') || 'N/A'}</small></td>
+            <td><small style="color: var(--text-secondary);">${mapping.sample_values.slice(0, 2).join(', ') || 'N/A'}</small></td>
             <td>
-                <select class="form-select form-select-sm bg-dark text-white" id="mapping-${index}" data-source="${mapping.source_column}">
+                <select class="form-select form-select-sm mapping-select" id="mapping-${index}" data-source="${mapping.source_column}">
                     <option value="${mapping.target_field}" selected>${mapping.target_field}</option>
                     <option value="">-- Skip this column --</option>
                 </select>

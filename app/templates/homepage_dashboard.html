@@ -6,9 +6,9 @@
 <style>
     /* ChatterFix Homepage Dashboard Styles */
     body {
-        background: linear-gradient(135deg, #0f1419 0%, #1a252f 50%, #2c3e50 100%);
+        background: var(--bg-body) !important;
         min-height: 100vh;
-        color: #ffffff;
+        color: var(--text-primary) !important;
     }
 
     .hero-section {
@@ -55,7 +55,7 @@
 
     .hero-subtitle {
         font-size: 1.5rem;
-        color: #bdc3c7;
+        color: var(--text-secondary);
         margin-bottom: 2rem;
         max-width: 800px;
         margin-left: auto;
@@ -100,7 +100,7 @@
     }
 
     .metric-label {
-        color: #bdc3c7;
+        color: var(--text-secondary);
         font-size: 1.1rem;
         margin-top: 0.5rem;
     }
@@ -166,11 +166,11 @@
         font-size: 1.5rem;
         font-weight: 600;
         margin-bottom: 1rem;
-        color: #ffffff;
+        color: var(--text-primary);
     }
 
     .action-description {
-        color: #bdc3c7;
+        color: var(--text-secondary);
         line-height: 1.6;
         margin-bottom: 1.5rem;
     }
@@ -408,7 +408,7 @@
         <div class="profile-card">
             <div class="profile-avatar">JT</div>
             <h4>Jake Thompson</h4>
-            <p style="color: #bdc3c7;">Senior Technician</p>
+            <p style="color: var(--text-secondary);">Senior Technician</p>
             <div style="margin: 1rem 0;">
                 <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
                     <strong style="color: #2ecc71;">Excellence:</strong> Generator maintenance expert
@@ -422,7 +422,7 @@
         <div class="profile-card">
             <div class="profile-avatar">AK</div>
             <h4>Anna Kowalski</h4>
-            <p style="color: #bdc3c7;">Fire Safety Specialist</p>
+            <p style="color: var(--text-secondary);">Fire Safety Specialist</p>
             <div style="margin: 1rem 0;">
                 <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
                     <strong style="color: #2ecc71;">Expertise:</strong> Fire suppression systems
@@ -436,7 +436,7 @@
         <div class="profile-card">
             <div class="profile-avatar">SM</div>
             <h4>Sam Martinez</h4>
-            <p style="color: #bdc3c7;">Operations Manager</p>
+            <p style="color: var(--text-secondary);">Operations Manager</p>
             <div style="margin: 1rem 0;">
                 <div style="background: rgba(46, 204, 113, 0.2); padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0;">
                     <strong style="color: #2ecc71;">Achievement:</strong> 943% ROI leadership
@@ -452,25 +452,25 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
         <div style="background: rgba(46, 204, 113, 0.1); border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
             <div style="font-size: 2rem; color: #2ecc71; font-weight: bold;">98.7%</div>
-            <div style="color: #bdc3c7;">Equipment Uptime</div>
+            <div style="color: var(--text-secondary);">Equipment Uptime</div>
             <small style="color: #95a5a6;">AI-optimized maintenance</small>
         </div>
         
         <div style="background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
             <div style="font-size: 2rem; color: #3498db; font-weight: bold;">47</div>
-            <div style="color: #bdc3c7;">Active Work Orders</div>
+            <div style="color: var(--text-secondary);">Active Work Orders</div>
             <small style="color: #95a5a6;">Intelligently prioritized</small>
         </div>
         
         <div style="background: rgba(155, 89, 182, 0.1); border: 1px solid rgba(155, 89, 182, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
             <div style="font-size: 2rem; color: #9b59b6; font-weight: bold;">23</div>
-            <div style="color: #bdc3c7;">Training Sessions</div>
+            <div style="color: var(--text-secondary);">Training Sessions</div>
             <small style="color: #95a5a6;">LineSmart powered</small>
         </div>
         
         <div style="background: rgba(241, 196, 15, 0.1); border: 1px solid rgba(241, 196, 15, 0.3); border-radius: 15px; padding: 1.5rem; text-align: center;">
             <div style="font-size: 2rem; color: #f1c40f; font-weight: bold;">$3.2M</div>
-            <div style="color: #bdc3c7;">Cost Savings YTD</div>
+            <div style="color: var(--text-secondary);">Cost Savings YTD</div>
             <small style="color: #95a5a6;">AI-driven efficiency</small>
         </div>
     </div>

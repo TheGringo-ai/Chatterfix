@@ -596,11 +596,11 @@ async def process_import_job(
                 }
                 collection_name = collection_map.get(entity_type, "assets")
 
-                # Batch insert records
+                # Batch insert records using proper async method
                 inserted_count = 0
                 for record in imported_records:
                     try:
-                        await firestore_manager.db.collection(collection_name).add(record)
+                        await firestore_manager.create_document(collection_name, record)
                         inserted_count += 1
                     except Exception as e:
                         job.errors.append(f"Failed to insert record: {str(e)[:100]}")

@@ -5,6 +5,9 @@
   --bg-glass: rgba(255, 255, 255, 0.9);
   --bg-glass-heavy: rgba(255, 255, 255, 0.95);
   --bg-glass-hover: rgba(255, 255, 255, 0.98);
+  --bg-overlay: rgba(0, 0, 0, 0.05);
+  --bg-overlay-medium: rgba(0, 0, 0, 0.1);
+  --bg-tertiary: rgba(241, 245, 249, 0.9);
   --bg-card: #ffffff;
   --card-bg: #ffffff; /* Alias for --bg-card for backward compatibility */
   --border-glass: rgba(79, 172, 254, 0.2);
@@ -35,6 +38,9 @@
   --bg-glass: rgba(26, 32, 44, 0.8);
   --bg-glass-heavy: rgba(23, 25, 35, 0.95);
   --bg-glass-hover: rgba(45, 55, 72, 0.9);
+  --bg-overlay: rgba(0, 0, 0, 0.3);
+  --bg-overlay-medium: rgba(0, 0, 0, 0.4);
+  --bg-tertiary: rgba(30, 41, 59, 0.9);
   --bg-card: #1a202c;
   --card-bg: #1a202c; /* Alias for --bg-card for backward compatibility */
   --border-glass: rgba(81, 97, 125, 0.3);

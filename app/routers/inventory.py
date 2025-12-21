@@ -551,7 +551,7 @@ async def bulk_import_parts(
                     errors.append(f"Row {idx}: Missing required field 'name'")
                     continue
 
-                # Build part data
+                # Build part data with organization scoping
                 part_data = {
                     "name": name,
                     "part_number": str(row.get("part_number", "")).strip(),
@@ -561,6 +561,8 @@ async def bulk_import_parts(
                     "minimum_stock": int(float(row.get("minimum_stock", 5) or 5)),
                     "location": str(row.get("location", "")).strip(),
                     "unit_cost": float(row.get("unit_cost", 0) or 0),
+                    "organization_id": current_user.organization_id,
+                    "imported_via": "bulk_import",
                     "created_at": datetime.now().isoformat(),
                     "updated_at": datetime.now().isoformat(),
                 }

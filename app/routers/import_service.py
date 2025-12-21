@@ -121,6 +121,9 @@ class MaintenanceScheduleItem(BaseModel):
 # In production, use Redis or Firestore
 import_jobs: Dict[str, ImportJob] = {}
 
+# Store file content temporarily (keyed by job_id)
+file_content_store: Dict[str, bytes] = {}
+
 
 # ============ Target Field Definitions ============
 
@@ -567,6 +570,8 @@ async def process_import_job(
                 job.errors.extend([f"Row {i+1}: {e}" for e in errors[:3]])  # Limit errors
             else:
                 validated_data["organization_id"] = organization_id
+                validated_data["created_at"] = datetime.now(timezone.utc).isoformat()
+                validated_data["imported_via"] = "bulk_import"
                 imported_records.append(validated_data)
 
             job.processed_rows = i + 1
@@ -575,9 +580,35 @@ async def process_import_job(
             if i % batch_size == 0:
                 await asyncio.sleep(0.01)
 
-        # TODO: Actually insert into Firestore
-        # For now, just log success
-        logger.info(f"Import job {job_id}: Processed {len(imported_records)} valid records")
+        # Insert into Firestore
+        if imported_records:
+            try:
+                from app.core.firestore_db import firestore_manager
+
+                # Determine collection based on entity type
+                collection_map = {
+                    "asset": "assets",
+                    "assets": "assets",
+                    "part": "parts",
+                    "parts": "parts",
+                    "user": "users",
+                    "users": "users",
+                }
+                collection_name = collection_map.get(entity_type, "assets")
+
+                # Batch insert records
+                inserted_count = 0
+                for record in imported_records:
+                    try:
+                        await firestore_manager.db.collection(collection_name).add(record)
+                        inserted_count += 1
+                    except Exception as e:
+                        job.errors.append(f"Failed to insert record: {str(e)[:100]}")
+
+                logger.info(f"Import job {job_id}: Inserted {inserted_count}/{len(imported_records)} records into {collection_name}")
+            except Exception as e:
+                logger.error(f"Firestore insertion failed: {e}")
+                job.errors.append(f"Database error: {str(e)}")
 
         job.status = "completed"
         job.completed_at = datetime.now(timezone.utc)
@@ -685,6 +716,9 @@ async def upload_file(
             total_rows=len(df)
         )
 
+        # Store file content for later processing
+        file_content_store[job_id] = content
+
         return JSONResponse({
             "success": True,
             "job_id": job_id,
@@ -722,6 +756,14 @@ async def confirm_import(
             detail=f"Job is not pending confirmation. Status: {job.status}"
         )
 
+    # Retrieve stored file content
+    file_content = file_content_store.get(job_id)
+    if not file_content:
+        raise HTTPException(
+            status_code=400,
+            detail="File content expired. Please re-upload the file."
+        )
+
     # Convert confirmed mapping to MappingSuggestion format
     mappings = [
         ColumnMapping(
@@ -738,18 +780,41 @@ async def confirm_import(
         mappings=mappings
     )
 
-    # Get organization ID from session
-    org_id = request.cookies.get("organization_id", "demo_org")
+    # Get organization ID from authenticated user
+    org_id = "demo_org"  # Default
+    try:
+        from app.services.auth_service import get_current_user_from_cookie
+        current_user = await get_current_user_from_cookie(request)
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+    except Exception as e:
+        logger.warning(f"Could not get org from auth, using demo: {e}")
 
-    # TODO: Retrieve stored file content
-    # For now, return success message
+    # Determine file type from filename
+    file_ext = (job.file_name or "").lower().split(".")[-1]
+
+    # Start background processing
     job.status = "processing"
+    background_tasks.add_task(
+        process_import_job,
+        job_id=job_id,
+        file_content=file_content,
+        file_type=file_ext,
+        entity_type=job.entity_type or "asset",
+        mapping=mapping,
+        organization_id=org_id
+    )
+
+    # Clean up stored file content after starting job
+    if job_id in file_content_store:
+        del file_content_store[job_id]
 
     return JSONResponse({
         "success": True,
         "job_id": job_id,
         "message": "Import started. Check status with GET /api/v1/import/status/{job_id}",
-        "status": job.status
+        "status": job.status,
+        "organization_id": org_id
     })
 
 

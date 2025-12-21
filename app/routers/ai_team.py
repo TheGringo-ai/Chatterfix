@@ -426,3 +426,331 @@ async def get_solutions(
     except Exception as e:
         logger.error(f"Solutions API error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================================================
+# CODE CHANGE TRACKING
+# =========================================================================
+
+class CodeChangeRequest(BaseModel):
+    """Request model for recording code changes"""
+    files_modified: List[str] = Field(..., min_length=1)
+    change_description: str = Field(..., min_length=1, max_length=2000)
+    change_type: str = Field(default="update", description="Type: create, update, delete, refactor")
+    session_id: Optional[str] = None
+    ai_reasoning: Optional[str] = ""
+    related_task: Optional[str] = ""
+
+
+class SessionActivityRequest(BaseModel):
+    """Request model for recording session activity"""
+    session_id: str = Field(..., min_length=1)
+    activity_type: str = Field(..., description="Type: start, task, error, solution, end")
+    description: str = Field(..., min_length=1, max_length=2000)
+    metadata: Dict[str, Any] = {}
+
+
+@router.post("/changes")
+async def record_code_change(request: CodeChangeRequest):
+    """
+    Record a code change from a development session.
+
+    Tracks all code modifications with context for pattern learning.
+    Used for:
+    - Understanding change patterns
+    - Tracking AI-assisted modifications
+    - Building knowledge of codebase evolution
+    """
+    try:
+        from datetime import datetime, timezone
+        memory = get_ai_memory_service()
+
+        change_data = {
+            "files_modified": request.files_modified,
+            "change_description": request.change_description,
+            "change_type": request.change_type,
+            "session_id": request.session_id,
+            "ai_reasoning": request.ai_reasoning,
+            "related_task": request.related_task,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        # Store in Firestore
+        doc_id = await memory.firestore.create_document("code_changes", change_data)
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Code change recorded",
+            "change_id": doc_id,
+        })
+
+    except Exception as e:
+        logger.error(f"Code change recording error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/changes")
+async def get_code_changes(
+    limit: int = Query(20, ge=1, le=100),
+    session_id: Optional[str] = Query(None, description="Filter by session"),
+    file_path: Optional[str] = Query(None, description="Filter by file path"),
+):
+    """
+    Get recorded code changes from development sessions.
+
+    Used to review change history and understand modification patterns.
+    """
+    try:
+        memory = get_ai_memory_service()
+
+        changes = await memory.firestore.get_collection(
+            "code_changes", limit=limit, order_by="-timestamp"
+        )
+
+        # Apply filters
+        if session_id:
+            changes = [c for c in changes if c.get("session_id") == session_id]
+        if file_path:
+            changes = [c for c in changes if file_path in c.get("files_modified", [])]
+
+        return JSONResponse({
+            "status": "success",
+            "count": len(changes),
+            "data": changes,
+        })
+
+    except Exception as e:
+        logger.error(f"Code changes API error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/session")
+async def record_session_activity(request: SessionActivityRequest):
+    """
+    Record session activity for development tracking.
+
+    Captures:
+    - Session start/end times
+    - Tasks worked on
+    - Errors encountered
+    - Solutions applied
+    """
+    try:
+        from datetime import datetime, timezone
+        memory = get_ai_memory_service()
+
+        activity_data = {
+            "session_id": request.session_id,
+            "activity_type": request.activity_type,
+            "description": request.description,
+            "metadata": request.metadata,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await memory.firestore.create_document("session_activities", activity_data)
+
+        return JSONResponse({
+            "status": "success",
+            "message": f"Session activity '{request.activity_type}' recorded",
+        })
+
+    except Exception as e:
+        logger.error(f"Session activity error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =========================================================================
+# AUTO-CONTEXT QUERY HOOK
+# =========================================================================
+
+@router.post("/auto-context")
+async def auto_context_hook(request: Request):
+    """
+    Auto-context query hook for development sessions.
+
+    Called before major operations to automatically provide relevant context.
+    Checks:
+    - Similar past mistakes for the current task
+    - Relevant solutions from knowledge base
+    - Recent changes to related files
+    - Known issues with dependencies
+
+    This powers the "never repeat mistakes" system.
+    """
+    try:
+        body = await request.json()
+        task_description = body.get("task", "")
+        files_involved = body.get("files", [])
+        operation_type = body.get("operation", "unknown")
+
+        intelligence = get_ai_team_intelligence()
+        memory = get_ai_memory_service()
+
+        # Gather relevant context automatically
+        context_data = {
+            "similar_mistakes": [],
+            "relevant_solutions": [],
+            "related_changes": [],
+            "warnings": [],
+            "recommendations": [],
+        }
+
+        # Check for similar past mistakes
+        if task_description:
+            similar_mistakes = await memory.find_similar_mistakes(task_description)
+            if similar_mistakes:
+                context_data["similar_mistakes"] = similar_mistakes[:5]
+                context_data["warnings"].append(
+                    f"Found {len(similar_mistakes)} similar past issues. Review before proceeding."
+                )
+
+        # Find relevant solutions
+        if task_description:
+            solutions = await memory.find_solutions(task_description)
+            if solutions:
+                context_data["relevant_solutions"] = solutions[:5]
+
+        # Check for recent changes to involved files
+        if files_involved:
+            recent_changes = await memory.firestore.get_collection(
+                "code_changes", limit=20, order_by="-timestamp"
+            )
+            for change in recent_changes:
+                if any(f in change.get("files_modified", []) for f in files_involved):
+                    context_data["related_changes"].append(change)
+                    if len(context_data["related_changes"]) >= 5:
+                        break
+
+        # Generate recommendations based on operation type
+        if operation_type == "deploy":
+            context_data["recommendations"].append(
+                "Run full test suite before deploying"
+            )
+            context_data["recommendations"].append(
+                "Verify all datetime objects use .strftime() for JSON"
+            )
+        elif operation_type == "auth":
+            context_data["recommendations"].append(
+                "Ensure cookies are set on the RETURNED response object"
+            )
+            context_data["recommendations"].append(
+                "Use credentials: 'include' in fetch calls"
+            )
+        elif operation_type == "firebase":
+            context_data["recommendations"].append(
+                "Check all Firebase config fields are present"
+            )
+            context_data["recommendations"].append(
+                "Verify Admin SDK credentials for server-side operations"
+            )
+
+        return JSONResponse({
+            "status": "success",
+            "context": context_data,
+            "has_warnings": len(context_data["warnings"]) > 0,
+            "warning_count": len(context_data["warnings"]),
+        })
+
+    except Exception as e:
+        logger.error(f"Auto-context hook error: {e}")
+        return JSONResponse({
+            "status": "error",
+            "message": str(e),
+            "context": {},
+        }, status_code=500)
+
+
+# =========================================================================
+# ERROR CATEGORIZATION
+# =========================================================================
+
+class ErrorCategorizationRequest(BaseModel):
+    """Request model for error categorization"""
+    error_message: str = Field(..., min_length=1)
+    stack_trace: Optional[str] = ""
+    file_path: Optional[str] = ""
+    context: Dict[str, Any] = {}
+
+
+@router.post("/categorize-error")
+async def categorize_error(request: ErrorCategorizationRequest):
+    """
+    Categorize an error using AI Team intelligence.
+
+    Analyzes error patterns and returns:
+    - Error category (auth, database, serialization, network, etc.)
+    - Severity level (low, medium, high, critical)
+    - Known pattern matches
+    - Suggested resolutions
+    """
+    try:
+        intelligence = get_ai_team_intelligence()
+        memory = get_ai_memory_service()
+
+        # Determine category from error message
+        error_msg_lower = request.error_message.lower()
+
+        categories = {
+            "auth": ["auth", "token", "session", "login", "permission", "unauthorized", "forbidden"],
+            "database": ["firestore", "firebase", "database", "query", "document", "collection"],
+            "serialization": ["json", "serialize", "datetime", "encode", "decode", "format"],
+            "network": ["network", "connection", "timeout", "fetch", "request", "http", "api"],
+            "validation": ["validation", "invalid", "required", "type error", "schema"],
+            "file": ["file", "path", "read", "write", "permission", "not found"],
+        }
+
+        detected_category = "unknown"
+        for category, keywords in categories.items():
+            if any(kw in error_msg_lower for kw in keywords):
+                detected_category = category
+                break
+
+        # Determine severity
+        severity = "medium"
+        if any(kw in error_msg_lower for kw in ["critical", "crash", "fatal", "emergency"]):
+            severity = "critical"
+        elif any(kw in error_msg_lower for kw in ["warning", "deprecated"]):
+            severity = "low"
+        elif any(kw in error_msg_lower for kw in ["error", "failed", "exception"]):
+            severity = "high"
+
+        # Find similar known issues
+        similar = await memory.find_similar_mistakes(request.error_message)
+
+        # Generate suggestions based on category
+        suggestions = []
+        if detected_category == "auth":
+            suggestions = [
+                "Check if cookies are set on the returned response object",
+                "Verify credentials: 'include' is used in fetch calls",
+                "Ensure session tokens are properly validated"
+            ]
+        elif detected_category == "serialization":
+            suggestions = [
+                "Use .strftime('%Y-%m-%d %H:%M') for datetime in JSON",
+                "Check for non-serializable objects in response",
+                "Verify model schema matches data structure"
+            ]
+        elif detected_category == "database":
+            suggestions = [
+                "Verify Firestore connection is properly initialized",
+                "Check document/collection paths are correct",
+                "Ensure organization_id is included for multi-tenant queries"
+            ]
+
+        result = {
+            "category": detected_category,
+            "severity": severity,
+            "known_matches": len(similar),
+            "similar_issues": similar[:3] if similar else [],
+            "suggestions": suggestions,
+        }
+
+        return JSONResponse({
+            "status": "success",
+            "data": result,
+        })
+
+    except Exception as e:
+        logger.error(f"Error categorization failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

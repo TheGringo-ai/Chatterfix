@@ -419,10 +419,21 @@ class AITeamIntelligence:
 
             # Get recent mistakes
             mistakes = await self.firestore.get_collection("mistake_patterns", limit=100)
-            recent_mistakes = [
-                m for m in mistakes
-                if m.get("timestamp") and m.get("timestamp").replace(tzinfo=timezone.utc) > cutoff
-            ]
+            recent_mistakes = []
+            for m in mistakes:
+                ts = m.get("timestamp")
+                if ts:
+                    # Handle both string and datetime timestamps
+                    if isinstance(ts, str):
+                        try:
+                            from dateutil import parser
+                            ts = parser.parse(ts)
+                        except Exception:
+                            continue
+                    if hasattr(ts, 'replace'):
+                        ts = ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+                    if ts > cutoff:
+                        recent_mistakes.append(m)
 
             # Analyze patterns
             error_types = {}

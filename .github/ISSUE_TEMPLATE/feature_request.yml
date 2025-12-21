@@ -2,18 +2,23 @@ name: Feature Request
 description: Suggest a new feature for ChatterFix
 title: "[Feature]: "
 labels: ["enhancement", "triage"]
+assignees: []
+
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for suggesting a feature! Help us understand what you need.
+        Thanks for suggesting a feature! We love hearing from users.
+        
+        **Remember:** ChatterFix is built for technicians on the floor. 
+        Features should be hands-free, voice-friendly, and minimize data entry.
 
   - type: textarea
     id: problem
     attributes:
       label: Problem Statement
-      description: What problem does this solve? What's the current pain point?
-      placeholder: As a technician, I need to...
+      description: What problem does this feature solve? Is it related to a frustration?
+      placeholder: "I'm always frustrated when..."
     validations:
       required: true
 
@@ -21,54 +26,76 @@ body:
     id: solution
     attributes:
       label: Proposed Solution
-      description: How should this work?
-      placeholder: Describe your ideal solution...
+      description: Describe the feature you'd like to see
+      placeholder: "I would like..."
     validations:
       required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: Feature Area
-      options:
-        - Work Orders
-        - Assets
-        - Inventory
-        - Dashboard
-        - Voice Commands
-        - Mobile App
-        - AI/Automation
-        - Training
-        - Reporting
-        - Integration
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: user
-    attributes:
-      label: Primary User
-      description: Who benefits most from this feature?
-      options:
-        - Technician (field worker)
-        - Manager
-        - Admin
-        - All users
-    validations:
-      required: true
-
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Priority
-      options:
-        - Nice to have
-        - Would improve workflow
-        - Critical for adoption
 
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives Considered
-      description: Any workarounds or alternatives you've tried?
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: "I've tried..."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area of ChatterFix does this affect?
+      options:
+        - Work Orders
+        - Assets & Equipment
+        - Inventory & Parts
+        - Voice Commands
+        - AI Assistant
+        - Mobile App
+        - Training System
+        - Reporting & Analytics
+        - Team Collaboration
+        - Integrations
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: How would this feature impact your work?
+      options:
+        - Critical - Can't work without it
+        - High - Would significantly improve productivity
+        - Medium - Would be nice to have
+        - Low - Minor improvement
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: voice
+    attributes:
+      label: Voice/Hands-Free Compatibility
+      description: Is this feature compatible with our hands-free philosophy?
+      options:
+        - label: This feature could work with voice commands
+        - label: This feature requires minimal screen interaction
+        - label: This feature helps technicians in the field
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, mockups, or screenshots about the feature request
+      placeholder: "Additional information..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to contribute?
+      options:
+        - label: I'm interested in implementing this feature
+        - label: I'm willing to help test this feature

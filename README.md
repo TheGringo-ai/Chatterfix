@@ -1,214 +1,238 @@
-# 🚀 ChatterFix: Revolutionary AI-Powered CMMS Platform
+<p align="center">
+  <img src="https://img.shields.io/badge/ChatterFix-CMMS%20Reimagined-00d4ff?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bS0xIDE3LjkzYy0zLjk1LS40OS03LTMuODUtNy03LjkzIDAtLjYyLjA4LTEuMjEuMjEtMS43OUw5IDE1djFjMCAxLjEuOSAyIDIgMnYxLjkzem02LjktMi41NGMtLjI2LS44MS0xLTEuMzktMS45LTEuMzloLTF2LTNjMC0uNTUtLjQ1LTEtMS0xSDh2LTJoMmMuNTUgMCAxLS40NSAxLTFWN2gyYzEuMSAwIDItLjkgMi0ydi0uNDFjMi45MyAxLjE5IDUgNC4wNiA1IDcuNDEgMCAyLjA4LS44IDMuOTctMi4xIDUuMzl6Ii8+PC9zdmc+" alt="ChatterFix" />
+</p>
 
-[![Deploy to Production](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml)
-[![Deploy to Cloud Run](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy-cloud-run.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy-cloud-run.yml)
-[![Security Scan](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml/badge.svg)](https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml)
-[![License](https://img.shields.io/badge/License-Dual%20(Community%2FEnterprise)-blue.svg)](LICENSE)
-[![AI Team](https://img.shields.io/badge/AI%20Team-Multi%20Model%20Collaboration-green.svg)](#ai-team-collaboration)
-[![Development Value](https://img.shields.io/badge/Development%20Value-$240K--385K-gold.svg)](#revolutionary-ai-features)
+<h1 align="center">
+  <br>
+  ChatterFix
+  <br>
+  <sub>The Future of Maintenance Management</sub>
+</h1>
 
-**The world's first maintenance management system with revolutionary multi-model AI collaboration, autonomous feature development, and never-repeat-mistakes architecture.**
+<p align="center">
+  <strong>AI-First. Voice-Driven. Hands-Free.</strong>
+  <br>
+  <em>Built for the technician on the floor, not the manager in the office.</em>
+</p>
 
-> **🎯 Development Value: $240,000 - $385,000** in advanced AI systems including multi-model collaboration, autonomous development, and enterprise intelligence.
+<p align="center">
+  <a href="https://chatterfix.com"><img src="https://img.shields.io/badge/Live%20Demo-chatterfix.com-00d4ff?style=for-the-badge" alt="Live Demo" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Quick%20Start-5%20Minutes-success?style=for-the-badge" alt="Quick Start" /></a>
+  <a href="mailto:enterprise@chatterfix.com"><img src="https://img.shields.io/badge/Enterprise-Contact%20Us-gold?style=for-the-badge" alt="Enterprise" /></a>
+</p>
 
-## Features
+<p align="center">
+  <a href="https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml"><img src="https://github.com/TheGringo-ai/Chatterfix/actions/workflows/deploy.yml/badge.svg" alt="Deploy to Production" /></a>
+  <a href="https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml"><img src="https://github.com/TheGringo-ai/Chatterfix/actions/workflows/security-scan.yml/badge.svg" alt="Security Scan" /></a>
+  <img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-009688.svg" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Firebase-Firestore-FFCA28.svg" alt="Firebase" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Dual%20(Community%2FEnterprise)-blue.svg" alt="License" /></a>
+</p>
 
--   **Unified Interface:** Consistent styling and navigation across all modules.
--   **Work Order Management:** Create, update, and track work orders with a modern UI.
--   **AI Integration:** Built-in AI assistant powered by Gemini for querying CMMS data and getting help.
--   **Voice Commands:** Process voice commands with Grok AI to create work orders hands-free.
--   **Computer Vision:** AI-powered part recognition and visual asset inspection.
--   **Predictive Maintenance:** ML-powered engine to predict asset failures.
--   **Health Monitoring:** System health checks and SLO tracking.
--   **Team Collaboration:** Real-time messaging, notifications, and team management.
--   **Training System:** AI-generated training modules and skill tracking.
--   **Geolocation & PWA:** Mobile-first with offline capabilities.
+---
 
-## Directory Structure
+<p align="center">
+  <img src="https://img.shields.io/badge/Development%20Value-$240K--385K-gold?style=flat-square&labelColor=1a1a2e" alt="Value" />
+  <img src="https://img.shields.io/badge/AI%20Models-5%20Integrated-00d4ff?style=flat-square&labelColor=1a1a2e" alt="AI Models" />
+  <img src="https://img.shields.io/badge/Voice%20Commands-Natural%20Language-success?style=flat-square&labelColor=1a1a2e" alt="Voice" />
+</p>
 
--   `main.py`: The entry point of the application (FastAPI).
--   `app/routers/`: API route handlers for all modules.
--   `app/services/`: Business logic and AI services.
--   `app/core/`: Database and core functionality.
--   `app/templates/`: Jinja2 HTML templates.
--   `app/static/`: CSS, JavaScript, and static assets.
+---
 
-## Setup and Running
+## The Problem We Solve
 
-1.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+**Traditional CMMS systems are built backwards.** They're designed for managers sitting at desks, not technicians with greasy hands standing next to broken equipment.
 
-2.  **Configure Environment Variables:**
-    Create a `.env` file with:
-    ```bash
-    GEMINI_API_KEY=your_gemini_api_key_here
-    XAI_API_KEY=your_xai_api_key_here  # Optional, for voice commands
-    ```
+<table>
+<tr>
+<td width="50%">
 
-3.  **Run the Application:**
-    ```bash
-    python3 main.py
-    ```
-    Or using uvicorn directly:
-    ```bash
-    uvicorn main:app --reload
-    ```
+### Traditional CMMS
+- Requires keyboard and mouse
+- Complex forms with dozens of fields
+- Manual data entry for everything
+- Designed for office workers
+- Slow, clunky interfaces
 
-4.  **Access the App:**
-    Open your browser and navigate to `http://localhost:8000`.
+</td>
+<td width="50%">
 
-## 🚀 Revolutionary AI Features
+### ChatterFix
+- Voice commands, no hands needed
+- AI fills forms automatically
+- OCR captures data from labels
+- Built for the shop floor
+- Fast, intuitive, mobile-first
 
-### 🧠 AI Team Collaboration Framework
-**Access:** [AI Team Dashboard](http://localhost:8000/ai-team/dashboard)
+</td>
+</tr>
+</table>
 
-**Architecture Overview:**
-The AI Team is built as an enterprise-grade, multi-agent collaboration platform with a **gRPC core** for high-performance inter-service communication and a **REST API wrapper** for web/frontend access.
+---
+
+## See It In Action
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Web Interface                        │
-│              (AI Team Dashboard)                        │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│              REST API (FastAPI)                         │
-│         /ai-team/execute, /ai-team/stream               │
-│         app/routers/ai_team_collaboration.py            │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│              gRPC Service Layer                         │
-│           protos/ai_team.proto                          │
-│           ai_team/grpc_server.py                        │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│            AutogenOrchestrator Core                     │
-│         ai_team/autogen_framework.py                    │
-│    (Multi-model coordination & memory system)           │
-└─────────────────────────────────────────────────────────┘
+Technician: "Hey ChatterFix, create a work order for the hydraulic press,
+             it's leaking oil and needs new seals"
+
+ChatterFix: "Got it. I've created Work Order #WO-2024-1247:
+             - Asset: Hydraulic Press #1 (Building A)
+             - Issue: Oil leak - requires seal replacement
+             - Priority: High (safety hazard)
+             - Parts: Ordered 2x hydraulic seals from inventory
+             - Assigned to: You
+
+             Want me to check if we have the seals in stock?"
 ```
 
-**Multi-Model Orchestration:**
-- **Claude Sonnet 4**: Lead architect for complex analysis and planning
-- **ChatGPT 4o**: Senior developer for coding and optimization
-- **Gemini 2.5 Flash**: Creative innovator for UI/UX solutions
-- **Grok 3**: Strategic reasoner for analysis and decision making
-- **Grok Code Fast**: Rapid coding specialist for quick implementations
+**That's it.** No typing. No clicking through menus. No filling out forms. Just talk.
 
-**Advanced Memory System:**
-- **Never-Repeat-Mistakes Engine**: AI learns from every error to prevent repetition
-- **Conversation Archive**: All AI interactions permanently stored and searchable
-- **Knowledge Search**: Instant access to all solutions, mistakes, and patterns
-- **Cross-Application Learning**: Shared intelligence across ChatterFix, LineSmart, Fix-it-Fred
+---
 
-**gRPC Interface (Primary - for service-to-service):**
-```protobuf
-service AITeamService {
-  rpc ExecuteTask(TaskRequest) returns (TaskResponse);
-  rpc StreamCollaboration(TaskRequest) returns (stream CollaborationResponse);
-  rpc GetAvailableModels(ModelsRequest) returns (ModelsResponse);
-  rpc HealthCheck(HealthRequest) returns (HealthResponse);
-}
+## Core Features
+
+<table>
+<tr>
+<td align="center" width="33%">
+<h3>Voice Commands</h3>
+<p>Create work orders, check out parts, update status - all by voice. Perfect for technicians with dirty hands or safety gloves.</p>
+</td>
+<td align="center" width="33%">
+<h3>OCR Scanning</h3>
+<p>Point your camera at a serial number, nameplate, or document. ChatterFix extracts the data automatically.</p>
+</td>
+<td align="center" width="33%">
+<h3>AI Assistant</h3>
+<p>Ask natural questions: "What's the maintenance history of pump #7?" Get instant, intelligent answers.</p>
+</td>
+</tr>
+<tr>
+<td align="center" width="33%">
+<h3>Part Recognition</h3>
+<p>Take a photo of a broken part. AI identifies it, finds it in inventory, and creates the order.</p>
+</td>
+<td align="center" width="33%">
+<h3>Predictive Maintenance</h3>
+<p>ML models analyze patterns to predict failures before they happen. Stop problems, not production.</p>
+</td>
+<td align="center" width="33%">
+<h3>Smart Training</h3>
+<p>AI-generated training modules based on your equipment. Track skills, close gaps, measure ROI.</p>
+</td>
+</tr>
+</table>
+
+---
+
+## The AI Team Advantage
+
+ChatterFix doesn't use just one AI model. It orchestrates **five different AI systems** working together:
+
 ```
-- Proto definition: `protos/ai_team.proto`
-- Server implementation: `ai_team/grpc_server.py`
-- Client: `ai_team/grpc_client.py`
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AI TEAM COLLABORATION                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│   Claude Sonnet 4      ChatGPT 4o        Gemini 2.5        Grok 3       │
+│   ┌──────────┐        ┌──────────┐      ┌──────────┐     ┌──────────┐   │
+│   │ Lead     │        │ Senior   │      │ Creative │     │ Strategic│   │
+│   │ Architect│◄──────►│ Developer│◄────►│ Innovator│◄───►│ Reasoner │   │
+│   └──────────┘        └──────────┘      └──────────┘     └──────────┘   │
+│         │                   │                 │                │         │
+│         └───────────────────┴────────┬────────┴────────────────┘         │
+│                                      │                                   │
+│                         ┌────────────▼────────────┐                      │
+│                         │   MEMORY SYSTEM         │                      │
+│                         │   Never Repeat Mistakes │                      │
+│                         │   Learn From Every Task │                      │
+│                         └─────────────────────────┘                      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-**REST APIs (for web/frontend access):**
-- `GET /ai-team/health` - Check AI team service health
-- `GET /ai-team/models` - List available AI models
-- `POST /ai-team/execute` - Multi-model collaborative task execution
-- `POST /ai-team/stream` - Real-time AI collaboration streaming (SSE)
-- `GET /ai-team/memory/search` - Search AI knowledge base
-- `POST /ai-team/memory/index/rebuild` - Rebuild knowledge index
-- `GET /ai-team/analytics` - AI team performance metrics
-- `GET /ai-team/dashboard` - Interactive web dashboard
+### Never-Repeat-Mistakes Engine
 
-### 📊 LineSmart Training Intelligence
-**Access:** [LineSmart ROI Dashboard](http://localhost:8000/linesmart/roi-dashboard)
+Our AI team remembers **every solution, every error, every pattern**. When a similar problem appears:
+- Instantly recalls past solutions
+- Warns about known pitfalls
+- Suggests proven approaches
+- Learns from outcomes
 
-**Business Intelligence:**
-- **ROI Tracking**: $124,500 annual savings calculations with 340% ROI
-- **Skills Gap Analysis**: AI-powered training recommendations
-- **Interactive Charts**: Chart.js visualizations for training effectiveness
-- **Performance Prediction**: ML models estimate training impact
+**Result:** The system gets smarter with every interaction.
 
-**APIs:**
-- `GET /linesmart/training-analytics` - Training effectiveness data
-- `POST /linesmart/submit-training-data` - AI analysis of training data  
-- `POST /linesmart/analyze-skill-gaps` - Skills gap identification
+---
 
-### 🤖 Autonomous Feature Development
-**Access:** [Auto Features Portal](http://localhost:8000/autonomous/interface)
+## Quick Start
 
-**Revolutionary Customer Experience:**
-- **Natural Language Requests**: Customers describe needs in plain English
-- **AI Automatic Implementation**: Features built and deployed in 2-5 minutes
-- **Background Processing**: AutoGen framework handles complex development
-- **Real-time Updates**: Live progress tracking during implementation
+### Prerequisites
+- Python 3.11+
+- Google Cloud account (for Firebase)
+- API keys for AI services (Gemini, optional: Grok)
 
-**APIs:**
-- `POST /autonomous/request` - Submit feature request for AI implementation
-- `POST /autonomous/simple` - Ultra-simple feature request interface
-- `GET /autonomous/examples` - Get example feature requests
+### Installation
 
-### 🔧 Fix-it-Fred Autonomous Maintenance  
-**Access:** [Fix-it-Fred Interface](http://localhost:8000/fix-it-fred/interface)
+```bash
+# Clone the repository
+git clone https://github.com/TheGringo-ai/Chatterfix.git
+cd Chatterfix
 
-**Intelligent Automation:**
-- **Issue Detection**: AI-powered problem diagnosis from descriptions
-- **Autonomous Resolution**: Self-fixing maintenance systems
-- **Predictive Maintenance**: Proactive issue prevention
-- **Learning Integration**: Feeds insights to LineSmart training system
+# Install dependencies
+pip install -r requirements.txt
 
-### Legacy AI Features
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys
 
-#### Voice Commands
-POST `/ai/voice-command` - Process voice commands to create work orders
-- Powered by Grok AI for intelligent command interpretation
-- Automatic priority detection and work order creation
+# Run the application
+python3 main.py
+```
 
-#### Computer Vision
-- POST `/ai/recognize-part` - Identify parts from images
-- POST `/ai/analyze-condition` - Analyze asset condition from visual inspection
-- Automatic inventory matching and condition scoring
+### Access
+- **Local:** http://localhost:8000
+- **Production:** https://chatterfix.com
 
-## Configuration
+---
 
--   **Database:** By default, the app uses a local SQLite database in `./data/cmms.db`.
--   **Port:** Default port is 8000. You can change it via the `CMMS_PORT` environment variable.
--   **AI Features:** Require API keys in `.env` file. Gemini for general AI, XAI for voice commands.
+## Architecture
+
+```
+ChatterFix/
+├── main.py                 # FastAPI application entry
+├── app/
+│   ├── routers/           # API endpoints
+│   │   ├── ai.py          # AI chat & voice commands
+│   │   ├── ai_team.py     # Multi-model AI collaboration
+│   │   ├── work_orders.py # Work order management
+│   │   ├── assets.py      # Asset management
+│   │   ├── inventory.py   # Parts & vendors
+│   │   └── ...
+│   ├── services/          # Business logic
+│   │   ├── ai_team_intelligence.py
+│   │   ├── gemini_service.py
+│   │   └── ...
+│   ├── core/              # Database & infrastructure
+│   │   └── firestore_db.py
+│   └── templates/         # Jinja2 HTML templates
+├── ai_team/               # AI Team collaboration framework
+├── mobile/                # React Native mobile app
+└── scripts/               # Utility scripts
+```
+
+---
 
 ## Deployment
 
-### Automated Deployment (GitHub Actions)
+### Automated (Recommended)
+Push to `main` branch triggers automatic deployment to Google Cloud Run.
 
-The application automatically deploys to Google Cloud Run on every push to the `main` branch.
-
-**Live Application:** [https://chatterfix.com](https://chatterfix.com)
-
-### Manual Deployment
-
-**Prerequisites:**
-- Google Cloud SDK installed and configured
-- Docker installed
-- Authenticated to GCP project `fredfix`
-
-**Quick Deploy:**
+### Manual
 ```bash
-# Direct deployment (fast)
+# Quick deployment
 ./deploy.sh direct
 
-# Cloud Build deployment (recommended for CI/CD)
-./deploy.sh cloudbuild
-```
-
-**Using gcloud directly:**
-```bash
+# Or using gcloud
 gcloud run deploy chatterfix-cmms \
   --source . \
   --region us-central1 \
@@ -216,179 +240,120 @@ gcloud run deploy chatterfix-cmms \
   --allow-unauthenticated
 ```
 
-### Deployment Documentation
+---
 
-For comprehensive deployment documentation, including:
-- Setting up GitHub Actions secrets
-- Configuring Google Cloud service accounts
-- Troubleshooting deployment issues
-- Rollback procedures
-- Monitoring and logging
+## API Highlights
 
-See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/ai/voice` | POST | Process voice commands |
+| `/ai/chat` | POST | AI assistant chat |
+| `/ai/context` | GET | Get AI team context |
+| `/ai/consensus` | POST | Multi-model consensus |
+| `/work-orders` | GET/POST | Work order CRUD |
+| `/assets` | GET/POST | Asset management |
+| `/inventory/parts` | GET/POST | Parts inventory |
+| `/api/v1/import/upload` | POST | Smart data import with AI |
 
-### Quick Links
-
-- 📱 **Production**: https://chatterfix.com
-- 📚 **Deployment Docs**: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- 🔧 **GitHub Actions**: [.github/workflows/](.github/workflows/)
-- 🐳 **Dockerfile**: [Dockerfile](Dockerfile)
-- ☁️ **Cloud Build**: [cloudbuild.yaml](cloudbuild.yaml)
-
-## Development
-
-### Code Quality and Linting
-
-ChatterFix uses comprehensive linting and code quality tools to maintain high standards:
-
-#### Installation
-
-Install development dependencies:
-```bash
-pip install -r requirements-dev.txt
-```
-
-#### Linting Tools
-
-- **Black**: Code formatter (88 character line length)
-  ```bash
-  black app/
-  ```
-
-- **isort**: Import statement organizer
-  ```bash
-  isort app/ --profile=black
-  ```
-
-- **Flake8**: Style guide enforcement and error detection
-  ```bash
-  flake8 app/
-  ```
-
-- **Pylint**: Advanced static analysis with import checking
-  ```bash
-  pylint app/ --disable=all --enable=import-error,cyclic-import
-  ```
-
-- **MyPy**: Static type checking
-  ```bash
-  mypy app/ --ignore-missing-imports
-  ```
-
-#### Pre-commit Hooks
-
-Install pre-commit hooks to automatically check code before commits:
-
-```bash
-# Install hooks
-pre-commit install
-
-# Run hooks manually on all files
-pre-commit run --all-files
-```
-
-The hooks will automatically:
-- Format code with Black
-- Organize imports with isort
-- Check for errors with Flake8
-- Run type checking with MyPy
-- Check security with Bandit
-- Run tests with pytest
-
-#### Import Validation
-
-Validate that all modules can be imported correctly:
-
-```bash
-# Run import validation tests
-pytest tests/test_imports.py -v
-
-# Check specific routers
-python -c "from app.routers import team, landing"
-```
-
-### Error Monitoring
-
-ChatterFix includes comprehensive error monitoring with special handling for import errors. See [MONITORING.md](MONITORING.md) for details on:
-
-- Error tracking middleware configuration
-- Integration with Sentry and Cloud Logging
-- Structured logging format
-- Troubleshooting import errors
-
-### Testing
-
-Run the test suite:
-
-```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_imports.py -v
-
-# Run with coverage
-pytest --cov=app --cov-report=html
-```
-
-## 📄 Licensing
-
-ChatterFix uses a **dual licensing model** to protect valuable AI innovations while enabling community engagement:
-
-### **Community Edition** (Modified MIT License)
-- ✅ **Personal learning and education**
-- ✅ **Academic research and teaching**  
-- ✅ **Open source projects (non-commercial)**
-- ✅ **Portfolio demonstrations**
-- ❌ **Commercial deployment or revenue generation**
-- ❌ **Enterprise or business use**
-- ❌ **AI model training on proprietary systems**
-
-### **Enterprise Edition** (Commercial License)
-- ✅ **Full commercial usage rights**
-- ✅ **Complete AI team collaboration system**
-- ✅ **LineSmart ROI analytics platform**
-- ✅ **Autonomous feature development system**
-- ✅ **Fix-it-Fred maintenance automation**
-- ✅ **Premium support and updates**
-- ✅ **White-label and customization rights**
-- ✅ **Multi-tenant deployment capabilities**
-
-### **AI Team Framework Protection**
-Your AI Team Collaboration Framework is specifically protected as proprietary technology including:
-- Multi-model AI orchestration system
-- Advanced memory and learning architecture  
-- Never-repeat-mistakes engine
-- Knowledge search and pattern recognition
-- Autonomous development capabilities
-
-### **Contact for Enterprise Licensing:**
-- **Email**: fred@chatterfix.com
-- **Enterprise Sales**: enterprise@chatterfix.com
-- **Website**: https://chatterfix.com
-
-**[📋 Full License Details](LICENSE)**
-
-## 💼 Business Value
-
-### **Protected Development Investment**
-- **Total Platform Value**: $240,000 - $385,000
-- **AI Team Framework**: $50,000 - $80,000  
-- **LineSmart Intelligence**: $30,000 - $50,000
-- **Autonomous Systems**: $40,000 - $60,000
-- **Fix-it-Fred Platform**: $35,000 - $55,000
-- **Memory Architecture**: $60,000 - $100,000
-- **Integration Framework**: $25,000 - $40,000
-
-### **Competitive Advantages**
-1. **First-of-its-kind multi-model AI collaboration**
-2. **Revolutionary autonomous feature development**  
-3. **Advanced memory system preventing repeated mistakes**
-4. **Enterprise-grade ROI analytics and training intelligence**
-5. **Self-fixing maintenance automation**
+**Full API Documentation:** Available at `/docs` when running locally.
 
 ---
 
-**© 2024 Fred Taylor. All Rights Reserved.**
+## Pricing & Licensing
 
-*ChatterFix™, AI Team Collaboration™, LineSmart™, and Fix-it-Fred™ are trademarks of Fred Taylor.*
+<table>
+<tr>
+<th width="50%">Community Edition</th>
+<th width="50%">Enterprise Edition</th>
+</tr>
+<tr>
+<td>
+<h3>FREE</h3>
+<p><em>For learning and non-commercial use</em></p>
+<ul>
+<li>Personal learning & education</li>
+<li>Academic research</li>
+<li>Portfolio demonstrations</li>
+<li>Open source projects</li>
+<li>Community support</li>
+</ul>
+<p><strong>Restrictions:</strong></p>
+<ul>
+<li>No commercial use</li>
+<li>No enterprise deployment</li>
+<li>No revenue generation</li>
+</ul>
+</td>
+<td>
+<h3>Contact for Pricing</h3>
+<p><em>Full commercial rights</em></p>
+<ul>
+<li>Complete AI team system</li>
+<li>Multi-tenant architecture</li>
+<li>White-label rights</li>
+<li>Priority support with SLA</li>
+<li>Custom integrations</li>
+<li>On-premise deployment option</li>
+<li>Training & onboarding</li>
+</ul>
+<p><a href="mailto:enterprise@chatterfix.com"><strong>Contact Enterprise Sales</strong></a></p>
+</td>
+</tr>
+</table>
+
+**[Full License Details](LICENSE)**
+
+---
+
+## Security
+
+We take security seriously. See our [Security Policy](SECURITY.md) for:
+- Vulnerability reporting
+- Security practices
+- Compliance information
+
+---
+
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting PRs.
+
+---
+
+## Support
+
+| Channel | For |
+|---------|-----|
+| [GitHub Issues](https://github.com/TheGringo-ai/Chatterfix/issues) | Bug reports, feature requests |
+| [Documentation](./documents/) | Guides and references |
+| [enterprise@chatterfix.com](mailto:enterprise@chatterfix.com) | Enterprise inquiries |
+| [support@chatterfix.com](mailto:support@chatterfix.com) | Technical support |
+
+---
+
+## Roadmap
+
+- [x] Multi-model AI collaboration
+- [x] Voice command interface
+- [x] Smart data import with OCR
+- [x] Mobile app (React Native)
+- [ ] AR/Smart glasses integration
+- [ ] Offline-first mobile app
+- [ ] IoT sensor integration
+- [ ] Predictive analytics dashboard
+
+---
+
+<p align="center">
+  <strong>Built with passion for the people who keep our world running.</strong>
+  <br><br>
+  <a href="https://chatterfix.com">Website</a> •
+  <a href="mailto:enterprise@chatterfix.com">Enterprise</a> •
+  <a href="https://github.com/TheGringo-ai/Chatterfix/issues">Issues</a>
+</p>
+
+<p align="center">
+  <sub>© 2024 Fred Taylor. All Rights Reserved.</sub>
+  <br>
+  <sub>ChatterFix™, AI Team Collaboration™, LineSmart™, and Fix-it-Fred™ are trademarks of Fred Taylor.</sub>
+</p>

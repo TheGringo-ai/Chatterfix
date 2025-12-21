@@ -1,8 +1,11 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Enterprise Inquiries
+    url: mailto:enterprise@chatterfix.com
+    about: Contact us for enterprise licensing and custom solutions
+  - name: Security Issues
+    url: mailto:security@chatterfix.com
+    about: Report security vulnerabilities privately
   - name: Documentation
-    url: https://github.com/TheGringo-ai/Chatterfix/blob/main/documents/README.md
-    about: Check the documentation for answers
-  - name: ChatterFix Website
-    url: https://chatterfix.com
-    about: Visit the live application
+    url: https://github.com/TheGringo-ai/Chatterfix/tree/main/documents
+    about: Check our documentation for answers

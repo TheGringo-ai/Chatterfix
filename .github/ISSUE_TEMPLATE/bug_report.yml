@@ -1,18 +1,20 @@
 name: Bug Report
-description: Report a bug or issue with ChatterFix
+description: Report a bug to help us improve ChatterFix
 title: "[Bug]: "
 labels: ["bug", "triage"]
+assignees: []
+
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a bug! Please fill out the details below.
+        Thanks for taking the time to report a bug! Please fill out the form below.
 
   - type: textarea
     id: description
     attributes:
       label: Bug Description
-      description: What happened? What did you expect to happen?
+      description: A clear and concise description of what the bug is.
       placeholder: Describe the bug...
     validations:
       required: true
@@ -21,56 +23,91 @@ body:
     id: steps
     attributes:
       label: Steps to Reproduce
-      description: How can we reproduce this issue?
+      description: Steps to reproduce the behavior
       placeholder: |
-        1. Go to...
-        2. Click on...
-        3. See error...
-    validations:
-      required: true
-
-  - type: dropdown
-    id: area
-    attributes:
-      label: Affected Area
-      description: What part of ChatterFix is affected?
-      options:
-        - Work Orders
-        - Assets
-        - Inventory
-        - Dashboard
-        - Authentication
-        - Voice Commands
-        - Mobile App
-        - API
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: severity
-    attributes:
-      label: Severity
-      options:
-        - Critical (blocking work)
-        - High (major feature broken)
-        - Medium (feature partially broken)
-        - Low (minor issue)
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
     validations:
       required: true
 
   - type: textarea
-    id: environment
+    id: expected
     attributes:
-      label: Environment
-      description: Browser, device, etc.
-      placeholder: |
-        - Browser: Chrome 120
-        - Device: iPhone 15 / Desktop
-        - URL: chatterfix.com or localhost
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
 
   - type: textarea
     id: screenshots
     attributes:
       label: Screenshots
-      description: Add screenshots if helpful
+      description: If applicable, add screenshots to help explain your problem.
+      placeholder: Drag and drop screenshots here...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did you encounter this bug?
+      options:
+        - Production (chatterfix.com)
+        - Local development
+        - Mobile app (iOS)
+        - Mobile app (Android)
+        - Self-hosted
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser/Device
+      description: What browser or device are you using?
+      placeholder: e.g., Chrome 120, Safari 17, iPhone 15
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of ChatterFix are you using?
+      placeholder: e.g., commit hash, release version
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Please copy and paste any relevant log output.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported
+          required: true
+        - label: I am using the latest version of ChatterFix
+          required: false
+        - label: I have included all relevant information above
+          required: true

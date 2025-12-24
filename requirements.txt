@@ -23,7 +23,7 @@ google-cloud-speech==2.34.0
 # AI & ML
 openai==1.93.3
 google-generativeai==0.8.5
-pandas==2.2.3
+pandas==2.3.3
 numpy==2.2.1
 scikit-learn==1.6.1
 

@@ -13,6 +13,7 @@ export interface TranscriptionResult {
 
 class WhisperTranscriptionService {
   private apiKey: string | null = null;
+  private isInitialized = false;
   private readonly WHISPER_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
 
   /**
@@ -20,10 +21,42 @@ class WhisperTranscriptionService {
    */
   setApiKey(key: string): void {
     this.apiKey = key;
+    this.isInitialized = true;
+  }
+
+  /**
+   * Check if the service is properly configured
+   * Call this at app startup to detect configuration issues early
+   */
+  checkConfiguration(): { isConfigured: boolean; error?: string } {
+    if (this.apiKey) {
+      return { isConfigured: true };
+    }
+
+    // Try to get from environment
+    const envKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    if (envKey) {
+      this.apiKey = envKey;
+      this.isInitialized = true;
+      return { isConfigured: true };
+    }
+
+    return {
+      isConfigured: false,
+      error: 'OpenAI API key not configured. Set EXPO_PUBLIC_OPENAI_API_KEY in your environment.',
+    };
+  }
+
+  /**
+   * Check if service is ready for transcription
+   */
+  isReady(): boolean {
+    return this.isInitialized || !!process.env.EXPO_PUBLIC_OPENAI_API_KEY;
   }
 
   /**
    * Transcribe audio file using Whisper API
+   * Returns a user-friendly error instead of throwing if API key is missing
    */
   async transcribe(audioUri: string): Promise<TranscriptionResult> {
     if (!this.apiKey) {
@@ -32,7 +65,13 @@ class WhisperTranscriptionService {
     }
 
     if (!this.apiKey) {
-      throw new Error('OpenAI API key not configured');
+      // Return a fallback instead of throwing to prevent app crash
+      console.error('Whisper API key not configured - voice transcription unavailable');
+      return {
+        text: '[Voice transcription unavailable - API key not configured]',
+        language: 'en',
+        duration: 0,
+      };
     }
 
     try {
@@ -86,6 +125,7 @@ class WhisperTranscriptionService {
 
   /**
    * Transcribe from a download URL (Firebase Storage)
+   * Returns a user-friendly error instead of throwing if API key is missing
    */
   async transcribeFromUrl(downloadUrl: string): Promise<TranscriptionResult> {
     if (!this.apiKey) {
@@ -93,7 +133,13 @@ class WhisperTranscriptionService {
     }
 
     if (!this.apiKey) {
-      throw new Error('OpenAI API key not configured');
+      // Return a fallback instead of throwing to prevent app crash
+      console.error('Whisper API key not configured - voice transcription unavailable');
+      return {
+        text: '[Voice transcription unavailable - API key not configured]',
+        language: 'en',
+        duration: 0,
+      };
     }
 
     try {

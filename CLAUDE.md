@@ -605,6 +605,82 @@ async def generate_demo_data(org_id: str = "demo_org"):
 - Document script usage in README
 - Add `--clear` flag to reset before seeding
 
+#### **LESSON #16: Voice Command / AR Mode Crash Prevention**
+**Problem**: App crashes when using voice commands in Glasses/AR mode, especially when creating work orders
+**Root Causes Identified (10 crash points)**:
+1. `stopRecording()` throws error if called when no recording in progress (double-tap)
+2. Race conditions with React state/refs in async recording functions
+3. Missing API key for Whisper transcription throws hard error
+4. useCallback dependencies not including required state variables
+5. Cleanup in useEffect not properly awaiting async operations
+6. Organization ID not set before voice command initiated
+
+**Symptoms**:
+- App crashes on double-tap of record button
+- Crash when stopping recording after quick start/stop
+- "No recording in progress" unhandled error
+- Silent failures when API keys not configured
+
+**Solution**:
+1. **Guard against double-tap**: Check `hasActiveRecording()` before stopping
+2. **Use refs for async operations**: State can be stale in async closures
+3. **Graceful API key handling**: Return fallback instead of throwing
+4. **Wrap handlers in try/catch**: Prevent crashes, show user-friendly errors
+5. **Proper cleanup**: Use refs and await async cleanup operations
+
+**Code Patterns**:
+```typescript
+// voiceRecorder.ts - Safe stop with null return instead of throw
+async stopRecording(): Promise<RecordingResult | null> {
+  if (!this.recording) {
+    console.warn('stopRecording called but no recording in progress');
+    return null;  // Don't throw!
+  }
+  // ... rest of logic
+}
+
+// voiceCommandService.ts - Guard before stopping
+async stopAndProcess(): Promise<VoiceCommandResult> {
+  if (!voiceRecorder.hasActiveRecording()) {
+    return { success: false, error: 'No recording in progress' };
+  }
+  if (this.isProcessing) {
+    return { success: false, error: 'Already processing' };
+  }
+  // ... rest of logic
+}
+
+// GlassesHUDScreen.tsx - Ref for cleanup to avoid stale closure
+const recordingRef = useRef<Audio.Recording | null>(null);
+useEffect(() => {
+  recordingRef.current = recording;
+}, [recording]);
+useEffect(() => {
+  return () => {
+    recordingRef.current?.stopAndUnloadAsync().catch(console.warn);
+  };
+}, []);
+
+// whisperTranscription.ts - Graceful fallback instead of throw
+if (!this.apiKey) {
+  return { text: '[Transcription unavailable - API key not configured]' };
+}
+```
+
+**Files Modified**:
+- `chatterfix-relay/src/services/voiceRecorder.ts` - Safe stop, hasActiveRecording()
+- `chatterfix-relay/src/services/voiceCommandService.ts` - Guards and double-tap prevention
+- `chatterfix-relay/src/services/whisperTranscription.ts` - Graceful API key handling
+- `mobile/src/screens/GlassesHUDScreen.tsx` - Ref-based cleanup, double-tap detection
+
+**Prevention**:
+- Always use refs for state accessed in async cleanup
+- Never throw from recording services - return null/fallback
+- Add hasActiveRecording() check before stop operations
+- Wrap all async handlers in try/catch with user-friendly errors
+- Test voice commands with rapid tapping (stress test)
+- Verify API keys are configured before deploying
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

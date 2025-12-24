@@ -27,7 +27,12 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "ChatterFix Relay",
+      "shortName": "CF Relay",
+      "description": "Voice-powered maintenance relay with offline support",
+      "backgroundColor": "#1a1a2e",
+      "themeColor": "#00d4ff"
     },
     "plugins": [
       "expo-router",

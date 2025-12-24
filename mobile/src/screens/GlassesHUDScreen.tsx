@@ -53,7 +53,6 @@ export default function GlassesHUDScreen() {
 
   const [status, setStatus] = useState<HUDStatus>('IDLE');
   const [hudMessage, setHudMessage] = useState('Ready');
-  const [isOnline, setIsOnline] = useState(true);
   const [queueCount, setQueueCount] = useState(0);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [pendingCommand, setPendingCommand] = useState<any>(null);
@@ -62,13 +61,24 @@ export default function GlassesHUDScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
 
+  // Ref to track recording for cleanup (avoids stale closure issues)
+  const recordingRef = useRef<Audio.Recording | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
+
   // Initialize on mount
   useEffect(() => {
     initializeHUD();
     return () => {
-      // Cleanup recording if active
-      if (recording) {
-        recording.stopAndUnloadAsync();
+      // Cleanup recording if active (use ref to avoid stale closure)
+      const activeRecording = recordingRef.current;
+      if (activeRecording) {
+        activeRecording.stopAndUnloadAsync().catch((err) => {
+          console.warn('Cleanup: Error stopping recording:', err);
+        });
       }
     };
   }, []);
@@ -188,23 +198,34 @@ export default function GlassesHUDScreen() {
     }
   };
 
-  // Main interaction handler
+  // Main interaction handler - wrapped to prevent crashes
   const handleTap = useCallback(async () => {
-    switch (status) {
-      case 'IDLE':
-        await startListening();
-        break;
-      case 'LISTENING':
-        await stopListening();
-        break;
-      case 'CONFIRMING':
-        await confirmCommand();
-        break;
-      case 'OFFLINE':
-        await syncOfflineQueue();
-        break;
+    try {
+      switch (status) {
+        case 'IDLE':
+          await startListening();
+          break;
+        case 'LISTENING':
+          await stopListening();
+          break;
+        case 'CONFIRMING':
+          await confirmCommand();
+          break;
+        case 'OFFLINE':
+          await syncOfflineQueue();
+          break;
+        case 'PROCESSING':
+          // Ignore taps while processing to prevent crashes
+          console.log('Ignoring tap - currently processing');
+          break;
+      }
+    } catch (error) {
+      console.error('Error in handleTap:', error);
+      setStatus('IDLE');
+      setHudMessage('Error - tap to retry');
+      await FeedbackService.announceError('Something went wrong');
     }
-  }, [status, recording, pendingCommand]);
+  }, [status]);
 
   const startListening = async () => {
     try {
@@ -227,15 +248,23 @@ export default function GlassesHUDScreen() {
   };
 
   const stopListening = async () => {
-    if (!recording) return;
+    // Use ref for safety - state might be stale in async context
+    const currentRecording = recordingRef.current;
+    if (!currentRecording) {
+      console.warn('stopListening called but no active recording');
+      setStatus('IDLE');
+      setHudMessage('Ready');
+      await FeedbackService.announceError('No recording found');
+      return;
+    }
 
     try {
       setStatus('PROCESSING');
       setHudMessage('Processing...');
       Vibration.vibrate([0, 30, 50, 30]);
 
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await currentRecording.stopAndUnloadAsync();
+      const uri = currentRecording.getURI();
       setRecording(null);
 
       if (!uri) {
@@ -272,7 +301,6 @@ export default function GlassesHUDScreen() {
       } catch (error: any) {
         // OFFLINE MODE: Queue the command
         if (!error.response || error.message?.includes('Network')) {
-          setIsOnline(false);
           setStatus('OFFLINE');
           setHudMessage('Offline - Queued');
 
@@ -338,11 +366,24 @@ export default function GlassesHUDScreen() {
     navigation.goBack();
   };
 
-  const handleDoubleTap = useCallback(() => {
-    if (status === 'CONFIRMING') {
-      cancelCommand();
+  // Double-tap detection for cancel in CONFIRMING state
+  const lastTapRef = useRef<number>(0);
+  const DOUBLE_TAP_DELAY = 300; // ms
+
+  const handleTapWithDoubleTapDetection = useCallback(async () => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+    lastTapRef.current = now;
+
+    // If double-tap detected and in CONFIRMING state, cancel
+    if (timeSinceLastTap < DOUBLE_TAP_DELAY && status === 'CONFIRMING') {
+      await cancelCommand();
+      return;
     }
-  }, [status]);
+
+    // Otherwise, handle as regular tap
+    await handleTap();
+  }, [status, handleTap]);
 
   // Get icon based on status
   const getIcon = () => {
@@ -380,7 +421,7 @@ export default function GlassesHUDScreen() {
     <TouchableOpacity
       style={styles.container}
       activeOpacity={1}
-      onPress={handleTap}
+      onPress={handleTapWithDoubleTapDetection}
       onLongPress={handleLongPress}
       delayLongPress={1000}
     >

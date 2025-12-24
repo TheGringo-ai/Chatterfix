@@ -56,21 +56,54 @@ class VoiceCommandService {
 
   /**
    * Stop recording and process the voice command
+   * Handles edge cases: no recording, missing org ID, double-tap prevention
    */
   async stopAndProcess(): Promise<VoiceCommandResult> {
-    if (!this.organizationId) {
+    // Guard: Check if there's actually a recording in progress
+    if (!voiceRecorder.hasActiveRecording()) {
+      console.warn('stopAndProcess called but no active recording');
       return {
         success: false,
         transcript: '',
-        error: 'Organization ID not set',
+        error: 'No recording in progress. Please tap the button to start recording first.',
+      };
+    }
+
+    if (!this.organizationId) {
+      // Cancel the recording to clean up
+      await voiceRecorder.cancelRecording();
+      return {
+        success: false,
+        transcript: '',
+        error: 'Organization ID not set. Please log in again.',
+      };
+    }
+
+    // Prevent double-processing
+    if (this.isProcessing) {
+      console.warn('Already processing a voice command');
+      return {
+        success: false,
+        transcript: '',
+        error: 'Already processing. Please wait.',
       };
     }
 
     this.isProcessing = true;
 
     try {
-      // 1. Stop recording
+      // 1. Stop recording (now returns null if no recording)
       const recording = await voiceRecorder.stopRecording();
+
+      // Double-check we got a valid recording
+      if (!recording) {
+        return {
+          success: false,
+          transcript: '',
+          error: 'Recording failed. Please try again.',
+        };
+      }
+
       console.log('Recording stopped:', recording);
 
       // 2. Upload to Firebase Storage
@@ -109,15 +142,14 @@ class VoiceCommandService {
       const commandType = this.detectCommandType(transcription.text);
 
       // 5. Create voice log in Firestore
-      const logId = await createLog({
+      const voiceLog = await createLog({
         asset_id: '',
         audio_file: uploadResult?.downloadUrl,
         transcript: transcription.text,
         command_type: commandType,
-        synced: false,
         organization_id: this.organizationId,
       });
-      console.log('Voice log created:', logId);
+      console.log('Voice log created:', voiceLog.id);
 
       // 6. Process command through backend AI
       let aiResponse;
@@ -129,7 +161,7 @@ class VoiceCommandService {
         console.log('AI response:', aiResponse);
 
         // Mark log as synced
-        await markLogSynced(logId);
+        await markLogSynced(voiceLog.id);
       } catch (syncError) {
         console.warn('Backend sync failed, command saved locally:', syncError);
         aiResponse = {
@@ -144,7 +176,7 @@ class VoiceCommandService {
         action: aiResponse.action,
         response: aiResponse.response,
         workOrder: aiResponse.data?.work_order,
-        logId,
+        logId: voiceLog.id,
       };
     } catch (error) {
       console.error('Voice command processing failed:', error);

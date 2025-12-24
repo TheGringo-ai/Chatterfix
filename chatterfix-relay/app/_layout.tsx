@@ -11,6 +11,7 @@ import { User } from 'firebase/auth';
 import { useAppStore } from '@/stores';
 import { initDatabase } from '@/db';
 import { authService } from '@/services/authService';
+import { useNetworkStatus } from '@/hooks';
 
 // Import global styles
 import '../global.css';
@@ -21,6 +22,15 @@ export default function RootLayout() {
   const [dbError, setDbError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const segments = useSegments();
+
+  // Automatic network monitoring - enables/disables Ghost Mode
+  // This runs continuously in the background while the app is open
+  const { isOnline, ghostModeEnabled, syncStatus } = useNetworkStatus();
+
+  // Log network status changes for debugging
+  useEffect(() => {
+    console.log('[RootLayout] Network status:', { isOnline, ghostModeEnabled, syncStatus });
+  }, [isOnline, ghostModeEnabled, syncStatus]);
 
   // Initialize database
   useEffect(() => {

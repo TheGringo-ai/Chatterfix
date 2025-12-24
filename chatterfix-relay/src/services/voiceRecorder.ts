@@ -82,11 +82,20 @@ class VoiceRecorderService {
   }
 
   /**
-   * Stop recording and return the audio file
+   * Check if a recording is currently in progress
    */
-  async stopRecording(): Promise<RecordingResult> {
+  hasActiveRecording(): boolean {
+    return this.recording !== null && this.isRecording;
+  }
+
+  /**
+   * Stop recording and return the audio file
+   * Returns null if no recording is in progress (prevents crash on double-tap)
+   */
+  async stopRecording(): Promise<RecordingResult | null> {
     if (!this.recording) {
-      throw new Error('No recording in progress');
+      console.warn('stopRecording called but no recording in progress');
+      return null;
     }
 
     try {

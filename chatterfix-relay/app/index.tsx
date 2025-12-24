@@ -8,6 +8,7 @@ import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { useAppStore } from '@/stores';
 import { voiceCommandService, authService } from '@/services';
+import { InstallPrompt } from '@/components';
 
 export default function HomeScreen() {
   const { isOnline, syncStatus, ghostModeEnabled, organizationId, setOrganizationId } = useAppStore();
@@ -87,6 +88,9 @@ export default function HomeScreen() {
           </Text>
         </View>
       )}
+
+      {/* Install App Prompt */}
+      <InstallPrompt />
 
       {/* Big Voice Record Button */}
       <View className="items-center my-6">

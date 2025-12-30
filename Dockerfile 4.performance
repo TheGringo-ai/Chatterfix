@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional dependencies for performance optimization
+RUN pip install --no-cache-dir \
+    redis \
+    asyncpg \
+    fastapi-cache2[redis] \
+    uvicorn[standard]
+
+# Copy application
+COPY performance_optimization.py .
+
+# Expose port
+EXPOSE 8090
+
+# Run the application
+CMD ["python", "performance_optimization.py"]

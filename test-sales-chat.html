@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ChatterFix Sales Chat</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; }
+        .test-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test-button { background: #0066ff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px 0; }
+        .test-result { background: #f9f9f9; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 ChatterFix Sales Chat Test</h1>
+        
+        <div class="test-section">
+            <h3>Test 1: Direct API Call</h3>
+            <button class="test-button" onclick="testAPI()">Test Sales AI API</button>
+            <div id="api-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: Test Widget Visibility</h3>
+            <button class="test-button" onclick="testWidget()">Check Widget on Live Site</button>
+            <div id="widget-result" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 3: Local Sales Chat Widget</h3>
+            <button class="test-button" onclick="toggleTestChat()">Toggle Test Chat</button>
+            
+            <!-- Test Sales Chat Widget -->
+            <div id="test-chat" style="display: none; border: 1px solid #ccc; padding: 20px; margin: 10px 0; border-radius: 8px;">
+                <div style="background: #0066ff; color: white; padding: 10px; margin-bottom: 10px;">
+                    <strong>🤖 ChatterFix AI Sales Test</strong>
+                </div>
+                <div id="test-messages" style="height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px;">
+                    <div style="color: #666; font-style: italic;">AI: Hi! I'm ready to help with ChatterFix CMMS questions.</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="test-input" placeholder="Ask about ChatterFix..." style="flex: 1; padding: 8px;" onkeypress="if(event.key==='Enter')sendTestMessage()">
+                    <button onclick="sendTestMessage()" style="padding: 8px 15px; background: #0066ff; color: white; border: none; border-radius: 4px;">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '🔄 Testing API...';
+            
+            try {
+                const response = await fetch('https://chatterfix.com/api/sales-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: 'What are the key benefits of ChatterFix CMMS?',
+                        context: 'sales'
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `✅ API Response: ${data.response}`;
+            } catch (error) {
+                resultDiv.innerHTML = `❌ API Error: ${error.message}`;
+            }
+        }
+        
+        function testWidget() {
+            const resultDiv = document.getElementById('widget-result');
+            resultDiv.innerHTML = `
+                📍 Widget should be at bottom-right of https://chatterfix.com<br>
+                🔍 Look for a blue gradient button with "🤖 AI Sales Assistant"<br>
+                ⚡ Button should pulse with animation<br>
+                📱 Try refreshing the page if not visible
+            `;
+        }
+        
+        function toggleTestChat() {
+            const chat = document.getElementById('test-chat');
+            chat.style.display = chat.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        async function sendTestMessage() {
+            const input = document.getElementById('test-input');
+            const messages = document.getElementById('test-messages');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            messages.innerHTML += `<div style="margin: 5px 0; text-align: right;"><strong>You:</strong> ${message}</div>`;
+            input.value = '';
+            
+            // Add typing indicator
+            messages.innerHTML += `<div id="typing" style="margin: 5px 0; color: #666; font-style: italic;">AI: Thinking...</div>`;
+            messages.scrollTop = messages.scrollHeight;
+            
+            try {
+                const response = await fetch('https://chatterfix.com/api/sales-ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message, context: 'sales' })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                const typing = document.getElementById('typing');
+                if (typing) typing.remove();
+                
+                // Add AI response
+                messages.innerHTML += `<div style="margin: 5px 0;"><strong>AI:</strong> ${data.response}</div>`;
+                messages.scrollTop = messages.scrollHeight;
+                
+            } catch (error) {
+                const typing = document.getElementById('typing');
+                if (typing) typing.remove();
+                
+                messages.innerHTML += `<div style="margin: 5px 0; color: red;"><strong>Error:</strong> ${error.message}</div>`;
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

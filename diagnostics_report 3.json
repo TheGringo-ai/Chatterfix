@@ -1,0 +1,70 @@
+
+
+        "revenue_intelligence": "unreachable",
+        "data_room": "unhealthy"
+      },
+      "enhanced_services_verification": {
+        "work_orders": {
+          "status": "healthy",
+          "features_available": ["crud", "attachments", "exports", "voice_ai"],
+          "verification": "✅ OPERATIONAL"
+        },
+        "assets": {
+          "status": "healthy", 
+          "features_available": ["crud", "attachments", "exports", "maintenance_tracking"],
+          "verification": "✅ OPERATIONAL"
+        },
+        "parts": {
+          "status": "unhealthy",
+          "features_available": ["crud", "checkout", "inventory_tracking", "barcode", "exports"],
+          "verification": "❌ SERVICE DOWN - 503 ERROR"
+        },
+        "voice_ai": {
+          "status": "unknown",
+          "features_available": ["speech_processing", "intent_parsing", "action_execution"],
+          "verification": "⚠️ NOT DEPLOYED"
+        }
+      },
+      "critical_issues": [
+        {
+          "service": "chatterfix-parts",
+          "issue": "Service returning 503 errors",
+          "impact": "Parts checkout and inventory management unavailable",
+          "attempted_fix": "Service restart failed due to CPU quota exceeded",
+          "status": "NEEDS_ATTENTION"
+        },
+        {
+          "service": "chatterfix-voice-ai",
+          "issue": "Service not deployed",
+          "impact": "Voice commands not available",
+          "resolution": "Requires deployment",
+          "status": "PENDING_DEPLOYMENT"
+        }
+      ],
+      "voice_ai_testing": {
+        "test_endpoint": "/api/voice/intent",
+        "test_phrases": [
+          "Create a work order for Asset A-103",
+          "Add a comment: unit still overheating", 
+          "Check out two filters for work order 324",
+          "Export the current work order",
+          "Advise troubleshooting for boiler low pressure"
+        ],
+        "results": {
+          "service_status": "NOT_DEPLOYED",
+          "endpoint_accessible": false,
+          "error": "404 Not Found",
+          "phrases_tested": 0,
+          "success_rate": "0%",
+          "impact": "Voice AI functionality completely unavailable"
+        },
+        "deployment_needed": {
+          "service": "chatterfix-voice-ai",
+          "source": "services/voice_ai",
+          "priority": "Medium - Enhancement feature",
+          "estimated_deployment_time": "5-10 minutes"
+        }
+      }
+    }
+  }
+}

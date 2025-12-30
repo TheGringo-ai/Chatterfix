@@ -1,0 +1,19 @@
+# ChatterFix CMMS v3.0 Enterprise Environment Configuration
+POSTGRES_PASSWORD=REDACTED_DB_PASSWORD
+REDIS_PASSWORD=REDACTED_DB_PASSWORD
+JWT_SECRET_KEY=chatterfix_enterprise_jwt_secret_key_phase3_2025_very_secure
+GRAFANA_PASSWORD=REDACTED_DB_PASSWORD
+
+# AI Provider API Keys (set these for production)
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+XAI_API_KEY=your_xai_api_key_here
+
+# Performance Settings
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+CACHE_TTL=300
+
+# Service URLs (auto-configured in Docker)
+DATABASE_URL=postgresql://cmms_user:REDACTED_DB_PASSWORD@postgres:5432/chatterfix_cmms
+REDIS_URL=redis://:REDACTED_DB_PASSWORD@redis:6379

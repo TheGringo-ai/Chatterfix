@@ -1,0 +1,27 @@
+[Unit]
+Description=Ollama AI Service
+Documentation=https://ollama.ai
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ollama serve
+User=root
+Group=root
+Restart=always
+RestartSec=5
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutStopSec=30
+WorkingDirectory=/var/lib/ollama
+Environment=OLLAMA_HOST=0.0.0.0:11434
+Environment=OLLAMA_ORIGINS=*
+Environment=OLLAMA_KEEP_ALIVE=5m
+Environment=OLLAMA_MAX_LOADED_MODELS=1
+Environment=OLLAMA_NUM_PARALLEL=2
+Environment=OLLAMA_CONCURRENCY=2
+Environment=OLLAMA_FLASH_ATTENTION=true
+
+[Install]
+WantedBy=multi-user.target

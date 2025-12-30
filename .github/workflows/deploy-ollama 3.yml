@@ -1,0 +1,137 @@
+name: 🤖 Deploy Ollama to VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_reinstall:
+        description: 'Force reinstall Ollama'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PROJECT_ID: fredfix
+  INSTANCE_NAME: chatterfix-cmms-production
+  ZONE: us-east1-b
+
+jobs:
+  deploy-ollama:
+    name: 🤖 Setup Ollama on Production VM
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup GCP Authentication
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: ☁️ Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 🚀 Deploy Ollama to VM
+        run: |
+          echo "🤖 Deploying Ollama to production VM..."
+          
+          # Copy optimization script to VM
+          gcloud compute scp scripts/optimize-ollama.sh ${{ env.INSTANCE_NAME }}:/tmp/optimize-ollama.sh --zone=${{ env.ZONE }}
+          
+          # Execute Ollama setup on VM
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+            chmod +x /tmp/optimize-ollama.sh
+            echo '🤖 Starting Ollama setup on VM...'
+            sudo /tmp/optimize-ollama.sh
+            echo '✅ Ollama setup complete on VM'
+          "
+          
+          echo "✅ Ollama deployment completed"
+
+      - name: 🔧 Configure CMMS for VM Ollama
+        run: |
+          echo "🔧 Configuring CMMS to use VM-based Ollama..."
+          
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+            cd /opt/chatterfix-cmms
+            
+            # Ensure Ollama URL points to VM localhost
+            if [ -f app.py ]; then
+              sudo sed -i 's/localhost:11434/127.0.0.1:11434/g' app.py
+              echo '✅ Updated app.py Ollama configuration'
+            fi
+            
+            # Check for other config files that might need updating
+            for file in *.py; do
+              if [ -f \"\$file\" ] && grep -q '11434' \"\$file\"; then
+                echo \"📝 Found Ollama references in \$file\"
+              fi
+            done
+            
+            # Restart CMMS service to pick up changes
+            echo '🔄 Restarting CMMS service...'
+            sudo systemctl restart chatterfix-cmms
+            echo '✅ CMMS service restarted'
+          "
+
+      - name: 🏥 Verify Ollama on VM
+        run: |
+          echo "🏥 Verifying Ollama installation on VM..."
+          
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+            echo '📊 Ollama service status:'
+            sudo systemctl status ollama --no-pager || true
+            echo ''
+            
+            echo '🔍 Testing Ollama API:'
+            if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+              echo '✅ Ollama API is responding on VM'
+              curl -s http://localhost:11434/api/tags | head -3
+            else
+              echo '⚠️ Ollama API not responding - checking logs...'
+              sudo journalctl -u ollama --no-pager -n 10
+            fi
+            echo ''
+            
+            echo '🤖 Available models:'
+            sudo -u ollama ollama list || echo 'No models available yet'
+            echo ''
+            
+            echo '🔍 CMMS service status:'
+            sudo systemctl status chatterfix-cmms --no-pager || true
+          "
+
+      - name: 🧪 Test LLaMA Integration
+        run: |
+          echo "🧪 Testing LLaMA integration..."
+          
+          # Test if the health endpoint shows LLaMA is available
+          if curl -s https://chatterfix.com/health | grep -q "Llama"; then
+            echo "✅ LLaMA is reported as available in health endpoint"
+          else
+            echo "⚠️ LLaMA not showing in health endpoint"
+          fi
+          
+          # Test VM Ollama directly through SSH
+          gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command="
+            echo '🤖 Testing LLaMA model on VM:'
+            if sudo -u ollama ollama run llama3.1:8b 'Hello from VM!' 2>/dev/null; then
+              echo '✅ LLaMA model responding on VM'
+            else
+              echo '📥 LLaMA model may need to be pulled...'
+              sudo -u ollama ollama pull llama3.1:8b
+            fi
+          "
+
+      - name: 📊 Deployment Report
+        run: |
+          echo "📊 Ollama VM Deployment Report"
+          echo "=============================="
+          echo "VM: ${{ env.INSTANCE_NAME }}"
+          echo "Zone: ${{ env.ZONE }}"
+          echo "Timestamp: $(date)"
+          echo ""
+          echo "🔗 Test the AI assistant at: https://chatterfix.com"
+          echo "🤖 Floating AI icon should now use VM-based LLaMA"
+          echo ""
+          echo "📋 To monitor:"
+          echo "  gcloud compute ssh ${{ env.INSTANCE_NAME }} --zone=${{ env.ZONE }} --command='journalctl -u ollama -f'"

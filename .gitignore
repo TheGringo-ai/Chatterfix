@@ -1,49 +1,148 @@
-# Python
-__pycache__/
-*.pyc
-.venv/
-venv/
-*.db
-
-# Development scripts (may contain secrets)
-deploy_*.sh
-*deployment*.yaml
-*deployment*.yml
-
-# OS
-.DS_Store
-
-# Environment Variables & Secrets
-*.log
+# ===================
+# Environment & Secrets
+# ===================
 .env
 .env.*
-!.env.template
 !.env.example
+!.env.template
+*.env
+!*.env.example
+!*.env.template
 *.key
 *.pem
 *.p12
 *.pfx
+*.crt
 service-account*.json
 credentials*.json
-
-# API Keys & Tokens
-*api-key*
 *secret*
 *token*
 auth.json
 secrets.yaml
 secrets.yml
+.secrets*
 
-# Database & Security
-database.env
-db-credentials*
+# ===================
+# Python
+# ===================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+ENV/
+env/
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+pytestdebug.log
+
+# ===================
+# Node.js
+# ===================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+.pnpm-store/
+
+# ===================
+# Database
+# ===================
+*.db
 *.sqlite
 *.sqlite3
+*.sql.gz
+database.env
+db-credentials*
 
-# Archives and uploads
+# ===================
+# IDE & Editors
+# ===================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-*
+
+# ===================
+# OS Files
+# ===================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
+
+# ===================
+# Logs & Temp
+# ===================
+*.log
+logs/
+tmp/
+temp/
+.temp/
+.cache/
+
+# ===================
+# Build & Deploy
+# ===================
+*.tar.gz
+*.zip
+.terraform/
+*.tfstate*
+.serverless/
+
+# ===================
+# Archives & Data
+# ===================
 archive/
 uploads/
 customer-data/
+backups/
+*.bak
 
-# IDE
-.vscode/
+# ===================
+# Docker
+# ===================
+docker-compose.override.yml
+
+# ===================
+# Testing
+# ===================
+.nyc_output/
+coverage/

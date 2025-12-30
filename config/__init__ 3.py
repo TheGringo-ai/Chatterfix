@@ -1,1 +1,0 @@
-# ChatterFix CMMS Configuration Package

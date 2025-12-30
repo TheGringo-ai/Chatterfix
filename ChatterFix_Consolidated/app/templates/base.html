@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ChatterFix CMMS{% endblock %}</title>
+
+    <!-- PWA Support -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ChatterFix">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <div class="navbar">
+        <a href="/" class="nav-brand">🤖 ChatterFix CMMS</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+            <a href="/work-orders" class="nav-link {% if request.url.path == '/work-orders' %}active{% endif %}">Work
+                Orders</a>
+            <a href="/assets" class="nav-link {% if request.url.path == '/assets' %}active{% endif %}">Assets</a>
+            <a href="/planner"
+                class="nav-link {% if request.url.path.startswith('/planner') %}active{% endif %}">Planner</a>
+            <a href="/purchasing"
+                class="nav-link {% if request.url.path.startswith('/purchasing') %}active{% endif %}">Purchasing</a>
+            <a href="/team" class="nav-link {% if request.url.path.startswith('/team') %}active{% endif %}">Team</a>
+            <a href="/training"
+                class="nav-link {% if request.url.path.startswith('/training') %}active{% endif %}">Training</a>
+            <a href="/ar-mode" class="nav-link">AR Mode</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+    <!-- AI Assistant Widget -->
+    <div id="ai-assistant-widget">
+        <!-- Floating Action Button -->
+        <button id="ai-fab" class="ai-fab" onclick="toggleAIChat()">
+            <i class="fas fa-robot"></i>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="ai-chat-window" class="ai-chat-window" style="display: none;">
+            <div class="ai-chat-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-robot me-2"></i>
+                    <h5 class="mb-0">ChatterFix Assistant</h5>
+                </div>
+                <button class="btn-close btn-close-white" onclick="toggleAIChat()"></button>
+            </div>
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-message ai-message-assistant">
+                    Hello! I'm your AI Assistant. I can help you create work orders, find parts, or troubleshoot
+                    equipment. How can I help you today?
+                </div>
+            </div>
+            <div class="ai-chat-input-area">
+                <div class="input-group">
+                    <button class="btn btn-outline-secondary" type="button" id="voice-btn" onclick="startVoiceInput()">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <input type="text" id="ai-user-input" class="form-control" placeholder="Type or speak..."
+                        onkeypress="handleAIKeyPress(event)">
+                    <button class="btn btn-primary" type="button" onclick="sendAIMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI Assistant Logic
+        function toggleAIChat() {
+            const chatWindow = document.getElementById('ai-chat-window');
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'flex';
+                document.getElementById('ai-user-input').focus();
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+
+        function handleAIKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendAIMessage();
+            }
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('ai-user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+
+            // Show typing indicator
+            const typingId = addTypingIndicator();
+
+            try {
+                const formData = new FormData();
+                formData.append('message', message);
+                // Get current context (page URL, title)
+                const context = `Current Page: ${window.location.href}\nPage Title: ${document.title}`;
+                formData.append('context', context);
+
+                const response = await fetch('/ai/assist', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Remove typing indicator
+                removeMessage(typingId);
+
+                // Add AI response
+                addMessage(data.response, 'assistant');
+
+                // Handle any client-side actions if needed (e.g., redirects)
+                if (data.action) {
+                    handleAIAction(data.action);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                removeMessage(typingId);
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messagesDiv = document.getElementById('ai-chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `ai-message ai-message-${sender}`;
+            // Simple markdown-like parsing for bold and links could be added here
+            messageDiv.innerHTML = text.replace(/\n/g, '<br>');
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            return messageDiv.id = 'msg-' + Date.now();
+        }
+
+        function addTypingIndicator() {
+            const messagesDiv = document.getElementById('ai-chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'ai-message ai-message-assistant typing-indicator';
+            messageDiv.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Thinking...';
+            messageDiv.id = 'typing-' + Date.now();
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            return messageDiv.id;
+        }
+
+        function removeMessage(id) {
+            const element = document.getElementById(id);
+            if (element) element.remove();
+        }
+
+        // Voice Input (Web Speech API)
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert('Voice input is not supported in this browser. Please use Chrome.');
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            const voiceBtn = document.getElementById('voice-btn');
+            voiceBtn.classList.add('btn-danger');
+            voiceBtn.classList.remove('btn-outline-secondary');
+
+            recognition.onresult = function (event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('ai-user-input').value = transcript;
+                sendAIMessage(); // Auto-send on voice end
+            };
+
+            recognition.onend = function () {
+                voiceBtn.classList.remove('btn-danger');
+                voiceBtn.classList.add('btn-outline-secondary');
+            };
+
+            recognition.start();
+        }
+
+        function handleAIAction(action) {
+            if (action.type === 'redirect') {
+                window.location.href = action.url;
+            }
+        }
+    </script>
+</body>
+
+</html>

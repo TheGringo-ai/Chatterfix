@@ -1,0 +1,93 @@
+{
+    "name": "ChatterFix CMMS",
+    "short_name": "ChatterFix",
+    "description": "AI-Powered Maintenance Management System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1e1e1e",
+    "theme_color": "#667eea",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/static/img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/img/screenshot-mobile.png",
+            "sizes": "540x720",
+            "type": "image/png",
+            "form_factor": "narrow"
+        },
+        {
+            "src": "/static/img/screenshot-desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "business"
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "View your personalized dashboard",
+            "url": "/",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Work Orders",
+            "short_name": "Work Orders",
+            "description": "View and manage work orders",
+            "url": "/work-orders",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "AR Mode",
+            "short_name": "AR Mode",
+            "description": "Launch AR assistance mode",
+            "url": "/ar-mode",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Team",
+            "short_name": "Team",
+            "description": "Team collaboration dashboard",
+            "url": "/team",
+            "icons": [
+                {
+                    "src": "/static/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "prefer_related_applications": false
+}

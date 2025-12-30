@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block title %}Planner Dashboard - ChatterFix{% endblock %}
+
+{% block head %}
+<style>
+    .planner-dashboard {
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .planner-header {
+        margin-bottom: 2rem;
+    }
+
+    .planner-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .planner-header h1::before {
+        content: "📅";
+        font-size: 2.5rem;
+    }
+
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stat-card.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .planner-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .planner-widget {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .widget-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .widget-content {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .capacity-bar {
+        margin-bottom: 1rem;
+    }
+
+    .capacity-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .capacity-progress {
+        height: 24px;
+        background: var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .capacity-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .capacity-fill.high {
+        background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .backlog-item {
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .backlog-item.urgent {
+        border-left-color: #f5576c;
+    }
+
+    .backlog-item.high {
+        border-left-color: #f093fb;
+    }
+
+    .backlog-item.medium {
+        border-left-color: #4facfe;
+    }
+
+    .backlog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .backlog-title {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .priority-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .priority-badge.urgent {
+        background: #f5576c;
+        color: white;
+    }
+
+    .priority-badge.high {
+        background: #f093fb;
+        color: white;
+    }
+
+    .priority-badge.medium {
+        background: #4facfe;
+        color: white;
+    }
+
+    .priority-badge.low {
+        background: var(--border-color);
+        color: var(--text-primary);
+    }
+
+    .backlog-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .asset-pm-item {
+        padding: 0.75rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pm-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .pm-status.overdue {
+        background: #f5576c;
+        color: white;
+    }
+
+    .pm-status.due-today {
+        background: #f093fb;
+        color: white;
+    }
+
+    .pm-status.due-this-week {
+        background: #ffd93d;
+        color: #333;
+    }
+
+    .conflict-alert {
+        padding: 1rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        color: white;
+    }
+
+    .conflict-header {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .compliance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .compliance-stat {
+        text-align: center;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+    }
+
+    .compliance-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .compliance-number.danger {
+        color: #f5576c;
+    }
+
+    .compliance-number.warning {
+        color: #ffd93d;
+    }
+
+    .compliance-number.success {
+        color: #4facfe;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .refresh-btn {
+        padding: 0.5rem 1rem;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="planner-dashboard">
+    <div class="planner-header">
+        <h1>Maintenance Planner Dashboard</h1>
+        <p style="color: var(--text-secondary);">Plan, schedule, and optimize maintenance operations</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats" id="quickStats">
+        <div class="stat-card warning">
+            <div class="stat-value" id="backlogCount">-</div>
+            <div class="stat-label">Work Order Backlog</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-value" id="overdueCount">-</div>
+            <div class="stat-label">Overdue Items</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-value" id="capacityAvg">-</div>
+            <div class="stat-label">Avg Capacity %</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="conflictCount">-</div>
+            <div class="stat-label">Scheduling Conflicts</div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="planner-grid">
+        <!-- Resource Capacity -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">👥 Resource Capacity</div>
+                <button class="refresh-btn" onclick="loadCapacity()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="capacityContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading capacity data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Order Backlog -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">📋 Work Order Backlog</div>
+                <button class="refresh-btn" onclick="loadBacklog()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="backlogContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading backlog...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset PM Status -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">🔧 Asset PM Status</div>
+                <button class="refresh-btn" onclick="loadAssetPM()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="assetPMContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading asset PM status...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduling Conflicts -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">⚠️ Scheduling Conflicts</div>
+                <button class="refresh-btn" onclick="loadConflicts()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="conflictsContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading conflicts...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parts Availability -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">📦 Parts Availability</div>
+                <button class="refresh-btn" onclick="loadParts()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="partsContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading parts data...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Tracking -->
+        <div class="planner-widget">
+            <div class="widget-header">
+                <div class="widget-title">✅ Compliance Tracking</div>
+                <button class="refresh-btn" onclick="loadCompliance()">🔄 Refresh</button>
+            </div>
+            <div class="widget-content" id="complianceContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading compliance data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load all data on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSummary();
+        loadCapacity();
+        loadBacklog();
+        loadAssetPM();
+        loadConflicts();
+        loadParts();
+        loadCompliance();
+    });
+
+    async function loadSummary() {
+        try {
+            const response = await fetch('/planner/summary');
+            const data = await response.json();
+
+            document.getElementById('backlogCount').textContent = data.backlog_count;
+            document.getElementById('overdueCount').textContent = data.overdue_count;
+            document.getElementById('capacityAvg').textContent = data.average_capacity + '%';
+            document.getElementById('conflictCount').textContent = data.conflict_count;
+        } catch (error) {
+            console.error('Error loading summary:', error);
+        }
+    }
+
+    async function loadCapacity() {
+        try {
+            const response = await fetch('/planner/resource-capacity');
+            const data = await response.json();
+
+            const content = document.getElementById('capacityContent');
+
+            if (data.technicians.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><p>No technicians found</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.technicians.forEach(tech => {
+                const capacityClass = tech.capacity_percentage > 80 ? 'high' : '';
+                html += `
+                <div class="capacity-bar">
+                    <div class="capacity-info">
+                        <span><strong>${tech.name}</strong> (${tech.status})</span>
+                        <span>${tech.active_work_orders} WOs | ${tech.total_hours}h</span>
+                    </div>
+                    <div class="capacity-progress">
+                        <div class="capacity-fill ${capacityClass}" style="width: ${tech.capacity_percentage}%">
+                            ${tech.capacity_percentage}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading capacity:', error);
+        }
+    }
+
+    async function loadBacklog() {
+        try {
+            const response = await fetch('/planner/backlog');
+            const data = await response.json();
+
+            const content = document.getElementById('backlogContent');
+
+            if (data.work_orders.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No backlog - Great job!</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.work_orders.slice(0, 10).forEach(wo => {
+                html += `
+                <div class="backlog-item ${wo.priority}">
+                    <div class="backlog-header">
+                        <div class="backlog-title">${wo.title}</div>
+                        <span class="priority-badge ${wo.priority}">${wo.priority}</span>
+                    </div>
+                    <div class="backlog-meta">
+                        <span>🏭 ${wo.asset_name || 'No asset'}</span>
+                        <span>📅 Due: ${wo.due_date || 'Not set'}</span>
+                        <span>⏱️ ${wo.estimated_duration || 0}h</span>
+                    </div>
+                </div>
+            `;
+            });
+
+            if (data.work_orders.length > 10) {
+                html += `<p style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">+${data.work_orders.length - 10} more items</p>`;
+            }
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading backlog:', error);
+        }
+    }
+
+    async function loadAssetPM() {
+        try {
+            const response = await fetch('/planner/asset-pm-status');
+            const data = await response.json();
+
+            const content = document.getElementById('assetPMContent');
+
+            if (data.assets.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏭</div><p>No assets found</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.assets.slice(0, 15).forEach(asset => {
+                const statusClass = asset.pm_status.toLowerCase().replace(/ /g, '-');
+                html += `
+                <div class="asset-pm-item">
+                    <div>
+                        <strong>${asset.name}</strong>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            ${asset.asset_id} | ${asset.location || 'No location'}
+                        </div>
+                    </div>
+                    <span class="pm-status ${statusClass}">${asset.pm_status}</span>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading asset PM:', error);
+        }
+    }
+
+    async function loadConflicts() {
+        try {
+            const response = await fetch('/planner/conflicts');
+            const data = await response.json();
+
+            const content = document.getElementById('conflictsContent');
+
+            if (data.conflicts.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No scheduling conflicts</p></div>';
+                return;
+            }
+
+            let html = '';
+            data.conflicts.forEach(conflict => {
+                html += `
+                <div class="conflict-alert">
+                    <div class="conflict-header">⚠️ ${conflict.technician_name} - ${conflict.date}</div>
+                    <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                        ${conflict.work_order_count} work orders | ${conflict.total_hours} hours total
+                    </div>
+                    <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.9;">
+                        Type: ${conflict.conflict_type}
+                    </div>
+                </div>
+            `;
+            });
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading conflicts:', error);
+        }
+    }
+
+    async function loadParts() {
+        try {
+            const response = await fetch('/planner/parts-availability');
+            const data = await response.json();
+
+            const content = document.getElementById('partsContent');
+
+            if (data.parts_needed.length === 0 && data.low_stock_items.length === 0) {
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>All parts available</p></div>';
+                return;
+            }
+
+            let html = '';
+
+            if (data.low_stock_items.length > 0) {
+                html += '<div style="margin-bottom: 1rem;"><strong style="color: #f5576c;">⚠️ Low Stock Items:</strong></div>';
+                data.low_stock_items.forEach(part => {
+                    html += `
+                    <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem;">
+                        <strong>${part.part_name}</strong>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Stock: ${part.quantity} | Min: ${part.min_quantity}
+                        </div>
+                    </div>
+                `;
+                });
+            }
+
+            if (data.parts_needed.length > 0) {
+                html += '<div style="margin: 1rem 0;"><strong>📦 Parts Needed for Scheduled Work:</strong></div>';
+                data.parts_needed.slice(0, 5).forEach(part => {
+                    html += `
+                    <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 0.5rem;">
+                        <strong>${part.part_name}</strong> (${part.quantity})
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            For: ${part.work_order_title} | Status: ${part.status}
+                        </div>
+                    </div>
+                `;
+                });
+            }
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading parts:', error);
+        }
+    }
+
+    async function loadCompliance() {
+        try {
+            const response = await fetch('/planner/compliance');
+            const data = await response.json();
+
+            const content = document.getElementById('complianceContent');
+
+            const html = `
+            <div class="compliance-grid">
+                <div class="compliance-stat">
+                    <div class="compliance-number success">${data.compliant}</div>
+                    <div>Compliant</div>
+                </div>
+                <div class="compliance-stat">
+                    <div class="compliance-number warning">${data.due_soon}</div>
+                    <div>Due Soon</div>
+                </div>
+                <div class="compliance-stat">
+                    <div class="compliance-number danger">${data.overdue}</div>
+                    <div>Overdue</div>
+                </div>
+                <div class="compliance-stat">
+                    <div class="compliance-number danger">${data.never_inspected}</div>
+                    <div>Never Inspected</div>
+                </div>
+            </div>
+        `;
+
+            content.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading compliance:', error);
+        }
+    }
+</script>
+{% endblock %}

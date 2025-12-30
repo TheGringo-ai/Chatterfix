@@ -1,0 +1,689 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ChatterFix{% endblock %}
+
+{% block head %}
+<!-- GridStack for drag-and-drop -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@8.4.0/dist/gridstack.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@8.4.0/dist/gridstack-extra.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/gridstack@8.4.0/dist/gridstack-all.js"></script>
+
+<!-- Chart.js for graphs -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        color: white;
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+    }
+
+    .quick-stats {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .widget {
+        background: var(--card-bg, #1e1e1e);
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .widget-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .widget-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .widget-btn {
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        padding: 0.25rem;
+        font-size: 1.2rem;
+    }
+
+    .widget-btn:hover {
+        color: #fff;
+    }
+
+    .widget-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .grid-stack {
+        background: transparent;
+    }
+
+    .grid-stack-item-content {
+        background: transparent;
+    }
+
+    /* Work Order Item */
+    .wo-item {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+        border-left: 3px solid #888;
+    }
+
+    .wo-item.urgent {
+        border-left-color: #dc3545;
+    }
+
+    .wo-item.high {
+        border-left-color: #ffc107;
+    }
+
+    .wo-item.overdue {
+        background: rgba(220, 53, 69, 0.1);
+    }
+
+    .wo-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .wo-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .wo-actions {
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    /* Message Item */
+    .message-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .message-item:last-child {
+        border-bottom: none;
+    }
+
+    .message-sender {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-text {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: #888;
+    }
+
+    /* Asset Health */
+    .asset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .asset-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.75rem;
+        border-radius: 6px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .asset-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .asset-status {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin: 0 auto 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .asset-status.good {
+        background: #28a745;
+    }
+
+    .asset-status.fair {
+        background: #ffc107;
+    }
+
+    .asset-status.poor {
+        background: #fd7e14;
+    }
+
+    .asset-status.critical {
+        background: #dc3545;
+    }
+
+    .asset-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Quick Actions */
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .action-btn {
+        background: rgba(102, 126, 234, 0.2);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        padding: 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: rgba(102, 126, 234, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .action-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    /* Loading State */
+    .widget-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #888;
+    }
+
+    /* Customization Panel */
+    .customize-panel {
+        position: fixed;
+        right: -300px;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background: #2a2a2a;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+        transition: right 0.3s;
+        z-index: 1000;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .customize-panel.open {
+        right: 0;
+    }
+
+    .customize-btn {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 999;
+    }
+
+    .customize-btn:hover {
+        background: #5568d3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>👋 Welcome, {{ user.full_name or user.username }}!</h1>
+                <p class="mb-0">{{ user.role|title }} Dashboard</p>
+            </div>
+            <div>
+                <button class="btn btn-light btn-sm" onclick="refreshAllWidgets()">🔄 Refresh</button>
+                <button class="btn btn-light btn-sm" onclick="resetDashboard()">↺ Reset</button>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats" id="quick-stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-workload">-</div>
+                <div class="stat-label">Active Work Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-completed">-</div>
+                <div class="stat-label">Completed Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-notifications">-</div>
+                <div class="stat-label">Unread Notifications</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Grid -->
+    <div class="grid-stack" id="widget-grid"></div>
+</div>
+
+<!-- Customize Button -->
+<button class="customize-btn" onclick="toggleCustomizePanel()">⚙️</button>
+
+<!-- Customization Panel -->
+<div class="customize-panel" id="customize-panel">
+    <h3>Customize Dashboard</h3>
+    <p class="text-muted">Add or remove widgets</p>
+
+    <div id="available-widgets">
+        <!-- Populated by JavaScript -->
+    </div>
+
+    <hr>
+
+    <button class="btn btn-primary w-100" onclick="saveDashboard()">💾 Save Layout</button>
+</div>
+
+<script>
+    // Global state
+    let grid = null;
+    let ws = null;
+    const userId = {{ user.id }};
+    const widgets = {{ widgets| tojson }};
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeGrid();
+        loadWidgets();
+        connectWebSocket();
+        loadQuickStats();
+    });
+
+    function initializeGrid() {
+        grid = GridStack.init({
+            cellHeight: 100,
+            margin: 10,
+            float: true,
+            draggable: {
+                handle: '.widget-header'
+            }
+        });
+    }
+
+    function loadWidgets() {
+        widgets.forEach((widget, index) => {
+            const widgetHtml = createWidgetHTML(widget);
+            grid.addWidget({
+                w: widget.size === 'large' ? 6 : widget.size === 'small' ? 3 : 4,
+                h: widget.size === 'large' ? 4 : widget.size === 'small' ? 2 : 3,
+                content: widgetHtml,
+                id: widget.widget_type
+            });
+
+            // Load widget data
+            loadWidgetData(widget.widget_type);
+        });
+    }
+
+    function createWidgetHTML(widget) {
+        return `
+            <div class="widget" data-widget-type="${widget.widget_type}">
+                <div class="widget-header">
+                    <h3 class="widget-title">${widget.title}</h3>
+                    <div class="widget-actions">
+                        <button class="widget-btn" onclick="refreshWidget('${widget.widget_type}')">🔄</button>
+                        <button class="widget-btn" onclick="removeWidget('${widget.widget_type}')">✕</button>
+                    </div>
+                </div>
+                <div class="widget-content" id="widget-${widget.widget_type}">
+                    <div class="widget-loading">Loading...</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function loadWidgetData(widgetType) {
+        try {
+            const response = await fetch(`/dashboard/widget/${widgetType}/data?user_id=${userId}`);
+            const data = await response.json();
+
+            renderWidget(widgetType, data);
+        } catch (error) {
+            console.error(`Error loading widget ${widgetType}:`, error);
+        }
+    }
+
+    function renderWidget(widgetType, data) {
+        const container = document.getElementById(`widget-${widgetType}`);
+        if (!container) return;
+
+        // Render based on widget type
+        switch (widgetType) {
+            case 'workload':
+                container.innerHTML = renderWorkload(data);
+                break;
+            case 'parts_status':
+                container.innerHTML = renderPartsStatus(data);
+                break;
+            case 'messages':
+                container.innerHTML = renderMessages(data);
+                break;
+            case 'performance':
+                container.innerHTML = renderPerformance(data);
+                break;
+            case 'equipment':
+                container.innerHTML = renderEquipment(data);
+                break;
+            case 'notifications':
+                container.innerHTML = renderNotifications(data);
+                break;
+            case 'quick_actions':
+                container.innerHTML = renderQuickActions(data);
+                break;
+            default:
+                container.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+    }
+
+    function renderWorkload(data) {
+        if (!data.work_orders || data.work_orders.length === 0) {
+            return '<p class="text-muted">No active work orders</p>';
+        }
+
+        return data.work_orders.slice(0, 5).map(wo => `
+            <div class="wo-item ${wo.priority} ${wo.urgency}">
+                <div class="wo-title">${wo.title}</div>
+                <div class="wo-meta">
+                    <span class="badge bg-${wo.priority === 'urgent' ? 'danger' : wo.priority === 'high' ? 'warning' : 'secondary'}">
+                        ${wo.priority}
+                    </span>
+                    ${wo.due_date ? `Due: ${wo.due_date}` : ''}
+                </div>
+                <div class="wo-actions">
+                    <button class="btn-sm btn-primary" onclick="startWorkOrder(${wo.id})">Start</button>
+                    <button class="btn-sm btn-secondary" onclick="viewWorkOrder(${wo.id})">View</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderPartsStatus(data) {
+        return `
+            <div class="mb-3">
+                <strong>Arriving Today:</strong> ${data.arriving_today || 0}<br>
+                <strong>Pending Requests:</strong> ${data.pending || 0}
+            </div>
+            ${(data.requests || []).slice(0, 5).map(req => `
+                <div class="message-item">
+                    <strong>${req.part_name}</strong><br>
+                    <small>Qty: ${req.quantity} | Status: ${req.status}</small>
+                </div>
+            `).join('')}
+        `;
+    }
+
+    function renderMessages(data) {
+        if (!data.messages || data.messages.length === 0) {
+            return '<p class="text-muted">No messages</p>';
+        }
+
+        return data.messages.slice(0, 5).map(msg => `
+            <div class="message-item">
+                <div class="message-sender">${msg.sender_name}</div>
+                <div class="message-text">${msg.message}</div>
+                <div class="message-time">${new Date(msg.created_date).toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderPerformance(data) {
+        return `
+            <div class="mb-3">
+                <h4>Today</h4>
+                <p>Completed: ${data.today?.completed || 0}</p>
+                <p>Avg Time: ${data.today?.avg_hours || 0} hours</p>
+            </div>
+            <div>
+                <h4>This Week</h4>
+                <p>Completed: ${data.this_week?.completed || 0}</p>
+                <p>Quality Score: ${data.quality_score || 0}%</p>
+            </div>
+        `;
+    }
+
+    function renderEquipment(data) {
+        if (!data.assets || data.assets.length === 0) {
+            return '<p class="text-muted">No assigned equipment</p>';
+        }
+
+        return `
+            <div class="asset-grid">
+                ${data.assets.map(asset => `
+                    <div class="asset-card" onclick="viewAsset(${asset.id})">
+                        <div class="asset-status ${asset.health}">
+                            ${asset.health === 'good' ? '✓' : asset.health === 'fair' ? '!' : '⚠'}
+                        </div>
+                        <div class="asset-name">${asset.name}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function renderNotifications(data) {
+        if (!data.notifications || data.notifications.length === 0) {
+            return '<p class="text-muted">No notifications</p>';
+        }
+
+        return data.notifications.slice(0, 5).map(notif => `
+            <div class="message-item">
+                <strong>${notif.title}</strong><br>
+                <small>${notif.message}</small>
+            </div>
+        `).join('');
+    }
+
+    function renderQuickActions(data) {
+        return `
+            <div class="action-grid">
+                ${(data.actions || []).map(action => `
+                    <div class="action-btn" onclick="handleAction('${action.id}')">
+                        <div class="action-icon">${action.icon}</div>
+                        <div class="action-label">${action.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // WebSocket connection
+    function connectWebSocket() {
+        ws = new WebSocket(`ws://localhost:8000/dashboard/stream?user_id=${userId}`);
+
+        ws.onopen = () => {
+            console.log('Dashboard WebSocket connected');
+            // Subscribe to all widgets
+            const widgetTypes = widgets.map(w => w.widget_type);
+            ws.send(JSON.stringify({
+                type: 'subscribe',
+                widgets: widgetTypes
+            }));
+        };
+
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+
+            if (message.type === 'widget_update') {
+                Object.entries(message.updates).forEach(([widgetType, data]) => {
+                    renderWidget(widgetType, data);
+                });
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket disconnected, reconnecting...');
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+
+    async function loadQuickStats() {
+        try {
+            const response = await fetch(`/dashboard/quick-stats?user_id=${userId}`);
+            const data = await response.json();
+
+            document.getElementById('stat-workload').textContent = data.workload?.total || 0;
+            document.getElementById('stat-completed').textContent = data.performance?.completed || 0;
+            document.getElementById('stat-notifications').textContent = data.unread_notifications || 0;
+        } catch (error) {
+            console.error('Error loading quick stats:', error);
+        }
+    }
+
+    // Actions
+    function refreshWidget(widgetType) {
+        loadWidgetData(widgetType);
+    }
+
+    function refreshAllWidgets() {
+        widgets.forEach(widget => loadWidgetData(widget.widget_type));
+        loadQuickStats();
+    }
+
+    function removeWidget(widgetType) {
+        const element = document.querySelector(`[data-widget-type="${widgetType}"]`).closest('.grid-stack-item');
+        grid.removeWidget(element);
+    }
+
+    async function saveDashboard() {
+        const items = grid.save();
+        // Save to backend
+        alert('Dashboard layout saved!');
+    }
+
+    async function resetDashboard() {
+        if (confirm('Reset dashboard to defaults?')) {
+            const response = await fetch(`/dashboard/reset?user_id=${userId}`, { method: 'POST' });
+            if (response.ok) {
+                location.reload();
+            }
+        }
+    }
+
+    function toggleCustomizePanel() {
+        document.getElementById('customize-panel').classList.toggle('open');
+    }
+
+    // Widget actions
+    function startWorkOrder(id) {
+        window.location.href = `/work-orders?id=${id}`;
+    }
+
+    function viewWorkOrder(id) {
+        window.location.href = `/work-orders?id=${id}`;
+    }
+
+    function viewAsset(id) {
+        window.location.href = `/assets/${id}`;
+    }
+
+    function handleAction(actionId) {
+        switch (actionId) {
+            case 'report_emergency':
+                window.location.href = '/work-orders?emergency=true';
+                break;
+            case 'request_parts':
+                window.location.href = '/inventory';
+                break;
+            case 'ar_mode':
+                window.location.href = '/ar-mode';
+                break;
+            default:
+                alert(`Action: ${actionId}`);
+        }
+    }
+</script>
+{% endblock %}

@@ -109,7 +109,8 @@ async def inspect_pallet_load(
 
             # Log near-misses and hazards for ROI tracking
             if result.status in [SafetyStatus.WARNING, SafetyStatus.DANGER]:
-                await _log_safety_incident(result, user_id, location_aisle, notes)
+                org_id = getattr(current_user, 'organization_id', None) if current_user else None
+                await _log_safety_incident(result, user_id, location_aisle, notes, org_id)
 
             return result
 
@@ -197,7 +198,8 @@ async def _log_safety_incident(
     result: InspectionResult,
     user_id: Optional[str],
     location: Optional[str],
-    notes: Optional[str]
+    notes: Optional[str],
+    organization_id: Optional[str] = None
 ):
     """Log safety incident to Firestore for tracking and ROI reporting"""
     try:
@@ -206,7 +208,7 @@ async def _log_safety_incident(
         db = FirestoreManager()
 
         incident = SafetyIncident(
-            organization_id="demo_org",  # TODO: Get from user context
+            organization_id=organization_id or "demo_org",
             inspection_result=result,
             notes=notes
         )
@@ -240,10 +242,14 @@ async def get_safety_incidents(
 
         db = FirestoreManager()
 
-        # Query incidents
+        # Build org filter - show demo data for anonymous users
+        org_id = getattr(current_user, 'organization_id', None) if current_user else "demo_org"
+        filters = [("organization_id", "==", org_id)]
+
+        # Query incidents filtered by organization
         incidents = await db.query_documents(
             collection="safety_incidents",
-            filters=[],  # TODO: Add org filter
+            filters=filters,
             order_by="created_at",
             order_direction="DESCENDING",
             limit=limit
@@ -281,10 +287,14 @@ async def get_safety_stats(
 
         db = FirestoreManager()
 
-        # Get all incidents (in production, filter by date range and org)
+        # Filter by organization - show demo data for anonymous users
+        org_id = getattr(current_user, 'organization_id', None) if current_user else "demo_org"
+        filters = [("organization_id", "==", org_id)]
+
+        # Get all incidents for this organization
         incidents = await db.query_documents(
             collection="safety_incidents",
-            filters=[],
+            filters=filters,
             limit=1000
         )
 

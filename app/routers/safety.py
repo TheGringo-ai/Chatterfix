@@ -678,29 +678,55 @@ async def get_safety_dashboard(
     Shows the ROI: "We prevented X accidents and saved $Y this month"
     """
     try:
+        from datetime import timedelta
         from app.core.firestore_db import FirestoreManager
         db = FirestoreManager()
 
-        # Get incidents
+        # Filter by organization
+        org_id = getattr(current_user, 'organization_id', None) if current_user else "demo_org"
+        org_filter = [("organization_id", "==", org_id)]
+
+        # Get incidents filtered by organization
         incidents = await db.query_documents(
             collection="safety_incidents",
-            filters=[],
+            filters=org_filter,
             limit=1000
         )
 
-        # Get man down events
+        # Get man down events filtered by organization
         man_down_events = await db.query_documents(
             collection="man_down_events",
-            filters=[],
+            filters=org_filter,
             limit=100
         )
 
+        # Calculate date boundaries for filtering
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = today_start - timedelta(days=7)
+        month_start = today_start - timedelta(days=30)
+
+        # Helper to parse incident date
+        def get_incident_date(incident):
+            created = incident.get("created_at") or incident.get("timestamp")
+            if isinstance(created, str):
+                try:
+                    return datetime.fromisoformat(created.replace("Z", "+00:00"))
+                except:
+                    return None
+            return created
+
+        # Filter incidents by date
+        today_incidents = [i for i in incidents if get_incident_date(i) and get_incident_date(i) >= today_start]
+        week_incidents = [i for i in incidents if get_incident_date(i) and get_incident_date(i) >= week_start]
+        month_incidents = [i for i in incidents if get_incident_date(i) and get_incident_date(i) >= month_start]
+
         # Calculate stats
-        near_misses = len([i for i in incidents if i.get("incident_type") == "near_miss"])
-        ppe_violations = len([i for i in incidents if i.get("type") == "ppe_violation"])
+        near_misses = len([i for i in month_incidents if i.get("incident_type") == "near_miss"])
+        ppe_violations = len([i for i in month_incidents if i.get("type") == "ppe_violation"])
         man_down_count = len([e for e in man_down_events if not e.get("false_alarm")])
 
-        total_incidents = len(incidents)
+        total_incidents = len(month_incidents)
 
         # Estimate accidents prevented (industry standard: 1 in 10 near misses becomes accident)
         prevented = near_misses // 10 + ppe_violations // 20
@@ -712,8 +738,8 @@ async def get_safety_dashboard(
         safety_score = max(0, 100 - (total_incidents / 10))
 
         return SafetyDashboardStats(
-            total_incidents_today=0,  # TODO: Filter by date
-            total_incidents_week=0,
+            total_incidents_today=len(today_incidents),
+            total_incidents_week=len(week_incidents),
             total_incidents_month=total_incidents,
             near_misses_reported=near_misses,
             ppe_violations_detected=ppe_violations,

@@ -1,9 +1,9 @@
 # Testing dependencies
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.25.1
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
+httpx>=0.28.0
 
 # Additional testing utilities
-pytest-xdist==3.3.1
-pytest-cov==4.1.0
-pytest-html==4.0.2
+pytest-xdist>=3.6.0
+pytest-cov>=6.0.0
+pytest-html>=4.1.0

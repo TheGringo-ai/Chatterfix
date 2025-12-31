@@ -1,25 +1,25 @@
 # FastAPI and server dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.18
 
 # HTTP client
-httpx==0.25.1
+httpx>=0.28.0
 
 # Data processing
-pydantic==2.4.2
+pydantic>=2.10.0
 
 # Logging and utilities
-python-json-logger==2.0.7
+python-json-logger>=2.0.7
 
 # Audio processing (for future STT integration)
-librosa==0.10.1
-numpy==1.24.3
+librosa>=0.10.2
+numpy>=2.0.0
 
 # Optional: Google Cloud dependencies (for STT/TTS)
-google-cloud-speech==2.21.0
-google-cloud-storage==2.10.0
+google-cloud-speech>=2.28.0
+google-cloud-storage>=2.18.0
 
 # Development and testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest>=8.3.0
+pytest-asyncio>=0.24.0

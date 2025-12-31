@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import init_database
-from app.routers import dashboard, work_orders, ar, inventory, ai, assets, team, training, feedback, geolocation, planner, purchasing, onboarding
+from app.routers import dashboard, work_orders, ar, inventory, ai, assets, team, training, feedback, geolocation, planner, purchasing, onboarding, rag
 from app.services.ai_assistant import chatterfix_ai
 
 # Configure logging
@@ -56,6 +56,7 @@ app.include_router(geolocation.router)
 app.include_router(planner.router)
 app.include_router(purchasing.router)
 app.include_router(onboarding.router)
+app.include_router(rag.router)
 
 @app.on_event("startup")
 async def startup_event():

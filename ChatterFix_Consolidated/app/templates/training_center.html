@@ -161,6 +161,60 @@
         </div>
     </div>
 
+    <!-- RAG Document Library -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📁 Document Library (RAG)</h5>
+                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                        + Upload Document
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Upload manuals, SOPs, and technical documents. AI will use these to generate training and answer questions.
+                    </p>
+                    <div id="rag-documents-list">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            <span class="ms-2">Loading documents...</span>
+                        </div>
+                    </div>
+                    <div id="rag-stats" class="mt-3 pt-3 border-top" style="display: none;">
+                        <div class="row text-center">
+                            <div class="col-4"><strong id="stat-documents">0</strong><br><small class="text-muted">Documents</small></div>
+                            <div class="col-4"><strong id="stat-chunks">0</strong><br><small class="text-muted">Indexed Chunks</small></div>
+                            <div class="col-4"><strong id="stat-indexed">0</strong><br><small class="text-muted">Ready for AI</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAG Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">🔍 Search Documents (Semantic)</h5>
+                </div>
+                <div class="card-body">
+                    <form id="rag-search-form" class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <input type="text" name="query" class="form-control" placeholder="Search documents..." id="rag-search-input">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-secondary w-100">Search</button>
+                        </div>
+                    </form>
+                    <div id="rag-search-results" class="mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Training Tools -->
     <div class="row">
         <div class="col-md-6 mb-4">
@@ -288,5 +342,121 @@
             btn.textContent = 'Ask Question';
         }
     });
+
+    // RAG Document functions
+    async function loadRagDocuments() {
+        try {
+            const response = await fetch('/api/rag/documents', { credentials: 'include' });
+            const data = await response.json();
+            const container = document.getElementById('rag-documents-list');
+
+            if (data.documents && data.documents.length > 0) {
+                let html = '<table class="table table-sm"><thead><tr><th>Document</th><th>Status</th><th>Chunks</th><th>Actions</th></tr></thead><tbody>';
+                for (const doc of data.documents) {
+                    const status = doc.status === 'indexed' ? '<span class="badge bg-success">Indexed</span>' : '<span class="badge bg-warning">Processing</span>';
+                    html += `<tr><td><strong>${doc.metadata?.original_name || 'Document'}</strong></td><td>${status}</td><td>${doc.chunk_count || 0}</td><td><button class="btn btn-sm btn-outline-danger" onclick="deleteRagDocument('${doc.document_id}')">Delete</button></td></tr>`;
+                }
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted text-center">No documents uploaded yet.</p>';
+            }
+            loadRagStats();
+        } catch (error) {
+            document.getElementById('rag-documents-list').innerHTML = '<p class="text-danger">Failed to load documents.</p>';
+        }
+    }
+
+    async function loadRagStats() {
+        try {
+            const response = await fetch('/api/rag/stats', { credentials: 'include' });
+            const data = await response.json();
+            document.getElementById('stat-documents').textContent = data.total_documents || 0;
+            document.getElementById('stat-chunks').textContent = data.total_chunks || 0;
+            document.getElementById('stat-indexed').textContent = data.indexed_documents || 0;
+            document.getElementById('rag-stats').style.display = 'block';
+        } catch (error) { console.error('Failed to load stats'); }
+    }
+
+    async function deleteRagDocument(documentId) {
+        if (!confirm('Delete this document?')) return;
+        try {
+            await fetch(`/api/rag/documents/${documentId}`, { method: 'DELETE', credentials: 'include' });
+            loadRagDocuments();
+        } catch (error) { alert('Delete failed: ' + error.message); }
+    }
+
+    document.getElementById('rag-upload-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = '⏳ Processing...';
+        try {
+            const response = await fetch('/api/rag/documents/upload', { method: 'POST', body: formData, credentials: 'include' });
+            const data = await response.json();
+            if (data.success) {
+                alert('Document uploaded!');
+                bootstrap.Modal.getInstance(document.getElementById('uploadDocModal')).hide();
+                e.target.reset();
+                loadRagDocuments();
+            } else { alert('Error: ' + data.error); }
+        } catch (error) { alert('Error: ' + error.message); }
+        finally { btn.disabled = false; btn.textContent = 'Upload'; }
+    });
+
+    document.getElementById('rag-search-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = document.getElementById('rag-search-input').value;
+        if (!query.trim()) return;
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        try {
+            const formData = new FormData();
+            formData.append('query', query);
+            const response = await fetch('/api/rag/search', { method: 'POST', body: formData, credentials: 'include' });
+            const data = await response.json();
+            const resultsDiv = document.getElementById('rag-search-results');
+            if (data.results && data.results.length > 0) {
+                let html = '<h6>Results:</h6>';
+                for (const result of data.results) {
+                    html += `<div class="card mb-2"><div class="card-body py-2"><small class="text-muted">Relevance: ${(result.similarity * 100).toFixed(1)}%</small><p class="mb-0 small">${result.text.substring(0, 200)}...</p></div></div>`;
+                }
+                resultsDiv.innerHTML = html;
+            } else { resultsDiv.innerHTML = '<p class="text-muted">No results found.</p>'; }
+            resultsDiv.style.display = 'block';
+        } catch (error) { alert('Search failed'); }
+        finally { btn.disabled = false; }
+    });
+
+    loadRagDocuments();
 </script>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadDocModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rag-upload-form" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Document File</label>
+                        <input type="file" name="file" class="form-control" required accept=".pdf,.doc,.docx,.txt,.csv">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="Brief description">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

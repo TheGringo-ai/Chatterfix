@@ -58,7 +58,7 @@ sentry-sdk==2.47.0
 # Computer Vision & OCR dependencies
 pyzbar==0.1.9
 qrcode[pil]==8.2
-opencv-python-headless==4.10.0.84
+opencv-python-headless==4.12.0.88
 pytesseract==0.3.13
 pillow==11.3.0
 easyocr==1.7.2

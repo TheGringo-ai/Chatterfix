@@ -1,6 +1,6 @@
 # ULTRA-OPTIMIZED Production Dockerfile for ChatterFix CMMS
 # AI Team Enhanced - UV for 10-100x faster builds
-FROM python:3.12-slim AS python-base
+FROM python:3.14-slim AS python-base
 
 # Optimized environment variables
 ENV PYTHONUNBUFFERED=1 \

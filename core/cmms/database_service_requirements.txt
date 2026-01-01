@@ -2,17 +2,17 @@
 # Optimized for Cloud Run deployment with minimal dependencies
 
 # Core FastAPI and web framework
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
 
 # Database support
-psycopg2-binary>=2.9.0
+psycopg2-binary>=2.9.9
 
 # Basic data validation
-pydantic>=2.4.0
+pydantic>=2.10.0
 
 # Environment configuration
 python-dotenv>=1.0.0
 
 # CORS support
-starlette>=0.27.0
+starlette>=0.41.0

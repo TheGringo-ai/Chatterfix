@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_optional_current_user, require_permission
+from app.auth import get_current_user_from_cookie, require_permission
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 
@@ -36,8 +36,8 @@ async def check_manager_access(request: Request) -> tuple[bool, User | None]:
     """
     from app.routers.settings import get_security_settings
 
-    # Get current user if logged in
-    current_user = await get_optional_current_user(request)
+    # Get current user if logged in (using cookie-based auth for HTML pages)
+    current_user = await get_current_user_from_cookie(request)
     org_id = current_user.organization_id if current_user else "default"
 
     # Check security settings

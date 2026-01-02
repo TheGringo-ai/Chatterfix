@@ -727,3 +727,68 @@ async def get_safety_dashboard(
     except Exception as e:
         logger.error(f"Failed to get safety dashboard: {e}")
         return SafetyDashboardStats()
+
+
+# ========== VOICE LOG ENDPOINT FOR MOBILE APP ==========
+
+class VoiceLogCreate(BaseModel):
+    """Voice log from mobile app"""
+    asset_id: Optional[str] = None
+    audio_url: Optional[str] = None
+    transcript: str
+    command_type: Optional[str] = None
+    organization_id: str
+    created_at: Optional[str] = None
+
+
+class VoiceLogResponse(BaseModel):
+    """Response for voice log creation"""
+    success: bool
+    log_id: Optional[str] = None
+    message: str
+
+
+@router.post("/voice-logs", response_model=VoiceLogResponse)
+async def create_voice_log(log: VoiceLogCreate):
+    """
+    📱 Mobile App Voice Log Sync
+
+    Receives voice logs from the ChatterFix Relay mobile app.
+    Used for:
+    - Voice command history
+    - Audit trail
+    - Analytics
+    """
+    try:
+        from app.core.firestore_db import FirestoreManager
+        from datetime import datetime, timezone
+
+        db = FirestoreManager()
+
+        log_data = {
+            "asset_id": log.asset_id,
+            "audio_url": log.audio_url,
+            "transcript": log.transcript,
+            "command_type": log.command_type or "general",
+            "organization_id": log.organization_id,
+            "created_at": log.created_at or datetime.now(timezone.utc).isoformat(),
+            "synced_at": datetime.now(timezone.utc).isoformat(),
+            "source": "mobile_app"
+        }
+
+        doc_id = await db.create_document("voice_logs", log_data)
+
+        logger.info(f"Voice log created: {doc_id}")
+
+        return VoiceLogResponse(
+            success=True,
+            log_id=doc_id,
+            message="Voice log synced successfully"
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to create voice log: {e}")
+        return VoiceLogResponse(
+            success=False,
+            message=f"Failed to sync voice log: {str(e)}"
+        )

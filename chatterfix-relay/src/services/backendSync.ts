@@ -83,10 +83,11 @@ class BackendSyncService {
 
   /**
    * Sync a voice log to the backend
+   * Uses /api/v1/safety/voice-logs endpoint
    */
   async syncVoiceLog(log: VoiceLog): Promise<boolean> {
     try {
-      await this.makeRequest('/api/v1/voice-logs', {
+      await this.makeRequest('/api/v1/safety/voice-logs', {
         method: 'POST',
         body: JSON.stringify({
           asset_id: log.asset_id,
@@ -300,6 +301,7 @@ class BackendSyncService {
 
   /**
    * Sync offline fall detection events
+   * Uses /api/v1/safety/man-down endpoint (SafetyFix Guardian Angel)
    */
   private async syncOfflineFallEvents(): Promise<void> {
     try {
@@ -311,9 +313,17 @@ class BackendSyncService {
 
       for (const event of events) {
         try {
-          await this.makeRequest('/api/v1/safety/fall-events', {
+          // Use the correct endpoint: /api/v1/safety/man-down
+          await this.makeRequest('/api/v1/safety/man-down', {
             method: 'POST',
-            body: JSON.stringify(event),
+            body: JSON.stringify({
+              user_id: event.user_id,
+              location: event.location || 'Unknown',
+              g_force: event.g_force || 2.0,
+              fall_duration_ms: event.fall_duration_ms || 500,
+              device_orientation: event.device_orientation || 'unknown',
+              audio_recording_url: event.audio_recording_url,
+            }),
           });
         } catch (error) {
           console.error('[BackendSync] Failed to sync fall event:', error);

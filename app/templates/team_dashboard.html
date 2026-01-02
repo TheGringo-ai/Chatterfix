@@ -146,108 +146,134 @@
     </div>
 </div>
 
-<!-- WebSocket Connection -->
+<!-- Firestore-based Messaging -->
 <script>
     const currentUserId = "{{ user.id if user else 'demo_user_1' }}";
-    let ws = null;
+    let pollInterval = null;
 
-    function connectWebSocket() {
-        // Dynamic protocol (ws or wss)
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // Connect to dynamic host
-        ws = new WebSocket(`${protocol}//${window.location.host}/team/ws/${currentUserId}`);
+    // Load messages on page load
+    async function loadMessages() {
+        try {
+            const response = await fetch('/team/messages/recent?limit=50', {
+                credentials: 'include'
+            });
+            const data = await response.json();
 
-        ws.onopen = () => {
-            console.log('WebSocket connected');
-        };
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            handleWebSocketMessage(data);
-        };
-
-        ws.onclose = () => {
-            console.log('WebSocket disconnected, reconnecting...');
-            setTimeout(connectWebSocket, 3000);
-        };
+            if (data.success && data.messages) {
+                renderMessages(data.messages);
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
     }
 
-    function handleWebSocketMessage(data) {
-        if (data.type === 'chat_message') {
-            addMessageToFeed(data);
-        } else if (data.type === 'notification') {
-            showNotification(data);
-        } else if (data.type === 'user_status') {
-            updateUserStatus(data.user_id, data.status);
+    function renderMessages(messages) {
+        const messageList = document.getElementById('message-list');
+        if (!messages || messages.length === 0) {
+            messageList.innerHTML = '<p class="text-muted text-center">No messages yet. Start the conversation!</p>';
+            return;
         }
+
+        messageList.innerHTML = messages.map(msg => `
+            <div class="message-item mb-3 p-3 border rounded" data-id="${msg.id || ''}">
+                <div class="d-flex justify-content-between">
+                    <strong>${msg.sender_name || 'Unknown'}</strong>
+                    ${msg.recipient_name
+                        ? `<small class="text-muted">→ ${msg.recipient_name}</small>`
+                        : '<small class="text-muted">→ Everyone</small>'
+                    }
+                </div>
+                <p class="mb-1">${msg.message || ''}</p>
+                <small class="text-muted">${formatDate(msg.created_at)}</small>
+                ${msg.priority === 'urgent' ? '<span class="badge bg-danger ms-2">URGENT</span>' : ''}
+                ${msg.priority === 'high' ? '<span class="badge bg-warning ms-2">HIGH</span>' : ''}
+            </div>
+        `).join('');
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleString();
     }
 
     function addMessageToFeed(msg) {
         const messageList = document.getElementById('message-list');
+        // Remove "no messages" placeholder if present
+        const placeholder = messageList.querySelector('.text-muted.text-center');
+        if (placeholder) placeholder.remove();
+
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message-item mb-3 p-3 border rounded';
         msgDiv.innerHTML = `
             <div class="d-flex justify-content-between">
-                <strong>User ${msg.sender_id}</strong>
-                <small class="text-muted">${new Date(msg.timestamp).toLocaleTimeString()}</small>
+                <strong>${msg.sender_name || 'You'}</strong>
+                <small class="text-muted">${new Date().toLocaleTimeString()}</small>
             </div>
             <p class="mb-0">${msg.message}</p>
         `;
         messageList.insertBefore(msgDiv, messageList.firstChild);
     }
 
-    function showNotification(notif) {
-        // Show browser notification if permitted
-        if (Notification.permission === 'granted') {
-            new Notification(notif.title, {
-                body: notif.message,
-                icon: '/static/img/logo.png'
-            });
-        }
-
-        // Add to notifications list
-        const notifList = document.getElementById('notifications-list');
-        const notifDiv = document.createElement('div');
-        notifDiv.className = 'alert alert-info alert-dismissible fade show mb-2';
-        notifDiv.innerHTML = `
-            <strong>${notif.title}</strong><br>
-            ${notif.message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        notifList.insertBefore(notifDiv, notifList.firstChild);
-    }
-
-    function updateUserStatus(userId, status) {
-        // Update status indicator
-        const indicators = document.querySelectorAll('.status-indicator');
-        // Implementation depends on DOM structure
-    }
-
-    // Send message
-    document.getElementById('send-message-form').addEventListener('submit', (e) => {
+    // Send message via API
+    document.getElementById('send-message-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const message = document.getElementById('message-input').value;
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
         const recipientId = document.getElementById('recipient-select').value;
 
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-                type: 'chat_message',
-                message: message,
-                recipient_id: recipientId || null,
-                priority: 'normal'
-            }));
+        if (!message) return;
 
-            document.getElementById('message-input').value = '';
+        try {
+            const response = await fetch('/team/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    message: message,
+                    recipient_id: recipientId || null,
+                    priority: 'normal'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Add message to feed immediately
+                addMessageToFeed({
+                    message: message,
+                    sender_name: 'You',
+                    recipient_id: recipientId
+                });
+                messageInput.value = '';
+            } else {
+                alert('Failed to send message: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Please try again.');
         }
     });
+
+    // Load notifications
+    async function loadNotifications() {
+        const notifList = document.getElementById('notifications-list');
+        notifList.innerHTML = '<p class="text-muted">No new notifications</p>';
+    }
 
     // Request browser notification permission
     if (Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // Connect on page load
-    connectWebSocket();
+    // Initialize on page load
+    loadMessages();
+    loadNotifications();
+
+    // Poll for new messages every 10 seconds
+    pollInterval = setInterval(loadMessages, 10000);
 
     // Helper functions
     function openChat(userId, userName) {
@@ -265,7 +291,8 @@
 
     function toggleChatView() {
         // Toggle between list and chat view
-        alert('Chat view toggle - to be implemented');
+        const container = document.getElementById('message-container');
+        container.classList.toggle('chat-view');
     }
 </script>
 

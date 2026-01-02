@@ -47,7 +47,8 @@ async def get_org_settings(org_id: str = "default") -> dict:
     try:
         firestore = get_firestore_manager()
         settings = await firestore.get_document("organization_settings", org_id)
-        return settings or {}
+        # Return empty dict if document doesn't exist
+        return settings if settings else {}
     except Exception as e:
         logger.warning(f"Could not fetch org settings: {e}")
         return {}
@@ -58,6 +59,9 @@ async def get_security_settings(org_id: str = "default") -> dict:
     try:
         firestore = get_firestore_manager()
         settings = await firestore.get_document("organization_settings", org_id)
+        # Handle None case when document doesn't exist
+        if not settings:
+            settings = {}
         return {
             "protect_manager_dashboard": settings.get("protect_manager_dashboard", False),
             "require_login_all": settings.get("require_login_all", False),

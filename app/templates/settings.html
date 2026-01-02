@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+{% block title %}Settings - ChatterFix CMMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1"><i class="fas fa-cog me-2"></i>Settings</h2>
+            <p class="text-muted">Configure your ChatterFix CMMS preferences</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Settings Navigation -->
+        <div class="col-md-3 mb-4">
+            <div class="card glass-panel">
+                <div class="list-group list-group-flush" style="background: transparent;">
+                    <a href="#general" class="list-group-item list-group-item-action active" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-sliders-h me-2"></i>General
+                    </a>
+                    <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-shield-alt me-2"></i>Security & Access
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-bell me-2"></i>Notifications
+                    </a>
+                    <a href="#integrations" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-plug me-2"></i>Integrations & API
+                    </a>
+                    <a href="#modules" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-puzzle-piece me-2"></i>Modules
+                    </a>
+                    <a href="#data" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-database me-2"></i>Data & Import
+                    </a>
+                    <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="list" style="background: var(--bg-glass); color: var(--text-primary); border-color: var(--card-border);">
+                        <i class="fas fa-users me-2"></i>Users & Roles
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- General Settings -->
+                <div class="tab-pane fade show active" id="general">
+                    <div class="card glass-panel mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-building me-2"></i>Organization Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="orgSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Organization Name</label>
+                                        <input type="text" class="form-control" id="orgName" value="{{ org_settings.name or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Industry</label>
+                                        <select class="form-select" id="orgIndustry">
+                                            <option value="manufacturing" {% if org_settings.industry == 'manufacturing' %}selected{% endif %}>Manufacturing</option>
+                                            <option value="facilities" {% if org_settings.industry == 'facilities' %}selected{% endif %}>Facilities Management</option>
+                                            <option value="healthcare" {% if org_settings.industry == 'healthcare' %}selected{% endif %}>Healthcare</option>
+                                            <option value="hospitality" {% if org_settings.industry == 'hospitality' %}selected{% endif %}>Hospitality</option>
+                                            <option value="logistics" {% if org_settings.industry == 'logistics' %}selected{% endif %}>Logistics & Warehousing</option>
+                                            <option value="other" {% if org_settings.industry == 'other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Timezone</label>
+                                        <select class="form-select" id="timezone">
+                                            <option value="America/New_York">Eastern Time (ET)</option>
+                                            <option value="America/Chicago">Central Time (CT)</option>
+                                            <option value="America/Denver">Mountain Time (MT)</option>
+                                            <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Date Format</label>
+                                        <select class="form-select" id="dateFormat">
+                                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Appearance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Theme</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="theme" id="themeDark" value="dark" checked>
+                                        <label class="btn btn-outline-primary" for="themeDark">
+                                            <i class="fas fa-moon me-1"></i>Dark
+                                        </label>
+                                        <input type="radio" class="btn-check" name="theme" id="themeLight" value="light">
+                                        <label class="btn btn-outline-primary" for="themeLight">
+                                            <i class="fas fa-sun me-1"></i>Light
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Company Logo</label>
+                                    <input type="file" class="form-control" accept="image/*">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card glass-panel mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-lock me-2"></i>Access Control</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="securitySettingsForm">
+                                <!-- Manager Dashboard Protection -->
+                                <div class="mb-4 p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="protectManagerDashboard"
+                                               {% if org_settings.protect_manager_dashboard %}checked{% endif %}>
+                                        <label class="form-check-label" for="protectManagerDashboard">
+                                            <strong>Password Protect Manager Dashboard</strong>
+                                        </label>
+                                    </div>
+                                    <p class="text-muted small mb-0">
+                                        When enabled, users must log in to access the Manager Dashboard.
+                                        When disabled, anyone with the link can view it.
+                                    </p>
+                                </div>
+
+                                <!-- Require Login for All Pages -->
+                                <div class="mb-4 p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="requireLoginAll"
+                                               {% if org_settings.require_login_all %}checked{% endif %}>
+                                        <label class="form-check-label" for="requireLoginAll">
+                                            <strong>Require Login for All Pages</strong>
+                                        </label>
+                                    </div>
+                                    <p class="text-muted small mb-0">
+                                        When enabled, all pages require authentication. Demo pages remain public.
+                                    </p>
+                                </div>
+
+                                <!-- Session Timeout -->
+                                <div class="mb-4">
+                                    <label class="form-label">Session Timeout</label>
+                                    <select class="form-select" id="sessionTimeout" style="max-width: 300px;">
+                                        <option value="30">30 minutes</option>
+                                        <option value="60">1 hour</option>
+                                        <option value="240">4 hours</option>
+                                        <option value="480">8 hours</option>
+                                        <option value="0">Never (not recommended)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Two-Factor Auth -->
+                                <div class="mb-4 p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="require2FA"
+                                               {% if org_settings.require_2fa %}checked{% endif %}>
+                                        <label class="form-check-label" for="require2FA">
+                                            <strong>Require Two-Factor Authentication</strong>
+                                        </label>
+                                    </div>
+                                    <p class="text-muted small mb-0">
+                                        Require all users to set up 2FA for their accounts.
+                                    </p>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Security Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i>Role Permissions</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Configure what each role can access:</p>
+                            <div class="table-responsive">
+                                <table class="table" style="color: var(--text-primary);">
+                                    <thead>
+                                        <tr>
+                                            <th>Permission</th>
+                                            <th class="text-center">Technician</th>
+                                            <th class="text-center">Supervisor</th>
+                                            <th class="text-center">Manager</th>
+                                            <th class="text-center">Admin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>View Work Orders</td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Create Work Orders</td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Edit Assets</td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Manager Dashboard</td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td>System Settings</td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                            <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Settings -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Notification Preferences</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="notificationSettingsForm">
+                                <h6 class="mb-3">Email Notifications</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailWorkOrders" checked>
+                                        <label class="form-check-label" for="emailWorkOrders">Work Order Updates</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailPM" checked>
+                                        <label class="form-check-label" for="emailPM">PM Schedule Reminders</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailInventory" checked>
+                                        <label class="form-check-label" for="emailInventory">Low Inventory Alerts</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailSafety" checked>
+                                        <label class="form-check-label" for="emailSafety">Safety Incidents</label>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <h6 class="mb-3">Push Notifications</h6>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="pushCritical" checked>
+                                        <label class="form-check-label" for="pushCritical">Critical Alerts Only</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="pushManDown" checked>
+                                        <label class="form-check-label" for="pushManDown">Man-Down Events (Safety)</label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Notification Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integrations Settings -->
+                <div class="tab-pane fade" id="integrations">
+                    <div class="card glass-panel mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-key me-2"></i>API Keys</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="apiKeysForm" action="/settings/api-keys" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label">Gemini API Key (AI Features)</label>
+                                    <input type="password" class="form-control" name="gemini_api_key"
+                                           value="{{ api_settings.gemini_api_key or '' }}" placeholder="Enter Gemini API key">
+                                    <small class="text-muted">Used for AI-powered features like voice commands and smart import</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">OpenAI API Key (Optional)</label>
+                                    <input type="password" class="form-control" name="openai_api_key"
+                                           value="{{ api_settings.openai_api_key or '' }}" placeholder="Enter OpenAI API key">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">xAI/Grok API Key (Optional)</label>
+                                    <input type="password" class="form-control" name="xai_api_key"
+                                           value="{{ api_settings.xai_api_key or '' }}" placeholder="Enter xAI API key">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save API Keys
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-plug me-2"></i>Connected Services</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded d-flex align-items-center justify-content-between"
+                                         style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div>
+                                            <i class="fab fa-google text-danger me-2"></i>
+                                            <strong>Firebase</strong>
+                                            <span class="badge bg-success ms-2">Connected</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded d-flex align-items-center justify-content-between"
+                                         style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div>
+                                            <i class="fas fa-robot text-primary me-2"></i>
+                                            <strong>AI Services</strong>
+                                            <span class="badge bg-success ms-2">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modules Settings -->
+                <div class="tab-pane fade" id="modules">
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-puzzle-piece me-2"></i>ChatterFix Modules</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">Enable or disable modules for your organization:</p>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="moduleFactory" checked>
+                                            <label class="form-check-label" for="moduleFactory">
+                                                <strong>FactoryFix</strong>
+                                                <span class="badge bg-primary ms-2">Core</span>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Machine monitoring, OEE tracking, IoT integration</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="moduleSafety" checked>
+                                            <label class="form-check-label" for="moduleSafety">
+                                                <strong>SafetyFix</strong>
+                                                <span class="badge bg-danger ms-2">Premium</span>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Guardian Angel - PPE detection, man-down, zone alerts</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="moduleQuality" checked>
+                                            <label class="form-check-label" for="moduleQuality">
+                                                <strong>QualityFix</strong>
+                                                <span class="badge bg-success ms-2">Premium</span>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">Visual QA, non-conformance tracking, CAPA</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="p-3 rounded" style="background: var(--bg-glass); border: 1px solid var(--card-border);">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="moduleTraining">
+                                            <label class="form-check-label" for="moduleTraining">
+                                                <strong>LineSmart Training</strong>
+                                                <span class="badge bg-info ms-2">Add-on</span>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">AR training, skill tracking, certification management</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data & Import Settings -->
+                <div class="tab-pane fade" id="data">
+                    <div class="card glass-panel mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-cloud-upload-alt me-2"></i>Data Import</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-4">Import your existing data into ChatterFix:</p>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <a href="/api/v1/import/page" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-magic me-2"></i>Smart AI Import
+                                        <br><small>CSV, Excel, PDF with AI mapping</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <a href="/manager/bulk-import" class="btn btn-outline-primary btn-lg w-100">
+                                        <i class="fas fa-upload me-2"></i>Bulk Import
+                                        <br><small>Quick CSV upload</small>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card glass-panel">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-download me-2"></i>Data Export</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-outline-secondary w-100" onclick="exportData('assets')">
+                                        <i class="fas fa-cogs me-2"></i>Export Assets
+                                    </button>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-outline-secondary w-100" onclick="exportData('work_orders')">
+                                        <i class="fas fa-clipboard-list me-2"></i>Export Work Orders
+                                    </button>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <button class="btn btn-outline-secondary w-100" onclick="exportData('parts')">
+                                        <i class="fas fa-boxes me-2"></i>Export Inventory
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Settings -->
+                <div class="tab-pane fade" id="users">
+                    <div class="card glass-panel">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-users me-2"></i>User Management</h5>
+                            <a href="/settings/users" class="btn btn-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-2"></i>Full User Management
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Manage users, roles, and permissions from the User Management page.</p>
+                            <a href="/team" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-users me-2"></i>Team Dashboard
+                            </a>
+                            <a href="/settings/users" class="btn btn-outline-secondary">
+                                <i class="fas fa-user-cog me-2"></i>Manage Users
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.list-group-item.active {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary)) !important;
+    border-color: var(--accent-color) !important;
+    color: white !important;
+}
+
+.list-group-item:hover:not(.active) {
+    background: var(--bg-glass-hover) !important;
+}
+
+.form-control, .form-select {
+    background: var(--bg-glass) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--card-border) !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 255, 0.25) !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+</style>
+
+<script>
+// Save organization settings
+document.getElementById('orgSettingsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        name: document.getElementById('orgName').value,
+        industry: document.getElementById('orgIndustry').value,
+        timezone: document.getElementById('timezone').value,
+        date_format: document.getElementById('dateFormat').value
+    };
+
+    try {
+        const response = await fetch('/settings/organization', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        alert(result.message || 'Settings saved!');
+    } catch (error) {
+        alert('Error saving settings: ' + error.message);
+    }
+});
+
+// Save security settings
+document.getElementById('securitySettingsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        protect_manager_dashboard: document.getElementById('protectManagerDashboard').checked,
+        require_login_all: document.getElementById('requireLoginAll').checked,
+        session_timeout: document.getElementById('sessionTimeout').value,
+        require_2fa: document.getElementById('require2FA').checked
+    };
+
+    try {
+        const response = await fetch('/settings/security', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        alert(result.message || 'Security settings saved!');
+    } catch (error) {
+        alert('Error saving settings: ' + error.message);
+    }
+});
+
+// Export data
+async function exportData(type) {
+    try {
+        const response = await fetch(`/api/export/${type}`, { credentials: 'include' });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chatterfix_${type}_export.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Export failed: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

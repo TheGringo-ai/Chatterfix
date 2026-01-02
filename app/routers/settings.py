@@ -1,15 +1,18 @@
 """
 Settings Routes
-User settings, API key management, and user administration
+User settings, organization settings, security, and administration
 """
 
 import logging
+from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, get_optional_current_user, require_permission
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 
@@ -17,6 +20,53 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+# ============ Pydantic Models ============
+
+class OrganizationSettings(BaseModel):
+    """Organization-level settings"""
+    name: Optional[str] = None
+    industry: Optional[str] = None
+    timezone: Optional[str] = "America/New_York"
+    date_format: Optional[str] = "MM/DD/YYYY"
+
+
+class SecuritySettings(BaseModel):
+    """Security and access control settings"""
+    protect_manager_dashboard: bool = False  # Default: open access
+    require_login_all: bool = False
+    session_timeout: int = 60  # minutes
+    require_2fa: bool = False
+
+
+# ============ Helper Functions ============
+
+async def get_org_settings(org_id: str = "default") -> dict:
+    """Get organization settings from Firestore"""
+    try:
+        firestore = get_firestore_manager()
+        settings = await firestore.get_document("organization_settings", org_id)
+        return settings or {}
+    except Exception as e:
+        logger.warning(f"Could not fetch org settings: {e}")
+        return {}
+
+
+async def get_security_settings(org_id: str = "default") -> dict:
+    """Get security settings - used by other routers to check access"""
+    try:
+        firestore = get_firestore_manager()
+        settings = await firestore.get_document("organization_settings", org_id)
+        return {
+            "protect_manager_dashboard": settings.get("protect_manager_dashboard", False),
+            "require_login_all": settings.get("require_login_all", False),
+            "session_timeout": settings.get("session_timeout", 60),
+            "require_2fa": settings.get("require_2fa", False),
+        }
+    except Exception as e:
+        logger.warning(f"Could not fetch security settings: {e}")
+        return {"protect_manager_dashboard": False, "require_login_all": False}
 
 
 def mask_api_key(key: str) -> str:
@@ -28,38 +78,121 @@ def mask_api_key(key: str) -> str:
 
 @router.get("", response_class=HTMLResponse)
 async def settings_page(
-    request: Request, current_user: User = Depends(get_current_active_user)
+    request: Request, current_user: User = Depends(get_optional_current_user)
 ):
-    """User settings page"""
-    if not current_user:
-        return RedirectResponse(url="/auth/login")
+    """User settings page - accessible to anyone, some features require auth"""
+    # Fetch organization settings
+    org_id = current_user.organization_id if current_user else "default"
+    org_settings = await get_org_settings(org_id)
 
-    # Fetch user settings from Firestore
-    settings_dict = {
+    # Fetch user API settings if logged in
+    api_settings = {
         "gemini_api_key": "",
         "xai_api_key": "",
         "openai_api_key": "",
         "custom_endpoint": "",
     }
 
-    try:
-        firestore = get_firestore_manager()
-        user_settings = await firestore.get_document("user_settings", current_user.uid)
-        if user_settings:
-            # Mask API keys for display
-            settings_dict = {
-                "gemini_api_key": mask_api_key(user_settings.get("gemini_api_key", "")),
-                "xai_api_key": mask_api_key(user_settings.get("xai_api_key", "")),
-                "openai_api_key": mask_api_key(user_settings.get("openai_api_key", "")),
-                "custom_endpoint": user_settings.get("custom_endpoint", ""),
-            }
-    except Exception as e:
-        logger.warning(f"Could not fetch user settings: {e}")
+    if current_user:
+        try:
+            firestore = get_firestore_manager()
+            user_settings = await firestore.get_document("user_settings", current_user.uid)
+            if user_settings:
+                api_settings = {
+                    "gemini_api_key": mask_api_key(user_settings.get("gemini_api_key", "")),
+                    "xai_api_key": mask_api_key(user_settings.get("xai_api_key", "")),
+                    "openai_api_key": mask_api_key(user_settings.get("openai_api_key", "")),
+                    "custom_endpoint": user_settings.get("custom_endpoint", ""),
+                }
+        except Exception as e:
+            logger.warning(f"Could not fetch user settings: {e}")
 
     return templates.TemplateResponse(
         "settings.html",
-        {"request": request, "user": current_user, "api_settings": settings_dict},
+        {
+            "request": request,
+            "user": current_user,
+            "api_settings": api_settings,
+            "org_settings": org_settings,
+        },
     )
+
+
+@router.post("/organization")
+async def save_organization_settings(
+    settings: OrganizationSettings,
+    current_user: User = Depends(get_optional_current_user),
+):
+    """Save organization settings"""
+    try:
+        firestore = get_firestore_manager()
+        org_id = current_user.organization_id if current_user else "default"
+
+        settings_data = {
+            "name": settings.name,
+            "industry": settings.industry,
+            "timezone": settings.timezone,
+            "date_format": settings.date_format,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_by": current_user.uid if current_user else "anonymous",
+        }
+
+        # Merge with existing settings
+        existing = await firestore.get_document("organization_settings", org_id) or {}
+        existing.update(settings_data)
+
+        await firestore.set_document("organization_settings", org_id, existing)
+        logger.info(f"Organization settings saved for {org_id}")
+
+        return JSONResponse({"success": True, "message": "Organization settings saved!"})
+
+    except Exception as e:
+        logger.error(f"Failed to save organization settings: {e}")
+        return JSONResponse(
+            {"success": False, "message": f"Failed to save: {str(e)}"}, status_code=500
+        )
+
+
+@router.post("/security")
+async def save_security_settings(
+    settings: SecuritySettings,
+    current_user: User = Depends(get_optional_current_user),
+):
+    """Save security settings"""
+    try:
+        firestore = get_firestore_manager()
+        org_id = current_user.organization_id if current_user else "default"
+
+        settings_data = {
+            "protect_manager_dashboard": settings.protect_manager_dashboard,
+            "require_login_all": settings.require_login_all,
+            "session_timeout": settings.session_timeout,
+            "require_2fa": settings.require_2fa,
+            "security_updated_at": datetime.now(timezone.utc).isoformat(),
+            "security_updated_by": current_user.uid if current_user else "anonymous",
+        }
+
+        # Merge with existing settings
+        existing = await firestore.get_document("organization_settings", org_id) or {}
+        existing.update(settings_data)
+
+        await firestore.set_document("organization_settings", org_id, existing)
+        logger.info(f"Security settings saved for {org_id}")
+
+        return JSONResponse({"success": True, "message": "Security settings saved!"})
+
+    except Exception as e:
+        logger.error(f"Failed to save security settings: {e}")
+        return JSONResponse(
+            {"success": False, "message": f"Failed to save: {str(e)}"}, status_code=500
+        )
+
+
+@router.get("/security/check")
+async def check_security_settings(org_id: str = "default"):
+    """Public endpoint to check security settings - used by other routers"""
+    settings = await get_security_settings(org_id)
+    return JSONResponse(settings)
 
 
 @router.post("/api-keys")

@@ -313,8 +313,8 @@ class BackendSyncService {
 
       for (const event of events) {
         try {
-          // Use the correct endpoint: /api/v1/safety/man-down
-          await this.makeRequest('/api/v1/safety/man-down', {
+          // Use the JSON endpoint: /api/v1/safety/man-down/json
+          await this.makeRequest('/api/v1/safety/man-down/json', {
             method: 'POST',
             body: JSON.stringify({
               user_id: event.user_id,

@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
 from app.auth import get_optional_current_user
@@ -533,6 +534,75 @@ async def _handle_man_down_event(event: ManDownEvent):
         logger.info(f"Man down event saved and notifications sent: {event.id}")
     except Exception as e:
         logger.error(f"Failed to handle man down event: {e}")
+
+
+# ============ JSON Body Man Down (for mobile app) ============
+
+class ManDownRequest(BaseModel):
+    """JSON request model for man-down event from mobile app"""
+    user_id: str
+    location: Optional[str] = "Unknown"
+    g_force: float = 2.0
+    fall_duration_ms: int = 500
+    device_orientation: Optional[str] = "unknown"
+    audio_recording_url: Optional[str] = None
+
+
+class ManDownResponse(BaseModel):
+    """Response for man-down event"""
+    success: bool
+    event_id: Optional[str] = None
+    message: str
+    impact_severity: Optional[str] = None
+
+
+@router.post("/man-down/json", response_model=ManDownResponse)
+async def report_man_down_json(
+    request: ManDownRequest,
+    background_tasks: BackgroundTasks,
+    current_user = Depends(get_optional_current_user),
+):
+    """
+    📱 Mobile App Man Down Event (JSON body)
+
+    Alternative endpoint for mobile apps that send JSON instead of form data.
+    """
+    event_id = str(uuid.uuid4())
+
+    # Determine impact severity from G-force
+    if request.g_force >= 6.0:
+        impact = "severe"
+    elif request.g_force >= 3.5:
+        impact = "moderate"
+    else:
+        impact = "light"
+
+    event = ManDownEvent(
+        id=event_id,
+        organization_id=current_user.organization_id if current_user else "demo_org",
+        user_id=request.user_id,
+        user_name=None,
+        g_force_detected=request.g_force,
+        fall_duration_ms=request.fall_duration_ms,
+        impact_severity=impact,
+        location=request.location,
+        gps_lat=None,
+        gps_lng=None,
+        video_buffer_url=request.audio_recording_url,
+        supervisor_notified=True,
+    )
+
+    # Save and notify in background
+    background_tasks.add_task(_handle_man_down_event, event)
+
+    logger.warning(f"MAN DOWN EVENT (mobile): {request.user_id} - G-force: {request.g_force}, Impact: {impact}")
+
+    return ManDownResponse(
+        success=True,
+        event_id=event_id,
+        message="Man down event recorded. Emergency services notified.",
+        impact_severity=impact
+    )
 
 
 @router.post("/man-down/{event_id}/false-alarm")

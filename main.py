@@ -1301,6 +1301,78 @@ async def api_health_all():
         return {"status": "degraded", "error": str(e)}
 
 
+@app.get("/api/assets", tags=["API"])
+async def api_get_assets(request: Request):
+    """Get assets for dropdown - filtered by organization"""
+    from app.core.firestore_db import get_firestore_manager
+    from app.auth import get_current_user_from_cookie
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return []
+
+    firestore_manager = get_firestore_manager()
+
+    try:
+        if current_user.organization_id:
+            assets = await firestore_manager.get_collection(
+                "assets",
+                filters=[{"field": "organization_id", "operator": "==", "value": current_user.organization_id}]
+            )
+        else:
+            assets = []
+
+        result = []
+        for asset in assets:
+            result.append({
+                "id": asset.get("id", ""),
+                "name": asset.get("name", "Unknown"),
+                "asset_tag": asset.get("asset_tag", ""),
+                "location": asset.get("location", ""),
+            })
+        return result
+    except Exception as e:
+        logger.error(f"Error getting assets: {e}")
+        return []
+
+
+@app.get("/api/users", tags=["API"])
+async def api_get_users(request: Request, role: str = None):
+    """Get users/technicians for dropdown - filtered by organization"""
+    from app.core.firestore_db import get_firestore_manager
+    from app.auth import get_current_user_from_cookie
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return []
+
+    firestore_manager = get_firestore_manager()
+
+    try:
+        filters = []
+        if current_user.organization_id:
+            filters.append({"field": "organization_id", "operator": "==", "value": current_user.organization_id})
+
+        users = await firestore_manager.get_collection("users", filters=filters) if filters else []
+
+        # Filter by role if specified
+        if role:
+            users = [u for u in users if u.get("role", "").lower() == role.lower()]
+
+        result = []
+        for user in users:
+            result.append({
+                "id": user.get("id", user.get("uid", "")),
+                "full_name": user.get("full_name", user.get("name", "Unknown")),
+                "email": user.get("email", ""),
+                "role": user.get("role", ""),
+            })
+        return result
+    except Exception as e:
+        logger.error(f"Error getting users: {e}")
+        return []
+
+
 @app.post("/chat/consult", tags=["Fix-it-Fred AI"])
 async def consult_fix_it_fred(request: MaintenanceConsultationRequest):
     """

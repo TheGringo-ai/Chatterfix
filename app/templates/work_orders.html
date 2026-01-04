@@ -998,8 +998,8 @@
     // Load initial data
     async function loadInitialData() {
         try {
-            // Load assets for dropdown
-            const assetResponse = await fetch('/api/assets');
+            // Load assets for dropdown (credentials needed for org filtering)
+            const assetResponse = await fetch('/api/assets', { credentials: 'include' });
             if (assetResponse.ok) {
                 const assets = await assetResponse.json();
                 populateAssetDropdown(assets);
@@ -1007,15 +1007,15 @@
                 availableAssets = assets;
             }
 
-            // Load technicians for dropdown
-            const techResponse = await fetch('/api/users?role=technician');
+            // Load technicians for dropdown (credentials needed for org filtering)
+            const techResponse = await fetch('/api/users', { credentials: 'include' });
             if (techResponse.ok) {
                 const technicians = await techResponse.json();
                 populateTechnicianDropdown(technicians);
             }
 
             // Load parts for parts checkout
-            const partsResponse = await fetch('/purchasing/parts/search');
+            const partsResponse = await fetch('/purchasing/parts/search', { credentials: 'include' });
             if (partsResponse.ok) {
                 const partsData = await partsResponse.json();
                 populatePartSelects(partsData.parts);

@@ -22,6 +22,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from fastapi.templating import Jinja2Templates
 
+from app.auth import get_current_user_from_cookie
+
 logger = logging.getLogger(__name__)
 
 # ===== SAFETYFIX PREMIUM MODULE LICENSING =====
@@ -321,6 +323,9 @@ safety_inspections = [
 @router.get("/dashboard", response_class=HTMLResponse)
 async def safety_dashboard(request: Request):
     """Main Safety Management dashboard"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = current_user is None
 
     # Calculate safety metrics
     total_incidents = len(safety_incidents)
@@ -345,6 +350,8 @@ async def safety_dashboard(request: Request):
 
     context = {
         "request": request,
+        "current_user": current_user,
+        "is_demo": is_demo,
         "safety_metrics": safety_metrics,
         "recent_incidents": safety_incidents[:5],
         "recent_lab_results": lab_results[:5],

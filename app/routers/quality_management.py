@@ -13,6 +13,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from app.auth import get_current_user_from_cookie
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -1164,6 +1166,10 @@ async def quality_dashboard(
     ),
 ):
     """Food Processing Quality Management dashboard with HACCP and GMP compliance"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = current_user is None
+
     try:
         # Get industry configuration
         industry_config = INDUSTRY_CONFIGS.get(
@@ -1247,6 +1253,8 @@ async def quality_dashboard(
 
         context = {
             "request": request,
+            "current_user": current_user,
+            "is_demo": is_demo,
             "industry_config": industry_config,
             "industry": industry,
             "active_haccp_plans": active_haccp_plans,

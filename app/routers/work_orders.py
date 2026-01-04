@@ -109,25 +109,30 @@ async def work_orders_list(request: Request):
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    is_demo = False
     work_orders = []
     stats = {}
 
-    if current_user and current_user.organization_id:
-        # Authenticated user with organization - show real Firestore data
-        try:
-            work_orders = await work_order_service.get_work_orders(
-                organization_id=current_user.organization_id
-            )
-        except Exception as e:
-            logger.error(f"Error loading work orders: {e}")
-            # Fall back to demo data on error
-            work_orders = DEMO_WORK_ORDERS
-            is_demo = True
+    # Key fix: is_demo should be False for ANY authenticated user (Lesson #8)
+    if current_user:
+        # Authenticated user - NOT demo mode
+        is_demo = False
+        if current_user.organization_id:
+            # Has organization - show real Firestore data
+            try:
+                work_orders = await work_order_service.get_work_orders(
+                    organization_id=current_user.organization_id
+                )
+            except Exception as e:
+                logger.error(f"Error loading work orders: {e}")
+                # Show empty list on error, not demo data (user is still authenticated)
+                work_orders = []
+        else:
+            # Authenticated but no org - show empty list (not demo data)
+            work_orders = []
     else:
-        # Not authenticated or no organization - show demo data
-        work_orders = DEMO_WORK_ORDERS
+        # Not authenticated - show demo data
         is_demo = True
+        work_orders = DEMO_WORK_ORDERS
         # Create demo user context for template
         current_user = type('obj', (object,), {
             'uid': 'demo',
@@ -166,14 +171,17 @@ async def work_order_detail(request: Request, wo_id: str):
     """Render work order details - demo data for guests, real data for authenticated"""
     current_user = await get_current_user_from_cookie(request)
 
-    is_demo = False
     work_order = None
 
-    if current_user and current_user.organization_id:
-        # Authenticated user - get real work order from Firestore
-        work_order = await work_order_service.get_work_order(
-            wo_id, organization_id=current_user.organization_id
-        )
+    # Key fix: is_demo should be False for ANY authenticated user (Lesson #8)
+    if current_user:
+        # Authenticated user - NOT demo mode
+        is_demo = False
+        if current_user.organization_id:
+            # Has organization - get real work order from Firestore
+            work_order = await work_order_service.get_work_order(
+                wo_id, organization_id=current_user.organization_id
+            )
         if not work_order:
             return RedirectResponse(url="/work-orders", status_code=302)
     else:

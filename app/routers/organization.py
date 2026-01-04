@@ -11,8 +11,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 
-from app.auth import get_current_active_user, require_permission
+from app.auth import get_current_active_user, require_permission, require_permission_cookie, get_current_user_from_cookie
 from app.models.user import User
+from app.services.auth_service import check_permission
 from app.services.organization_service import get_organization_service
 from app.services.email_service import email_service
 
@@ -214,11 +215,18 @@ class UpdateTeamMemberRequest(BaseModel):
 
 @router.put("/team/{user_id}", response_class=JSONResponse)
 async def update_team_member(
+    request: Request,
     user_id: str,
     update_data: UpdateTeamMemberRequest,
-    current_user: User = Depends(require_permission("manage_team"))
 ):
     """Update a team member's information"""
+    # Use cookie-based auth for browser JavaScript calls (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if not check_permission(current_user, "manage_team"):
+        raise HTTPException(status_code=403, detail="Permission denied: 'manage_team' required")
+
     org_service = get_organization_service()
 
     if not current_user.organization_id:
@@ -251,9 +259,17 @@ async def update_team_member(
 
 @router.delete("/team/{user_id}", response_class=JSONResponse)
 async def remove_team_member(
-    user_id: str, current_user: User = Depends(require_permission("manage_team"))
+    request: Request,
+    user_id: str,
 ):
     """Remove a team member from the organization"""
+    # Use cookie-based auth for browser JavaScript calls (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if not check_permission(current_user, "manage_team"):
+        raise HTTPException(status_code=403, detail="Permission denied: 'manage_team' required")
+
     org_service = get_organization_service()
 
     if not current_user.organization_id:

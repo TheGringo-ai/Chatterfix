@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_optional_current_user
+from app.auth import get_current_user_from_cookie
 from app.models.user import User
 from app.services.advanced_scheduler_service import advanced_scheduler
 from app.services.planner_service import planner_service
@@ -17,10 +17,10 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def planner_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def planner_dashboard(request: Request):
     """Render planner dashboard with full calendar and drag-drop scheduling"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "planner_dashboard.html",
@@ -34,10 +34,10 @@ async def planner_dashboard(
 
 
 @router.get("/advanced", response_class=HTMLResponse)
-async def advanced_scheduler_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def advanced_scheduler_dashboard(request: Request):
     """Render advanced scheduler dashboard with enterprise features"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "advanced_scheduler.html",
@@ -46,10 +46,10 @@ async def advanced_scheduler_dashboard(
 
 
 @router.get("/mobile", response_class=HTMLResponse)
-async def mobile_scheduler_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def mobile_scheduler_dashboard(request: Request):
     """Render mobile-responsive scheduler for field technicians"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "mobile_scheduler.html",
@@ -58,10 +58,10 @@ async def mobile_scheduler_dashboard(
 
 
 @router.get("/analytics", response_class=HTMLResponse)
-async def scheduler_analytics_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def scheduler_analytics_dashboard(request: Request):
     """Render comprehensive scheduler analytics and reporting dashboard"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "scheduler_analytics.html",

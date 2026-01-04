@@ -2,12 +2,12 @@ import os
 import shutil
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_optional_current_user
+from app.auth import get_current_user_from_cookie
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 from app.services.purchasing_service import purchasing_service
@@ -32,10 +32,10 @@ class ApprovalRequest(BaseModel):
 
 
 @router.get("/", response_class=HTMLResponse)
-async def purchasing_main(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def purchasing_main(request: Request):
     """Main purchaser command center - landing page"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "purchaser_dashboard.html",
@@ -44,10 +44,10 @@ async def purchasing_main(
 
 
 @router.get("/tools", response_class=HTMLResponse)
-async def purchasing_tools(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def purchasing_tools(request: Request):
     """Purchasing tools - PO creation, parts, document scanner, barcodes"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "enhanced_purchasing.html",

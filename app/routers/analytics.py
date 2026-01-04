@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from app.auth import (
     get_optional_current_user,
+    get_current_user_from_cookie,
 )
 from app.models.user import User
 from typing import Optional as OptionalType
@@ -679,11 +680,11 @@ async def roi_dashboard(
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def analytics_dashboard(
-    request: Request,
-    current_user: OptionalType[User] = Depends(get_optional_current_user),
-):
+async def analytics_dashboard(request: Request):
     """Render the advanced analytics dashboard - accessible to all users including demo"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+
     # Get KPI summary for initial render
     try:
         kpi_data = await analytics_service.get_kpi_summary(30)
@@ -699,6 +700,7 @@ async def analytics_dashboard(
             "request": request,
             "kpi_data": kpi_data,
             "user": current_user,
+            "current_user": current_user,
             "is_demo": is_demo,
         },
     )
@@ -1118,13 +1120,14 @@ class MicroLearningRequest(BaseModel):
 
 
 @router.get("/linesmart/training-dashboard", response_class=HTMLResponse)
-async def linesmart_training_dashboard(
-    request: Request,
-    current_user: OptionalType[User] = Depends(get_optional_current_user),
-):
+async def linesmart_training_dashboard(request: Request):
     """LineSmart Training Intelligence Dashboard across all platforms"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = current_user is None
     return templates.TemplateResponse(
-        "linesmart_dashboard.html", {"request": request, "user": current_user}
+        "linesmart_dashboard.html",
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": is_demo}
     )
 
 

@@ -1,10 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_optional_current_user
+from app.auth import get_current_user_from_cookie
 from app.models.user import User
 from app.core.firestore_db import get_db_connection
 
@@ -15,10 +15,10 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/ar-mode", response_class=HTMLResponse)
-async def ar_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def ar_dashboard(request: Request):
     """Render the AR dashboard"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = current_user is None
     return templates.TemplateResponse(
         "ar/dashboard.html",

@@ -58,27 +58,36 @@ async def check_manager_access(request: Request) -> tuple[bool, User | None]:
 async def manager_dashboard(request: Request):
     """Comprehensive Manager Dashboard - Central Command Center
 
-    Access is controlled by organization settings:
-    - Default: Open access (no login required)
-    - If 'protect_manager_dashboard' enabled: Requires manager role
+    Requires authentication to access real data.
     """
-    # Check access
-    allowed, current_user = await check_manager_access(request)
-    if not allowed:
+    # Require authentication - use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
         return RedirectResponse(url="/auth/login?next=/manager", status_code=302)
 
     firestore_manager = get_firestore_manager()
+    org_id = current_user.organization_id
 
-    # Fetch data for dashboard
+    # Fetch org-scoped data for dashboard
     try:
+        org_filter = [{"field": "organization_id", "operator": "==", "value": org_id}] if org_id else []
         users, work_orders, assets = await asyncio.gather(
-            firestore_manager.get_collection("users"),
-            firestore_manager.get_collection("work_orders", limit=50),
-            firestore_manager.get_collection("assets", limit=50),
+            firestore_manager.get_collection("users", filters=org_filter),
+            firestore_manager.get_collection("work_orders", filters=org_filter, limit=50),
+            firestore_manager.get_collection("assets", filters=org_filter, limit=50),
         )
     except Exception as e:
         logger.warning(f"Could not fetch dashboard data: {e}")
         users, work_orders, assets = [], [], []
+
+    # Calculate real stats from Firestore data
+    total_work_orders = len(work_orders)
+    completed_work_orders = len([w for w in work_orders if w.get("status") == "Completed"])
+
+    # Calculate efficiency score from completion rate (if we have work orders)
+    efficiency_score = 0
+    if total_work_orders > 0:
+        efficiency_score = int((completed_work_orders / total_work_orders) * 100)
 
     overview_stats = {
         "total_technicians": len([u for u in users if u.get("role") == "technician"]),
@@ -95,12 +104,12 @@ async def manager_dashboard(request: Request):
         "critical_assets": len(
             [a for a in assets if a.get("criticality") == "Critical"]
         ),
-        "overdue_maintenance": 0,  # Placeholder
-        "monthly_costs": 0,  # Placeholder
-        "efficiency_score": 85,  # Placeholder
+        "overdue_maintenance": 0,
+        "monthly_costs": 0,
+        "efficiency_score": efficiency_score,
     }
 
-    # Mocking some data for demonstration
+    # Real data lists - empty until populated from Firestore
     recent_activities = []
     top_technicians = []
     critical_assets_list = []

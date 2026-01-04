@@ -19,66 +19,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/team", tags=["team"])
 templates = Jinja2Templates(directory="app/templates")
 
-# Demo data for unauthenticated users
-DEMO_TEAM = [
-    {
-        "id": "demo_1",
-        "full_name": "Mike Johnson",
-        "username": "mike.johnson@demo.com",
-        "role": "Senior Technician",
-        "department": "Maintenance",
-        "skills": ["HVAC", "Electrical", "Plumbing"],
-        "certifications": ["EPA 608", "OSHA 30", "First Aid/CPR"],
-        "active_work_orders": 3,
-        "completed_orders": 47,
-        "status": "Available",
-        "contact": "mike.johnson@demo.com",
-        "phone": "(555) 123-4567",
-        "start_date": "2021-03-15",
-        "employee_id": "EMP-001",
-        "shift": "Day Shift (7am-3pm)",
-        "supervisor": "Sarah Chen",
-        "notes": "Excellent troubleshooting skills. Lead tech for HVAC systems.",
-    },
-    {
-        "id": "demo_2",
-        "full_name": "Sarah Chen",
-        "username": "sarah.chen@demo.com",
-        "role": "Maintenance Manager",
-        "department": "Operations",
-        "skills": ["Project Management", "Mechanical", "Safety", "Team Leadership"],
-        "certifications": ["PMP", "CMRP", "OSHA 30", "Six Sigma Green Belt"],
-        "active_work_orders": 5,
-        "completed_orders": 128,
-        "status": "Busy",
-        "contact": "sarah.chen@demo.com",
-        "phone": "(555) 234-5678",
-        "start_date": "2018-06-01",
-        "employee_id": "EMP-002",
-        "shift": "Day Shift (7am-3pm)",
-        "supervisor": "Director of Operations",
-        "notes": "Department head. Responsible for all maintenance operations.",
-    },
-    {
-        "id": "demo_3",
-        "full_name": "Alex Rodriguez",
-        "username": "alex.rodriguez@demo.com",
-        "role": "Maintenance Technician",
-        "department": "Maintenance",
-        "skills": ["Mechanical", "Pneumatics", "Preventive Maintenance"],
-        "certifications": ["OSHA 10", "Forklift Operator"],
-        "active_work_orders": 2,
-        "completed_orders": 23,
-        "status": "Available",
-        "contact": "alex.rodriguez@demo.com",
-        "phone": "(555) 345-6789",
-        "start_date": "2023-01-10",
-        "employee_id": "EMP-003",
-        "shift": "Swing Shift (3pm-11pm)",
-        "supervisor": "Mike Johnson",
-        "notes": "New hire showing great progress. Strong mechanical aptitude.",
-    },
-]
 
 
 # ========== TEAM ROUTES ==========
@@ -138,10 +78,9 @@ async def team_dashboard(request: Request):
                 "certifications": [],
             }]
     else:
-        # Not authenticated - show demo data
-        logger.info("No authenticated user - showing demo data")
-        team_members = DEMO_TEAM
-        is_demo = True
+        # Not authenticated - redirect to login
+        logger.info("No authenticated user - redirecting to login")
+        return RedirectResponse(url="/auth/login?next=/team", status_code=302)
 
     response = templates.TemplateResponse(
         "team_dashboard.html",
@@ -153,7 +92,7 @@ async def team_dashboard(request: Request):
             "online_users": [],
             "current_user": current_user,
             "user": current_user,
-            "is_demo": is_demo,
+            "is_demo": False,
         },
     )
     # Force no caching to ensure users see latest version
@@ -165,10 +104,10 @@ async def team_dashboard(request: Request):
 
 @router.get("/users", response_class=JSONResponse)
 async def get_users(current_user: Optional[User] = Depends(get_optional_current_user)):
-    """Get users - org-scoped for authenticated, demo data for guests"""
+    """Get users - org-scoped for authenticated, empty for guests"""
     if not current_user or not current_user.organization_id:
-        # Return demo data for unauthenticated users
-        return JSONResponse({"users": DEMO_TEAM, "is_demo": True})
+        # Return empty list for unauthenticated users
+        return JSONResponse({"users": [], "error": "Authentication required"}, status_code=401)
 
     firestore_manager = get_firestore_manager()
     users = []
@@ -185,10 +124,9 @@ async def get_users(current_user: Optional[User] = Depends(get_optional_current_
         )
     except Exception as e:
         logger.error(f"Error loading users: {e}")
-        # Fall back to demo data on error
-        return JSONResponse({"users": DEMO_TEAM, "is_demo": True})
+        return JSONResponse({"users": [], "error": str(e)}, status_code=500)
 
-    return JSONResponse({"users": users, "is_demo": False})
+    return JSONResponse({"users": users})
 
 
 @router.get("/users/{user_id}", response_class=HTMLResponse)

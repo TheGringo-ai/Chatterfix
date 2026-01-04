@@ -37,38 +37,31 @@
 <div class="row mb-4">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card">
-            <div class="stat-number">{{ overview_stats.total_technicians }}</div>
+            <div class="stat-number">{{ overview_stats.total_technicians or 0 }}</div>
             <div class="stat-label">Active Technicians</div>
-            <div class="text-success small mt-2">
-                <i class="fas fa-arrow-up"></i> 3 new this month
-            </div>
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card">
-            <div class="stat-number">{{ overview_stats.active_work_orders }}</div>
+            <div class="stat-number">{{ overview_stats.active_work_orders or 0 }}</div>
             <div class="stat-label">Active Work Orders</div>
+            {% if overview_stats.overdue_maintenance and overview_stats.overdue_maintenance > 0 %}
             <div class="text-warning small mt-2">
                 <i class="fas fa-clock"></i> {{ overview_stats.overdue_maintenance }} overdue
             </div>
+            {% endif %}
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card">
-            <div class="stat-number">${{ "{:,.0f}".format(overview_stats.monthly_costs) }}</div>
+            <div class="stat-number">${{ "{:,.0f}".format(overview_stats.monthly_costs or 0) }}</div>
             <div class="stat-label">Monthly Costs</div>
-            <div class="text-danger small mt-2">
-                <i class="fas fa-arrow-up"></i> 12% over budget
-            </div>
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card">
-            <div class="stat-number">{{ overview_stats.efficiency_score }}%</div>
+            <div class="stat-number">{{ overview_stats.efficiency_score or 0 }}%</div>
             <div class="stat-label">System Efficiency</div>
-            <div class="text-success small mt-2">
-                <i class="fas fa-arrow-up"></i> +2.3% this quarter
-            </div>
         </div>
     </div>
 </div>
@@ -272,27 +265,38 @@
                 </h5>
             </div>
             <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
-                {% for activity in recent_activities %}
-                <div class="activity-item">
-                    <div class="activity-icon {{ activity.priority }}">
-                        {% if activity.type == 'technician_added' %}
-                            <i class="fas fa-user-plus"></i>
-                        {% elif activity.type == 'asset_alert' %}
-                            <i class="fas fa-exclamation-triangle"></i>
-                        {% elif activity.type == 'performance_review' %}
-                            <i class="fas fa-star"></i>
-                        {% elif activity.type == 'cost_alert' %}
-                            <i class="fas fa-dollar-sign"></i>
-                        {% endif %}
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-medium">{{ activity.message }}</div>
-                        <div class="text-muted small">
-                            {{ activity.timestamp.strftime('%m/%d/%Y at %I:%M %p') }}
+                {% if recent_activities and recent_activities|length > 0 %}
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon {{ activity.priority }}">
+                            {% if activity.type == 'technician_added' %}
+                                <i class="fas fa-user-plus"></i>
+                            {% elif activity.type == 'asset_alert' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% elif activity.type == 'performance_review' %}
+                                <i class="fas fa-star"></i>
+                            {% elif activity.type == 'cost_alert' %}
+                                <i class="fas fa-dollar-sign"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">{{ activity.message }}</div>
+                            <div class="text-muted small">
+                                {% if activity.timestamp %}
+                                    {{ activity.timestamp.strftime('%m/%d/%Y at %I:%M %p') }}
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted p-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p class="mb-0">No recent activity</p>
+                    </div>
+                {% endif %}
             </div>
             <div class="card-footer text-center">
                 <a href="/manager/activity-log" class="btn btn-sm btn-outline-primary">
@@ -312,30 +316,38 @@
                 </h5>
             </div>
             <div class="card-body">
-                {% for tech in top_technicians %}
-                <div class="d-flex align-items-center mb-3">
-                    <div class="badge badge-primary rounded-pill me-3" style="width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">
-                        {{ loop.index }}
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-medium">{{ tech.name }}</div>
-                        <div class="small text-muted">
-                            {{ tech.completion_rate }}% completion • {{ tech.avg_time }}h avg
+                {% if top_technicians and top_technicians|length > 0 %}
+                    {% for tech in top_technicians %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="badge badge-primary rounded-pill me-3" style="width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;">
+                            {{ loop.index }}
                         </div>
-                        <div class="progress-bar mt-1">
-                            <div class="progress-fill" style="width: {{ tech.completion_rate }}%"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">{{ tech.name }}</div>
+                            <div class="small text-muted">
+                                {{ tech.completion_rate }}% completion • {{ tech.avg_time }}h avg
+                            </div>
+                            <div class="progress-bar mt-1">
+                                <div class="progress-fill" style="width: {{ tech.completion_rate }}%"></div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-warning">
+                                {% for i in range(tech.rating|int) %}
+                                <i class="fas fa-star"></i>
+                                {% endfor %}
+                            </div>
+                            <div class="small text-muted">{{ tech.rating }}/5</div>
                         </div>
                     </div>
-                    <div class="text-end">
-                        <div class="text-warning">
-                            {% for i in range(tech.rating|int) %}
-                            <i class="fas fa-star"></i>
-                            {% endfor %}
-                        </div>
-                        <div class="small text-muted">{{ tech.rating }}/5</div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted p-4">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <p class="mb-0">No performance data available yet</p>
+                        <small>Data will appear as technicians complete work orders</small>
                     </div>
-                </div>
-                {% endfor %}
+                {% endif %}
             </div>
             <div class="card-footer text-center">
                 <a href="/manager/performance" class="btn btn-sm btn-outline-primary">
@@ -357,6 +369,7 @@
                 </h5>
             </div>
             <div class="card-body">
+                {% if critical_assets and critical_assets|length > 0 %}
                 <div class="row">
                     {% for asset in critical_assets %}
                     <div class="col-md-4 mb-3">
@@ -382,6 +395,13 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center text-muted p-4">
+                    <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                    <p class="mb-0">No critical assets requiring attention</p>
+                    <small>All assets are operating normally</small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

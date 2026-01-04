@@ -495,10 +495,13 @@
         document.getElementById('stat-busy').textContent = busy;
         document.getElementById('stat-oncall').textContent = oncall;
 
-        // Handle Edit Modal - populate form when modal opens
+        // Handle Edit Modal - populate form when modal opens via data-bs-toggle (not programmatic)
         const editModal = document.getElementById('editUserModal');
         editModal.addEventListener('show.bs.modal', function(event) {
+            // Skip if opened programmatically (no relatedTarget) - openEditModal() handles form population
             const button = event.relatedTarget;
+            if (!button) return;
+
             const userId = button.getAttribute('data-user-id');
             const user = usersData[userId];
 
@@ -524,10 +527,13 @@
             document.getElementById('editUserNotes').value = user.notes || '';
         });
 
-        // Handle Delete Modal - populate name when modal opens
+        // Handle Delete Modal - populate name when modal opens via data-bs-toggle (not programmatic)
         const deleteModal = document.getElementById('deleteUserModal');
         deleteModal.addEventListener('show.bs.modal', function(event) {
+            // Skip if opened programmatically (no relatedTarget) - openDeleteModal() handles form population
             const button = event.relatedTarget;
+            if (!button) return;
+
             const userId = button.getAttribute('data-user-id');
             const userName = button.getAttribute('data-user-name');
 

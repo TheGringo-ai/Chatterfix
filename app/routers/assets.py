@@ -96,36 +96,27 @@ DEMO_ASSETS = [
 
 @router.get("/", response_class=HTMLResponse)
 async def assets_list(request: Request):
-    """Display assets - demo data for guests, real Firestore data for authenticated"""
+    """Display assets - requires authentication"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    is_demo = False
+    # Require authentication - no more demo mode
+    if not current_user:
+        return RedirectResponse(url="/auth/login?next=/assets", status_code=302)
+
     assets = []
 
-    if current_user and current_user.organization_id:
+    if current_user.organization_id:
         # Authenticated user with organization - show real Firestore data
         firestore_manager = get_firestore_manager()
         try:
             assets = await firestore_manager.get_org_assets(current_user.organization_id)
         except Exception as e:
             logger.error(f"Error loading assets: {e}")
-            # Fall back to demo data on error
-            assets = DEMO_ASSETS
-            is_demo = True
+            assets = []
     else:
-        # Not authenticated or no organization - show demo data
-        assets = DEMO_ASSETS
-        is_demo = True
-        # Create demo user context for template
-        current_user = type('obj', (object,), {
-            'uid': 'demo',
-            'id': 'demo',
-            'role': 'technician',
-            'full_name': 'Demo Visitor',
-            'email': 'demo@chatterfix.com',
-            'organization_id': None
-        })()
+        # Authenticated but no organization yet
+        assets = []
 
     stats = {
         "total": len(assets),
@@ -148,18 +139,21 @@ async def assets_list(request: Request):
             "stats": stats,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": is_demo,
-            "demo_mode": is_demo,
+            "is_demo": False,
+            "demo_mode": False,
         },
     )
 
 
 @router.get("/{asset_id}", response_class=HTMLResponse)
 async def asset_detail(request: Request, asset_id: str):
-    """Asset detail view - demo data for guests, real data for authenticated"""
+    """Asset detail view - requires authentication"""
     current_user = await get_current_user_from_cookie(request)
 
-    is_demo = False
+    # Require authentication - no more demo mode
+    if not current_user:
+        return RedirectResponse(url=f"/auth/login?next=/assets/{asset_id}", status_code=302)
+
     asset = None
     children = []
     media = []
@@ -167,7 +161,7 @@ async def asset_detail(request: Request, asset_id: str):
     history = []
     work_orders = []
 
-    if current_user and current_user.organization_id:
+    if current_user.organization_id:
         # Authenticated user - get real asset from Firestore
         firestore_manager = get_firestore_manager()
         asset = await firestore_manager.get_org_document(
@@ -197,21 +191,8 @@ async def asset_detail(request: Request, asset_id: str):
             firestore_manager.get_asset_work_orders(asset_id),
         )
     else:
-        # Not authenticated - show demo asset
-        is_demo = True
-        # Find demo asset by ID
-        asset = next((a for a in DEMO_ASSETS if a.get("id") == asset_id), None)
-        if not asset:
-            return RedirectResponse("/assets", status_code=302)
-        # Create demo user context
-        current_user = type('obj', (object,), {
-            'uid': 'demo',
-            'id': 'demo',
-            'role': 'technician',
-            'full_name': 'Demo Visitor',
-            'email': 'demo@chatterfix.com',
-            'organization_id': None
-        })()
+        # Authenticated but no organization - redirect to assets list
+        return RedirectResponse("/assets", status_code=302)
 
     # Simplified cost analytics
     total_cost = sum(h.get("total_cost", 0) for h in history)
@@ -239,7 +220,7 @@ async def asset_detail(request: Request, asset_id: str):
             "cost_data": cost_data,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": is_demo,
+            "is_demo": False,
         },
     )
 

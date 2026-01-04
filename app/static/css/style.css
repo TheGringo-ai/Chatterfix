@@ -2479,3 +2479,132 @@ body.dark-mode .modal .text-light {
 body.dark-mode .modal .modal-header.bg-danger {
   background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%) !important;
 }
+
+/* ========================================
+   CUSTOM MODALS (Asset Detail, etc.)
+   ======================================== */
+
+/* Custom modal overlay - theme aware */
+div.modal[style*="display"] {
+  backdrop-filter: blur(5px);
+}
+
+/* Custom modal content - Light mode */
+div.modal > .modal-content,
+div.modal > .modal-content.glass-panel {
+  background: #ffffff !important;
+  color: #2d3748 !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+div.modal .modal-header {
+  color: #2d3748;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+div.modal .modal-header h2 {
+  color: #2d3748;
+  margin: 0;
+}
+
+div.modal label {
+  color: #4a5568;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+div.modal input[type="text"],
+div.modal input[type="number"],
+div.modal input[type="date"],
+div.modal input[type="file"],
+div.modal select,
+div.modal textarea {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #2d3748 !important;
+  border-radius: 6px;
+  padding: 0.75rem;
+  width: 100%;
+}
+
+div.modal input:focus,
+div.modal select:focus,
+div.modal textarea:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  outline: none;
+}
+
+/* Custom modal content - Dark mode */
+:root.dark-mode div.modal > .modal-content,
+:root.dark-mode div.modal > .modal-content.glass-panel,
+body.dark-mode div.modal > .modal-content,
+body.dark-mode div.modal > .modal-content.glass-panel {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%) !important;
+  color: #f7fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root.dark-mode div.modal .modal-header,
+body.dark-mode div.modal .modal-header {
+  color: #f7fafc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root.dark-mode div.modal .modal-header h2,
+body.dark-mode div.modal .modal-header h2 {
+  color: #f7fafc;
+}
+
+:root.dark-mode div.modal label,
+body.dark-mode div.modal label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:root.dark-mode div.modal input[type="text"],
+:root.dark-mode div.modal input[type="number"],
+:root.dark-mode div.modal input[type="date"],
+:root.dark-mode div.modal input[type="file"],
+:root.dark-mode div.modal select,
+:root.dark-mode div.modal textarea,
+body.dark-mode div.modal input[type="text"],
+body.dark-mode div.modal input[type="number"],
+body.dark-mode div.modal input[type="date"],
+body.dark-mode div.modal input[type="file"],
+body.dark-mode div.modal select,
+body.dark-mode div.modal textarea {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+:root.dark-mode div.modal input:focus,
+:root.dark-mode div.modal select:focus,
+:root.dark-mode div.modal textarea:focus,
+body.dark-mode div.modal input:focus,
+body.dark-mode div.modal select:focus,
+body.dark-mode div.modal textarea:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+}
+
+/* Modal close button */
+div.modal .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+}
+
+div.modal .modal-close:hover {
+  opacity: 1;
+}

@@ -201,6 +201,54 @@ async def get_pending_invites(
     return {"success": True, "invites": invites, "total": len(invites)}
 
 
+class UpdateTeamMemberRequest(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    phone: Optional[str] = None
+    department: Optional[str] = None
+    skills: Optional[list] = None
+    certifications: Optional[list] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.put("/team/{user_id}", response_class=JSONResponse)
+async def update_team_member(
+    user_id: str,
+    update_data: UpdateTeamMemberRequest,
+    current_user: User = Depends(require_permission("manage_team"))
+):
+    """Update a team member's information"""
+    org_service = get_organization_service()
+
+    if not current_user.organization_id:
+        raise HTTPException(
+            status_code=404, detail="No organization associated with this account"
+        )
+
+    # Verify user belongs to same organization
+    from app.core.firestore_db import get_firestore_manager
+    firestore_manager = get_firestore_manager()
+
+    try:
+        user_doc = await firestore_manager.get_document("users", user_id)
+        if not user_doc or user_doc.get("organization_id") != current_user.organization_id:
+            raise HTTPException(status_code=404, detail="Team member not found")
+
+        # Update user document
+        update_dict = update_data.dict(exclude_none=True)
+        if update_dict:
+            await firestore_manager.update_document("users", user_id, update_dict)
+
+        return {"success": True, "message": "Team member updated successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating team member: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update team member")
+
+
 @router.delete("/team/{user_id}", response_class=JSONResponse)
 async def remove_team_member(
     user_id: str, current_user: User = Depends(require_permission("manage_team"))

@@ -585,7 +585,7 @@
         return;
         {% endif %}
 
-        fetch(`/org/users/${userId}`, {
+        fetch(`/organization/team/${userId}`, {
             method: 'DELETE',
             credentials: 'include'
         })
@@ -599,14 +599,14 @@
                     card.style.opacity = '0';
                     setTimeout(() => card.remove(), 500);
                 }
-                showNotification('success', 'Employee Deleted', `${userName} has been removed.`);
+                showNotification('success', 'Team Member Removed', `${userName} has been removed from the team.`);
             } else {
-                showNotification('error', 'Error', data.message || 'Failed to delete employee');
+                showNotification('error', 'Error', data.detail || data.message || 'Failed to remove team member');
             }
         })
         .catch(error => {
             deleteModalInstance.hide();
-            showNotification('error', 'Error', 'Failed to delete employee. Please try again.');
+            showNotification('error', 'Error', 'Failed to remove team member. Please try again.');
         });
     }
 
@@ -640,23 +640,26 @@
         {% endif %}
 
         try {
-            const response = await fetch('/org/invite', {
+            const response = await fetch('/organization/team/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(userData)
+                body: JSON.stringify({
+                    email: userData.email,
+                    role: userData.role.toLowerCase().replace(' ', '_')
+                })
             });
             const data = await response.json();
             addModalInstance.hide();
             if (data.success) {
-                showNotification('success', 'Employee Added!', `${userData.full_name} will receive an invitation email.`);
+                showNotification('success', 'Invitation Sent!', `${userData.email} will receive an invitation email.`);
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Error', data.message || 'Failed to add employee');
+                showNotification('error', 'Error', data.detail || data.message || 'Failed to send invitation');
             }
         } catch (error) {
             addModalInstance.hide();
-            showNotification('error', 'Error', 'Failed to add employee. Please try again.');
+            showNotification('error', 'Error', 'Failed to send invitation. Please try again.');
         }
     }
 
@@ -692,23 +695,32 @@
         {% endif %}
 
         try {
-            const response = await fetch(`/org/users/${userId}`, {
+            const response = await fetch(`/organization/team/${userId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(userData)
+                body: JSON.stringify({
+                    full_name: userData.full_name,
+                    role: userData.role,
+                    phone: userData.phone,
+                    department: userData.department,
+                    skills: userData.skills,
+                    certifications: userData.certifications,
+                    status: userData.status,
+                    notes: userData.notes
+                })
             });
             const data = await response.json();
             editModalInstance.hide();
             if (data.success) {
-                showNotification('success', 'Changes Saved!', 'Employee profile has been updated.');
+                showNotification('success', 'Changes Saved!', 'Team member profile has been updated.');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Error', data.message || 'Failed to update employee');
+                showNotification('error', 'Error', data.detail || data.message || 'Failed to update team member');
             }
         } catch (error) {
             editModalInstance.hide();
-            showNotification('error', 'Error', 'Failed to update employee. Please try again.');
+            showNotification('error', 'Error', 'Failed to update team member. Please try again.');
         }
     }
 

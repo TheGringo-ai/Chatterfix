@@ -326,9 +326,7 @@ async def add_team_member_directly(
         raise
     except Exception as e:
         logger.error(f"Error adding team member: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to add team member: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to add team member")
 
 
 class UpdateTeamMemberRequest(BaseModel):

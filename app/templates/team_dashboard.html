@@ -1,373 +1,312 @@
 {% extends "base.html" %}
 
-{% block title %}Team Dashboard - ChatterFix{% endblock %}
+{% block title %}Team Management - ChatterFix{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Header -->
     <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="mb-3">🤝 Team Dashboard</h1>
-            <p class="text-muted">Real-time collaboration and communication</p>
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-1"><i class="fas fa-users"></i> Team Management</h1>
+                <p class="text-muted mb-0">Manage your maintenance team members</p>
+            </div>
+            <button class="btn btn-success btn-lg" onclick="openAddUserModal()">
+                <i class="fas fa-user-plus"></i> Add Team Member
+            </button>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Team Members -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 cmms-card p-0 overflow-hidden">
-                <div class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">👥 Team Members</h5>
-                    <button class="btn btn-sm btn-success" onclick="openAddUserModal()">
-                        <i class="fas fa-user-plus"></i> Add
-                    </button>
-                </div>
-                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                    {% for user in users %}
-                    {% if user %}
-                    <div class="d-flex align-items-center mb-3 p-2 border-bottom">
-                        <div class="position-relative">
-                            {% if user.avatar_url %}
-                            <img src="{{ user.avatar_url }}" class="rounded-circle" width="40" height="40">
-                            {% else %}
-                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                                style="width: 40px; height: 40px;">
-                                {{ (user.full_name[0] if user.full_name else user.username[0]) if user else 'U' }}
+    <!-- Team Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card cmms-card text-center p-3">
+                <div class="display-4 text-primary">{{ users|length }}</div>
+                <div class="text-muted">Total Members</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card cmms-card text-center p-3">
+                <div class="display-4 text-success">{{ users|selectattr('status', 'equalto', 'Available')|list|length if users else 0 }}</div>
+                <div class="text-muted">Available</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card cmms-card text-center p-3">
+                <div class="display-4 text-warning">{{ users|selectattr('status', 'equalto', 'Busy')|list|length if users else 0 }}</div>
+                <div class="text-muted">Busy</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card cmms-card text-center p-3">
+                <div class="display-4 text-info">{{ users|selectattr('status', 'equalto', 'On Call')|list|length if users else 0 }}</div>
+                <div class="text-muted">On Call</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Cards Grid -->
+    <div class="row" id="employeeCardsContainer">
+        {% for user in users %}
+        {% if user %}
+        <div class="col-xl-4 col-lg-6 mb-4" id="employee-card-{{ user.id }}">
+            <div class="card cmms-card h-100 employee-card">
+                <!-- Card Header with Actions -->
+                <div class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-start">
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <div class="rounded-circle bg-gradient text-white d-flex align-items-center justify-content-center employee-avatar"
+                                style="width: 60px; height: 60px; font-size: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                {{ user.full_name[0] if user.full_name else 'U' }}
                             </div>
-                            {% endif %}
-                            <span class="position-absolute bottom-0 end-0 status-indicator 
-                                         {% if user and user.id in online_users %}bg-success{% else %}bg-secondary{% endif %}"
-                                style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;">
+                            <span class="position-absolute bottom-0 end-0 status-dot
+                                {% if user.status == 'Available' %}bg-success
+                                {% elif user.status == 'Busy' %}bg-warning
+                                {% elif user.status == 'On Call' %}bg-info
+                                {% else %}bg-secondary{% endif %}"
+                                title="{{ user.status }}">
                             </span>
                         </div>
-                        <div class="ms-3 flex-grow-1">
-                            <a href="/team/users/{{ user.id if user else '#' }}" class="text-decoration-none">
-                                <strong>{{ (user.full_name or user.username) if user else 'Unknown User' }}</strong>
-                            </a>
-                            <br>
-                            <small class="text-muted">{{ user.role if user else 'No Role' }}</small>
-                            {% if user and user.active_work_orders > 0 %}
-                            <span class="badge bg-warning ms-2">{{ user.active_work_orders }} WO</span>
+                        <div>
+                            <h5 class="mb-0">{{ user.full_name }}</h5>
+                            <span class="badge bg-primary">{{ user.role }}</span>
+                            <span class="badge bg-secondary ms-1">{{ user.employee_id if user.employee_id else 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditUserModal({{ user|tojson|e }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="confirmDeleteUser('{{ user.id }}', '{{ user.full_name }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+                    <!-- Contact Info -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="fas fa-address-card"></i> Contact Information</h6>
+                        <div class="row small">
+                            <div class="col-6">
+                                <i class="fas fa-envelope text-muted"></i> {{ user.username or user.contact or 'N/A' }}
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-phone text-muted"></i> {{ user.phone if user.phone else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employment Details -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="fas fa-briefcase"></i> Employment Details</h6>
+                        <div class="row small">
+                            <div class="col-6 mb-1">
+                                <strong>Department:</strong> {{ user.department if user.department else 'N/A' }}
+                            </div>
+                            <div class="col-6 mb-1">
+                                <strong>Shift:</strong> {{ user.shift if user.shift else 'N/A' }}
+                            </div>
+                            <div class="col-6 mb-1">
+                                <strong>Start Date:</strong> {{ user.start_date if user.start_date else 'N/A' }}
+                            </div>
+                            <div class="col-6 mb-1">
+                                <strong>Supervisor:</strong> {{ user.supervisor if user.supervisor else 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="fas fa-tools"></i> Skills</h6>
+                        <div class="skills-container">
+                            {% if user.skills %}
+                                {% for skill in user.skills %}
+                                <span class="badge bg-info text-dark me-1 mb-1">{{ skill }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">No skills listed</span>
                             {% endif %}
                         </div>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-secondary" title="Edit"
-                                onclick="openEditUserModal('{{ user.id if user else 0 }}', '{{ (user.full_name or user.username) if user else 'Unknown' }}', '{{ user.role if user else '' }}', '{{ user.username if user else '' }}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-outline-primary" title="Message"
-                                onclick="openChat({{ user.id if user else 0 }}, '{{ (user.full_name or user.username) if user else 'Unknown' }}')">
-                                💬
-                            </button>
+                    </div>
+
+                    <!-- Certifications -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2"><i class="fas fa-certificate"></i> Certifications</h6>
+                        <div class="certifications-container">
+                            {% if user.certifications %}
+                                {% for cert in user.certifications %}
+                                <span class="badge bg-success me-1 mb-1">{{ cert }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">No certifications listed</span>
+                            {% endif %}
                         </div>
+                    </div>
+
+                    <!-- Work Stats -->
+                    <div class="mb-2">
+                        <h6 class="text-muted mb-2"><i class="fas fa-chart-bar"></i> Performance</h6>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="stat-box p-2 rounded">
+                                    <div class="h4 mb-0 text-warning">{{ user.active_work_orders if user.active_work_orders else 0 }}</div>
+                                    <small class="text-muted">Active WOs</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-box p-2 rounded">
+                                    <div class="h4 mb-0 text-success">{{ user.completed_orders if user.completed_orders else 0 }}</div>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-box p-2 rounded">
+                                    <div class="h4 mb-0 text-primary">
+                                        {% if user.status == 'Available' %}
+                                        <i class="fas fa-check-circle"></i>
+                                        {% elif user.status == 'Busy' %}
+                                        <i class="fas fa-clock"></i>
+                                        {% else %}
+                                        <i class="fas fa-phone"></i>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ user.status }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    {% if user.notes %}
+                    <div class="mt-3 pt-3 border-top border-secondary">
+                        <small class="text-muted"><i class="fas fa-sticky-note"></i> <strong>Notes:</strong> {{ user.notes }}</small>
                     </div>
                     {% endif %}
-                    {% endfor %}
                 </div>
-            </div>
-        </div>
 
-        <!-- Message Feed -->
-        <div class="col-md-8 mb-4">
-            <div class="card h-100 cmms-card p-0 overflow-hidden">
-                <div class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">💬 Team Messages</h5>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleChatView()">
-                        <span id="chat-view-icon">📋</span> <span id="chat-view-text">List View</span>
-                    </button>
-                </div>
-                <div class="card-body" id="message-container" style="max-height: 500px; overflow-y: auto;">
-                    <div id="message-list">
-                        {% for msg in messages %}
-                        <div class="message-item mb-3 p-3 border rounded">
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ msg.sender_name }}</strong>
-                                {% if msg.recipient_name %}
-                                <small class="text-muted">→ {{ msg.recipient_name }}</small>
-                                {% else %}
-                                <small class="text-muted">→ Everyone</small>
-                                {% endif %}
-                            </div>
-                            <p class="mb-1">{{ msg.message }}</p>
-                            <small class="text-muted">{{ msg.created_date }}</small>
-                            {% if msg.priority == 'urgent' %}
-                            <span class="badge bg-danger ms-2">URGENT</span>
-                            {% elif msg.priority == 'high' %}
-                            <span class="badge bg-warning">HIGH</span>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                <!-- Card Footer Actions -->
+                <div class="card-footer bg-transparent border-top border-secondary">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openChat('{{ user.id }}', '{{ user.full_name }}')">
+                            <i class="fas fa-comment"></i> Message
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewWorkOrders('{{ user.id }}')">
+                            <i class="fas fa-clipboard-list"></i> Work Orders
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewTraining('{{ user.id }}')">
+                            <i class="fas fa-graduation-cap"></i> Training
+                        </button>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <form id="send-message-form" class="d-flex gap-2">
-                        <input type="text" id="message-input" class="form-control" placeholder="Type a message..."
-                            required>
-                        <select id="recipient-select" class="form-select" style="max-width: 200px;">
-                            <option value="">Everyone</option>
-                            {% for user in users %}
-                            {% if user %}
-                            <option value="{{ user.id }}">{{ user.full_name or user.username or 'Unknown User' }}</option>
-                            {% endif %}
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-primary">Send</button>
-                    </form>
-                </div>
             </div>
         </div>
+        {% endif %}
+        {% endfor %}
     </div>
 
-    <!-- Quick Actions -->
+    {% if not users or users|length == 0 %}
     <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card cmms-card p-0 overflow-hidden bg-transparent">
-                <div class="card-header bg-transparent border-bottom border-secondary">
-                    <h5 class="mb-0">🔧 Quick Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" onclick="requestParts()">
-                            📦 Request Parts
-                        </button>
-                        <button class="btn btn-outline-success" onclick="reportIssue()">
-                            ⚠️ Report Immediate Failure
-                        </button>
-                        <a href="/training" class="btn btn-outline-info">
-                            🎓 View Training
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="card cmms-card p-0 overflow-hidden bg-transparent">
-                <div class="card-header bg-transparent border-bottom border-secondary">
-                    <h5 class="mb-0">🔔 Recent Notifications</h5>
-                </div>
-                <div class="card-body" style="max-height: 200px; overflow-y: auto;">
-                    <div id="notifications-list">
-                        <p class="text-muted">Loading notifications...</p>
-                    </div>
-                </div>
-            </div>
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-users fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">No Team Members Yet</h3>
+            <p class="text-muted">Add your first team member to get started</p>
+            <button class="btn btn-success btn-lg" onclick="openAddUserModal()">
+                <i class="fas fa-user-plus"></i> Add Team Member
+            </button>
         </div>
     </div>
+    {% endif %}
 </div>
 
-<!-- Firestore-based Messaging -->
-<script>
-    const currentUserId = "{{ user.id if user else 'demo_user_1' }}";
-    let pollInterval = null;
-
-    // Load messages on page load
-    async function loadMessages() {
-        try {
-            const response = await fetch('/team/messages/recent?limit=50', {
-                credentials: 'include'
-            });
-            const data = await response.json();
-
-            if (data.success && data.messages) {
-                renderMessages(data.messages);
-            }
-        } catch (error) {
-            console.error('Error loading messages:', error);
-        }
-    }
-
-    function renderMessages(messages) {
-        const messageList = document.getElementById('message-list');
-        if (!messages || messages.length === 0) {
-            messageList.innerHTML = '<p class="text-muted text-center">No messages yet. Start the conversation!</p>';
-            return;
-        }
-
-        messageList.innerHTML = messages.map(msg => `
-            <div class="message-item mb-3 p-3 border rounded" data-id="${msg.id || ''}">
-                <div class="d-flex justify-content-between">
-                    <strong>${msg.sender_name || 'Unknown'}</strong>
-                    ${msg.recipient_name
-                        ? `<small class="text-muted">→ ${msg.recipient_name}</small>`
-                        : '<small class="text-muted">→ Everyone</small>'
-                    }
-                </div>
-                <p class="mb-1">${msg.message || ''}</p>
-                <small class="text-muted">${formatDate(msg.created_at)}</small>
-                ${msg.priority === 'urgent' ? '<span class="badge bg-danger ms-2">URGENT</span>' : ''}
-                ${msg.priority === 'high' ? '<span class="badge bg-warning ms-2">HIGH</span>' : ''}
-            </div>
-        `).join('');
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleString();
-    }
-
-    function addMessageToFeed(msg) {
-        const messageList = document.getElementById('message-list');
-        // Remove "no messages" placeholder if present
-        const placeholder = messageList.querySelector('.text-muted.text-center');
-        if (placeholder) placeholder.remove();
-
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'message-item mb-3 p-3 border rounded';
-        msgDiv.innerHTML = `
-            <div class="d-flex justify-content-between">
-                <strong>${msg.sender_name || 'You'}</strong>
-                <small class="text-muted">${new Date().toLocaleTimeString()}</small>
-            </div>
-            <p class="mb-0">${msg.message}</p>
-        `;
-        messageList.insertBefore(msgDiv, messageList.firstChild);
-    }
-
-    // Send message via API
-    document.getElementById('send-message-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const messageInput = document.getElementById('message-input');
-        const message = messageInput.value.trim();
-        const recipientId = document.getElementById('recipient-select').value;
-
-        if (!message) return;
-
-        try {
-            const response = await fetch('/team/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    message: message,
-                    recipient_id: recipientId || null,
-                    priority: 'normal'
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                // Add message to feed immediately
-                addMessageToFeed({
-                    message: message,
-                    sender_name: 'You',
-                    recipient_id: recipientId
-                });
-                messageInput.value = '';
-            } else {
-                alert('Failed to send message: ' + (data.error || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-            alert('Failed to send message. Please try again.');
-        }
-    });
-
-    // Load notifications
-    async function loadNotifications() {
-        const notifList = document.getElementById('notifications-list');
-        notifList.innerHTML = '<p class="text-muted">No new notifications</p>';
-    }
-
-    // Request browser notification permission
-    if (Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-
-    // Initialize on page load
-    loadMessages();
-    loadNotifications();
-
-    // Poll for new messages every 10 seconds
-    pollInterval = setInterval(loadMessages, 10000);
-
-    // Helper functions
-    function openChat(userId, userName) {
-        document.getElementById('recipient-select').value = userId;
-        document.getElementById('message-input').focus();
-    }
-
-    function requestParts() {
-        window.location.href = '/inventory';
-    }
-
-    function reportIssue() {
-        window.location.href = '/work-orders';
-    }
-
-    function toggleChatView() {
-        // Toggle between list and chat view
-        const container = document.getElementById('message-container');
-        container.classList.toggle('chat-view');
-    }
-</script>
-
-<style>
-    .status-indicator {
-        display: inline-block;
-    }
-
-    .message-item {
-        transition: background-color 0.3s;
-        background: var(--bg-glass);
-        color: var(--text-primary);
-    }
-
-    .message-item:hover {
-        background-color: var(--bg-glass-hover);
-    }
-    
-    /* Ensure cards inherit glass styles */
-    .card-header h5 {
-        color: var(--text-primary);
-    }
-</style>
-
 <!-- Add User Modal -->
-<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-light">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="addUserModalLabel"><i class="fas fa-user-plus"></i> Add Team Member</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add Team Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="addUserForm" onsubmit="submitAddUser(event)">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="newUserEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control bg-secondary text-light border-secondary" id="newUserEmail" required placeholder="team.member@company.com">
-                    </div>
-                    <div class="mb-3">
-                        <label for="newUserName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserName" required placeholder="John Smith">
-                    </div>
-                    <div class="mb-3">
-                        <label for="newUserRole" class="form-label">Role</label>
-                        <select class="form-select bg-secondary text-light border-secondary" id="newUserRole" required>
-                            <option value="">Select Role...</option>
-                            <option value="technician">Technician</option>
-                            <option value="senior_technician">Senior Technician</option>
-                            <option value="manager">Manager</option>
-                            <option value="planner">Planner</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="newUserDepartment" class="form-label">Department</label>
-                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserDepartment" placeholder="Maintenance">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserName" required placeholder="John Smith">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" class="form-control bg-secondary text-light border-secondary" id="newUserEmail" required placeholder="john.smith@company.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control bg-secondary text-light border-secondary" id="newUserPhone" placeholder="(555) 123-4567">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employee ID</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserEmployeeId" placeholder="EMP-006">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Role *</label>
+                            <select class="form-select bg-secondary text-light border-secondary" id="newUserRole" required>
+                                <option value="">Select Role...</option>
+                                <option value="Maintenance Technician">Maintenance Technician</option>
+                                <option value="Senior Technician">Senior Technician</option>
+                                <option value="Maintenance Manager">Maintenance Manager</option>
+                                <option value="Maintenance Planner">Maintenance Planner</option>
+                                <option value="Supervisor">Supervisor</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserDepartment" placeholder="Maintenance">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Shift</label>
+                            <select class="form-select bg-secondary text-light border-secondary" id="newUserShift">
+                                <option value="">Select Shift...</option>
+                                <option value="Day Shift (7am-3pm)">Day Shift (7am-3pm)</option>
+                                <option value="Swing Shift (3pm-11pm)">Swing Shift (3pm-11pm)</option>
+                                <option value="Night Shift (11pm-7am)">Night Shift (11pm-7am)</option>
+                                <option value="Rotating">Rotating</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control bg-secondary text-light border-secondary" id="newUserStartDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supervisor</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserSupervisor" placeholder="Manager Name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hourly Rate</label>
+                            <input type="number" step="0.01" class="form-control bg-secondary text-light border-secondary" id="newUserHourlyRate" placeholder="25.00">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Skills (comma-separated)</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserSkills" placeholder="HVAC, Electrical, Plumbing">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Certifications (comma-separated)</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserCertifications" placeholder="OSHA 30, EPA 608, First Aid">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control bg-secondary text-light border-secondary" id="newUserNotes" rows="2" placeholder="Additional notes about this employee..."></textarea>
+                        </div>
                     </div>
                     {% if is_demo %}
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> In the full version, an invitation email will be sent to the new team member.
+                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> In the full version, this will create a real employee record and send an invitation email.
                     </div>
                     {% endif %}
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> Send Invite</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Add Employee</button>
                 </div>
             </form>
         </div>
@@ -375,43 +314,102 @@
 </div>
 
 <!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content bg-dark text-light">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="editUserModalLabel"><i class="fas fa-user-edit"></i> Edit Team Member</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-user-edit"></i> Edit Team Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="editUserForm" onsubmit="submitEditUser(event)">
                 <input type="hidden" id="editUserId">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="editUserEmail" class="form-label">Email Address</label>
-                        <input type="email" class="form-control bg-secondary text-light border-secondary" id="editUserEmail" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editUserName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editUserRole" class="form-label">Role</label>
-                        <select class="form-select bg-secondary text-light border-secondary" id="editUserRole" required>
-                            <option value="technician">Technician</option>
-                            <option value="senior_technician">Senior Technician</option>
-                            <option value="manager">Manager</option>
-                            <option value="planner">Planner</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" class="form-control bg-secondary text-light border-secondary" id="editUserEmail" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control bg-secondary text-light border-secondary" id="editUserPhone">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employee ID</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserEmployeeId">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Role *</label>
+                            <select class="form-select bg-secondary text-light border-secondary" id="editUserRole" required>
+                                <option value="Maintenance Technician">Maintenance Technician</option>
+                                <option value="Senior Technician">Senior Technician</option>
+                                <option value="Maintenance Manager">Maintenance Manager</option>
+                                <option value="Maintenance Planner">Maintenance Planner</option>
+                                <option value="Supervisor">Supervisor</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserDepartment">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Shift</label>
+                            <select class="form-select bg-secondary text-light border-secondary" id="editUserShift">
+                                <option value="">Select Shift...</option>
+                                <option value="Day Shift (7am-3pm)">Day Shift (7am-3pm)</option>
+                                <option value="Swing Shift (3pm-11pm)">Swing Shift (3pm-11pm)</option>
+                                <option value="Night Shift (11pm-7am)">Night Shift (11pm-7am)</option>
+                                <option value="Rotating">Rotating</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control bg-secondary text-light border-secondary" id="editUserStartDate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Supervisor</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserSupervisor">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hourly Rate</label>
+                            <input type="number" step="0.01" class="form-control bg-secondary text-light border-secondary" id="editUserHourlyRate">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select bg-secondary text-light border-secondary" id="editUserStatus">
+                                <option value="Available">Available</option>
+                                <option value="Busy">Busy</option>
+                                <option value="On Call">On Call</option>
+                                <option value="Off Duty">Off Duty</option>
+                                <option value="Vacation">Vacation</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Skills (comma-separated)</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserSkills">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Certifications (comma-separated)</label>
+                            <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserCertifications">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control bg-secondary text-light border-secondary" id="editUserNotes" rows="2"></textarea>
+                        </div>
                     </div>
                     {% if is_demo %}
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> Changes will not be saved. Sign up for a free account to manage your team.
+                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> Changes will be simulated. Sign up for a free account to manage your real team.
                     </div>
                     {% endif %}
                 </div>
                 <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-outline-danger me-auto" onclick="confirmDeleteUser()">
-                        <i class="fas fa-trash"></i> Remove
+                    <button type="button" class="btn btn-danger me-auto" onclick="deleteUserFromModal()">
+                        <i class="fas fa-trash"></i> Delete Employee
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
@@ -421,37 +419,150 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary bg-danger">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteUserName"></strong>?</p>
+                <p class="text-warning"><i class="fas fa-warning"></i> This action cannot be undone. All associated data including work order history will be preserved but the user will be removed from the team.</p>
+                <input type="hidden" id="deleteUserId">
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="executeDeleteUser()">
+                    <i class="fas fa-trash"></i> Yes, Delete Employee
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // User Management Functions
+    // Modal instances
+    let addModal, editModal, deleteModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        addModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+    });
+
+    // Open Add User Modal
     function openAddUserModal() {
         document.getElementById('addUserForm').reset();
-        const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
-        modal.show();
+        addModal.show();
     }
 
-    function openEditUserModal(userId, fullName, role, email) {
-        document.getElementById('editUserId').value = userId;
-        document.getElementById('editUserEmail').value = email;
-        document.getElementById('editUserName').value = fullName;
-        document.getElementById('editUserRole').value = role.toLowerCase().replace(' ', '_');
-        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        modal.show();
+    // Open Edit User Modal
+    function openEditUserModal(user) {
+        document.getElementById('editUserId').value = user.id;
+        document.getElementById('editUserName').value = user.full_name || '';
+        document.getElementById('editUserEmail').value = user.username || user.contact || '';
+        document.getElementById('editUserPhone').value = user.phone || '';
+        document.getElementById('editUserEmployeeId').value = user.employee_id || '';
+        document.getElementById('editUserRole').value = user.role || '';
+        document.getElementById('editUserDepartment').value = user.department || '';
+        document.getElementById('editUserShift').value = user.shift || '';
+        document.getElementById('editUserStartDate').value = user.start_date || '';
+        document.getElementById('editUserSupervisor').value = user.supervisor || '';
+        document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
+        document.getElementById('editUserStatus').value = user.status || 'Available';
+        document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
+        document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
+        document.getElementById('editUserNotes').value = user.notes || '';
+        editModal.show();
     }
 
+    // Confirm Delete User
+    function confirmDeleteUser(userId, userName) {
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteUserName').textContent = userName;
+        deleteModal.show();
+    }
+
+    // Delete from Edit Modal
+    function deleteUserFromModal() {
+        const userId = document.getElementById('editUserId').value;
+        const userName = document.getElementById('editUserName').value;
+        editModal.hide();
+        setTimeout(() => {
+            confirmDeleteUser(userId, userName);
+        }, 300);
+    }
+
+    // Execute Delete
+    function executeDeleteUser() {
+        const userId = document.getElementById('deleteUserId').value;
+        const userName = document.getElementById('deleteUserName').textContent;
+
+        {% if is_demo %}
+        deleteModal.hide();
+        // Simulate deletion in demo mode
+        const card = document.getElementById('employee-card-' + userId);
+        if (card) {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.8)';
+            setTimeout(() => card.remove(), 500);
+        }
+        showNotification('success', 'Employee Deleted', `${userName} has been removed from the team.`);
+        return;
+        {% endif %}
+
+        fetch(`/org/users/${userId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            deleteModal.hide();
+            if (data.success) {
+                const card = document.getElementById('employee-card-' + userId);
+                if (card) {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 500);
+                }
+                showNotification('success', 'Employee Deleted', `${userName} has been removed.`);
+            } else {
+                showNotification('error', 'Error', data.message || 'Failed to delete employee');
+            }
+        })
+        .catch(error => {
+            deleteModal.hide();
+            showNotification('error', 'Error', 'Failed to delete employee. Please try again.');
+        });
+    }
+
+    // Submit Add User
     async function submitAddUser(event) {
         event.preventDefault();
 
         const userData = {
-            email: document.getElementById('newUserEmail').value,
             full_name: document.getElementById('newUserName').value,
+            email: document.getElementById('newUserEmail').value,
+            phone: document.getElementById('newUserPhone').value,
+            employee_id: document.getElementById('newUserEmployeeId').value,
             role: document.getElementById('newUserRole').value,
-            department: document.getElementById('newUserDepartment').value
+            department: document.getElementById('newUserDepartment').value,
+            shift: document.getElementById('newUserShift').value,
+            start_date: document.getElementById('newUserStartDate').value,
+            supervisor: document.getElementById('newUserSupervisor').value,
+            hourly_rate: parseFloat(document.getElementById('newUserHourlyRate').value) || null,
+            skills: document.getElementById('newUserSkills').value.split(',').map(s => s.trim()).filter(s => s),
+            certifications: document.getElementById('newUserCertifications').value.split(',').map(s => s.trim()).filter(s => s),
+            notes: document.getElementById('newUserNotes').value
         };
 
         {% if is_demo %}
-        // Demo mode - show success message
-        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-        showNotification('success', 'Invitation Sent!', `Demo: ${userData.full_name} would receive an invitation email at ${userData.email}`);
+        addModal.hide();
+        showNotification('success', 'Employee Added!', `${userData.full_name} has been added to the team. (Demo Mode)`);
+        setTimeout(() => location.reload(), 1500);
         return;
         {% endif %}
 
@@ -462,34 +573,46 @@
                 credentials: 'include',
                 body: JSON.stringify(userData)
             });
-
             const data = await response.json();
-
+            addModal.hide();
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-                showNotification('success', 'Invitation Sent!', `${userData.full_name} will receive an email invitation.`);
+                showNotification('success', 'Employee Added!', `${userData.full_name} will receive an invitation email.`);
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Error', data.message || 'Failed to send invitation');
+                showNotification('error', 'Error', data.message || 'Failed to add employee');
             }
         } catch (error) {
-            showNotification('error', 'Error', 'Failed to send invitation. Please try again.');
+            addModal.hide();
+            showNotification('error', 'Error', 'Failed to add employee. Please try again.');
         }
     }
 
+    // Submit Edit User
     async function submitEditUser(event) {
         event.preventDefault();
 
         const userId = document.getElementById('editUserId').value;
         const userData = {
             full_name: document.getElementById('editUserName').value,
-            role: document.getElementById('editUserRole').value
+            email: document.getElementById('editUserEmail').value,
+            phone: document.getElementById('editUserPhone').value,
+            employee_id: document.getElementById('editUserEmployeeId').value,
+            role: document.getElementById('editUserRole').value,
+            department: document.getElementById('editUserDepartment').value,
+            shift: document.getElementById('editUserShift').value,
+            start_date: document.getElementById('editUserStartDate').value,
+            supervisor: document.getElementById('editUserSupervisor').value,
+            hourly_rate: parseFloat(document.getElementById('editUserHourlyRate').value) || null,
+            status: document.getElementById('editUserStatus').value,
+            skills: document.getElementById('editUserSkills').value.split(',').map(s => s.trim()).filter(s => s),
+            certifications: document.getElementById('editUserCertifications').value.split(',').map(s => s.trim()).filter(s => s),
+            notes: document.getElementById('editUserNotes').value
         };
 
         {% if is_demo %}
-        // Demo mode - show success message
-        bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-        showNotification('success', 'Changes Saved!', `Demo: ${userData.full_name}'s profile would be updated.`);
+        editModal.hide();
+        showNotification('success', 'Changes Saved!', `${userData.full_name}'s profile has been updated. (Demo Mode)`);
+        setTimeout(() => location.reload(), 1500);
         return;
         {% endif %}
 
@@ -500,55 +623,32 @@
                 credentials: 'include',
                 body: JSON.stringify(userData)
             });
-
             const data = await response.json();
-
+            editModal.hide();
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-                showNotification('success', 'User Updated!', 'Changes have been saved.');
+                showNotification('success', 'Changes Saved!', 'Employee profile has been updated.');
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Error', data.message || 'Failed to update user');
+                showNotification('error', 'Error', data.message || 'Failed to update employee');
             }
         } catch (error) {
-            showNotification('error', 'Error', 'Failed to update user. Please try again.');
+            editModal.hide();
+            showNotification('error', 'Error', 'Failed to update employee. Please try again.');
         }
     }
 
-    function confirmDeleteUser() {
-        const userId = document.getElementById('editUserId').value;
-        const userName = document.getElementById('editUserName').value;
-
-        {% if is_demo %}
-        bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-        showNotification('info', 'Demo Mode', `${userName} would be removed from the team.`);
-        return;
-        {% endif %}
-
-        if (confirm(`Are you sure you want to remove ${userName} from the team?`)) {
-            deleteUser(userId);
-        }
+    // Helper functions
+    function openChat(userId, userName) {
+        showNotification('info', 'Message', `Opening chat with ${userName}...`);
+        // Could redirect to messaging or open chat modal
     }
 
-    async function deleteUser(userId) {
-        try {
-            const response = await fetch(`/org/users/${userId}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
+    function viewWorkOrders(userId) {
+        window.location.href = {% if is_demo %}'/demo/work-orders'{% else %}`/work-orders?assigned_to=${userId}`{% endif %};
+    }
 
-            const data = await response.json();
-
-            if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-                showNotification('success', 'User Removed', 'Team member has been removed.');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showNotification('error', 'Error', data.message || 'Failed to remove user');
-            }
-        } catch (error) {
-            showNotification('error', 'Error', 'Failed to remove user. Please try again.');
-        }
+    function viewTraining(userId) {
+        window.location.href = {% if is_demo %}'/demo/training'{% else %}`/training?user=${userId}`{% endif %};
     }
 
     // Notification helper
@@ -556,12 +656,14 @@
         const colors = {
             success: 'rgba(39, 174, 96, 0.95)',
             error: 'rgba(231, 76, 60, 0.95)',
-            info: 'rgba(52, 152, 219, 0.95)'
+            info: 'rgba(52, 152, 219, 0.95)',
+            warning: 'rgba(241, 196, 15, 0.95)'
         };
         const icons = {
             success: 'check-circle',
             error: 'exclamation-circle',
-            info: 'info-circle'
+            info: 'info-circle',
+            warning: 'exclamation-triangle'
         };
 
         const notification = document.createElement('div');
@@ -569,7 +671,7 @@
             position: fixed; top: 20px; right: 20px; padding: 20px 25px;
             border-radius: 10px; background: ${colors[type]}; color: white;
             z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease; max-width: 350px;
+            animation: slideIn 0.3s ease; max-width: 400px;
         `;
         notification.innerHTML = `
             <div style="font-weight: 600; margin-bottom: 5px;">
@@ -590,6 +692,43 @@
     @keyframes slideIn {
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
+    }
+
+    .employee-card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .employee-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    .employee-avatar {
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .status-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid var(--bg-dark, #1a1a2e);
+    }
+
+    .stat-box {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .skills-container .badge,
+    .certifications-container .badge {
+        font-size: 0.75rem;
+    }
+
+    .card-footer .btn {
+        flex: 1;
+        margin: 0 2px;
     }
 </style>
 {% endblock %}

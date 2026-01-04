@@ -343,6 +343,7 @@ body {
     background: var(--accent-gradient);
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none; /* Ensure clicks pass through */
 }
 
 .cmms-card:hover {
@@ -1816,6 +1817,7 @@ body {
   transform: rotate(-45deg);
   transition: all 0.6s ease;
   opacity: 0;
+  pointer-events: none; /* CRITICAL: Allow clicks to pass through to buttons */
 }
 
 .cmms-card:hover::after {

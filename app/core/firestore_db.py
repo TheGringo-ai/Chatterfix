@@ -108,9 +108,20 @@ class FirestoreManager:
                 doc_ref.set(data)
                 return doc_id
             else:
+                # Use add() which generates a unique ID
                 doc_ref = self.db.collection(collection).add(data)[1]
                 return cast(str, doc_ref.id)
         except Exception as e:
+            error_str = str(e)
+            # Handle "Document already exists" by retrying with a new ID
+            if "already exists" in error_str.lower() and not doc_id:
+                logger.warning(f"Document ID collision in {collection}, retrying with new ID")
+                try:
+                    doc_ref = self.db.collection(collection).add(data)[1]
+                    return cast(str, doc_ref.id)
+                except Exception as retry_error:
+                    logger.error(f"Retry failed for {collection}: {retry_error}")
+                    raise retry_error
             logger.error(f"Error creating document in {collection}: {e}")
             raise
 

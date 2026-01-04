@@ -277,17 +277,18 @@
             </div>
         </div>
 
-        <!-- Media Gallery -->
+        <!-- Media Gallery (Images & Videos) -->
         <div class="section-card">
             <div class="section-header">
-                <h3><i class="fas fa-images"></i> Media Gallery ({{ media|length }})</h3>
+                <h3><i class="fas fa-images"></i> Photos & Videos</h3>
                 <button class="cmms-btn cmms-btn-sm"
                     onclick="document.getElementById('uploadMediaModal').style.display='block'">
                     <i class="fas fa-upload"></i> Upload
                 </button>
             </div>
             <div class="media-gallery">
-                {% for item in media %}
+                {% set image_video_media = media|selectattr("file_type", "in", ["image", "video"])|list %}
+                {% for item in image_video_media %}
                 <div class="media-item" onclick="viewMedia('{{ item.file_path }}', '{{ item.file_type }}')">
                     {% if item.file_type == 'image' %}
                     <img src="/{{ item.file_path }}" alt="{{ item.title }}">
@@ -297,16 +298,76 @@
                         style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem;">
                         <i class="fas fa-play-circle"></i>
                     </div>
-                    {% else %}
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                        <i class="fas fa-file-pdf" style="font-size: 3rem;"></i>
-                    </div>
                     {% endif %}
                 </div>
                 {% endfor %}
-                {% if not media %}
+                {% if not image_video_media %}
                 <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; opacity: 0.5;">
-                    No media uploaded yet
+                    No photos or videos uploaded yet
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Documents & Manuals -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3><i class="fas fa-folder-open"></i> Documents & Manuals</h3>
+                <button class="cmms-btn cmms-btn-sm"
+                    onclick="document.getElementById('uploadMediaModal').style.display='block'">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+            <div class="documents-list">
+                {% set document_media = media|rejectattr("file_type", "in", ["image", "video"])|list %}
+                {% for doc in document_media %}
+                <div class="document-item" onclick="viewMedia('{{ doc.file_path }}', '{{ doc.file_type }}')"
+                     style="display: flex; align-items: center; padding: 1rem; background: var(--bg-glass); border-radius: 8px; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s;">
+                    <div style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        {% if doc.file_path.endswith('.pdf') %}
+                        <i class="fas fa-file-pdf" style="font-size: 1.5rem; color: #e74c3c;"></i>
+                        {% elif doc.file_path.endswith('.doc') or doc.file_path.endswith('.docx') %}
+                        <i class="fas fa-file-word" style="font-size: 1.5rem; color: #2b579a;"></i>
+                        {% elif doc.file_path.endswith('.xls') or doc.file_path.endswith('.xlsx') %}
+                        <i class="fas fa-file-excel" style="font-size: 1.5rem; color: #217346;"></i>
+                        {% elif doc.file_path.endswith('.ppt') or doc.file_path.endswith('.pptx') %}
+                        <i class="fas fa-file-powerpoint" style="font-size: 1.5rem; color: #d24726;"></i>
+                        {% elif doc.file_path.endswith('.txt') %}
+                        <i class="fas fa-file-alt" style="font-size: 1.5rem; color: #6c757d;"></i>
+                        {% else %}
+                        <i class="fas fa-file" style="font-size: 1.5rem; color: #3498db;"></i>
+                        {% endif %}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">{{ doc.title or doc.file_path.split('/')|last }}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">
+                            <span class="cmms-badge" style="font-size: 0.7rem; padding: 2px 8px;">
+                                {% if doc.file_type == 'manual' %}📖 Manual
+                                {% elif doc.file_type == 'datasheet' %}📊 Datasheet
+                                {% elif doc.file_type == 'warranty' %}📜 Warranty
+                                {% elif doc.file_type == 'certificate' %}🏆 Certificate
+                                {% else %}📄 Document{% endif %}
+                            </span>
+                            {% if doc.description %}
+                            <span style="margin-left: 0.5rem;">{{ doc.description }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="/{{ doc.file_path }}" download onclick="event.stopPropagation();"
+                           class="cmms-btn cmms-btn-sm" style="background: rgba(255,255,255,0.1);">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not document_media %}
+                <div style="text-align: center; padding: 2rem; opacity: 0.5;">
+                    <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <div>No documents uploaded yet</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.5rem;">
+                        Upload equipment manuals, datasheets, warranty docs, etc.
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -551,32 +612,39 @@
 <div id="uploadMediaModal" class="modal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
     <div class="modal-content glass-panel" style="margin: 10% auto; width: 500px; padding: 30px;">
-        <h2><i class="fas fa-upload"></i> Upload Media</h2>
+        <h2><i class="fas fa-upload"></i> Upload File</h2>
         <form action="/assets/{{ asset.id }}/media" method="post" enctype="multipart/form-data"
             style="margin-top: 20px;">
             <div style="margin-bottom: 1rem;">
                 <label>File</label>
-                <input type="file" name="file" class="form-control" required accept="image/*,video/*,.pdf">
+                <input type="file" name="file" class="form-control" required
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.ppt,.pptx,.odt,.ods,.odp,.rtf,.xml,.json">
+                <small style="opacity: 0.7;">Supported: Images, Videos, PDF, Word, Excel, PowerPoint, Text files</small>
             </div>
             <div style="margin-bottom: 1rem;">
-                <label>Type</label>
-                <select name="file_type" class="form-control">
-                    <option value="image">Image</option>
+                <label>File Type</label>
+                <select name="file_type" class="form-control" id="fileTypeSelect">
+                    <option value="image">Image/Photo</option>
                     <option value="video">Video</option>
-                    <option value="document">Document</option>
-                    <option value="manual">Manual</option>
+                    <option value="manual">Equipment Manual</option>
+                    <option value="document">General Document</option>
+                    <option value="datasheet">Datasheet/Specs</option>
+                    <option value="warranty">Warranty Document</option>
+                    <option value="certificate">Certificate/Compliance</option>
                 </select>
             </div>
             <div style="margin-bottom: 1rem;">
-                <label>Title</label>
-                <input type="text" name="title" class="form-control">
+                <label>Title *</label>
+                <input type="text" name="title" class="form-control" required placeholder="e.g., Installation Manual, Service Guide">
             </div>
             <div style="margin-bottom: 1rem;">
                 <label>Description</label>
-                <textarea name="description" class="form-control" rows="2"></textarea>
+                <textarea name="description" class="form-control" rows="2" placeholder="Optional notes about this file"></textarea>
             </div>
             <div style="display: flex; gap: 1rem;">
-                <button type="submit" class="cmms-btn">Upload</button>
+                <button type="submit" class="cmms-btn">
+                    <i class="fas fa-cloud-upload-alt"></i> Upload
+                </button>
                 <button type="button" class="cmms-btn" style="background: #555;"
                     onclick="document.getElementById('uploadMediaModal').style.display='none'">Cancel</button>
             </div>

@@ -92,27 +92,54 @@ async def team_dashboard(request: Request):
     is_demo = False
     team_members = []
 
-    if current_user and current_user.organization_id:
-        # Authenticated user with organization - show real Firestore data
+    logger.info(f"Team dashboard: current_user={current_user is not None}, org_id={current_user.organization_id if current_user else None}")
+
+    if current_user:
+        # User is authenticated - NOT demo mode
+        is_demo = False
         firestore_manager = get_firestore_manager()
-        try:
-            team_members = await firestore_manager.get_collection(
-                "users",
-                filters=[
-                    {
-                        "field": "organization_id",
-                        "operator": "==",
-                        "value": current_user.organization_id,
-                    }
-                ],
-            )
-        except Exception as e:
-            logger.error(f"Error loading team: {e}")
-            # Fall back to demo data on error
-            team_members = DEMO_TEAM
-            is_demo = True
+
+        if current_user.organization_id:
+            # Has organization - show team from that org
+            try:
+                team_members = await firestore_manager.get_collection(
+                    "users",
+                    filters=[
+                        {
+                            "field": "organization_id",
+                            "operator": "==",
+                            "value": current_user.organization_id,
+                        }
+                    ],
+                )
+                logger.info(f"Loaded {len(team_members)} team members for org {current_user.organization_id}")
+            except Exception as e:
+                logger.error(f"Error loading team: {e}")
+                # Show user's own profile as fallback
+                team_members = [{
+                    "id": current_user.uid,
+                    "full_name": current_user.full_name or current_user.email,
+                    "username": current_user.email,
+                    "role": current_user.role,
+                    "status": "Available",
+                    "skills": [],
+                    "certifications": [],
+                }]
+        else:
+            # Authenticated but no org - show user's own profile
+            logger.info(f"User {current_user.uid} has no organization_id - showing own profile")
+            team_members = [{
+                "id": current_user.uid,
+                "full_name": current_user.full_name or current_user.email,
+                "username": current_user.email,
+                "role": current_user.role,
+                "status": "Available",
+                "skills": [],
+                "certifications": [],
+            }]
     else:
-        # Not authenticated or no organization - show demo data
+        # Not authenticated - show demo data
+        logger.info("No authenticated user - showing demo data")
         team_members = DEMO_TEAM
         is_demo = True
 

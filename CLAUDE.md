@@ -681,6 +681,66 @@ if (!this.apiKey) {
 - Test voice commands with rapid tapping (stress test)
 - Verify API keys are configured before deploying
 
+#### **LESSON #17: Bootstrap Modal Buttons Not Working - Multiple Root Causes**
+**Problem**: Edit/Delete buttons on team dashboard don't open modals, user appears in demo mode when logged in
+**Root Causes** (Multiple issues that combine to cause failure):
+1. **Pydantic User model missing `id` property**: Templates check `user.id` but model only has `uid`
+2. **Demo mode logic too strict**: Authenticated users without `organization_id` were shown demo data
+3. **Missing Bootstrap modal attributes**: Buttons used `onclick` handlers instead of native `data-bs-toggle`
+
+**Symptoms**:
+- Clicking Edit/Delete buttons does nothing (no modal opens)
+- Navigation shows "Demo" and "Upgrade Now" even when user is logged in
+- JavaScript console may show errors about missing user data
+
+**Solution**:
+1. **Add computed_field to User model**:
+```python
+from pydantic import computed_field
+
+class User(BaseModel):
+    uid: str
+    # ... other fields ...
+
+    @computed_field
+    @property
+    def id(self) -> str:
+        """Alias for uid - templates expect user.id"""
+        return self.uid
+```
+
+2. **Fix demo mode logic in routers**:
+```python
+# WRONG: Treats authenticated users without org as demo
+if current_user and current_user.organization_id:
+    is_demo = False
+else:
+    is_demo = True
+
+# CORRECT: Any authenticated user is NOT demo
+if current_user:
+    is_demo = False
+else:
+    is_demo = True
+```
+
+3. **Use Bootstrap's native modal triggering**:
+```html
+<!-- WRONG: onclick handlers that may fail if functions not defined -->
+<button onclick="openEditModal('{{ user.id }}')">Edit</button>
+
+<!-- CORRECT: Bootstrap data attributes (always work) -->
+<button type="button" data-bs-toggle="modal" data-bs-target="#editUserModal"
+        data-user-id="{{ user.id }}">Edit</button>
+```
+
+**Prevention**:
+- Always ensure Pydantic models have properties templates expect (use `@computed_field`)
+- Authenticated users should NEVER see demo mode - only unauthenticated guests
+- Use Bootstrap's native `data-bs-toggle` for modal buttons (more reliable than onclick)
+- Add console.log debugging in modal event handlers to trace issues
+- Test both demo mode AND authenticated mode separately
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

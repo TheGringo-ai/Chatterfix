@@ -74,13 +74,13 @@
                         </div>
                     </div>
                     <div class="d-flex gap-1">
-                        <button class="btn btn-primary btn-sm edit-user-btn"
-                                onclick="openEditModal('{{ user.id }}')"
+                        <button type="button" class="btn btn-primary btn-sm edit-user-btn"
+                                data-bs-toggle="modal" data-bs-target="#editUserModal"
                                 data-user-id="{{ user.id }}">
                             <i class="fas fa-pencil-alt"></i> Edit
                         </button>
-                        <button class="btn btn-danger btn-sm delete-user-btn"
-                                onclick="openDeleteModal('{{ user.id }}', '{{ user.full_name|e }}')"
+                        <button type="button" class="btn btn-danger btn-sm delete-user-btn"
+                                data-bs-toggle="modal" data-bs-target="#deleteUserModal"
                                 data-user-id="{{ user.id }}"
                                 data-user-name="{{ user.full_name }}">
                             <i class="fas fa-trash-alt"></i> Delete
@@ -495,22 +495,29 @@
         document.getElementById('stat-busy').textContent = busy;
         document.getElementById('stat-oncall').textContent = oncall;
 
-        // Handle Edit Modal - populate form when modal opens via data-bs-toggle (not programmatic)
+        // Handle Edit Modal - populate form when modal opens via data-bs-toggle
         const editModal = document.getElementById('editUserModal');
         editModal.addEventListener('show.bs.modal', function(event) {
-            // Skip if opened programmatically (no relatedTarget) - openEditModal() handles form population
             const button = event.relatedTarget;
-            if (!button) return;
-
-            const userId = button.getAttribute('data-user-id');
-            const user = usersData[userId];
-
-            if (!user) {
-                showNotification('error', 'Error', 'User not found');
+            if (!button) {
+                console.warn('Edit modal opened without relatedTarget');
                 return;
             }
 
-            document.getElementById('editUserId').value = user.id;
+            const userId = button.getAttribute('data-user-id');
+            console.log('Edit modal: userId=', userId, 'usersData keys=', Object.keys(usersData));
+
+            const user = usersData[userId];
+
+            if (!user) {
+                console.error('User not found in usersData:', userId);
+                showNotification('error', 'Error', 'User not found. Please refresh the page.');
+                return;
+            }
+
+            console.log('Populating edit form with user:', user);
+
+            document.getElementById('editUserId').value = user.id || userId;
             document.getElementById('editUserName').value = user.full_name || '';
             document.getElementById('editUserEmail').value = user.username || user.contact || '';
             document.getElementById('editUserPhone').value = user.phone || '';
@@ -527,15 +534,19 @@
             document.getElementById('editUserNotes').value = user.notes || '';
         });
 
-        // Handle Delete Modal - populate name when modal opens via data-bs-toggle (not programmatic)
+        // Handle Delete Modal - populate name when modal opens via data-bs-toggle
         const deleteModal = document.getElementById('deleteUserModal');
         deleteModal.addEventListener('show.bs.modal', function(event) {
-            // Skip if opened programmatically (no relatedTarget) - openDeleteModal() handles form population
             const button = event.relatedTarget;
-            if (!button) return;
+            if (!button) {
+                console.warn('Delete modal opened without relatedTarget');
+                return;
+            }
 
             const userId = button.getAttribute('data-user-id');
-            const userName = button.getAttribute('data-user-name');
+            const userName = button.getAttribute('data-user-name') || 'this user';
+
+            console.log('Delete modal: userId=', userId, 'userName=', userName);
 
             document.getElementById('deleteUserId').value = userId;
             document.getElementById('deleteUserName').textContent = userName;

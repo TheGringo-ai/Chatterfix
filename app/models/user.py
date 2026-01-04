@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, computed_field
 from typing import Optional, List, Dict, Any
 
 
@@ -31,6 +31,12 @@ class User(BaseModel):
     organization_id: Optional[str] = None
     organization_name: Optional[str] = None
     company: Optional[Dict[str, Any]] = None
+
+    @computed_field
+    @property
+    def id(self) -> str:
+        """Alias for uid - used by templates that expect user.id"""
+        return self.uid
 
 
 class TokenData(BaseModel):

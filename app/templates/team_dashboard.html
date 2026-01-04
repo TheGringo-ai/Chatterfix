@@ -459,27 +459,27 @@
     // Modal instances
     let addModal, editModal, deleteModal;
 
-    // Store user data for editing
+    // Store user data for editing - use tojson for proper JS escaping (handles newlines, quotes, etc)
     const usersData = {
         {% for user in users %}
         {% if user %}
-        '{{ user.id }}': {
-            id: '{{ user.id }}',
-            full_name: '{{ user.full_name|default("", true)|e }}',
-            username: '{{ user.username|default("", true)|e }}',
-            contact: '{{ user.contact|default("", true)|e }}',
-            phone: '{{ user.phone|default("", true)|e }}',
-            employee_id: '{{ user.employee_id|default("", true)|e }}',
-            role: '{{ user.role|default("", true)|e }}',
-            department: '{{ user.department|default("", true)|e }}',
-            shift: '{{ user.shift|default("", true)|e }}',
-            start_date: '{{ user.start_date|default("", true)|e }}',
-            supervisor: '{{ user.supervisor|default("", true)|e }}',
-            hourly_rate: {{ user.hourly_rate|default(0, true) }},
-            status: '{{ user.status|default("Available", true)|e }}',
+        {{ user.id|tojson }}: {
+            id: {{ user.id|tojson }},
+            full_name: {{ user.full_name|default("", true)|tojson }},
+            username: {{ user.username|default("", true)|tojson }},
+            contact: {{ user.contact|default("", true)|tojson }},
+            phone: {{ user.phone|default("", true)|tojson }},
+            employee_id: {{ user.employee_id|default("", true)|tojson }},
+            role: {{ user.role|default("", true)|tojson }},
+            department: {{ user.department|default("", true)|tojson }},
+            shift: {{ user.shift|default("", true)|tojson }},
+            start_date: {{ user.start_date|default("", true)|tojson }},
+            supervisor: {{ user.supervisor|default("", true)|tojson }},
+            hourly_rate: {{ user.hourly_rate|default(0, true)|tojson }},
+            status: {{ user.status|default("Available", true)|tojson }},
             skills: {{ user.skills|default([], true)|tojson }},
             certifications: {{ user.certifications|default([], true)|tojson }},
-            notes: '{{ user.notes|default("", true)|e }}'
+            notes: {{ user.notes|default("", true)|tojson }}
         },
         {% endif %}
         {% endfor %}

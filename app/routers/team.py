@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_optional_current_user
+from app.auth import get_optional_current_user, get_current_user_from_cookie
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 
@@ -85,10 +85,10 @@ DEMO_TEAM = [
 
 
 @router.get("/", response_class=HTMLResponse)
-async def team_dashboard(
-    request: Request, current_user: Optional[User] = Depends(get_optional_current_user)
-):
+async def team_dashboard(request: Request):
     """Team dashboard - shows real data for authenticated, demo data for guests"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
     is_demo = False
     team_members = []
 
@@ -160,11 +160,7 @@ async def get_users(current_user: Optional[User] = Depends(get_optional_current_
 
 
 @router.get("/users/{user_id}", response_class=HTMLResponse)
-async def user_profile(
-    request: Request,
-    user_id: str,
-    current_user: Optional[User] = Depends(get_optional_current_user),
-):
+async def user_profile(request: Request, user_id: str):
     """User profile - redirect back to team page"""
     # Always redirect to team page for now (profile details shown in modal)
     return RedirectResponse(url="/team", status_code=302)

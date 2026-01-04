@@ -73,12 +73,12 @@
                             <span class="badge bg-secondary ms-1">{{ user.employee_id if user.employee_id else 'N/A' }}</span>
                         </div>
                     </div>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditUserModal('{{ user.id }}')">
-                            <i class="fas fa-edit"></i>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-primary btn-sm" onclick="openEditUserModal('{{ user.id }}')">
+                            <i class="fas fa-pencil-alt"></i> Edit
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="confirmDeleteUser('{{ user.id }}', '{{ user.full_name }}')">
-                            <i class="fas fa-trash"></i>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDeleteUser('{{ user.id }}', '{{ user.full_name }}')">
+                            <i class="fas fa-trash-alt"></i> Delete
                         </button>
                     </div>
                 </div>
@@ -188,16 +188,22 @@
 
                 <!-- Card Footer Actions -->
                 <div class="card-footer bg-transparent border-top border-secondary">
-                    <div class="d-flex justify-content-between">
-                        <button class="btn btn-sm btn-outline-primary" onclick="openChat('{{ user.id }}', '{{ user.full_name }}')">
-                            <i class="fas fa-comment"></i> Message
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="viewWorkOrders('{{ user.id }}')">
-                            <i class="fas fa-clipboard-list"></i> Work Orders
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="viewTraining('{{ user.id }}')">
-                            <i class="fas fa-graduation-cap"></i> Training
-                        </button>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <button class="btn btn-outline-light btn-sm w-100" onclick="openChat('{{ user.id }}', '{{ user.full_name }}')">
+                                <i class="fas fa-comment"></i> Message
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-light btn-sm w-100" onclick="viewWorkOrders('{{ user.id }}')">
+                                <i class="fas fa-wrench"></i> WOs
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-light btn-sm w-100" onclick="viewTraining('{{ user.id }}')">
+                                <i class="fas fa-graduation-cap"></i> Train
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -769,8 +775,30 @@
     }
 
     .card-footer .btn {
-        flex: 1;
-        margin: 0 2px;
+        font-size: 0.75rem;
+    }
+
+    /* Make header action buttons very visible */
+    .card-header .btn-primary {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .card-header .btn-danger {
+        background: #dc3545;
+        border-color: #dc3545;
+        font-weight: 600;
+    }
+
+    .card-header .btn-primary:hover {
+        background: #0b5ed7;
+        transform: scale(1.05);
+    }
+
+    .card-header .btn-danger:hover {
+        background: #bb2d3b;
+        transform: scale(1.05);
     }
 </style>
 {% endblock %}

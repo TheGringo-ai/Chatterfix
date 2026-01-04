@@ -74,8 +74,17 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(response: Response, session_token: Optional[str] = Cookie(None)):
-    """User logout endpoint - clears session cookie"""
+async def logout_post(response: Response, session_token: Optional[str] = Cookie(None)):
+    """User logout endpoint (POST) - clears session cookie"""
+    # Firebase tokens are stateless, so we just clear the cookie
+    response = RedirectResponse(url="/auth/login", status_code=302)
+    response.delete_cookie("session_token")
+    return response
+
+
+@router.get("/logout")
+async def logout_get(response: Response, session_token: Optional[str] = Cookie(None)):
+    """User logout endpoint (GET) - clears session cookie"""
     # Firebase tokens are stateless, so we just clear the cookie
     response = RedirectResponse(url="/auth/login", status_code=302)
     response.delete_cookie("session_token")

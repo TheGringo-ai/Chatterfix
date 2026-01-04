@@ -13,6 +13,8 @@ from fastapi.templating import Jinja2Templates
 from app.auth import (
     get_current_active_user,
     require_permission,
+    require_permission_cookie,
+    require_auth_cookie,
     get_current_user_from_cookie,
 )
 from app.models.user import User
@@ -242,7 +244,7 @@ async def create_asset(
     warranty_expiry: str = Form(None),
     purchase_cost: float = Form(None),
     files: List[UploadFile] = File(None),
-    current_user: User = Depends(require_permission("create_asset")),
+    current_user: User = Depends(require_permission_cookie("create_asset")),
 ):
     """Create a new asset"""
     firestore_manager = get_firestore_manager()
@@ -323,7 +325,7 @@ async def update_asset(
     purchase_date: str = Form(None),
     warranty_expiry: str = Form(None),
     purchase_cost: float = Form(None),
-    current_user: User = Depends(require_permission("update_asset")),
+    current_user: User = Depends(require_permission_cookie("update_asset")),
 ):
     """Update an existing asset"""
     firestore_manager = get_firestore_manager()
@@ -384,7 +386,7 @@ async def upload_media(
     file_type: str = Form("image"),
     title: str = Form(""),
     description: str = Form(""),
-    current_user: User = Depends(require_permission("update_asset")),
+    current_user: User = Depends(require_permission_cookie("update_asset")),
 ):
     """Upload photo, video, or document"""
     asset_dir = os.path.join(UPLOAD_DIR, str(asset_id))
@@ -420,7 +422,7 @@ async def log_maintenance(
     downtime_hours: float = Form(0),
     labor_cost: float = Form(0),
     parts_cost: float = Form(0),
-    current_user: User = Depends(require_permission("log_maintenance")),
+    current_user: User = Depends(require_permission_cookie("log_maintenance")),
 ):
     """Log a maintenance event"""
     total_cost = labor_cost + parts_cost
@@ -459,7 +461,7 @@ async def log_maintenance(
 
 @router.get("/{asset_id}/ai-health")
 async def ai_health_analysis(
-    asset_id: str, current_user: User = Depends(get_current_active_user)
+    asset_id: str, current_user: User = Depends(require_auth_cookie)
 ):
     """AI-powered health analysis"""
     if not gemini_service.is_available():
@@ -521,7 +523,7 @@ async def ai_health_analysis(
 
 @router.get("/{asset_id}/ai-recommendations")
 async def ai_recommendations(
-    asset_id: str, current_user: User = Depends(get_current_active_user)
+    asset_id: str, current_user: User = Depends(require_auth_cookie)
 ):
     """AI predictive maintenance recommendations"""
     if not gemini_service.is_available():
@@ -572,7 +574,7 @@ async def ai_recommendations(
 
 @router.post("/scan-barcode")
 async def scan_asset_barcode(
-    file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
+    file: UploadFile = File(...), current_user: User = Depends(require_auth_cookie)
 ):
     """Scan barcode to find asset and related information"""
     try:
@@ -629,7 +631,7 @@ async def scan_asset_barcode(
 
 @router.post("/lookup-by-tag")
 async def lookup_asset_by_tag(
-    asset_tag: str = Form(...), current_user: User = Depends(get_current_active_user)
+    asset_tag: str = Form(...), current_user: User = Depends(require_auth_cookie)
 ):
     """Quick lookup of asset by tag/barcode"""
     try:
@@ -662,7 +664,7 @@ async def lookup_asset_by_tag(
 
 @router.get("/{asset_id}/generate-qr")
 async def generate_asset_qr_code(
-    asset_id: str, current_user: User = Depends(get_current_active_user)
+    asset_id: str, current_user: User = Depends(require_auth_cookie)
 ):
     """Generate QR code for asset"""
     try:

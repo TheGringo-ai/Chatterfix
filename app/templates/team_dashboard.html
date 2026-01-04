@@ -11,7 +11,7 @@
                 <h1 class="mb-1"><i class="fas fa-users"></i> Team Management</h1>
                 <p class="text-muted mb-0">Manage your maintenance team members</p>
             </div>
-            <button class="btn btn-success btn-lg" onclick="openAddUserModal()">
+            <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#addUserModal">
                 <i class="fas fa-user-plus"></i> Add Team Member
             </button>
         </div>
@@ -74,10 +74,17 @@
                         </div>
                     </div>
                     <div class="d-flex gap-1">
-                        <button class="btn btn-primary btn-sm" onclick="openEditUserModal('{{ user.id }}')">
+                        <button class="btn btn-primary btn-sm edit-user-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editUserModal"
+                                data-user-id="{{ user.id }}">
                             <i class="fas fa-pencil-alt"></i> Edit
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="confirmDeleteUser('{{ user.id }}', '{{ user.full_name }}')">
+                        <button class="btn btn-danger btn-sm delete-user-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteUserModal"
+                                data-user-id="{{ user.id }}"
+                                data-user-name="{{ user.full_name }}">
                             <i class="fas fa-trash-alt"></i> Delete
                         </button>
                     </div>
@@ -218,7 +225,7 @@
             <i class="fas fa-users fa-4x text-muted mb-3"></i>
             <h3 class="text-muted">No Team Members Yet</h3>
             <p class="text-muted">Add your first team member to get started</p>
-            <button class="btn btn-success btn-lg" onclick="openAddUserModal()">
+            <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#addUserModal">
                 <i class="fas fa-user-plus"></i> Add Team Member
             </button>
         </div>
@@ -479,10 +486,6 @@
     };
 
     document.addEventListener('DOMContentLoaded', function() {
-        addModal = new bootstrap.Modal(document.getElementById('addUserModal'));
-        editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-
         // Calculate stats
         let available = 0, busy = 0, oncall = 0;
         Object.values(usersData).forEach(user => {
@@ -493,53 +496,71 @@
         document.getElementById('stat-available').textContent = available;
         document.getElementById('stat-busy').textContent = busy;
         document.getElementById('stat-oncall').textContent = oncall;
+
+        // Handle Edit Modal - populate form when modal opens
+        const editModal = document.getElementById('editUserModal');
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-user-id');
+            const user = usersData[userId];
+
+            if (!user) {
+                showNotification('error', 'Error', 'User not found');
+                return;
+            }
+
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserName').value = user.full_name || '';
+            document.getElementById('editUserEmail').value = user.username || user.contact || '';
+            document.getElementById('editUserPhone').value = user.phone || '';
+            document.getElementById('editUserEmployeeId').value = user.employee_id || '';
+            document.getElementById('editUserRole').value = user.role || '';
+            document.getElementById('editUserDepartment').value = user.department || '';
+            document.getElementById('editUserShift').value = user.shift || '';
+            document.getElementById('editUserStartDate').value = user.start_date || '';
+            document.getElementById('editUserSupervisor').value = user.supervisor || '';
+            document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
+            document.getElementById('editUserStatus').value = user.status || 'Available';
+            document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
+            document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
+            document.getElementById('editUserNotes').value = user.notes || '';
+        });
+
+        // Handle Delete Modal - populate name when modal opens
+        const deleteModal = document.getElementById('deleteUserModal');
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-user-id');
+            const userName = button.getAttribute('data-user-name');
+
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+        });
+
+        // Handle Add Modal - reset form when opened
+        const addModal = document.getElementById('addUserModal');
+        addModal.addEventListener('show.bs.modal', function() {
+            document.getElementById('addUserForm').reset();
+        });
     });
-
-    // Open Add User Modal
-    function openAddUserModal() {
-        document.getElementById('addUserForm').reset();
-        addModal.show();
-    }
-
-    // Open Edit User Modal
-    function openEditUserModal(userId) {
-        const user = usersData[userId];
-        if (!user) {
-            showNotification('error', 'Error', 'User not found');
-            return;
-        }
-        document.getElementById('editUserId').value = user.id;
-        document.getElementById('editUserName').value = user.full_name || '';
-        document.getElementById('editUserEmail').value = user.username || user.contact || '';
-        document.getElementById('editUserPhone').value = user.phone || '';
-        document.getElementById('editUserEmployeeId').value = user.employee_id || '';
-        document.getElementById('editUserRole').value = user.role || '';
-        document.getElementById('editUserDepartment').value = user.department || '';
-        document.getElementById('editUserShift').value = user.shift || '';
-        document.getElementById('editUserStartDate').value = user.start_date || '';
-        document.getElementById('editUserSupervisor').value = user.supervisor || '';
-        document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
-        document.getElementById('editUserStatus').value = user.status || 'Available';
-        document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
-        document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
-        document.getElementById('editUserNotes').value = user.notes || '';
-        editModal.show();
-    }
-
-    // Confirm Delete User
-    function confirmDeleteUser(userId, userName) {
-        document.getElementById('deleteUserId').value = userId;
-        document.getElementById('deleteUserName').textContent = userName;
-        deleteModal.show();
-    }
 
     // Delete from Edit Modal
     function deleteUserFromModal() {
         const userId = document.getElementById('editUserId').value;
         const userName = document.getElementById('editUserName').value;
-        editModal.hide();
+
+        // Close edit modal and open delete modal
+        const editModalEl = document.getElementById('editUserModal');
+        const editModalInstance = bootstrap.Modal.getInstance(editModalEl);
+        editModalInstance.hide();
+
+        // Wait for edit modal to close, then open delete modal
         setTimeout(() => {
-            confirmDeleteUser(userId, userName);
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+            const deleteModalEl = document.getElementById('deleteUserModal');
+            const deleteModalInstance = new bootstrap.Modal(deleteModalEl);
+            deleteModalInstance.show();
         }, 300);
     }
 
@@ -547,9 +568,11 @@
     function executeDeleteUser() {
         const userId = document.getElementById('deleteUserId').value;
         const userName = document.getElementById('deleteUserName').textContent;
+        const deleteModalEl = document.getElementById('deleteUserModal');
+        const deleteModalInstance = bootstrap.Modal.getInstance(deleteModalEl);
 
         {% if is_demo %}
-        deleteModal.hide();
+        deleteModalInstance.hide();
         // Simulate deletion in demo mode
         const card = document.getElementById('employee-card-' + userId);
         if (card) {
@@ -568,7 +591,7 @@
         })
         .then(response => response.json())
         .then(data => {
-            deleteModal.hide();
+            deleteModalInstance.hide();
             if (data.success) {
                 const card = document.getElementById('employee-card-' + userId);
                 if (card) {
@@ -582,7 +605,7 @@
             }
         })
         .catch(error => {
-            deleteModal.hide();
+            deleteModalInstance.hide();
             showNotification('error', 'Error', 'Failed to delete employee. Please try again.');
         });
     }
@@ -590,6 +613,8 @@
     // Submit Add User
     async function submitAddUser(event) {
         event.preventDefault();
+        const addModalEl = document.getElementById('addUserModal');
+        const addModalInstance = bootstrap.Modal.getInstance(addModalEl);
 
         const userData = {
             full_name: document.getElementById('newUserName').value,
@@ -608,7 +633,7 @@
         };
 
         {% if is_demo %}
-        addModal.hide();
+        addModalInstance.hide();
         showNotification('success', 'Employee Added!', `${userData.full_name} has been added to the team. (Demo Mode)`);
         setTimeout(() => location.reload(), 1500);
         return;
@@ -622,7 +647,7 @@
                 body: JSON.stringify(userData)
             });
             const data = await response.json();
-            addModal.hide();
+            addModalInstance.hide();
             if (data.success) {
                 showNotification('success', 'Employee Added!', `${userData.full_name} will receive an invitation email.`);
                 setTimeout(() => location.reload(), 1500);
@@ -630,7 +655,7 @@
                 showNotification('error', 'Error', data.message || 'Failed to add employee');
             }
         } catch (error) {
-            addModal.hide();
+            addModalInstance.hide();
             showNotification('error', 'Error', 'Failed to add employee. Please try again.');
         }
     }
@@ -638,6 +663,8 @@
     // Submit Edit User
     async function submitEditUser(event) {
         event.preventDefault();
+        const editModalEl = document.getElementById('editUserModal');
+        const editModalInstance = bootstrap.Modal.getInstance(editModalEl);
 
         const userId = document.getElementById('editUserId').value;
         const userData = {
@@ -658,7 +685,7 @@
         };
 
         {% if is_demo %}
-        editModal.hide();
+        editModalInstance.hide();
         showNotification('success', 'Changes Saved!', `${userData.full_name}'s profile has been updated. (Demo Mode)`);
         setTimeout(() => location.reload(), 1500);
         return;
@@ -672,7 +699,7 @@
                 body: JSON.stringify(userData)
             });
             const data = await response.json();
-            editModal.hide();
+            editModalInstance.hide();
             if (data.success) {
                 showNotification('success', 'Changes Saved!', 'Employee profile has been updated.');
                 setTimeout(() => location.reload(), 1500);
@@ -680,7 +707,7 @@
                 showNotification('error', 'Error', data.message || 'Failed to update employee');
             }
         } catch (error) {
-            editModal.hide();
+            editModalInstance.hide();
             showNotification('error', 'Error', 'Failed to update employee. Please try again.');
         }
     }

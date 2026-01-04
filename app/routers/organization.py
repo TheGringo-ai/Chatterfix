@@ -378,6 +378,62 @@ async def accept_invite(
 
 
 # ==========================================
+# FIX MISSING ORGANIZATION
+# ==========================================
+
+
+@router.post("/fix-missing-org", response_class=JSONResponse)
+async def fix_missing_organization(
+    request: Request,
+    company_name: str = "My Company",
+):
+    """
+    Fix users who signed up before multi-tenant was added.
+    Creates an organization and links it to the user.
+    """
+    from app.auth import get_current_user_from_cookie
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Check if user already has an organization
+    if current_user.organization_id:
+        org_service = get_organization_service()
+        org = await org_service.get_organization(current_user.organization_id)
+        if org:
+            return {
+                "success": True,
+                "message": "Organization already exists",
+                "organization_id": current_user.organization_id,
+                "organization_name": org.get("name"),
+            }
+
+    # Create new organization for this user
+    org_service = get_organization_service()
+    try:
+        org_data = await org_service.create_organization(
+            name=company_name,
+            owner_user_id=current_user.uid,
+            owner_email=current_user.email,
+            is_demo=False,
+        )
+
+        logger.info(f"Created organization {org_data.get('id')} for user {current_user.uid}")
+
+        return {
+            "success": True,
+            "message": "Organization created successfully",
+            "organization_id": org_data.get("id"),
+            "organization_name": org_data.get("name"),
+            "note": "Please log out and log back in for changes to take effect.",
+        }
+    except Exception as e:
+        logger.error(f"Error creating organization for user {current_user.uid}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create organization: {str(e)}")
+
+
+# ==========================================
 # API ENDPOINTS FOR FRONTEND
 # ==========================================
 

@@ -2276,3 +2276,206 @@ body {
   border-color: #e2e8f0 !important;
   color: #2d3748 !important;
 }
+
+/* ========================================
+   UNIVERSAL MODAL THEMING - Light/Dark Mode
+   ======================================== */
+
+/* Reset Bootstrap's bg-dark for modals to use theme variables */
+.modal .modal-content.bg-dark {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Light Mode Modal Styles (default) */
+.modal .modal-content {
+  background: #ffffff;
+  color: #2d3748;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+}
+
+.modal .modal-header {
+  background: rgba(247, 250, 252, 0.8);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px 12px 0 0;
+}
+
+.modal .modal-header .modal-title {
+  color: #2d3748;
+}
+
+.modal .modal-header .btn-close {
+  filter: none;
+}
+
+.modal .modal-footer {
+  background: rgba(247, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 0 0 12px 12px;
+}
+
+.modal .modal-body {
+  color: #2d3748;
+}
+
+.modal .form-label {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+/* Light mode form controls in modals */
+.modal .form-control,
+.modal .form-select {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #2d3748 !important;
+}
+
+.modal .form-control:focus,
+.modal .form-select:focus {
+  background: #ffffff !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.modal .form-control::placeholder {
+  color: #a0aec0;
+}
+
+/* Override bg-secondary for form controls in light mode */
+.modal .form-control.bg-secondary,
+.modal .form-select.bg-secondary {
+  background: #f7fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #2d3748 !important;
+}
+
+.modal .form-control.text-light,
+.modal .form-select.text-light {
+  color: #2d3748 !important;
+}
+
+/* Dark Mode Modal Styles */
+:root.dark-mode .modal .modal-content,
+body.dark-mode .modal .modal-content {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%) !important;
+  color: #f7fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+:root.dark-mode .modal .modal-header,
+body.dark-mode .modal .modal-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root.dark-mode .modal .modal-header .modal-title,
+body.dark-mode .modal .modal-header .modal-title {
+  color: #f7fafc;
+}
+
+:root.dark-mode .modal .modal-header .btn-close,
+body.dark-mode .modal .modal-header .btn-close {
+  filter: invert(1);
+}
+
+:root.dark-mode .modal .modal-footer,
+body.dark-mode .modal .modal-footer {
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root.dark-mode .modal .modal-body,
+body.dark-mode .modal .modal-body {
+  color: #e2e8f0;
+}
+
+:root.dark-mode .modal .form-label,
+body.dark-mode .modal .form-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Dark mode form controls in modals */
+:root.dark-mode .modal .form-control,
+:root.dark-mode .modal .form-select,
+body.dark-mode .modal .form-control,
+body.dark-mode .modal .form-select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+:root.dark-mode .modal .form-control:focus,
+:root.dark-mode .modal .form-select:focus,
+body.dark-mode .modal .form-control:focus,
+body.dark-mode .modal .form-select:focus {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+}
+
+:root.dark-mode .modal .form-control::placeholder,
+body.dark-mode .modal .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Dark mode select dropdown options */
+:root.dark-mode .modal .form-select option,
+body.dark-mode .modal .form-select option {
+  background: #1a1a2e;
+  color: #ffffff;
+}
+
+/* Modal backdrop blur effect */
+.modal-backdrop.show {
+  backdrop-filter: blur(4px);
+}
+
+:root.dark-mode .modal-backdrop.show,
+body.dark-mode .modal-backdrop.show {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+/* Text colors in modals */
+:root.dark-mode .modal .text-muted,
+body.dark-mode .modal .text-muted {
+  color: #a0aec0 !important;
+}
+
+:root.dark-mode .modal .text-light,
+body.dark-mode .modal .text-light {
+  color: #f7fafc !important;
+}
+
+/* Badge colors in modals */
+.modal .badge.bg-info {
+  background: #4299e1 !important;
+}
+
+.modal .badge.bg-success {
+  background: #48bb78 !important;
+}
+
+.modal .badge.bg-primary {
+  background: #667eea !important;
+}
+
+.modal .badge.bg-secondary {
+  background: #718096 !important;
+}
+
+/* Modal danger header (delete confirmation) */
+.modal .modal-header.bg-danger {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%) !important;
+  border-bottom: none;
+}
+
+:root.dark-mode .modal .modal-header.bg-danger,
+body.dark-mode .modal .modal-header.bg-danger {
+  background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%) !important;
+}

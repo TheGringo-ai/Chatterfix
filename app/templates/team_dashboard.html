@@ -231,10 +231,10 @@
 <!-- Add User Modal -->
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add Team Member</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="addUserForm" onsubmit="submitAddUser(event)">
                 <div class="modal-body">
@@ -307,7 +307,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Add Employee</button>
                 </div>
@@ -319,10 +319,10 @@
 <!-- Edit User Modal -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header border-secondary">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title"><i class="fas fa-user-edit"></i> Edit Team Member</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="editUserForm" onsubmit="submitEditUser(event)">
                 <input type="hidden" id="editUserId">
@@ -405,7 +405,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-secondary">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-danger me-auto" onclick="deleteUserFromModal()">
                         <i class="fas fa-trash"></i> Delete Employee
                     </button>
@@ -420,8 +420,8 @@
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark text-light">
-            <div class="modal-header border-secondary bg-danger">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -430,7 +430,7 @@
                 <p class="text-warning"><i class="fas fa-warning"></i> This action cannot be undone. All associated data including work order history will be preserved but the user will be removed from the team.</p>
                 <input type="hidden" id="deleteUserId">
             </div>
-            <div class="modal-footer border-secondary">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" onclick="executeDeleteUser()">
                     <i class="fas fa-trash"></i> Yes, Delete Employee
@@ -894,51 +894,5 @@
         transform: scale(1.05);
     }
 
-    /* Modal Dark Mode Glassmorphism Styling */
-    .modal-content.bg-dark {
-        background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-header.border-secondary {
-        border-color: rgba(255, 255, 255, 0.15) !important;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .modal-footer.border-secondary {
-        border-color: rgba(255, 255, 255, 0.15) !important;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    /* Form controls in dark modal */
-    .modal .form-control.bg-secondary,
-    .modal .form-select.bg-secondary {
-        background: rgba(255, 255, 255, 0.08) !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
-        color: #fff !important;
-    }
-
-    .modal .form-control.bg-secondary:focus,
-    .modal .form-select.bg-secondary:focus {
-        background: rgba(255, 255, 255, 0.12) !important;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
-    }
-
-    .modal .form-control.bg-secondary::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-    }
-
-    .modal .form-label {
-        color: rgba(255, 255, 255, 0.85);
-        font-weight: 500;
-    }
-
-    /* Modal backdrop */
-    .modal-backdrop.show {
-        backdrop-filter: blur(5px);
-    }
 </style>
 {% endblock %}

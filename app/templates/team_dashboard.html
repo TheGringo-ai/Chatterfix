@@ -75,11 +75,11 @@
                     </div>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-primary btn-sm edit-user-btn"
-                                onclick="alert('Button clicked! User ID: {{ user.id }}'); openEditModal('{{ user.id }}');">
+                                onclick="openEditModal('{{ user.id }}');">
                             <i class="fas fa-pencil-alt"></i> Edit
                         </button>
                         <button type="button" class="btn btn-danger btn-sm delete-user-btn"
-                                onclick="alert('Delete clicked!'); openDeleteModal('{{ user.id }}', '{{ user.full_name|e }}');">
+                                onclick="openDeleteModal('{{ user.id }}', '{{ user.full_name|e }}');">
                             <i class="fas fa-trash-alt"></i> Delete
                         </button>
                     </div>

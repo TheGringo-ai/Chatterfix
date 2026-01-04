@@ -267,6 +267,46 @@ async def firebase_signin(request: Request):
         # Verify Firebase token and get user data
         user_data = await firebase_auth_service.verify_token(id_token)
 
+        uid = user_data["uid"]
+        email = user_data["email"]
+        name = user_data["name"]
+        stored_user_data = user_data.get("user_data", {})
+
+        # Check if user has an organization - if not, create one
+        org_id = stored_user_data.get("organization_id")
+        org_name = stored_user_data.get("organization_name")
+
+        if not org_id:
+            # User doesn't have an organization - create one for them
+            logger.info(f"User {uid} has no organization - creating one")
+            org_service = OrganizationService()
+            try:
+                org_data = await org_service.create_organization(
+                    name=f"{name or email.split('@')[0]}'s Workspace",
+                    owner_user_id=uid,
+                    owner_email=email,
+                    is_demo=False,
+                )
+                org_id = org_data.get("id")
+                org_name = org_data.get("name")
+                logger.info(f"Created organization {org_id} for user {uid}")
+
+                # Update user document with organization info
+                if firebase_auth_service.db:
+                    user_ref = firebase_auth_service.db.collection("users").document(uid)
+                    user_ref.set(
+                        {
+                            "organization_id": org_id,
+                            "organization_name": org_name,
+                            "organization_role": "owner",
+                            "role": "owner",
+                        },
+                        merge=True,
+                    )
+            except Exception as org_error:
+                logger.error(f"Failed to create organization for user {uid}: {org_error}")
+                # Don't fail login - just log the error
+
         # Use the ID token as session token (Firebase ID tokens are self-validating)
         session_token = id_token
 
@@ -275,11 +315,13 @@ async def firebase_signin(request: Request):
             {
                 "success": True,
                 "user": {
-                    "uid": user_data["uid"],
-                    "email": user_data["email"],
-                    "name": user_data["name"],
+                    "uid": uid,
+                    "email": email,
+                    "name": name,
                     "verified": user_data["verified"],
-                    "role": user_data["user_data"].get("role", "technician"),
+                    "role": stored_user_data.get("role", "owner"),
+                    "organization_id": org_id,
+                    "organization_name": org_name,
                 },
             }
         )

@@ -2,7 +2,7 @@ import csv
 import io
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -43,46 +43,156 @@ templates = Jinja2Templates(directory="app/templates")
 UPLOAD_DIR = "app/static/uploads/work_orders"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Demo work orders for unauthenticated users
+DEMO_WORK_ORDERS = [
+    {
+        "id": "WO-2024-001",
+        "title": "Replace HVAC filters in Building B",
+        "asset": "HVAC Unit B-2",
+        "priority": "High",
+        "status": "In Progress",
+        "assigned_to": "Mike Johnson",
+        "created_date": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
+        "due_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
+        "description": "Quarterly filter replacement for optimal air quality and system efficiency.",
+    },
+    {
+        "id": "WO-2024-002",
+        "title": "Compressor oil change and inspection",
+        "asset": "Compressor C-5",
+        "priority": "Critical",
+        "status": "Overdue",
+        "assigned_to": "Sarah Chen",
+        "created_date": (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"),
+        "due_date": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d"),
+        "description": "Emergency maintenance required. Compressor showing signs of oil contamination.",
+    },
+    {
+        "id": "WO-2024-003",
+        "title": "Production line calibration",
+        "asset": "Production Line A",
+        "priority": "Medium",
+        "status": "Scheduled",
+        "assigned_to": "Alex Rodriguez",
+        "created_date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"),
+        "due_date": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
+        "description": "Monthly calibration of production line sensors and equipment.",
+    },
+    {
+        "id": "WO-2024-004",
+        "title": "Conveyor belt tension adjustment",
+        "asset": "Conveyor System C-1",
+        "priority": "Low",
+        "status": "Open",
+        "assigned_to": "Mike Johnson",
+        "created_date": (datetime.now() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M"),
+        "due_date": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
+        "description": "Routine tension check and adjustment for conveyor belt system.",
+    },
+    {
+        "id": "WO-2024-005",
+        "title": "Emergency lighting test",
+        "asset": "Emergency Systems",
+        "priority": "High",
+        "status": "Completed",
+        "assigned_to": "Sarah Chen",
+        "created_date": (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d %H:%M"),
+        "due_date": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d"),
+        "description": "Quarterly emergency lighting system test and battery check.",
+    },
+]
+
 
 @router.get("", response_class=HTMLResponse)
 async def work_orders_list(request: Request):
-    """Render the work orders list (filtered by organization)"""
+    """Render work orders - demo data for guests, real Firestore data for authenticated"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/work-orders", status_code=302)
+    is_demo = False
+    work_orders = []
+    stats = {}
 
-    # Multi-tenant: filter by user's organization
-    work_orders = await work_order_service.get_work_orders(
-        organization_id=current_user.organization_id
-    )
+    if current_user and current_user.organization_id:
+        # Authenticated user with organization - show real Firestore data
+        try:
+            work_orders = await work_order_service.get_work_orders(
+                organization_id=current_user.organization_id
+            )
+        except Exception as e:
+            logger.error(f"Error loading work orders: {e}")
+            # Fall back to demo data on error
+            work_orders = DEMO_WORK_ORDERS
+            is_demo = True
+    else:
+        # Not authenticated or no organization - show demo data
+        work_orders = DEMO_WORK_ORDERS
+        is_demo = True
+        # Create demo user context for template
+        current_user = type('obj', (object,), {
+            'uid': 'demo',
+            'id': 'demo',
+            'role': 'technician',
+            'full_name': 'Demo Visitor',
+            'email': 'demo@chatterfix.com',
+            'organization_id': None
+        })()
+
+    # Calculate stats
+    stats = {
+        "total": len(work_orders),
+        "in_progress": len([w for w in work_orders if w.get("status") == "In Progress"]),
+        "scheduled": len([w for w in work_orders if w.get("status") in ["Scheduled", "Open"]]),
+        "overdue": len([w for w in work_orders if w.get("status") == "Overdue"]),
+        "completed": len([w for w in work_orders if w.get("status") == "Completed"]),
+    }
+
     return templates.TemplateResponse(
         "work_orders.html",
         {
             "request": request,
             "work_orders": work_orders,
+            "stats": stats,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
+            "demo_mode": is_demo,
         },
     )
 
 
 @router.get("/{wo_id}", response_class=HTMLResponse)
-async def work_order_detail(
-    request: Request, wo_id: str, current_user: User = Depends(get_current_active_user)
-):
-    """Render work order details (validates organization ownership)"""
-    # Multi-tenant: validate work order belongs to user's organization
-    work_order = await work_order_service.get_work_order(
-        wo_id, organization_id=current_user.organization_id
-    )
-    if not work_order:
-        return RedirectResponse(url="/work-orders")
+async def work_order_detail(request: Request, wo_id: str):
+    """Render work order details - demo data for guests, real data for authenticated"""
+    current_user = await get_current_user_from_cookie(request)
 
-    # Media and other related data would be fetched by the service in a real app
+    is_demo = False
+    work_order = None
+
+    if current_user and current_user.organization_id:
+        # Authenticated user - get real work order from Firestore
+        work_order = await work_order_service.get_work_order(
+            wo_id, organization_id=current_user.organization_id
+        )
+        if not work_order:
+            return RedirectResponse(url="/work-orders", status_code=302)
+    else:
+        # Not authenticated - show demo work order
+        is_demo = True
+        # Find demo work order by ID
+        work_order = next((wo for wo in DEMO_WORK_ORDERS if wo.get("id") == wo_id), None)
+        if not work_order:
+            return RedirectResponse(url="/work-orders", status_code=302)
+        # Create demo user context
+        current_user = type('obj', (object,), {
+            'uid': 'demo',
+            'id': 'demo',
+            'role': 'technician',
+            'full_name': 'Demo Visitor',
+            'email': 'demo@chatterfix.com',
+            'organization_id': None
+        })()
+
     return templates.TemplateResponse(
         "work_order_detail.html",
         {
@@ -91,7 +201,7 @@ async def work_order_detail(
             "media": [],
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 

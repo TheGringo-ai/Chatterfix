@@ -1,8 +1,9 @@
 import asyncio
 import json
+import logging
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -19,6 +20,8 @@ from app.core.firestore_db import get_firestore_manager
 from app.services.gemini_service import gemini_service
 from app.services.media_service import media_service
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/assets", tags=["assets"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -26,38 +29,113 @@ templates = Jinja2Templates(directory="app/templates")
 UPLOAD_DIR = "app/static/uploads/assets"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Demo assets for unauthenticated users
+DEMO_ASSETS = [
+    {
+        "id": "demo_asset_1",
+        "name": "Production Line A",
+        "category": "Manufacturing Equipment",
+        "location": "Factory Floor - Zone 1",
+        "status": "Operational",
+        "condition": "Good",
+        "condition_rating": 8,
+        "last_maintenance": (datetime.now() - timedelta(days=15)).strftime("%Y-%m-%d"),
+        "next_maintenance": (datetime.now() + timedelta(days=75)).strftime("%Y-%m-%d"),
+        "criticality": "High",
+    },
+    {
+        "id": "demo_asset_2",
+        "name": "HVAC Unit B-2",
+        "category": "HVAC",
+        "location": "Building B - Roof",
+        "status": "Maintenance Required",
+        "condition": "Fair",
+        "condition_rating": 5,
+        "last_maintenance": (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d"),
+        "next_maintenance": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
+        "criticality": "Medium",
+    },
+    {
+        "id": "demo_asset_3",
+        "name": "Forklift FL-001",
+        "category": "Material Handling",
+        "location": "Warehouse",
+        "status": "Operational",
+        "condition": "Excellent",
+        "condition_rating": 9,
+        "last_maintenance": (datetime.now() - timedelta(days=8)).strftime("%Y-%m-%d"),
+        "next_maintenance": (datetime.now() + timedelta(days=82)).strftime("%Y-%m-%d"),
+        "criticality": "Medium",
+    },
+    {
+        "id": "demo_asset_4",
+        "name": "Compressor C-5",
+        "category": "Compressed Air",
+        "location": "Utility Room",
+        "status": "Down",
+        "condition": "Poor",
+        "condition_rating": 2,
+        "last_maintenance": (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d"),
+        "next_maintenance": (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d"),
+        "criticality": "Critical",
+    },
+    {
+        "id": "demo_asset_5",
+        "name": "Conveyor System C-1",
+        "category": "Material Handling",
+        "location": "Assembly Line",
+        "status": "Operational",
+        "condition": "Good",
+        "condition_rating": 7,
+        "last_maintenance": (datetime.now() - timedelta(days=20)).strftime("%Y-%m-%d"),
+        "next_maintenance": (datetime.now() + timedelta(days=40)).strftime("%Y-%m-%d"),
+        "criticality": "High",
+    },
+]
+
 
 @router.get("/", response_class=HTMLResponse)
 async def assets_list(request: Request):
-    """Display all assets with filtering (filtered by organization)"""
+    """Display assets - demo data for guests, real Firestore data for authenticated"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/assets", status_code=302)
+    is_demo = False
+    assets = []
 
-    firestore_manager = get_firestore_manager()
-    # Multi-tenant: filter by user's organization
-    if current_user.organization_id:
-        assets = await firestore_manager.get_org_assets(current_user.organization_id)
+    if current_user and current_user.organization_id:
+        # Authenticated user with organization - show real Firestore data
+        firestore_manager = get_firestore_manager()
+        try:
+            assets = await firestore_manager.get_org_assets(current_user.organization_id)
+        except Exception as e:
+            logger.error(f"Error loading assets: {e}")
+            # Fall back to demo data on error
+            assets = DEMO_ASSETS
+            is_demo = True
     else:
-        assets = await firestore_manager.get_collection("assets", order_by="name")
-
-    # The original query joined parent asset names. This is harder in Firestore.
-    # For now, we will handle this on the client side if needed, or fetch parents individually.
-    # This is a good candidate for denormalization in Firestore.
+        # Not authenticated or no organization - show demo data
+        assets = DEMO_ASSETS
+        is_demo = True
+        # Create demo user context for template
+        current_user = type('obj', (object,), {
+            'uid': 'demo',
+            'id': 'demo',
+            'role': 'technician',
+            'full_name': 'Demo Visitor',
+            'email': 'demo@chatterfix.com',
+            'organization_id': None
+        })()
 
     stats = {
         "total": len(assets),
-        "active": len([a for a in assets if a.get("status") == "Active"]),
-        "critical": len([a for a in assets if a.get("criticality") == "Critical"]),
+        "active": len([a for a in assets if a.get("status") in ["Active", "Operational"]]),
+        "critical": len([a for a in assets if a.get("criticality") == "Critical" or a.get("status") == "Down"]),
         "maintenance_due": len(
             [
                 a
                 for a in assets
-                if a.get("next_service_date")
-                and a["next_service_date"] <= datetime.now().strftime("%Y-%m-%d")
+                if a.get("status") in ["Maintenance Required", "Down"]
             ]
         ),
     }
@@ -70,55 +148,70 @@ async def assets_list(request: Request):
             "stats": stats,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
+            "demo_mode": is_demo,
         },
     )
 
 
 @router.get("/{asset_id}", response_class=HTMLResponse)
 async def asset_detail(request: Request, asset_id: str):
-    """Comprehensive asset detail view (validates organization ownership)"""
-    # Use cookie-based auth for web pages
+    """Asset detail view - demo data for guests, real data for authenticated"""
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(
-            url=f"/auth/login?next=/assets/{asset_id}", status_code=302
-        )
+    is_demo = False
+    asset = None
+    children = []
+    media = []
+    parts = []
+    history = []
+    work_orders = []
 
-    firestore_manager = get_firestore_manager()
-
-    # Multi-tenant: get asset and validate ownership
-    if current_user.organization_id:
+    if current_user and current_user.organization_id:
+        # Authenticated user - get real asset from Firestore
+        firestore_manager = get_firestore_manager()
         asset = await firestore_manager.get_org_document(
             "assets", asset_id, current_user.organization_id
         )
-    else:
-        asset = await firestore_manager.get_document("assets", asset_id)
-    if not asset:
-        return RedirectResponse("/assets")
+        if not asset:
+            return RedirectResponse("/assets", status_code=302)
 
-    # Get related data in parallel
-    children, media, parts, history, work_orders = await asyncio.gather(
-        firestore_manager.get_collection(
-            "assets",
-            filters=[{"field": "parent_asset_id", "operator": "==", "value": asset_id}],
-        ),
-        firestore_manager.get_collection(
-            "asset_media",
-            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
-            order_by="-uploaded_date",
-        ),
-        firestore_manager.get_asset_parts(asset_id),
-        firestore_manager.get_collection(
-            "maintenance_history",
-            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
-            order_by="-created_date",
-            limit=50,
-        ),
-        firestore_manager.get_asset_work_orders(asset_id),
-    )
+        # Get related data in parallel
+        children, media, parts, history, work_orders = await asyncio.gather(
+            firestore_manager.get_collection(
+                "assets",
+                filters=[{"field": "parent_asset_id", "operator": "==", "value": asset_id}],
+            ),
+            firestore_manager.get_collection(
+                "asset_media",
+                filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+                order_by="-uploaded_date",
+            ),
+            firestore_manager.get_asset_parts(asset_id),
+            firestore_manager.get_collection(
+                "maintenance_history",
+                filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+                order_by="-created_date",
+                limit=50,
+            ),
+            firestore_manager.get_asset_work_orders(asset_id),
+        )
+    else:
+        # Not authenticated - show demo asset
+        is_demo = True
+        # Find demo asset by ID
+        asset = next((a for a in DEMO_ASSETS if a.get("id") == asset_id), None)
+        if not asset:
+            return RedirectResponse("/assets", status_code=302)
+        # Create demo user context
+        current_user = type('obj', (object,), {
+            'uid': 'demo',
+            'id': 'demo',
+            'role': 'technician',
+            'full_name': 'Demo Visitor',
+            'email': 'demo@chatterfix.com',
+            'organization_id': None
+        })()
 
     # Simplified cost analytics
     total_cost = sum(h.get("total_cost", 0) for h in history)
@@ -146,7 +239,7 @@ async def asset_detail(request: Request, asset_id: str):
             "cost_data": cost_data,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 

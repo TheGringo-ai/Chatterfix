@@ -46,10 +46,10 @@
         }
     </script>
     <script>
-        // Navigation routing configuration - set from server-side template
-        // Authenticated users get direct routes, demo users get /demo prefix
-        const NAV_PREFIX = '{{ "/demo" if is_demo else "" }}';
-        const DASHBOARD_PATH = '{{ "/demo" if is_demo else "/dashboard" }}';
+        // Navigation routing configuration - unified routes handle demo mode automatically
+        // All routes now work for both authenticated and demo users
+        const NAV_PREFIX = '';
+        const DASHBOARD_PATH = '/dashboard';
         const IS_DEMO_MODE = {{ 'true' if is_demo else 'false' }};
     </script>
     <!-- Custom CSS -->
@@ -1062,11 +1062,9 @@
         </div>
 
         <!-- Clean Browser-Style Tab Navigation with Scroll -->
-        <!-- Navigation uses different paths based on authentication status:
-             - Authenticated users (is_demo=False): /dashboard, /work-orders, /assets, etc.
-             - Demo users (is_demo=True): /demo, /demo/work-orders, /demo/assets, etc. -->
-        {% set nav_prefix = '/demo' if is_demo else '' %}
-        {% set dashboard_path = '/demo' if is_demo else '/dashboard' %}
+        <!-- Navigation uses unified routes that handle both demo and authenticated modes -->
+        {% set nav_prefix = '' %}
+        {% set dashboard_path = '/dashboard' %}
         <div class="nav-tabs-wrapper">
             <button class="nav-scroll-btn scroll-left" onclick="scrollNavTabs(-200)" aria-label="Scroll left">
                 <i class="fas fa-chevron-left"></i>
@@ -1345,7 +1343,7 @@
                 </button>
             </div>
             
-            <form id="globalWorkOrderForm" action="/demo/work-orders/create" method="post" enctype="multipart/form-data">
+            <form id="globalWorkOrderForm" action="/work-orders" method="post" enctype="multipart/form-data">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                     <!-- Basic Information -->
                     <div>

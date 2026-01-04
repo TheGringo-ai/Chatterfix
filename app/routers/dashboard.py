@@ -38,13 +38,10 @@ class DashboardLayoutUpdate(BaseModel):
 
 @router.get("/app", response_class=HTMLResponse)
 async def root_dashboard(request: Request):
-    """App route - show landing page or dashboard based on authentication"""
+    """App route - show demo dashboard for guests, real dashboard for authenticated"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
-    if not current_user:
-        return RedirectResponse(url="/landing", status_code=302)
-
-    # User is authenticated, show dashboard
+    # Always show dashboard (demo for guests, real for authenticated)
     return await dashboard(request, current_user=current_user)
 
 
@@ -150,95 +147,108 @@ async def dashboard(
 
 
 @router.get("/classic", response_class=HTMLResponse)
-async def classic_dashboard(
-    request: Request,
-    current_user: User = Depends(get_current_active_user),
-):
-    """Render the original AI Command Center dashboard"""
-    # Get real-time stats from Firestore via db_adapter
-    try:
-        db_adapter = get_db_adapter()
-        # Multi-tenant: use org-scoped data
-        if current_user.organization_id:
+async def classic_dashboard(request: Request):
+    """Render the original AI Command Center dashboard - demo for guests, real for authenticated"""
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = False
+
+    if current_user and current_user.organization_id:
+        # Authenticated user with organization - get real data
+        try:
+            db_adapter = get_db_adapter()
             dashboard_data = await db_adapter.get_org_dashboard_data(
                 current_user.organization_id, current_user.uid
             )
-        else:
-            dashboard_data = await db_adapter.get_dashboard_data(current_user.uid)
 
-        # Extract data for template
-        work_orders = dashboard_data.get("work_orders", [])
-        assets = dashboard_data.get("assets", [])
-        ai_interactions = dashboard_data.get("ai_interactions", [])
+            # Extract data for template
+            work_orders = dashboard_data.get("work_orders", [])
+            assets = dashboard_data.get("assets", [])
+            ai_interactions = dashboard_data.get("ai_interactions", [])
 
-        # Build workload stats from work orders
-        active_count = len([wo for wo in work_orders if wo.get("status") == "active"])
-        pending_count = len([wo for wo in work_orders if wo.get("status") == "pending"])
-        completed_count = len(
-            [wo for wo in work_orders if wo.get("status") == "completed"]
-        )
+            # Build workload stats from work orders
+            active_count = len([wo for wo in work_orders if wo.get("status") == "active"])
+            pending_count = len([wo for wo in work_orders if wo.get("status") == "pending"])
+            completed_count = len(
+                [wo for wo in work_orders if wo.get("status") == "completed"]
+            )
 
-        workload = {
-            "stats": {
-                "active": active_count,
-                "pending": pending_count,
-                "completed": completed_count,
-                "total": len(work_orders),
+            workload = {
+                "stats": {
+                    "active": active_count,
+                    "pending": pending_count,
+                    "completed": completed_count,
+                    "total": len(work_orders),
+                }
             }
-        }
 
-        # Build performance metrics from work orders
-        total_wos = len(work_orders)
-        completion_rate = (completed_count / total_wos * 100) if total_wos > 0 else 0
+            # Build performance metrics from work orders
+            total_wos = len(work_orders)
+            completion_rate = (completed_count / total_wos * 100) if total_wos > 0 else 0
 
+            performance = {
+                "today": {
+                    "completion_rate": round(completion_rate, 1),
+                    "total_work_orders": total_wos,
+                    "completed_today": completed_count,
+                }
+            }
+
+            # Build equipment status from assets
+            healthy_assets = len([a for a in assets if a.get("status") == "operational"])
+            warning_assets = len([a for a in assets if a.get("status") == "warning"])
+            critical_assets = len([a for a in assets if a.get("status") == "critical"])
+
+            equipment = {
+                "total_assets": len(assets),
+                "healthy": healthy_assets,
+                "warning": warning_assets,
+                "critical": critical_assets,
+                "uptime_percentage": round(
+                    (healthy_assets / len(assets) * 100) if assets else 100, 1
+                ),
+            }
+
+            # Notifications from AI interactions or fallback
+            notifications = {
+                "unread_count": len(ai_interactions),
+                "recent_interactions": ai_interactions[:5],
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching dashboard data: {e}")
+            # Fallback to demo data on error
+            is_demo = True
+            workload = {"stats": {"active": 3, "pending": 2, "completed": 8, "total": 13}}
+            performance = {
+                "today": {"completion_rate": 61.5, "total_work_orders": 13, "completed_today": 8}
+            }
+            notifications = {"unread_count": 3, "recent_interactions": []}
+            equipment = {"total_assets": 5, "healthy": 3, "warning": 1, "critical": 1, "uptime_percentage": 80.0}
+    else:
+        # Not authenticated - show demo data
+        is_demo = True
+        current_user = type('obj', (object,), {
+            'uid': 'demo',
+            'id': 'demo',
+            'role': 'technician',
+            'full_name': 'Demo Visitor',
+            'email': 'demo@chatterfix.com',
+            'organization_id': None
+        })()
+
+        # Demo dashboard data
+        workload = {"stats": {"active": 3, "pending": 2, "completed": 8, "total": 13}}
         performance = {
-            "today": {
-                "completion_rate": round(completion_rate, 1),
-                "total_work_orders": total_wos,
-                "completed_today": completed_count,
-            }
+            "today": {"completion_rate": 61.5, "total_work_orders": 13, "completed_today": 8}
         }
-
-        # Build equipment status from assets
-        healthy_assets = len([a for a in assets if a.get("status") == "operational"])
-        warning_assets = len([a for a in assets if a.get("status") == "warning"])
-        critical_assets = len([a for a in assets if a.get("status") == "critical"])
-
-        equipment = {
-            "total_assets": len(assets),
-            "healthy": healthy_assets,
-            "warning": warning_assets,
-            "critical": critical_assets,
-            "uptime_percentage": round(
-                (healthy_assets / len(assets) * 100) if assets else 100, 1
-            ),
-        }
-
-        # Notifications from AI interactions or fallback
         notifications = {
-            "unread_count": len(ai_interactions),
-            "recent_interactions": ai_interactions[:5],  # Latest 5
+            "unread_count": 3,
+            "recent_interactions": [
+                {"type": "AI", "message": "Predictive maintenance alert for Pump Station", "timestamp": "5 min ago"},
+                {"type": "System", "message": "New work order assigned", "timestamp": "15 min ago"},
+            ]
         }
-
-    except Exception as e:
-        logger.error(f"Error fetching dashboard data: {e}")
-        # Fallback data
-        workload = {"stats": {"active": 0, "pending": 0, "completed": 0, "total": 0}}
-        performance = {
-            "today": {
-                "completion_rate": 0,
-                "total_work_orders": 0,
-                "completed_today": 0,
-            }
-        }
-        notifications = {"unread_count": 0, "recent_interactions": []}
-        equipment = {
-            "total_assets": 0,
-            "healthy": 0,
-            "warning": 0,
-            "critical": 0,
-            "uptime_percentage": 100,
-        }
+        equipment = {"total_assets": 5, "healthy": 3, "warning": 1, "critical": 1, "uptime_percentage": 80.0}
 
     return templates.TemplateResponse(
         "dashboard.html",
@@ -249,6 +259,8 @@ async def classic_dashboard(
             "performance": performance,
             "notifications": notifications,
             "equipment": equipment,
+            "is_demo": is_demo,
+            "demo_mode": is_demo,
         },
     )
 

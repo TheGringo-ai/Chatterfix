@@ -445,207 +445,43 @@ DEMO_USER = {
 
 @router.get("/demo", response_class=RedirectResponse)
 async def demo_home(request: Request):
-    """Demo home - redirect to dashboard"""
-    return RedirectResponse(url="/demo/dashboard", status_code=302)
+    """Demo home - redirect to unified dashboard (handles demo mode automatically)"""
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
 @router.get("/demo/", response_class=RedirectResponse)
 async def demo_home_slash(request: Request):
-    """Demo home with trailing slash - redirect to dashboard"""
-    return RedirectResponse(url="/demo/dashboard", status_code=302)
+    """Demo home with trailing slash - redirect to unified dashboard"""
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@router.get("/demo/dashboard", response_class=HTMLResponse)
-async def demo_dashboard(request: Request):
-    """Demo dashboard with mock data - SECURITY: Never uses real customer data"""
-    # Calculate stats from mock data
-    active_count = len(
-        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Open", "In Progress"]]
-    )
-    pending_count = len(
-        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") in ["Scheduled", "On Hold"]]
-    )
-    completed_count = len(
-        [wo for wo in DEMO_WORK_ORDERS if wo.get("status") == "Completed"]
-    )
-
-    workload = {
-        "stats": {
-            "active": active_count,
-            "pending": pending_count,
-            "completed": completed_count,
-            "total": len(DEMO_WORK_ORDERS),
-        }
-    }
-
-    # Performance metrics
-    total_wos = len(DEMO_WORK_ORDERS)
-    completion_rate = (completed_count / total_wos * 100) if total_wos > 0 else 0
-    performance = {
-        "today": {
-            "completion_rate": round(completion_rate, 1),
-            "total_work_orders": total_wos,
-            "completed_today": completed_count,
-        }
-    }
-
-    # Equipment stats from mock data
-    healthy_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Operational"])
-    warning_assets = len(
-        [a for a in DEMO_ASSETS if a.get("status") == "Maintenance Required"]
-    )
-    critical_assets = len([a for a in DEMO_ASSETS if a.get("status") == "Down"])
-
-    equipment = {
-        "total_assets": len(DEMO_ASSETS),
-        "healthy": healthy_assets,
-        "warning": warning_assets,
-        "critical": critical_assets,
-        "uptime_percentage": round(
-            (healthy_assets / len(DEMO_ASSETS) * 100) if DEMO_ASSETS else 100, 1
-        ),
-    }
-
-    notifications = {
-        "unread_count": 3,
-        "recent_interactions": [
-            {
-                "type": "AI",
-                "message": "Predictive maintenance alert for Pump Station",
-                "timestamp": "5 min ago",
-            },
-            {
-                "type": "System",
-                "message": "New work order assigned",
-                "timestamp": "15 min ago",
-            },
-        ],
-    }
-
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
-            "current_user": DEMO_USER,
-            "workload": workload,
-            "performance": performance,
-            "notifications": notifications,
-            "equipment": equipment,
-            "is_demo": True,
-            "demo_mode": True,
-            "demo_banner": "🎭 DEMO MODE - Explore all features with sample data",
-        },
-    )
+@router.get("/demo/dashboard", response_class=RedirectResponse)
+async def demo_dashboard_redirect(request: Request):
+    """Redirect to unified dashboard (handles demo mode automatically)"""
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
-@router.get("/demo/assets", response_class=HTMLResponse)
-async def demo_assets(request: Request):
-    """Demo assets page - ALWAYS uses mock data for security (never real customer data)"""
-    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
-    stats = {
-        "total": len(DEMO_ASSETS),
-        "active": len([a for a in DEMO_ASSETS if a.get("status") == "Operational"]),
-        "critical": len(
-            [
-                a
-                for a in DEMO_ASSETS
-                if a.get("criticality") == "Critical" or a.get("status") == "Down"
-            ]
-        ),
-        "maintenance_due": len(
-            [
-                a
-                for a in DEMO_ASSETS
-                if a.get("status") in ["Maintenance Required", "Down"]
-            ]
-        ),
-    }
-
-    return templates.TemplateResponse(
-        "assets_list.html",
-        {
-            "request": request,
-            "assets": DEMO_ASSETS,
-            "stats": stats,
-            "is_demo": True,
-            "demo_mode": True,
-            "current_user": {
-                "uid": "demo",
-                "role": "technician",
-                "full_name": "Demo User",
-            },
-        },
-    )
+@router.get("/demo/assets", response_class=RedirectResponse)
+async def demo_assets_redirect(request: Request):
+    """Redirect to unified assets (handles demo mode automatically)"""
+    return RedirectResponse(url="/assets", status_code=302)
 
 
-@router.get("/demo/work-orders", response_class=HTMLResponse)
-async def demo_work_orders(request: Request):
-    """Demo work orders page - ALWAYS uses mock data for security (never real customer data)"""
-    # SECURITY: Demo mode ONLY uses mock data to prevent data leakage between organizations
-    stats = {
-        "total": len(DEMO_WORK_ORDERS),
-        "in_progress": len(
-            [w for w in DEMO_WORK_ORDERS if w.get("status") == "In Progress"]
-        ),
-        "scheduled": len(
-            [w for w in DEMO_WORK_ORDERS if w.get("status") == "Scheduled"]
-        ),
-        "overdue": len([w for w in DEMO_WORK_ORDERS if w.get("status") == "Overdue"]),
-        "completed": len(
-            [w for w in DEMO_WORK_ORDERS if w.get("status") == "Completed"]
-        ),
-    }
-
-    return templates.TemplateResponse(
-        "work_orders.html",
-        {
-            "request": request,
-            "work_orders": DEMO_WORK_ORDERS,
-            "stats": stats,
-            "is_demo": True,
-            "demo_mode": True,
-            "current_user": {
-                "uid": "demo",
-                "role": "technician",
-                "full_name": "Demo User",
-            },
-        },
-    )
+@router.get("/demo/work-orders", response_class=RedirectResponse)
+async def demo_work_orders_redirect(request: Request):
+    """Redirect to unified work orders (handles demo mode automatically)"""
+    return RedirectResponse(url="/work-orders", status_code=302)
 
 
-@router.get("/demo/team", response_class=HTMLResponse)
-async def demo_team(request: Request):
-    """Demo team page with sample data"""
+@router.get("/demo/team", response_class=RedirectResponse)
+async def demo_team_redirect(request: Request):
+    """Redirect to unified team (handles demo mode automatically)"""
+    return RedirectResponse(url="/team", status_code=302)
 
-    # Convert DEMO_TEAM dictionaries to objects that support dot notation
-    class DictObj:
-        def __init__(self, d):
-            for k, v in d.items():
-                setattr(self, k, v)
 
-    demo_users = [DictObj(user) for user in DEMO_TEAM]
-
-    # Add mock user for WebSocket connection - also convert to object
-    mock_user = DictObj(
-        {
-            "id": "demo_user_1",
-            "username": "demo@chatterfix.com",
-            "full_name": "Demo Manager",
-            "role": "manager",
-        }
-    )
-
-    return templates.TemplateResponse(
-        "team_dashboard.html",
-        {
-            "request": request,
-            "users": demo_users,  # Convert dictionaries to objects with dot notation
-            "messages": [],  # Empty messages for demo
-            "online_users": [],  # No online users in demo mode
-            "user": mock_user,  # Pass current user for WebSocket as object
-            "is_demo": True,
-        },
-    )
+# NOTE: The original /demo/dashboard, /demo/assets, /demo/work-orders, /demo/team
+# handlers have been removed. These routes now redirect to the unified routes
+# which handle both demo and authenticated modes automatically.
 
 
 @router.get("/demo/planner", response_class=HTMLResponse)

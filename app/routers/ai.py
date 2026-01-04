@@ -8,7 +8,7 @@ from pydantic import BaseModel, field_validator
 from app.core.firestore_db import get_db_connection
 
 # # from app.core.database import get_db_connection
-from app.auth import get_current_active_user
+from app.auth import get_current_active_user, require_auth_cookie
 from app.models.user import User
 from typing import Union
 import json
@@ -299,7 +299,7 @@ async def reset_circuit_breaker():
 async def analyze_image(
     image: UploadFile = File(...),
     prompt: str = Form("Describe this image for maintenance purposes."),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_auth_cookie),
 ):
     """Analyze an uploaded image"""
     if not chatterfix_ai.gemini:
@@ -322,7 +322,7 @@ async def analyze_image(
 
 
 @router.post("/kpi-report")
-async def kpi_report(current_user: User = Depends(get_current_active_user)):
+async def kpi_report(current_user: User = Depends(require_auth_cookie)):
     """Generate KPI Report"""
     if not chatterfix_ai.gemini:
         return JSONResponse({"response": "AI features unavailable."})
@@ -355,7 +355,7 @@ async def kpi_report(current_user: User = Depends(get_current_active_user)):
 async def troubleshoot(
     asset: str = Form(...),
     issue: str = Form(...),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_auth_cookie),
 ):
     """Get troubleshooting advice"""
     if not chatterfix_ai.gemini:

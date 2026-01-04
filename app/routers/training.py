@@ -16,6 +16,8 @@ from fastapi.templating import Jinja2Templates
 from app.auth import (
     get_current_active_user,
     require_permission,
+    require_permission_cookie,
+    require_auth_cookie,
     get_current_user_from_cookie,
 )
 from app.models.user import User
@@ -382,7 +384,7 @@ async def ask_question(question: str = Form(...), context: str = Form(None)):
 
 @router.post("/modules/{module_id}/start")
 async def start_training(
-    module_id: str, current_user: User = Depends(get_current_active_user)
+    module_id: str, current_user: User = Depends(require_auth_cookie)
 ):
     """Start a training module for the current user"""
     firestore_manager = get_firestore_manager()
@@ -427,7 +429,7 @@ async def start_training(
 async def complete_training(
     module_id: str,
     score: float = Form(None),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_auth_cookie),
 ):
     """Complete a training module for the current user"""
     firestore_manager = get_firestore_manager()
@@ -470,7 +472,7 @@ async def complete_training(
 
 
 @router.get("/my-training")
-async def get_my_training(current_user: User = Depends(get_current_active_user)):
+async def get_my_training(current_user: User = Depends(require_auth_cookie)):
     """Get current user's training assignments"""
     firestore_manager = get_firestore_manager()
     user_id = current_user.uid
@@ -486,7 +488,7 @@ async def get_my_training(current_user: User = Depends(get_current_active_user))
 async def assign_training(
     user_id: str = Form(...),
     module_id: str = Form(...),
-    current_user: User = Depends(require_permission("manager")),
+    current_user: User = Depends(require_permission_cookie("manager")),
 ):
     """Assign training to a user (manager only)"""
     firestore_manager = get_firestore_manager()

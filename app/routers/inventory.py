@@ -25,6 +25,8 @@ except ImportError:
 from app.auth import (
     get_current_active_user,
     require_permission,
+    require_permission_cookie,
+    require_auth_cookie,
     get_current_user_from_cookie,
 )
 from app.models.user import User
@@ -68,7 +70,7 @@ async def inventory_list(request: Request):
 @router.get("/inventory/add", response_class=HTMLResponse)
 async def add_part_form(
     request: Request,
-    current_user: User = Depends(require_permission("manage_inventory")),
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
 ):
     """Render the add part form"""
     firestore_manager = get_firestore_manager()
@@ -101,7 +103,7 @@ async def add_part(
     unit_cost: float = Form(0.0),
     vendor_id: str = Form(None),
     files: List[UploadFile] = File(None),
-    current_user: User = Depends(require_permission("manage_inventory")),
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
 ):
     """Add a new part to inventory"""
     firestore_manager = get_firestore_manager()
@@ -199,7 +201,7 @@ async def part_detail(request: Request, part_id: str):
 async def upload_part_media(
     part_id: str,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_permission("manage_inventory")),
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
 ):
     """Upload media for part"""
     part_dir = os.path.join(UPLOAD_DIR, str(part_id))
@@ -258,7 +260,7 @@ async def add_vendor(
     contact_name: str = Form(""),
     email: str = Form(""),
     phone: str = Form(""),
-    current_user: User = Depends(require_permission("manage_vendors")),
+    current_user: User = Depends(require_permission_cookie("manage_vendors")),
 ):
     """Add a new vendor"""
     firestore_manager = get_firestore_manager()
@@ -285,7 +287,7 @@ async def add_vendor(
 
 @router.get("/api/parts/search", response_class=JSONResponse)
 async def search_parts(
-    q: str = "", current_user: User = Depends(get_current_active_user)
+    q: str = "", current_user: User = Depends(require_auth_cookie)
 ):
     """Search parts by part number, name, or description"""
     firestore_manager = get_firestore_manager()
@@ -334,7 +336,7 @@ async def search_parts(
 
 @router.get("/api/parts/by-asset/{asset_id}", response_class=JSONResponse)
 async def get_parts_by_asset(
-    asset_id: str, current_user: User = Depends(get_current_active_user)
+    asset_id: str, current_user: User = Depends(require_auth_cookie)
 ):
     """Get all parts assigned to a specific asset"""
     firestore_manager = get_firestore_manager()
@@ -362,7 +364,7 @@ async def get_parts_by_asset(
 
 
 @router.get("/api/assets/list", response_class=JSONResponse)
-async def get_assets_list(current_user: User = Depends(get_current_active_user)):
+async def get_assets_list(current_user: User = Depends(require_auth_cookie)):
     """Get a simple list of all assets for dropdowns"""
     firestore_manager = get_firestore_manager()
     assets = await firestore_manager.get_collection("assets", order_by="name")
@@ -490,7 +492,7 @@ async def download_parts_template(format: str = "csv"):
 
 @router.post("/api/parts/bulk-import")
 async def bulk_import_parts(
-    file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
+    file: UploadFile = File(...), current_user: User = Depends(require_auth_cookie)
 ):
     """Bulk import parts from CSV or Excel file"""
     firestore_manager = get_firestore_manager()

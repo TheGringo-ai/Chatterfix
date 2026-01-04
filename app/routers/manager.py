@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_user_from_cookie, require_permission
+from app.auth import get_current_user_from_cookie, require_permission, require_permission_cookie
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 
@@ -120,7 +120,7 @@ async def manager_dashboard(request: Request):
 
 @router.get("/technicians", response_class=HTMLResponse)
 async def technician_management(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Technician Management - Onboarding, Performance, Scheduling"""
     firestore_manager = get_firestore_manager()
@@ -144,7 +144,7 @@ async def start_technician_onboarding(
     role: str = Form(...),
     department: str = Form(...),
     start_date: str = Form(...),
-    current_user: User = Depends(require_permission("manager")),
+    current_user: User = Depends(require_permission_cookie("manager")),
 ):
     """Start onboarding process for new technician"""
     # This should be part of a more extensive user management service.
@@ -175,7 +175,7 @@ async def start_technician_onboarding(
 
 @router.get("/performance", response_class=HTMLResponse)
 async def performance_analytics(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Performance Analytics - Technician & Asset Performance"""
     return templates.TemplateResponse(
@@ -185,7 +185,7 @@ async def performance_analytics(
 
 @router.get("/assets", response_class=HTMLResponse)
 async def asset_monitoring(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Asset Performance Monitoring & Management"""
     firestore_manager = get_firestore_manager()
@@ -205,7 +205,7 @@ async def asset_monitoring(
 
 @router.get("/inventory", response_class=HTMLResponse)
 async def inventory_management(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Inventory & Cost Management Dashboard"""
     firestore_manager = get_firestore_manager()
@@ -226,7 +226,7 @@ async def inventory_management(
 
 @router.get("/reports", response_class=HTMLResponse)
 async def reports_analytics(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Comprehensive Reports & Analytics"""
     return templates.TemplateResponse(
@@ -242,7 +242,7 @@ async def reports_analytics(
 
 @router.get("/admin", response_class=HTMLResponse)
 async def system_administration(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """System Administration & Settings"""
     return templates.TemplateResponse(
@@ -258,7 +258,7 @@ async def system_administration(
 
 @router.get("/table/work-orders", response_class=HTMLResponse)
 async def work_orders_table_view(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Editable table view for work orders with bulk operations"""
     firestore_manager = get_firestore_manager()
@@ -273,7 +273,7 @@ async def work_orders_table_view(
 
 @router.get("/table/assets", response_class=HTMLResponse)
 async def assets_table_view(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Editable table view for assets with bulk operations"""
     firestore_manager = get_firestore_manager()
@@ -286,7 +286,7 @@ async def assets_table_view(
 
 @router.get("/table/parts", response_class=HTMLResponse)
 async def parts_table_view(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Editable table view for parts/inventory with bulk operations"""
     firestore_manager = get_firestore_manager()

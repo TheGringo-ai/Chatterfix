@@ -206,7 +206,7 @@ async def save_api_keys(
     xai_api_key: str = Form(""),
     openai_api_key: str = Form(""),
     custom_endpoint: str = Form(""),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_permission_cookie("manage_settings")),
 ):
     """Save user's API keys to Firestore"""
     try:
@@ -314,7 +314,7 @@ async def add_user(
     password: str = Form(...),
     full_name: str = Form(""),
     role: str = Form("technician"),
-    current_user: User = Depends(require_permission("manager")),
+    current_user: User = Depends(require_permission_cookie("manager")),
 ):
     """Add a new user (managers only)"""
     # This functionality should be handled via the Firebase Console or a dedicated admin SDK script.
@@ -332,7 +332,7 @@ async def add_user(
 
 @router.post("/users/{user_id}/toggle-active")
 async def toggle_user_active(
-    user_id: str, current_user: User = Depends(require_permission("manager"))
+    user_id: str, current_user: User = Depends(require_permission_cookie("manager"))
 ):
     """Toggle user active status (managers only)"""
     try:

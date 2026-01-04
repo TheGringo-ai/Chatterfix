@@ -26,7 +26,7 @@ try:
 except ImportError:
     IOT_AVAILABLE = False
 
-from app.auth import get_current_active_user
+from app.auth import get_current_active_user, require_auth_cookie
 from app.models.user import User
 
 router = APIRouter(prefix="/iot", tags=["IoT Advanced Module"])
@@ -47,7 +47,7 @@ class SensorConfigRequest(BaseModel):
 
 # Premium Feature Check Endpoint
 @router.get("/license-status")
-async def check_license_status(current_user: User = Depends(get_current_active_user)):
+async def check_license_status(current_user: User = Depends(require_auth_cookie)):
     """Check IoT Advanced Module license status"""
     if not IOT_AVAILABLE:
         return JSONResponse(
@@ -67,7 +67,7 @@ async def check_license_status(current_user: User = Depends(get_current_active_u
 # Sensor Management Endpoints
 @router.post("/sensors")
 async def add_sensor(
-    config: SensorConfigRequest, current_user: User = Depends(get_current_active_user)
+    config: SensorConfigRequest, current_user: User = Depends(require_auth_cookie)
 ):
     """Add a new IoT sensor to monitoring system"""
     if not IOT_AVAILABLE:
@@ -111,7 +111,7 @@ async def add_sensor(
 
 
 @router.get("/sensors")
-async def list_sensors(current_user: User = Depends(get_current_active_user)):
+async def list_sensors(current_user: User = Depends(require_auth_cookie)):
     """List all configured IoT sensors"""
     if not IOT_AVAILABLE:
         return JSONResponse(
@@ -135,7 +135,7 @@ async def list_sensors(current_user: User = Depends(get_current_active_user)):
 
 
 @router.get("/dashboard/overview")
-async def get_dashboard_overview(current_user: User = Depends(get_current_active_user)):
+async def get_dashboard_overview(current_user: User = Depends(require_auth_cookie)):
     """Get IoT dashboard overview with key metrics"""
     if not IOT_AVAILABLE:
         return JSONResponse(
@@ -198,7 +198,7 @@ async def get_dashboard_overview(current_user: User = Depends(get_current_active
 # Voice Integration with IoT
 @router.post("/voice-sensor-query")
 async def process_voice_sensor_query(
-    voice_text: str = Form(...), current_user: User = Depends(get_current_active_user)
+    voice_text: str = Form(...), current_user: User = Depends(require_auth_cookie)
 ):
     """Process voice queries about sensor data"""
     if not IOT_AVAILABLE:
@@ -329,7 +329,7 @@ async def get_sensor_config_templates():
 
 # Upgrade Information
 @router.get("/upgrade-info")
-async def get_iot_upgrade_info(current_user: User = Depends(get_current_active_user)):
+async def get_iot_upgrade_info(current_user: User = Depends(require_auth_cookie)):
     """Get IoT Advanced Module upgrade information"""
     if IOT_AVAILABLE:
         customer_id = getattr(current_user, "customer_id", "demo_customer_1")

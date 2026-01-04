@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from app.auth import (
     get_current_active_user,
+    require_auth_cookie,
     get_current_user_from_cookie,
     get_subscription_status_for_user,
 )
@@ -276,7 +277,7 @@ async def classic_dashboard(request: Request):
 
 
 @router.get("/config")
-async def get_dashboard_config(current_user: User = Depends(get_current_active_user)):
+async def get_dashboard_config(current_user: User = Depends(require_auth_cookie)):
     """Get user's dashboard configuration"""
     config = dashboard_service.get_user_dashboard_config(current_user.uid)
     return JSONResponse(content=config)
@@ -284,7 +285,7 @@ async def get_dashboard_config(current_user: User = Depends(get_current_active_u
 
 @router.post("/config")
 async def save_dashboard_config(
-    layout: DashboardLayoutUpdate, current_user: User = Depends(get_current_active_user)
+    layout: DashboardLayoutUpdate, current_user: User = Depends(require_auth_cookie)
 ):
     """Save user's dashboard layout"""
     widgets = [w.dict() for w in layout.widgets]
@@ -299,7 +300,7 @@ async def save_dashboard_config(
 
 
 @router.get("/widgets")
-async def get_available_widgets(current_user: User = Depends(get_current_active_user)):
+async def get_available_widgets(current_user: User = Depends(require_auth_cookie)):
     """Get available widgets for user's role"""
     # Return static widget configuration for dashboard
     # In production, this would be role-based from Firestore based on user.role
@@ -346,7 +347,7 @@ async def get_available_widgets(current_user: User = Depends(get_current_active_
 
 @router.get("/widget/{widget_type}/data")
 async def get_widget_data(
-    widget_type: str, current_user: User = Depends(get_current_active_user)
+    widget_type: str, current_user: User = Depends(require_auth_cookie)
 ):
     """Get data for a specific widget"""
     data = dashboard_service.get_widget_data(widget_type, current_user.uid)
@@ -355,7 +356,7 @@ async def get_widget_data(
 
 @router.post("/widget/{widget_id}/config")
 async def update_widget_config(
-    widget_id: int, config: dict, current_user: User = Depends(get_current_active_user)
+    widget_id: int, config: dict, current_user: User = Depends(require_auth_cookie)
 ):
     """Update widget configuration"""
     success = dashboard_service.update_widget_config(
@@ -371,7 +372,7 @@ async def update_widget_config(
 
 
 @router.post("/reset")
-async def reset_dashboard(current_user: User = Depends(get_current_active_user)):
+async def reset_dashboard(current_user: User = Depends(require_auth_cookie)):
     """Reset dashboard to default layout"""
     try:
         # Reset to default dashboard configuration
@@ -397,7 +398,7 @@ async def reset_dashboard(current_user: User = Depends(get_current_active_user))
 # Real-time data endpoints
 @router.websocket("/stream")
 async def dashboard_stream(
-    websocket: WebSocket, user: User = Depends(get_current_active_user)
+    websocket: WebSocket, user: User = Depends(require_auth_cookie)
 ):
     """WebSocket endpoint for real-time dashboard updates"""
     await websocket_manager.connect(websocket, user.uid)
@@ -443,28 +444,28 @@ async def dashboard_stream(
 
 # Specific widget data endpoints for quick access
 @router.get("/workload")
-async def get_workload(current_user: User = Depends(get_current_active_user)):
+async def get_workload(current_user: User = Depends(require_auth_cookie)):
     """Get detailed workload data"""
     data = dashboard_service.get_workload_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/parts-status")
-async def get_parts_status(current_user: User = Depends(get_current_active_user)):
+async def get_parts_status(current_user: User = Depends(require_auth_cookie)):
     """Get parts status"""
     data = dashboard_service.get_parts_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/team-status")
-async def get_team_status(current_user: User = Depends(get_current_active_user)):
+async def get_team_status(current_user: User = Depends(require_auth_cookie)):
     """Get team availability"""
     data = dashboard_service.get_team_data(current_user.uid, {})
     return JSONResponse(content=data)
 
 
 @router.get("/quick-stats")
-async def get_quick_stats(current_user: User = Depends(get_current_active_user)):
+async def get_quick_stats(current_user: User = Depends(require_auth_cookie)):
     """Get summary metrics for quick overview"""
     workload = dashboard_service.get_workload_data(current_user.uid, {})
     performance = dashboard_service.get_performance_data(current_user.uid, {})

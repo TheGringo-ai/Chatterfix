@@ -133,8 +133,8 @@ async def get_current_manager_user(
 
 def require_permission(permission: str):
     """
-    Dependency factory for requiring specific permissions.
-    This creates a dependency that can be used in endpoint definitions.
+    Dependency factory for requiring specific permissions (OAuth2 Bearer token).
+    This creates a dependency that can be used in API endpoint definitions.
     """
 
     async def permission_checker(current_user: User = Depends(get_current_active_user)):
@@ -144,5 +144,31 @@ def require_permission(permission: str):
                 detail=f"Permission denied: '{permission}' required.",
             )
         return current_user
+
+    return permission_checker
+
+
+def require_permission_cookie(permission: str):
+    """
+    Dependency factory for requiring specific permissions (cookie-based).
+    Use this for HTML page routes that require specific permissions.
+    (Lesson #8: HTML pages must use cookie auth, not OAuth2 Bearer)
+    """
+
+    async def permission_checker(request: Request):
+        user = await get_current_user_from_cookie(request)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+            )
+        if user.disabled:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        if not check_permission(user, permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permission denied: '{permission}' required.",
+            )
+        return user
 
     return permission_checker

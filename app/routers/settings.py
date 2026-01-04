@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user, get_optional_current_user, require_permission
+from app.auth import get_current_active_user, get_optional_current_user, require_permission, require_permission_cookie, get_current_user_from_cookie
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 
@@ -81,10 +81,11 @@ def mask_api_key(key: str) -> str:
 
 
 @router.get("", response_class=HTMLResponse)
-async def settings_page(
-    request: Request, current_user: User = Depends(get_optional_current_user)
-):
+async def settings_page(request: Request):
     """User settings page - accessible to anyone, some features require auth"""
+    # Use cookie-based auth for HTML pages (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+
     # Fetch organization settings
     org_id = current_user.organization_id if current_user else "default"
     org_settings = await get_org_settings(org_id)
@@ -256,9 +257,9 @@ async def save_api_keys(
 
 @router.get("/users", response_class=HTMLResponse)
 async def users_management(
-    request: Request, current_user: User = Depends(require_permission("manager"))
+    request: Request, current_user: User = Depends(require_permission_cookie("manager"))
 ):
-    """User management page (managers only)"""
+    """User management page (managers only) - uses cookie auth for HTML pages"""
     users = []
 
     try:

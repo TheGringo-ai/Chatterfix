@@ -10,10 +10,6 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Firebase SDK (for anonymous auth) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    
     <style>
         :root {
             --primary-color: #3498db;
@@ -22,10 +18,10 @@
             --card-border: rgba(255, 255, 255, 0.2);
             --success-color: #38ef7d;
             --warning-color: #fbbf24;
-            --demo-color: #ff6b6b;
+            --accent-color: #ff6b6b;
             --backdrop-blur: blur(15px);
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--primary-gradient);
@@ -63,7 +59,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--primary-color), var(--success-color), var(--demo-color));
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color), var(--accent-color));
         }
 
         .hero-title {
@@ -92,8 +88,8 @@
             margin-right: auto;
         }
 
-        /* Demo Buttons */
-        .demo-buttons {
+        /* Action Buttons */
+        .action-buttons {
             display: flex;
             gap: 1.5rem;
             justify-content: center;
@@ -101,7 +97,7 @@
             margin-bottom: 3rem;
         }
 
-        .demo-btn {
+        .action-btn {
             padding: 1rem 2.5rem;
             border: none;
             border-radius: 12px;
@@ -118,25 +114,25 @@
             justify-content: center;
         }
 
-        .demo-btn-primary {
-            background: linear-gradient(135deg, var(--demo-color), #ff8a80);
+        .action-btn-primary {
+            background: linear-gradient(135deg, var(--success-color), #2ecc71);
             color: white;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 8px 25px rgba(56, 239, 125, 0.3);
         }
 
-        .demo-btn-primary:hover {
+        .action-btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 12px 35px rgba(56, 239, 125, 0.4);
             color: white;
         }
 
-        .demo-btn-secondary {
+        .action-btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        .demo-btn-secondary:hover {
+        .action-btn-secondary:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-3px);
             color: white;
@@ -176,7 +172,7 @@
             display: block;
         }
 
-        .feature-icon.ai { color: var(--demo-color); }
+        .feature-icon.ai { color: var(--accent-color); }
         .feature-icon.dashboard { color: var(--primary-color); }
         .feature-icon.mobile { color: var(--success-color); }
         .feature-icon.automation { color: var(--warning-color); }
@@ -192,8 +188,8 @@
             line-height: 1.6;
         }
 
-        /* Live Demo Preview */
-        .demo-preview {
+        /* Stats Preview */
+        .stats-preview {
             background: var(--card-background);
             border: 1px solid var(--card-border);
             border-radius: 15px;
@@ -203,8 +199,8 @@
             text-align: center;
         }
 
-        .demo-preview h3 {
-            color: var(--demo-color);
+        .stats-preview h3 {
+            color: var(--primary-color);
             margin-bottom: 1rem;
         }
 
@@ -232,21 +228,36 @@
             opacity: 0.7;
         }
 
+        /* CTA Section */
+        .cta-section {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            backdrop-filter: var(--backdrop-blur);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .cta-section h3 {
+            color: var(--success-color);
+            margin-bottom: 1rem;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero-title {
                 font-size: 2.5rem;
             }
-            
+
             .hero-subtitle {
                 font-size: 1.2rem;
             }
-            
-            .demo-buttons {
+
+            .action-buttons {
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .hero-content {
                 padding: 2rem;
             }
@@ -286,44 +297,40 @@
                         </h1>
                         <h2 class="hero-subtitle">AI-Powered CMMS Platform</h2>
                         <p class="hero-description">
-                            Experience the future of maintenance management with our intelligent CMMS platform. 
+                            Experience the future of maintenance management with our intelligent CMMS platform.
                             Real-time asset tracking, predictive maintenance, AI-powered insights, and seamless team collaboration.
                         </p>
-                        
-                        <div class="demo-buttons fade-in-up-delay">
-                            <button onclick="startDemo()" class="demo-btn demo-btn-primary" id="tryDemoBtn">
-                                <i class="fas fa-rocket"></i>
-                                Try Demo (48hr)
-                            </button>
-                            <a href="/auth/login" class="demo-btn demo-btn-secondary">
-                                <i class="fas fa-sign-in-alt"></i>
-                                Login
-                            </a>
-                            <a href="/signup" class="demo-btn demo-btn-secondary">
+
+                        <div class="action-buttons fade-in-up-delay">
+                            <a href="/signup" class="action-btn action-btn-primary">
                                 <i class="fas fa-user-plus"></i>
                                 Sign Up Free
                             </a>
+                            <a href="/auth/login" class="action-btn action-btn-secondary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
+                            </a>
                         </div>
 
-                        <!-- Live Demo Preview -->
-                        <div class="demo-preview fade-in-up-delay">
-                            <h3><i class="fas fa-chart-line"></i> Live Demo Statistics</h3>
-                            <p>Real-time data from our demo environment</p>
+                        <!-- Stats Preview -->
+                        <div class="stats-preview fade-in-up-delay">
+                            <h3><i class="fas fa-chart-line"></i> Platform Statistics</h3>
+                            <p>Trusted by maintenance teams worldwide</p>
                             <div class="preview-stats">
                                 <div class="preview-stat">
-                                    <div class="preview-stat-number" id="demo-assets">150+</div>
+                                    <div class="preview-stat-number">150+</div>
                                     <div class="preview-stat-label">Assets Tracked</div>
                                 </div>
                                 <div class="preview-stat">
-                                    <div class="preview-stat-number" id="demo-workorders">95%</div>
+                                    <div class="preview-stat-number">95%</div>
                                     <div class="preview-stat-label">Uptime</div>
                                 </div>
                                 <div class="preview-stat">
-                                    <div class="preview-stat-number" id="demo-users">50+</div>
+                                    <div class="preview-stat-number">50+</div>
                                     <div class="preview-stat-label">Active Users</div>
                                 </div>
                                 <div class="preview-stat">
-                                    <div class="preview-stat-number" id="demo-ai">24/7</div>
+                                    <div class="preview-stat-number">24/7</div>
                                     <div class="preview-stat-label">AI Monitoring</div>
                                 </div>
                             </div>
@@ -343,65 +350,64 @@
                     <p class="lead opacity-75">Everything you need to manage maintenance efficiently</p>
                 </div>
             </div>
-            
+
             <div class="feature-grid">
                 <div class="feature-card fade-in-up">
                     <i class="fas fa-robot feature-icon ai"></i>
                     <h3 class="feature-title">AI-Powered Insights</h3>
                     <p class="feature-description">
-                        Advanced machine learning algorithms predict equipment failures, optimize maintenance schedules, 
+                        Advanced machine learning algorithms predict equipment failures, optimize maintenance schedules,
                         and provide actionable insights to reduce downtime.
                     </p>
                 </div>
-                
+
                 <div class="feature-card fade-in-up">
                     <i class="fas fa-tachometer-alt feature-icon dashboard"></i>
                     <h3 class="feature-title">Real-Time Dashboard</h3>
                     <p class="feature-description">
-                        Live monitoring of all your assets, work orders, and team performance with customizable 
+                        Live monitoring of all your assets, work orders, and team performance with customizable
                         widgets and real-time notifications.
                     </p>
                 </div>
-                
+
                 <div class="feature-card fade-in-up">
                     <i class="fas fa-mobile-alt feature-icon mobile"></i>
                     <h3 class="feature-title">Mobile-First Design</h3>
                     <p class="feature-description">
-                        PWA technology ensures your team can access ChatterFix from anywhere, with offline 
+                        PWA technology ensures your team can access ChatterFix from anywhere, with offline
                         capabilities and native app-like experience.
                     </p>
                 </div>
-                
+
                 <div class="feature-card fade-in-up">
                     <i class="fas fa-cogs feature-icon automation"></i>
                     <h3 class="feature-title">Smart Automation</h3>
                     <p class="feature-description">
-                        Automated work order generation, smart scheduling, preventive maintenance alerts, 
+                        Automated work order generation, smart scheduling, preventive maintenance alerts,
                         and intelligent parts management.
                     </p>
                 </div>
             </div>
 
-            <!-- Demo Access Section -->
+            <!-- CTA Section -->
             <div class="row mt-5">
                 <div class="col-12 text-center">
-                    <div class="demo-preview">
-                        <h3><i class="fas fa-rocket"></i> Ready to Experience ChatterFix?</h3>
-                        <p>Get your own workspace with full features for 48 hours - no credit card required</p>
-                        <div class="demo-buttons">
-                            <button onclick="startDemo()" class="demo-btn demo-btn-primary">
-                                <i class="fas fa-rocket"></i>
-                                Start Your 48hr Demo
-                            </button>
-                            <a href="/signup" class="demo-btn demo-btn-secondary">
+                    <div class="cta-section">
+                        <h3><i class="fas fa-rocket"></i> Ready to Get Started?</h3>
+                        <p>Create your free account and start managing maintenance smarter today</p>
+                        <div class="action-buttons">
+                            <a href="/signup" class="action-btn action-btn-primary">
                                 <i class="fas fa-user-plus"></i>
                                 Create Free Account
                             </a>
+                            <a href="/auth/login" class="action-btn action-btn-secondary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login
+                            </a>
                         </div>
                         <p class="mt-3 small opacity-75">
-                            <i class="fas fa-info-circle"></i>
-                            Your demo includes your own workspace, AI features, work orders, assets, and more.
-                            Upgrade anytime to keep your data!
+                            <i class="fas fa-check-circle"></i>
+                            No credit card required &bull; Full access to all features &bull; Cancel anytime
                         </p>
                     </div>
                 </div>
@@ -414,15 +420,15 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><i class="fas fa-bolt"></i> Quick Demo Access</h5>
-                    <p class="mb-0">Experience ChatterFix features instantly</p>
+                    <h5><i class="fas fa-bolt"></i> Quick Access</h5>
+                    <p class="mb-0">Join maintenance teams using ChatterFix</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <a href="/auth/login" class="btn btn-outline-light btn-sm me-2">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </a>
-                    <a href="/landing" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-user-plus"></i> Sign Up
+                    <a href="/signup" class="btn btn-success btn-sm">
+                        <i class="fas fa-user-plus"></i> Sign Up Free
                     </a>
                 </div>
             </div>
@@ -431,181 +437,5 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // Firebase Configuration - loaded dynamically from backend
-        let firebaseConfig = null;
-        let auth = null;
-
-        // Initialize Firebase
-        async function initFirebase() {
-            try {
-                const response = await fetch('/auth/config');
-                const config = await response.json();
-
-                if (config.firebase_config && config.firebase_config.apiKey) {
-                    firebaseConfig = config.firebase_config;
-                    firebase.initializeApp(firebaseConfig);
-                    auth = firebase.auth();
-                    console.log('Firebase initialized for demo');
-                }
-            } catch (error) {
-                console.warn('Firebase config fetch failed:', error);
-            }
-        }
-
-        // Start Demo - Creates anonymous Firebase user and demo organization
-        async function startDemo() {
-            // Find all demo buttons and update them
-            const buttons = document.querySelectorAll('[onclick="startDemo()"]');
-            const btn = buttons[0]; // Use first button for state tracking
-            const originalContents = Array.from(buttons).map(b => b.innerHTML);
-
-            try {
-                // Show loading state on all demo buttons
-                buttons.forEach(b => {
-                    b.disabled = true;
-                    b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating workspace...';
-                });
-
-                // Ensure Firebase is initialized
-                if (!auth) {
-                    await initFirebase();
-                }
-
-                if (!auth) {
-                    throw new Error('Firebase not available. Please try again.');
-                }
-
-                // Sign in anonymously with Firebase
-                const userCredential = await auth.signInAnonymously();
-                const user = userCredential.user;
-
-                // Get ID token
-                const idToken = await user.getIdToken();
-
-                // Send to our backend to create demo organization
-                const response = await fetch('/auth/try-demo', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ idToken: idToken })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    // Success! Update all buttons
-                    buttons.forEach(b => {
-                        b.innerHTML = '<i class="fas fa-check"></i> Workspace Ready!';
-                        b.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
-                    });
-
-                    // Show welcome notification
-                    showNotification(
-                        'success',
-                        `Welcome to ${data.organization.name}!`,
-                        `Your 48-hour demo is ready. Redirecting to dashboard...`
-                    );
-
-                    // Redirect to dashboard after short delay
-                    setTimeout(() => {
-                        window.location.href = '/dashboard?welcome=demo';
-                    }, 1500);
-                } else {
-                    throw new Error(data.detail || data.message || 'Demo creation failed');
-                }
-
-            } catch (error) {
-                console.error('Demo start error:', error);
-
-                // Reset all buttons
-                buttons.forEach((b, i) => {
-                    b.disabled = false;
-                    b.innerHTML = originalContents[i];
-                });
-
-                // Show error notification
-                showNotification(
-                    'error',
-                    'Demo Setup Failed',
-                    error.message || 'Please try again or sign up for a free account.'
-                );
-            }
-        }
-
-        // Simple notification helper
-        function showNotification(type, title, message) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 20px 25px;
-                border-radius: 10px;
-                background: ${type === 'success' ? 'rgba(39, 174, 96, 0.95)' : 'rgba(231, 76, 60, 0.95)'};
-                color: white;
-                z-index: 10000;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                backdrop-filter: blur(10px);
-                animation: slideIn 0.3s ease;
-                max-width: 350px;
-            `;
-
-            notification.innerHTML = `
-                <div style="font-weight: 600; margin-bottom: 5px;">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                    ${title}
-                </div>
-                <div style="font-size: 14px; opacity: 0.9;">${message}</div>
-            `;
-
-            // Add slide animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
-
-            document.body.appendChild(notification);
-
-            // Remove after delay
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s ease reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, type === 'success' ? 5000 : 4000);
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase in background
-            initFirebase();
-
-            // Animate demo stats
-            const stats = [
-                { id: 'demo-assets', values: ['147', '148', '149', '150', '151'], suffix: '+' },
-                { id: 'demo-workorders', values: ['94.2%', '94.8%', '95.1%', '95.3%', '95.7%'], suffix: '' },
-                { id: 'demo-users', values: ['48', '49', '50', '51', '52'], suffix: '+' },
-                { id: 'demo-ai', values: ['24/7', '24/7', '24/7', '24/7', '24/7'], suffix: '' }
-            ];
-
-            stats.forEach(stat => {
-                const element = document.getElementById(stat.id);
-                if (element) {
-                    let index = 0;
-                    setInterval(() => {
-                        element.textContent = stat.values[index] + stat.suffix;
-                        index = (index + 1) % stat.values.length;
-                    }, 3000 + Math.random() * 2000);
-                }
-            });
-        });
-    </script>
 </body>
 </html>

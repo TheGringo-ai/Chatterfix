@@ -75,14 +75,11 @@
                     </div>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-primary btn-sm edit-user-btn"
-                                data-bs-toggle="modal" data-bs-target="#editUserModal"
-                                data-user-id="{{ user.id }}">
+                                onclick="openEditModal('{{ user.id }}')">
                             <i class="fas fa-pencil-alt"></i> Edit
                         </button>
                         <button type="button" class="btn btn-danger btn-sm delete-user-btn"
-                                data-bs-toggle="modal" data-bs-target="#deleteUserModal"
-                                data-user-id="{{ user.id }}"
-                                data-user-name="{{ user.full_name }}">
+                                onclick="openDeleteModal('{{ user.id }}', '{{ user.full_name|e }}')">
                             <i class="fas fa-trash-alt"></i> Delete
                         </button>
                     </div>
@@ -549,48 +546,84 @@
         });
     });
 
-    // Explicit modal openers (onclick handlers)
+    // Explicit modal openers (onclick handlers) - GLOBAL FUNCTIONS
     function openEditModal(userId) {
-        console.log('Opening edit modal for user:', userId);
-        const user = usersData[userId];
-        if (!user) {
-            console.error('User not found in usersData:', userId, 'Available:', Object.keys(usersData));
-            showNotification('error', 'Error', 'User data not found. Please refresh the page.');
-            return;
+        try {
+            console.log('=== EDIT MODAL DEBUG ===');
+            console.log('1. openEditModal called with userId:', userId);
+            console.log('2. usersData keys:', Object.keys(usersData));
+            console.log('3. usersData content:', usersData);
+
+            const user = usersData[userId];
+            console.log('4. Found user:', user);
+
+            if (!user) {
+                console.error('5. ERROR: User not found in usersData!');
+                alert('User data not found. userId=' + userId + ', available keys=' + Object.keys(usersData).join(','));
+                return;
+            }
+
+            // Populate form
+            console.log('6. Populating form fields...');
+            document.getElementById('editUserId').value = user.id || userId;
+            document.getElementById('editUserName').value = user.full_name || '';
+            document.getElementById('editUserEmail').value = user.username || user.contact || '';
+            document.getElementById('editUserPhone').value = user.phone || '';
+            document.getElementById('editUserEmployeeId').value = user.employee_id || '';
+            document.getElementById('editUserRole').value = user.role || '';
+            document.getElementById('editUserDepartment').value = user.department || '';
+            document.getElementById('editUserShift').value = user.shift || '';
+            document.getElementById('editUserStartDate').value = user.start_date || '';
+            document.getElementById('editUserSupervisor').value = user.supervisor || '';
+            document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
+            document.getElementById('editUserStatus').value = user.status || 'Available';
+            document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
+            document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
+            document.getElementById('editUserNotes').value = user.notes || '';
+
+            // Show modal
+            console.log('7. Opening modal...');
+            const editModalEl = document.getElementById('editUserModal');
+            console.log('8. Modal element found:', editModalEl ? 'YES' : 'NO');
+
+            if (!editModalEl) {
+                alert('Modal element #editUserModal not found in DOM!');
+                return;
+            }
+
+            console.log('9. Creating Bootstrap Modal instance...');
+            const editModal = new bootstrap.Modal(editModalEl);
+            console.log('10. Calling show()...');
+            editModal.show();
+            console.log('11. Modal show() called successfully');
+        } catch (error) {
+            console.error('ERROR in openEditModal:', error);
+            alert('Error opening edit modal: ' + error.message);
         }
-
-        // Populate form
-        document.getElementById('editUserId').value = user.id;
-        document.getElementById('editUserName').value = user.full_name || '';
-        document.getElementById('editUserEmail').value = user.username || user.contact || '';
-        document.getElementById('editUserPhone').value = user.phone || '';
-        document.getElementById('editUserEmployeeId').value = user.employee_id || '';
-        document.getElementById('editUserRole').value = user.role || '';
-        document.getElementById('editUserDepartment').value = user.department || '';
-        document.getElementById('editUserShift').value = user.shift || '';
-        document.getElementById('editUserStartDate').value = user.start_date || '';
-        document.getElementById('editUserSupervisor').value = user.supervisor || '';
-        document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
-        document.getElementById('editUserStatus').value = user.status || 'Available';
-        document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
-        document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
-        document.getElementById('editUserNotes').value = user.notes || '';
-
-        // Show modal
-        const editModalEl = document.getElementById('editUserModal');
-        const editModal = new bootstrap.Modal(editModalEl);
-        editModal.show();
     }
 
     function openDeleteModal(userId, userName) {
-        console.log('Opening delete modal for user:', userId, userName);
-        document.getElementById('deleteUserId').value = userId;
-        document.getElementById('deleteUserName').textContent = userName;
+        try {
+            console.log('=== DELETE MODAL DEBUG ===');
+            console.log('openDeleteModal called:', userId, userName);
 
-        // Show modal
-        const deleteModalEl = document.getElementById('deleteUserModal');
-        const deleteModal = new bootstrap.Modal(deleteModalEl);
-        deleteModal.show();
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = userName || 'this user';
+
+            // Show modal
+            const deleteModalEl = document.getElementById('deleteUserModal');
+            if (!deleteModalEl) {
+                alert('Modal element #deleteUserModal not found!');
+                return;
+            }
+
+            const deleteModal = new bootstrap.Modal(deleteModalEl);
+            deleteModal.show();
+            console.log('Delete modal opened successfully');
+        } catch (error) {
+            console.error('ERROR in openDeleteModal:', error);
+            alert('Error opening delete modal: ' + error.message);
+        }
     }
 
     // Delete from Edit Modal

@@ -738,17 +738,27 @@ document.addEventListener('alpine:init', () => {
 
 // 🎨 Enhanced GSAP Animation Utilities with ScrollTrigger and Advanced Effects
 const UIAnimations = {
-    
+
+    // Check if GSAP is available
+    isGsapAvailable() {
+        return typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined';
+    },
+
     // Initialize ScrollTrigger
     init() {
+        if (!this.isGsapAvailable()) {
+            console.warn('⚠️ GSAP not available, skipping animations');
+            return;
+        }
         gsap.registerPlugin(ScrollTrigger, TextPlugin);
         this.setupScrollAnimations();
         this.setupParallaxEffects();
         this.setupTextAnimations();
     },
-    
+
     // Simple card hover effects (tilt/rotation removed)
     enhanceCards() {
+        if (!this.isGsapAvailable()) return;
         gsap.utils.toArray('.cmms-card, .capability-card, .kpi-card').forEach(card => {
             card.addEventListener('mouseenter', () => {
                 gsap.to(card, {

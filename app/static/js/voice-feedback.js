@@ -54,6 +54,12 @@ class VoiceFeedbackSystem {
 
     init() {
         this.createUI();
+
+        // Only bind events if UI was created (not disabled by AI widget)
+        if (this.disabled) {
+            return;
+        }
+
         this.bindEvents();
 
         if (this.options.autoStart) {
@@ -79,6 +85,7 @@ class VoiceFeedbackSystem {
         if (checkForAIWidget()) {
             console.log('🤖 AI widget detected, disabling voice feedback system to avoid conflicts');
             removeExistingVoiceUI();
+            this.disabled = true;
             return;
         }
 
@@ -491,6 +498,12 @@ class VoiceFeedbackSystem {
     }
 
     bindEvents() {
+        // Check if elements exist (they won't if AI widget disabled the UI)
+        if (!this.elements || !this.elements.micBtn) {
+            console.log('⚠️ Voice feedback elements not found, skipping event binding');
+            return;
+        }
+
         // Microphone button click
         this.elements.micBtn.addEventListener('click', () => {
             if (this.state.isListening) {

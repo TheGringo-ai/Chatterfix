@@ -309,11 +309,6 @@
                             <textarea class="form-control bg-secondary text-light border-secondary" id="newUserNotes" rows="2" placeholder="Additional notes about this employee..."></textarea>
                         </div>
                     </div>
-                    {% if is_demo %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> In the full version, this will create a real employee record and send an invitation email.
-                    </div>
-                    {% endif %}
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -412,11 +407,6 @@
                             <textarea class="form-control bg-secondary text-light border-secondary" id="editUserNotes" rows="2"></textarea>
                         </div>
                     </div>
-                    {% if is_demo %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> Changes will be simulated. Sign up for a free account to manage your real team.
-                    </div>
-                    {% endif %}
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-danger me-auto" onclick="deleteUserFromModal()">
@@ -630,20 +620,6 @@
         const deleteModalEl = document.getElementById('deleteUserModal');
         const deleteModalInstance = bootstrap.Modal.getInstance(deleteModalEl);
 
-        {% if is_demo %}
-        deleteModalInstance.hide();
-        // Simulate deletion in demo mode
-        const card = document.getElementById('employee-card-' + userId);
-        if (card) {
-            card.style.transition = 'all 0.5s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.8)';
-            setTimeout(() => card.remove(), 500);
-        }
-        showNotification('success', 'Employee Deleted', `${userName} has been removed from the team.`);
-        return;
-        {% endif %}
-
         fetch(`/organization/team/${userId}`, {
             method: 'DELETE',
             credentials: 'include'
@@ -690,13 +666,6 @@
             certifications: document.getElementById('newUserCertifications').value.split(',').map(s => s.trim()).filter(s => s),
             notes: document.getElementById('newUserNotes').value
         };
-
-        {% if is_demo %}
-        addModalInstance.hide();
-        showNotification('success', 'Employee Added!', `${userData.full_name} has been added to the team. (Demo Mode)`);
-        setTimeout(() => location.reload(), 1500);
-        return;
-        {% endif %}
 
         try {
             const response = await fetch('/organization/team/invite', {
@@ -746,13 +715,6 @@
             notes: document.getElementById('editUserNotes').value
         };
 
-        {% if is_demo %}
-        editModalInstance.hide();
-        showNotification('success', 'Changes Saved!', `${userData.full_name}'s profile has been updated. (Demo Mode)`);
-        setTimeout(() => location.reload(), 1500);
-        return;
-        {% endif %}
-
         try {
             const response = await fetch(`/organization/team/${userId}`, {
                 method: 'PUT',
@@ -790,11 +752,11 @@
     }
 
     function viewWorkOrders(userId) {
-        window.location.href = {% if is_demo %}'/demo/work-orders'{% else %}`/work-orders?assigned_to=${userId}`{% endif %};
+        window.location.href = `/work-orders?assigned_to=${userId}`;
     }
 
     function viewTraining(userId) {
-        window.location.href = {% if is_demo %}'/demo/training'{% else %}`/training?user=${userId}`{% endif %};
+        window.location.href = `/training?user=${userId}`;
     }
 
     // Notification helper

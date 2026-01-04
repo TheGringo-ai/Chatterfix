@@ -1109,6 +1109,20 @@
                     </a>
                 </li>
 
+                <li class="nav-tab {% if request.url and request.url.path and ('/manager' in request.url.path) %}active{% endif %}">
+                    <a href="/manager" class="nav-tab-link">
+                        <i class="nav-tab-icon fas fa-user-tie"></i>
+                        Manager
+                    </a>
+                </li>
+
+                <li class="nav-tab {% if request.url and request.url.path and ('/iot' in request.url.path) %}active{% endif %}">
+                    <a href="/iot/dashboard" class="nav-tab-link">
+                        <i class="nav-tab-icon fas fa-microchip"></i>
+                        IoT Sensors
+                    </a>
+                </li>
+
                 <li class="nav-tab {% if request.url and request.url.path and ('/ar-mode' in request.url.path) %}active{% endif %}">
                     <a href="{{ nav_prefix }}/ar-mode" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-vr-cardboard"></i>

@@ -3,8 +3,9 @@ ChatterFix IoT Advanced Module - API Endpoints
 Premium sensor integration and analytics endpoints
 """
 
-from fastapi import APIRouter, Depends, Form
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Dict, Optional, Any
 from datetime import datetime
@@ -26,10 +27,11 @@ try:
 except ImportError:
     IOT_AVAILABLE = False
 
-from app.auth import get_current_active_user, require_auth_cookie
+from app.auth import get_current_active_user, require_auth_cookie, get_current_user_from_cookie
 from app.models.user import User
 
 router = APIRouter(prefix="/iot", tags=["IoT Advanced Module"])
+templates = Jinja2Templates(directory="app/templates")
 
 
 # Request/Response Models
@@ -43,6 +45,26 @@ class SensorConfigRequest(BaseModel):
     alert_thresholds: Optional[Dict[str, float]] = None
     asset_id: Optional[str] = None
     location: Optional[str] = None
+
+
+# ==========================================
+# IoT Dashboard HTML Page
+# ==========================================
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def iot_dashboard(request: Request):
+    """IoT Sensor Dashboard - Monitor and manage IoT sensors"""
+    current_user = await get_current_user_from_cookie(request)
+
+    return templates.TemplateResponse(
+        "iot_dashboard.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "user": current_user,
+            "iot_available": IOT_AVAILABLE,
+        },
+    )
 
 
 # Premium Feature Check Endpoint

@@ -959,10 +959,17 @@
         // Early theme application to prevent flash
         const savedTheme = localStorage.getItem('theme');
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
+
         if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
             document.documentElement.classList.add('dark-mode');
-            document.body.classList.add('dark-mode');
+            // Body may not exist yet in <head>, apply after DOM ready
+            if (document.body) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.classList.add('dark-mode');
+                });
+            }
         }
     </script>
 </head>

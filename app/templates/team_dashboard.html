@@ -75,14 +75,12 @@
                     </div>
                     <div class="d-flex gap-1">
                         <button class="btn btn-primary btn-sm edit-user-btn"
-                                data-bs-toggle="modal"
-                                data-bs-target="#editUserModal"
+                                onclick="openEditModal('{{ user.id }}')"
                                 data-user-id="{{ user.id }}">
                             <i class="fas fa-pencil-alt"></i> Edit
                         </button>
                         <button class="btn btn-danger btn-sm delete-user-btn"
-                                data-bs-toggle="modal"
-                                data-bs-target="#deleteUserModal"
+                                onclick="openDeleteModal('{{ user.id }}', '{{ user.full_name|e }}')"
                                 data-user-id="{{ user.id }}"
                                 data-user-name="{{ user.full_name }}">
                             <i class="fas fa-trash-alt"></i> Delete
@@ -543,6 +541,50 @@
             document.getElementById('addUserForm').reset();
         });
     });
+
+    // Explicit modal openers (onclick handlers)
+    function openEditModal(userId) {
+        console.log('Opening edit modal for user:', userId);
+        const user = usersData[userId];
+        if (!user) {
+            console.error('User not found in usersData:', userId, 'Available:', Object.keys(usersData));
+            showNotification('error', 'Error', 'User data not found. Please refresh the page.');
+            return;
+        }
+
+        // Populate form
+        document.getElementById('editUserId').value = user.id;
+        document.getElementById('editUserName').value = user.full_name || '';
+        document.getElementById('editUserEmail').value = user.username || user.contact || '';
+        document.getElementById('editUserPhone').value = user.phone || '';
+        document.getElementById('editUserEmployeeId').value = user.employee_id || '';
+        document.getElementById('editUserRole').value = user.role || '';
+        document.getElementById('editUserDepartment').value = user.department || '';
+        document.getElementById('editUserShift').value = user.shift || '';
+        document.getElementById('editUserStartDate').value = user.start_date || '';
+        document.getElementById('editUserSupervisor').value = user.supervisor || '';
+        document.getElementById('editUserHourlyRate').value = user.hourly_rate || '';
+        document.getElementById('editUserStatus').value = user.status || 'Available';
+        document.getElementById('editUserSkills').value = (user.skills || []).join(', ');
+        document.getElementById('editUserCertifications').value = (user.certifications || []).join(', ');
+        document.getElementById('editUserNotes').value = user.notes || '';
+
+        // Show modal
+        const editModalEl = document.getElementById('editUserModal');
+        const editModal = new bootstrap.Modal(editModalEl);
+        editModal.show();
+    }
+
+    function openDeleteModal(userId, userName) {
+        console.log('Opening delete modal for user:', userId, userName);
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteUserName').textContent = userName;
+
+        // Show modal
+        const deleteModalEl = document.getElementById('deleteUserModal');
+        const deleteModal = new bootstrap.Modal(deleteModalEl);
+        deleteModal.show();
+    }
 
     // Delete from Edit Modal
     function deleteUserFromModal() {

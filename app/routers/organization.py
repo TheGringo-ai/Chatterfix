@@ -277,21 +277,6 @@ async def add_team_member_directly(
     firestore_manager = get_firestore_manager()
 
     try:
-        # Check if user with this email already exists in the organization
-        existing_users = await firestore_manager.get_collection(
-            "users",
-            filters=[
-                {"field": "email", "operator": "==", "value": member_data.email},
-                {"field": "organization_id", "operator": "==", "value": current_user.organization_id}
-            ]
-        )
-
-        if existing_users:
-            raise HTTPException(
-                status_code=400,
-                detail=f"A team member with email {member_data.email} already exists"
-            )
-
         # Generate a unique ID for the new team member
         member_id = f"team_{uuid.uuid4().hex[:12]}"
 
@@ -306,30 +291,30 @@ async def add_team_member_directly(
             "username": member_data.email,
             "role": member_data.role,
             "organization_id": current_user.organization_id,
-            "organization_name": current_user.organization_name,
-            "phone": member_data.phone,
-            "employee_id": member_data.employee_id,
-            "department": member_data.department,
-            "shift": member_data.shift,
-            "start_date": member_data.start_date,
-            "supervisor": member_data.supervisor,
-            "hourly_rate": member_data.hourly_rate,
+            "organization_name": current_user.organization_name or "",
+            "phone": member_data.phone or "",
+            "employee_id": member_data.employee_id or "",
+            "department": member_data.department or "",
+            "shift": member_data.shift or "",
+            "start_date": member_data.start_date or "",
+            "supervisor": member_data.supervisor or "",
+            "hourly_rate": member_data.hourly_rate or 0,
             "skills": member_data.skills or [],
             "certifications": member_data.certifications or [],
-            "notes": member_data.notes,
+            "notes": member_data.notes or "",
             "status": "Available",
             "permissions": permissions,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "created_by": current_user.uid,
-            "is_firebase_user": False,  # Not a Firebase Auth user yet
+            "is_firebase_user": False,
             "active_work_orders": 0,
             "completed_orders": 0,
         }
 
-        # Create user document using firestore_manager method
-        await firestore_manager.create_document("users", user_data, doc_id=member_id)
+        # Create user document directly using Firestore sync client
+        firestore_manager.db.collection("users").document(member_id).set(user_data)
 
-        logger.info(f"Team member {member_data.email} added directly to org {current_user.organization_id}")
+        logger.info(f"Team member {member_data.email} added to org {current_user.organization_id}")
 
         return {
             "success": True,
@@ -341,6 +326,8 @@ async def add_team_member_directly(
         raise
     except Exception as e:
         logger.error(f"Error adding team member: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to add team member: {str(e)}")
 
 

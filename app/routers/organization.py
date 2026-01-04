@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 
-from app.auth import get_current_active_user, require_permission, require_permission_cookie, get_current_user_from_cookie
+from app.auth import get_current_active_user, require_permission, require_permission_cookie, get_current_user_from_cookie, require_auth_cookie
 from app.models.user import User
 from app.services.auth_service import check_permission
 from app.services.organization_service import get_organization_service
@@ -45,7 +45,7 @@ class UpdateOrganizationRequest(BaseModel):
 
 
 @router.get("", response_class=JSONResponse)
-async def get_organization(current_user: User = Depends(get_current_active_user)):
+async def get_organization(current_user: User = Depends(require_auth_cookie)):
     """Get current user's organization details"""
     org_service = get_organization_service()
 
@@ -76,7 +76,7 @@ async def get_organization(current_user: User = Depends(get_current_active_user)
 @router.put("", response_class=JSONResponse)
 async def update_organization(
     update_data: UpdateOrganizationRequest,
-    current_user: User = Depends(require_permission("manage_organization")),
+    current_user: User = Depends(require_permission_cookie("manage_organization")),
 ):
     """Update organization settings (owner/admin only)"""
     org_service = get_organization_service()
@@ -105,7 +105,7 @@ async def update_organization(
 
 
 @router.get("/subscription", response_class=JSONResponse)
-async def get_subscription_status(current_user: User = Depends(get_current_active_user)):
+async def get_subscription_status(current_user: User = Depends(require_auth_cookie)):
     """Get organization's subscription/trial status"""
     from app.services.subscription_service import get_subscription_service
 
@@ -129,7 +129,7 @@ async def get_subscription_status(current_user: User = Depends(get_current_activ
 
 
 @router.get("/team", response_class=JSONResponse)
-async def get_team_members(current_user: User = Depends(get_current_active_user)):
+async def get_team_members(current_user: User = Depends(require_auth_cookie)):
     """Get all team members in the organization"""
     org_service = get_organization_service()
 
@@ -146,7 +146,7 @@ async def get_team_members(current_user: User = Depends(get_current_active_user)
 @router.post("/team/invite", response_class=JSONResponse)
 async def invite_team_member(
     invite_data: InviteMemberRequest,
-    current_user: User = Depends(require_permission("manage_team")),
+    current_user: User = Depends(require_permission_cookie("manage_team")),
 ):
     """Invite a new team member to the organization"""
     org_service = get_organization_service()
@@ -211,7 +211,7 @@ async def invite_team_member(
 
 @router.get("/team/invites", response_class=JSONResponse)
 async def get_pending_invites(
-    current_user: User = Depends(require_permission("manage_team")),
+    current_user: User = Depends(require_permission_cookie("manage_team")),
 ):
     """Get all pending invitations for the organization"""
     org_service = get_organization_service()

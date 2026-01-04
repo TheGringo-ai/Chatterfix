@@ -143,7 +143,7 @@ async def team_dashboard(request: Request):
         team_members = DEMO_TEAM
         is_demo = True
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "team_dashboard.html",
         {
             "request": request,
@@ -156,6 +156,11 @@ async def team_dashboard(request: Request):
             "is_demo": is_demo,
         },
     )
+    # Force no caching to ensure users see latest version
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 @router.get("/users", response_class=JSONResponse)

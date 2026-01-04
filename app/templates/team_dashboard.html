@@ -893,5 +893,52 @@
         background: #bb2d3b;
         transform: scale(1.05);
     }
+
+    /* Modal Dark Mode Glassmorphism Styling */
+    .modal-content.bg-dark {
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.98) 0%, rgba(22, 33, 62, 0.98) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header.border-secondary {
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .modal-footer.border-secondary {
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Form controls in dark modal */
+    .modal .form-control.bg-secondary,
+    .modal .form-select.bg-secondary {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+    }
+
+    .modal .form-control.bg-secondary:focus,
+    .modal .form-select.bg-secondary:focus {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    }
+
+    .modal .form-control.bg-secondary::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .modal .form-label {
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 500;
+    }
+
+    /* Modal backdrop */
+    .modal-backdrop.show {
+        backdrop-filter: blur(5px);
+    }
 </style>
 {% endblock %}

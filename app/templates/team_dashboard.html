@@ -15,8 +15,11 @@
         <!-- Team Members -->
         <div class="col-md-4 mb-4">
             <div class="card h-100 cmms-card p-0 overflow-hidden">
-                <div class="card-header bg-transparent border-bottom border-secondary">
+                <div class="card-header bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">👥 Team Members</h5>
+                    <button class="btn btn-sm btn-success" onclick="openAddUserModal()">
+                        <i class="fas fa-user-plus"></i> Add
+                    </button>
                 </div>
                 <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                     {% for user in users %}
@@ -46,10 +49,16 @@
                             <span class="badge bg-warning ms-2">{{ user.active_work_orders }} WO</span>
                             {% endif %}
                         </div>
-                        <button class="btn btn-sm btn-outline-primary"
-                            onclick="openChat({{ user.id if user else 0 }}, '{{ (user.full_name or user.username) if user else 'Unknown' }}')">
-                            💬
-                        </button>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" title="Edit"
+                                onclick="openEditUserModal('{{ user.id if user else 0 }}', '{{ (user.full_name or user.username) if user else 'Unknown' }}', '{{ user.role if user else '' }}', '{{ user.username if user else '' }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" title="Message"
+                                onclick="openChat({{ user.id if user else 0 }}, '{{ (user.full_name or user.username) if user else 'Unknown' }}')">
+                                💬
+                            </button>
+                        </div>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -314,6 +323,273 @@
     /* Ensure cards inherit glass styles */
     .card-header h5 {
         color: var(--text-primary);
+    }
+</style>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="addUserModalLabel"><i class="fas fa-user-plus"></i> Add Team Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addUserForm" onsubmit="submitAddUser(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newUserEmail" class="form-label">Email Address</label>
+                        <input type="email" class="form-control bg-secondary text-light border-secondary" id="newUserEmail" required placeholder="team.member@company.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="newUserName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserName" required placeholder="John Smith">
+                    </div>
+                    <div class="mb-3">
+                        <label for="newUserRole" class="form-label">Role</label>
+                        <select class="form-select bg-secondary text-light border-secondary" id="newUserRole" required>
+                            <option value="">Select Role...</option>
+                            <option value="technician">Technician</option>
+                            <option value="senior_technician">Senior Technician</option>
+                            <option value="manager">Manager</option>
+                            <option value="planner">Planner</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newUserDepartment" class="form-label">Department</label>
+                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="newUserDepartment" placeholder="Maintenance">
+                    </div>
+                    {% if is_demo %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> In the full version, an invitation email will be sent to the new team member.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane"></i> Send Invite</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="editUserModalLabel"><i class="fas fa-user-edit"></i> Edit Team Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editUserForm" onsubmit="submitEditUser(event)">
+                <input type="hidden" id="editUserId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editUserEmail" class="form-label">Email Address</label>
+                        <input type="email" class="form-control bg-secondary text-light border-secondary" id="editUserEmail" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editUserName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control bg-secondary text-light border-secondary" id="editUserName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editUserRole" class="form-label">Role</label>
+                        <select class="form-select bg-secondary text-light border-secondary" id="editUserRole" required>
+                            <option value="technician">Technician</option>
+                            <option value="senior_technician">Senior Technician</option>
+                            <option value="manager">Manager</option>
+                            <option value="planner">Planner</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    {% if is_demo %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> <strong>Demo Mode:</strong> Changes will not be saved. Sign up for a free account to manage your team.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-danger me-auto" onclick="confirmDeleteUser()">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // User Management Functions
+    function openAddUserModal() {
+        document.getElementById('addUserForm').reset();
+        const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        modal.show();
+    }
+
+    function openEditUserModal(userId, fullName, role, email) {
+        document.getElementById('editUserId').value = userId;
+        document.getElementById('editUserEmail').value = email;
+        document.getElementById('editUserName').value = fullName;
+        document.getElementById('editUserRole').value = role.toLowerCase().replace(' ', '_');
+        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        modal.show();
+    }
+
+    async function submitAddUser(event) {
+        event.preventDefault();
+
+        const userData = {
+            email: document.getElementById('newUserEmail').value,
+            full_name: document.getElementById('newUserName').value,
+            role: document.getElementById('newUserRole').value,
+            department: document.getElementById('newUserDepartment').value
+        };
+
+        {% if is_demo %}
+        // Demo mode - show success message
+        bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+        showNotification('success', 'Invitation Sent!', `Demo: ${userData.full_name} would receive an invitation email at ${userData.email}`);
+        return;
+        {% endif %}
+
+        try {
+            const response = await fetch('/org/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                showNotification('success', 'Invitation Sent!', `${userData.full_name} will receive an email invitation.`);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('error', 'Error', data.message || 'Failed to send invitation');
+            }
+        } catch (error) {
+            showNotification('error', 'Error', 'Failed to send invitation. Please try again.');
+        }
+    }
+
+    async function submitEditUser(event) {
+        event.preventDefault();
+
+        const userId = document.getElementById('editUserId').value;
+        const userData = {
+            full_name: document.getElementById('editUserName').value,
+            role: document.getElementById('editUserRole').value
+        };
+
+        {% if is_demo %}
+        // Demo mode - show success message
+        bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+        showNotification('success', 'Changes Saved!', `Demo: ${userData.full_name}'s profile would be updated.`);
+        return;
+        {% endif %}
+
+        try {
+            const response = await fetch(`/org/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                showNotification('success', 'User Updated!', 'Changes have been saved.');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('error', 'Error', data.message || 'Failed to update user');
+            }
+        } catch (error) {
+            showNotification('error', 'Error', 'Failed to update user. Please try again.');
+        }
+    }
+
+    function confirmDeleteUser() {
+        const userId = document.getElementById('editUserId').value;
+        const userName = document.getElementById('editUserName').value;
+
+        {% if is_demo %}
+        bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+        showNotification('info', 'Demo Mode', `${userName} would be removed from the team.`);
+        return;
+        {% endif %}
+
+        if (confirm(`Are you sure you want to remove ${userName} from the team?`)) {
+            deleteUser(userId);
+        }
+    }
+
+    async function deleteUser(userId) {
+        try {
+            const response = await fetch(`/org/users/${userId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                showNotification('success', 'User Removed', 'Team member has been removed.');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('error', 'Error', data.message || 'Failed to remove user');
+            }
+        } catch (error) {
+            showNotification('error', 'Error', 'Failed to remove user. Please try again.');
+        }
+    }
+
+    // Notification helper
+    function showNotification(type, title, message) {
+        const colors = {
+            success: 'rgba(39, 174, 96, 0.95)',
+            error: 'rgba(231, 76, 60, 0.95)',
+            info: 'rgba(52, 152, 219, 0.95)'
+        };
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            info: 'info-circle'
+        };
+
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed; top: 20px; right: 20px; padding: 20px 25px;
+            border-radius: 10px; background: ${colors[type]}; color: white;
+            z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease; max-width: 350px;
+        `;
+        notification.innerHTML = `
+            <div style="font-weight: 600; margin-bottom: 5px;">
+                <i class="fas fa-${icons[type]}"></i> ${title}
+            </div>
+            <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+        `;
+
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.style.animation = 'slideIn 0.3s ease reverse';
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
+    }
+</script>
+
+<style>
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
 </style>
 {% endblock %}

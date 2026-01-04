@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, cast
 
@@ -104,24 +105,18 @@ class FirestoreManager:
             data["updated_at"] = datetime.now(timezone.utc)
 
             if doc_id:
-                doc_ref = self.db.collection(collection).document(doc_id)
-                doc_ref.set(data)
-                return doc_id
+                # Use provided document ID
+                final_doc_id = doc_id
             else:
-                # Use add() which generates a unique ID
-                doc_ref = self.db.collection(collection).add(data)[1]
-                return cast(str, doc_ref.id)
+                # Generate a unique document ID using UUID
+                final_doc_id = uuid.uuid4().hex
+
+            # Use set() which overwrites if exists - more reliable than add()
+            doc_ref = self.db.collection(collection).document(final_doc_id)
+            doc_ref.set(data)
+            logger.info(f"Created document {final_doc_id} in {collection}")
+            return final_doc_id
         except Exception as e:
-            error_str = str(e)
-            # Handle "Document already exists" by retrying with a new ID
-            if "already exists" in error_str.lower() and not doc_id:
-                logger.warning(f"Document ID collision in {collection}, retrying with new ID")
-                try:
-                    doc_ref = self.db.collection(collection).add(data)[1]
-                    return cast(str, doc_ref.id)
-                except Exception as retry_error:
-                    logger.error(f"Retry failed for {collection}: {retry_error}")
-                    raise retry_error
             logger.error(f"Error creating document in {collection}: {e}")
             raise
 

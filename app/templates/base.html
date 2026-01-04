@@ -3238,7 +3238,7 @@
 
     <!-- Voice Feedback System for Hands-Free Operation (disabled when AI widget is present) -->
     {% if request.endpoint not in ['ceo_dashboard', 'iot_dashboard'] %}
-    <script src="{{ url_for('static', path='js/voice-feedback.js') }}"></script>
+    <script src="{{ url_for('static', path='js/voice-feedback.js') }}?v=2"></script>
     <div id="voice-feedback-container" data-voice-feedback-auto data-auto-start="false" data-use-server="true"></div>
     {% endif %}
 

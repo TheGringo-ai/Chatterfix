@@ -326,8 +326,8 @@ async def add_team_member_directly(
             "completed_orders": 0,
         }
 
-        # Create user document
-        await firestore_manager.db.collection("users").document(member_id).set(user_data)
+        # Create user document using firestore_manager method
+        await firestore_manager.create_document("users", user_data, doc_id=member_id)
 
         logger.info(f"Team member {member_data.email} added directly to org {current_user.organization_id}")
 

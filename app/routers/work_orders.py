@@ -26,6 +26,8 @@ except ImportError:
 from app.auth import (
     get_current_active_user,
     require_permission,
+    require_permission_cookie,
+    require_auth_cookie,
     get_optional_current_user,
     get_current_user_from_cookie,
 )
@@ -224,7 +226,7 @@ async def create_work_order(
     asset_id: Optional[str] = Form(None),
     work_order_type: str = Form("Corrective"),
     due_date: Optional[str] = Form(None),
-    current_user: User = Depends(require_permission("create_work_order_request")),
+    current_user: User = Depends(require_permission_cookie("create_work_order_request")),
 ):
     """Create a new work order"""
     # Sanitize user inputs to prevent XSS/injection
@@ -279,7 +281,7 @@ async def update_work_order(
     status: str = Form(...),
     assigned_to_uid: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
-    current_user: User = Depends(require_permission("update_status")),
+    current_user: User = Depends(require_permission_cookie("update_status")),
 ):
     """Update an existing work order"""
     # Sanitize user inputs to prevent XSS/injection
@@ -408,7 +410,7 @@ async def get_my_work_orders(
 
 @router.get("/bulk-import", response_class=HTMLResponse)
 async def bulk_import_work_orders_page(
-    request: Request, current_user: User = Depends(get_current_active_user)
+    request: Request, current_user: User = Depends(require_auth_cookie)
 ):
     """Render the bulk import page for work orders"""
     return templates.TemplateResponse(
@@ -504,7 +506,7 @@ async def download_work_orders_template(format: str = "csv"):
 
 @router.post("/api/work-orders/bulk-import")
 async def bulk_import_work_orders(
-    file: UploadFile = File(...), current_user: User = Depends(get_current_active_user)
+    file: UploadFile = File(...), current_user: User = Depends(require_auth_cookie)
 ):
     """Bulk import work orders from CSV or Excel file"""
     from app.core.firestore_db import get_firestore_manager

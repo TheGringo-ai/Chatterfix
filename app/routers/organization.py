@@ -100,6 +100,30 @@ async def update_organization(
 
 
 # ==========================================
+# SUBSCRIPTION STATUS
+# ==========================================
+
+
+@router.get("/subscription", response_class=JSONResponse)
+async def get_subscription_status(current_user: User = Depends(get_current_active_user)):
+    """Get organization's subscription/trial status"""
+    from app.services.subscription_service import get_subscription_service
+
+    if not current_user.organization_id:
+        raise HTTPException(
+            status_code=404, detail="No organization associated with this account"
+        )
+
+    subscription_service = get_subscription_service()
+    status = await subscription_service.get_subscription_status(current_user.organization_id)
+
+    return {
+        "success": True,
+        "subscription": status,
+    }
+
+
+# ==========================================
 # TEAM MANAGEMENT
 # ==========================================
 

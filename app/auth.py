@@ -5,15 +5,20 @@ Provides dependencies to protect endpoints and get the current authenticated use
 Two authentication methods supported:
 1. OAuth2 Bearer token (Authorization header) - for API calls
 2. Cookie-based session (session_token cookie) - for web pages
+
+Trial access checking:
+- All new users get 30-day free trial
+- Access is blocked when trial expires (unless paid subscription)
 """
 
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Dict, Any
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
 from app.models.user import User
 from app.services.auth_service import verify_id_token_and_get_user, check_permission
+from app.services.subscription_service import get_subscription_service, SubscriptionStatus
 
 # This tells FastAPI where the client can go to get a token.
 # Since Firebase handles this on the client-side, this is mainly for documentation purposes.
@@ -172,3 +177,103 @@ def require_permission_cookie(permission: str):
         return user
 
     return permission_checker
+
+
+# ==========================================
+# TRIAL / SUBSCRIPTION ACCESS CHECKING
+# ==========================================
+
+
+async def get_subscription_status_for_user(user: User) -> Dict[str, Any]:
+    """
+    Get subscription/trial status for a user's organization.
+    Returns status info including days remaining and access permissions.
+    """
+    if not user or not user.organization_id:
+        # No organization - default to trial status
+        return {
+            "status": SubscriptionStatus.TRIAL,
+            "has_access": True,
+            "days_remaining": 30,
+            "message": "Free trial",
+        }
+
+    subscription_service = get_subscription_service()
+    return await subscription_service.get_subscription_status(user.organization_id)
+
+
+async def check_trial_access(request: Request) -> Dict[str, Any]:
+    """
+    Check if the current user has access (trial or paid subscription).
+    Returns subscription status dict - does NOT block access.
+    Use require_active_subscription to block expired users.
+    """
+    user = await get_current_user_from_cookie(request)
+    if not user:
+        return {
+            "status": SubscriptionStatus.TRIAL,
+            "has_access": True,
+            "days_remaining": 30,
+            "message": "Free trial",
+            "is_demo": True,
+        }
+
+    status_info = await get_subscription_status_for_user(user)
+    status_info["is_demo"] = False
+    return status_info
+
+
+async def require_active_subscription(request: Request) -> User:
+    """
+    Dependency that requires both authentication AND active subscription/trial.
+    Raises 403 if trial expired and no paid subscription.
+    Use this for protected routes that should block expired users.
+    """
+    user = await get_current_user_from_cookie(request)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    if user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    status_info = await get_subscription_status_for_user(user)
+
+    if not status_info.get("has_access", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your free trial has expired. Please upgrade to continue using ChatterFix.",
+        )
+
+    return user
+
+
+def require_active_subscription_with_status():
+    """
+    Dependency factory that returns both user and subscription status.
+    Use this when you need to show trial info on the page.
+    """
+    async def checker(request: Request) -> tuple[User, Dict[str, Any]]:
+        user = await get_current_user_from_cookie(request)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+            )
+
+        if user.disabled:
+            raise HTTPException(status_code=400, detail="Inactive user")
+
+        status_info = await get_subscription_status_for_user(user)
+
+        if not status_info.get("has_access", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your free trial has expired. Please upgrade to continue using ChatterFix.",
+            )
+
+        return user, status_info
+
+    return checker

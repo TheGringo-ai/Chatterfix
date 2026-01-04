@@ -1560,6 +1560,129 @@ body {
   opacity: 0.9;
 }
 
+/* Trial Status Banner Styles */
+.trial-banner {
+  background: linear-gradient(135deg, rgba(66, 153, 225, 0.15), rgba(102, 126, 234, 0.15));
+  border: 1px solid rgba(66, 153, 225, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.trial-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.trial-banner i {
+  color: #4299e1;
+}
+
+.trial-message {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.trial-message strong {
+  color: #4299e1;
+}
+
+.trial-upgrade-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.trial-upgrade-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6b4190 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.trial-upgrade-urgent {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  animation: pulse-urgent 2s infinite;
+}
+
+.trial-upgrade-urgent:hover {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+
+@keyframes pulse-urgent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 101, 101, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(245, 101, 101, 0); }
+}
+
+.trial-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.trial-dismiss-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Trial Expired State */
+.trial-banner.trial-expired {
+  background: linear-gradient(135deg, rgba(245, 101, 101, 0.15), rgba(237, 137, 54, 0.15));
+  border-color: rgba(245, 101, 101, 0.4);
+}
+
+.trial-banner.trial-expired i {
+  color: #f56565;
+}
+
+.trial-banner.trial-expired .trial-message strong {
+  color: #f56565;
+}
+
+/* Dark Mode Trial Banner */
+:root.dark-mode .trial-banner,
+body.dark-mode .trial-banner {
+  background: linear-gradient(135deg, rgba(66, 153, 225, 0.1), rgba(102, 126, 234, 0.1));
+  border-color: rgba(66, 153, 225, 0.2);
+}
+
+:root.dark-mode .trial-banner.trial-expired,
+body.dark-mode .trial-banner.trial-expired {
+  background: linear-gradient(135deg, rgba(245, 101, 101, 0.1), rgba(237, 137, 54, 0.1));
+  border-color: rgba(245, 101, 101, 0.3);
+}
+
+/* Responsive Trial Banner */
+@media (max-width: 768px) {
+  .trial-banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .trial-dismiss-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .trial-banner {
+    position: relative;
+  }
+}
+
 /* 🔧 AI TEAM: BULLETPROOF DARK MODE FOR DEMO ENVIRONMENT */
 html.dark-mode, 
 :root.dark-mode, 

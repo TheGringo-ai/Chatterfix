@@ -51,8 +51,8 @@
         const DASHBOARD_PATH = '/dashboard';
         const IS_DEMO_MODE = false; // Demo mode disabled
     </script>
-    <!-- Custom CSS - v14 theme-aware custom modals -->
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=14">
+    <!-- Custom CSS - v15 theme-aware custom modals + trial banner -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=15">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -1190,6 +1190,44 @@
         {% endwith %}
         {% endif %}
 
+        <!-- Trial Status Banner -->
+        {% if subscription_status and subscription_status.status == 'trial' %}
+        <div class="trial-banner" id="trialBanner">
+            <div class="trial-banner-content">
+                <i class="fas fa-clock me-2"></i>
+                <span class="trial-message">
+                    <strong>Free Trial:</strong>
+                    {% if subscription_status.days_remaining is not none %}
+                        {{ subscription_status.days_remaining }} day{% if subscription_status.days_remaining != 1 %}s{% endif %} remaining
+                    {% else %}
+                        Active
+                    {% endif %}
+                </span>
+                <a href="/pricing" class="trial-upgrade-btn">
+                    <i class="fas fa-arrow-up me-1"></i> Upgrade Now
+                </a>
+                <button class="trial-dismiss-btn" onclick="dismissTrialBanner()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% elif subscription_status and subscription_status.status == 'expired' %}
+        <div class="trial-banner trial-expired" id="trialBanner">
+            <div class="trial-banner-content">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span class="trial-message">
+                    <strong>Trial Expired:</strong>
+                    Upgrade to continue using ChatterFix
+                </span>
+                <a href="/pricing" class="trial-upgrade-btn trial-upgrade-urgent">
+                    <i class="fas fa-arrow-up me-1"></i> Upgrade Now
+                </a>
+            </div>
+        </div>
+        {% elif subscription_status and subscription_status.status == 'active' %}
+        <!-- Active subscription - no banner needed -->
+        {% endif %}
+
         {% block content %}{% endblock %}
     </div>
 
@@ -1678,6 +1716,31 @@
 
         });
 
+    </script>
+
+    <script>
+        // Trial Banner Management
+        function dismissTrialBanner() {
+            const banner = document.getElementById('trialBanner');
+            if (banner) {
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-10px)';
+                banner.style.transition = 'all 0.3s ease';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 300);
+                // Remember dismissal for this session
+                sessionStorage.setItem('trialBannerDismissed', 'true');
+            }
+        }
+
+        // Restore banner state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const banner = document.getElementById('trialBanner');
+            if (banner && sessionStorage.getItem('trialBannerDismissed') === 'true') {
+                banner.style.display = 'none';
+            }
+        });
     </script>
 
     <script>

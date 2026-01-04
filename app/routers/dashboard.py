@@ -12,12 +12,14 @@ from pydantic import BaseModel
 from app.auth import (
     get_current_active_user,
     get_current_user_from_cookie,
+    get_subscription_status_for_user,
 )
 from app.models.user import User
 from app.core.db_adapter import get_db_adapter
 from app.services.dashboard_service import dashboard_service
 from app.services.real_time_feed_service import real_time_feed
 from app.services.websocket_manager import websocket_manager
+from app.services.subscription_service import SubscriptionStatus
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -54,10 +56,13 @@ async def dashboard(
     user_id = "demo"
     is_demo = True
     error_message = None
+    subscription_status = None
 
     if current_user:
         user_id = current_user.uid
         is_demo = False
+        # Get subscription/trial status for authenticated users
+        subscription_status = await get_subscription_status_for_user(current_user)
 
     # Get real-time stats from Firestore via db_adapter
     try:
@@ -142,6 +147,7 @@ async def dashboard(
             "ai_interactions": ai_interactions,
             "is_demo": is_demo,
             "error_message": error_message,
+            "subscription_status": subscription_status,
         },
     )
 
@@ -151,8 +157,11 @@ async def classic_dashboard(request: Request):
     """Render the original AI Command Center dashboard - demo for guests, real for authenticated"""
     current_user = await get_current_user_from_cookie(request)
     is_demo = False
+    subscription_status = None
 
     if current_user and current_user.organization_id:
+        # Get subscription/trial status for authenticated users
+        subscription_status = await get_subscription_status_for_user(current_user)
         # Authenticated user with organization - get real data
         try:
             db_adapter = get_db_adapter()
@@ -261,6 +270,7 @@ async def classic_dashboard(request: Request):
             "equipment": equipment,
             "is_demo": is_demo,
             "demo_mode": is_demo,
+            "subscription_status": subscription_status,
         },
     )
 

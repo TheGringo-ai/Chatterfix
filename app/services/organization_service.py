@@ -79,11 +79,15 @@ class OrganizationService:
             org_id = self._generate_org_id(name)
 
             # Calculate expiration for demo orgs
+            now = datetime.now(timezone.utc)
             expires_at = None
             if is_demo:
-                expires_at = (
-                    datetime.now(timezone.utc) + timedelta(hours=DEMO_EXPIRATION_HOURS)
-                ).isoformat()
+                expires_at = (now + timedelta(hours=DEMO_EXPIRATION_HOURS)).isoformat()
+
+            # Calculate 30-day free trial dates for real organizations
+            FREE_TRIAL_DAYS = 30
+            trial_start = now.isoformat()
+            trial_end = (now + timedelta(days=FREE_TRIAL_DAYS)).isoformat()
 
             org_data = {
                 "name": name,
@@ -96,11 +100,16 @@ class OrganizationService:
                 "status": "active",
                 "is_demo": is_demo,
                 "expires_at": expires_at,
+                # Trial period tracking
+                "trial_start_date": trial_start,
+                "trial_end_date": trial_end,
+                "subscription_status": "trial",
                 "subscription": {
                     "plan": "demo" if is_demo else "free_trial",
                     "status": "active",
-                    "started_at": datetime.now(timezone.utc).isoformat(),
-                    "features": ["all"],  # Full access - demo gets everything
+                    "started_at": now.isoformat(),
+                    "trial_days": FREE_TRIAL_DAYS,
+                    "features": ["all"],  # Full access during trial
                 },
                 "settings": {
                     "timezone": "America/New_York",

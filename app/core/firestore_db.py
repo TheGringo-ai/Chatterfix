@@ -220,6 +220,11 @@ class FirestoreManager:
 
             return results
         except Exception as e:
+            error_str = str(e)
+            # Handle missing index gracefully - return empty list with warning
+            if "requires an index" in error_str.lower():
+                logger.warning(f"Missing Firestore index for {collection} query - returning empty results")
+                return []
             logger.error(f"Error getting collection {collection}: {e}")
             raise
 

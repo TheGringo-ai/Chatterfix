@@ -21,25 +21,25 @@
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card cmms-card text-center p-3">
-                <div class="display-4 text-primary">{{ users|length }}</div>
+                <div class="display-4 text-primary">{{ users|length if users else 0 }}</div>
                 <div class="text-muted">Total Members</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card cmms-card text-center p-3">
-                <div class="display-4 text-success">{{ users|selectattr('status', 'equalto', 'Available')|list|length if users else 0 }}</div>
+                <div class="display-4 text-success" id="stat-available">0</div>
                 <div class="text-muted">Available</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card cmms-card text-center p-3">
-                <div class="display-4 text-warning">{{ users|selectattr('status', 'equalto', 'Busy')|list|length if users else 0 }}</div>
+                <div class="display-4 text-warning" id="stat-busy">0</div>
                 <div class="text-muted">Busy</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="card cmms-card text-center p-3">
-                <div class="display-4 text-info">{{ users|selectattr('status', 'equalto', 'On Call')|list|length if users else 0 }}</div>
+                <div class="display-4 text-info" id="stat-oncall">0</div>
                 <div class="text-muted">On Call</div>
             </div>
         </div>
@@ -74,7 +74,7 @@
                         </div>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditUserModal({{ user|tojson|e }})">
+                        <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditUserModal('{{ user.id }}')">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="confirmDeleteUser('{{ user.id }}', '{{ user.full_name }}')">
@@ -446,10 +446,47 @@
     // Modal instances
     let addModal, editModal, deleteModal;
 
+    // Store user data for editing
+    const usersData = {
+        {% for user in users %}
+        {% if user %}
+        '{{ user.id }}': {
+            id: '{{ user.id }}',
+            full_name: '{{ user.full_name|default("", true)|e }}',
+            username: '{{ user.username|default("", true)|e }}',
+            contact: '{{ user.contact|default("", true)|e }}',
+            phone: '{{ user.phone|default("", true)|e }}',
+            employee_id: '{{ user.employee_id|default("", true)|e }}',
+            role: '{{ user.role|default("", true)|e }}',
+            department: '{{ user.department|default("", true)|e }}',
+            shift: '{{ user.shift|default("", true)|e }}',
+            start_date: '{{ user.start_date|default("", true)|e }}',
+            supervisor: '{{ user.supervisor|default("", true)|e }}',
+            hourly_rate: {{ user.hourly_rate|default(0, true) }},
+            status: '{{ user.status|default("Available", true)|e }}',
+            skills: {{ user.skills|default([], true)|tojson }},
+            certifications: {{ user.certifications|default([], true)|tojson }},
+            notes: '{{ user.notes|default("", true)|e }}'
+        },
+        {% endif %}
+        {% endfor %}
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         addModal = new bootstrap.Modal(document.getElementById('addUserModal'));
         editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
         deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+
+        // Calculate stats
+        let available = 0, busy = 0, oncall = 0;
+        Object.values(usersData).forEach(user => {
+            if (user.status === 'Available') available++;
+            else if (user.status === 'Busy') busy++;
+            else if (user.status === 'On Call') oncall++;
+        });
+        document.getElementById('stat-available').textContent = available;
+        document.getElementById('stat-busy').textContent = busy;
+        document.getElementById('stat-oncall').textContent = oncall;
     });
 
     // Open Add User Modal
@@ -459,7 +496,12 @@
     }
 
     // Open Edit User Modal
-    function openEditUserModal(user) {
+    function openEditUserModal(userId) {
+        const user = usersData[userId];
+        if (!user) {
+            showNotification('error', 'Error', 'User not found');
+            return;
+        }
         document.getElementById('editUserId').value = user.id;
         document.getElementById('editUserName').value = user.full_name || '';
         document.getElementById('editUserEmail').value = user.username || user.contact || '';

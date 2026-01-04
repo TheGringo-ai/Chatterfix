@@ -124,15 +124,16 @@ class OrganizationService:
             org_ref = self.db.collection("organizations").document(org_id)
             org_ref.set(org_data)
 
-            # Update user with organization_id
+            # Update user with organization_id (use set with merge for anonymous users who may not have a doc yet)
             user_ref = self.db.collection("users").document(owner_user_id)
-            user_ref.update(
+            user_ref.set(
                 {
                     "organization_id": org_id,
                     "organization_name": name,
                     "organization_role": "owner",
                     "updated_at": firestore.SERVER_TIMESTAMP,
-                }
+                },
+                merge=True,  # Creates doc if not exists, updates if exists
             )
 
             org_data["id"] = org_id

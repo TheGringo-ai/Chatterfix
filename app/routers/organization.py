@@ -39,6 +39,23 @@ class UpdateOrganizationRequest(BaseModel):
     phone: Optional[str] = None
 
 
+class AddTeamMemberRequest(BaseModel):
+    """Request model for directly adding a team member"""
+    full_name: str
+    email: EmailStr
+    role: str = "technician"
+    phone: Optional[str] = None
+    employee_id: Optional[str] = None
+    department: Optional[str] = None
+    shift: Optional[str] = None
+    start_date: Optional[str] = None
+    supervisor: Optional[str] = None
+    hourly_rate: Optional[float] = None
+    skills: Optional[list] = []
+    certifications: Optional[list] = []
+    notes: Optional[str] = None
+
+
 # ==========================================
 # ORGANIZATION INFO
 # ==========================================
@@ -224,6 +241,107 @@ async def get_pending_invites(
     invites = await org_service.get_pending_invites(current_user.organization_id)
 
     return {"success": True, "invites": invites, "total": len(invites)}
+
+
+@router.post("/team/add", response_class=JSONResponse)
+async def add_team_member_directly(
+    request: Request,
+    member_data: AddTeamMemberRequest,
+):
+    """Directly add a team member to the organization (no invite required)"""
+    from datetime import datetime, timezone
+    from app.core.firestore_db import get_firestore_manager
+    from app.services.auth_service import get_permissions_for_role
+    import uuid
+
+    # Use cookie-based auth for browser JavaScript calls (Lesson #8)
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if not check_permission(current_user, "manage_team"):
+        raise HTTPException(status_code=403, detail="Permission denied: 'manage_team' required")
+
+    if not current_user.organization_id:
+        raise HTTPException(
+            status_code=404, detail="No organization associated with this account"
+        )
+
+    # Validate role
+    valid_roles = ["owner", "manager", "supervisor", "technician", "requestor"]
+    if member_data.role not in valid_roles:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}",
+        )
+
+    firestore_manager = get_firestore_manager()
+
+    try:
+        # Check if user with this email already exists in the organization
+        existing_users = await firestore_manager.get_collection(
+            "users",
+            filters=[
+                {"field": "email", "operator": "==", "value": member_data.email},
+                {"field": "organization_id", "operator": "==", "value": current_user.organization_id}
+            ]
+        )
+
+        if existing_users:
+            raise HTTPException(
+                status_code=400,
+                detail=f"A team member with email {member_data.email} already exists"
+            )
+
+        # Generate a unique ID for the new team member
+        member_id = f"team_{uuid.uuid4().hex[:12]}"
+
+        # Get permissions for the role
+        permissions = get_permissions_for_role(member_data.role)
+
+        # Create the team member document
+        user_data = {
+            "uid": member_id,
+            "email": member_data.email,
+            "full_name": member_data.full_name,
+            "username": member_data.email,
+            "role": member_data.role,
+            "organization_id": current_user.organization_id,
+            "organization_name": current_user.organization_name,
+            "phone": member_data.phone,
+            "employee_id": member_data.employee_id,
+            "department": member_data.department,
+            "shift": member_data.shift,
+            "start_date": member_data.start_date,
+            "supervisor": member_data.supervisor,
+            "hourly_rate": member_data.hourly_rate,
+            "skills": member_data.skills or [],
+            "certifications": member_data.certifications or [],
+            "notes": member_data.notes,
+            "status": "Available",
+            "permissions": permissions,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": current_user.uid,
+            "is_firebase_user": False,  # Not a Firebase Auth user yet
+            "active_work_orders": 0,
+            "completed_orders": 0,
+        }
+
+        # Create user document
+        await firestore_manager.db.collection("users").document(member_id).set(user_data)
+
+        logger.info(f"Team member {member_data.email} added directly to org {current_user.organization_id}")
+
+        return {
+            "success": True,
+            "message": f"Team member {member_data.full_name} added successfully",
+            "member_id": member_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding team member: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to add team member: {str(e)}")
 
 
 class UpdateTeamMemberRequest(BaseModel):

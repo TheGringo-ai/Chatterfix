@@ -699,26 +699,39 @@
         };
 
         try {
-            const response = await fetch('/organization/team/invite', {
+            // Call the direct add endpoint (creates user immediately)
+            const response = await fetch('/organization/team/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({
+                    full_name: userData.full_name,
                     email: userData.email,
-                    role: userData.role  // Already in correct format: technician, manager, etc.
+                    role: userData.role,
+                    phone: userData.phone || null,
+                    employee_id: userData.employee_id || null,
+                    department: userData.department || null,
+                    shift: userData.shift || null,
+                    start_date: userData.start_date || null,
+                    supervisor: userData.supervisor || null,
+                    hourly_rate: userData.hourly_rate || null,
+                    skills: userData.skills || [],
+                    certifications: userData.certifications || [],
+                    notes: userData.notes || null
                 })
             });
             const data = await response.json();
             addModalInstance.hide();
             if (data.success) {
-                showNotification('success', 'Invitation Sent!', `${userData.email} will receive an invitation email.`);
+                showNotification('success', 'Team Member Added!', `${userData.full_name} has been added to your team.`);
                 setTimeout(() => location.reload(), 1500);
             } else {
-                showNotification('error', 'Error', data.detail || data.message || 'Failed to send invitation');
+                showNotification('error', 'Error', data.detail || data.message || 'Failed to add team member');
             }
         } catch (error) {
             addModalInstance.hide();
-            showNotification('error', 'Error', 'Failed to send invitation. Please try again.');
+            console.error('Error adding team member:', error);
+            showNotification('error', 'Error', 'Failed to add team member. Please try again.');
         }
     }
 

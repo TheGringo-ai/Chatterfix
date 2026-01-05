@@ -930,20 +930,24 @@ async def update_work_order(request: Request, work_order_id: str, updates: WorkO
                     if frontend_field in update_data and update_data[frontend_field] is not None:
                         firestore_updates[firestore_field] = update_data[frontend_field]
 
-                # Add updated_at timestamp
+                # Add updated_at timestamp (Lesson #2: use isoformat for JSON serialization)
                 from datetime import datetime, timezone
-                firestore_updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+                updated_at_str = datetime.now(timezone.utc).isoformat()
+                firestore_updates["updated_at"] = updated_at_str
                 firestore_updates["updated_by"] = current_user.uid
 
                 # Update in Firestore
                 await firestore_manager.update_document("work_orders", work_order_id, firestore_updates)
+
+                # Create JSON-safe response (all values must be serializable)
+                response_updates = {k: str(v) if hasattr(v, 'isoformat') else v for k, v in firestore_updates.items()}
 
                 return JSONResponse(
                     content={
                         "status": "success",
                         "message": f"Work order {work_order_id} updated successfully",
                         "work_order_id": work_order_id,
-                        "updates_applied": firestore_updates,
+                        "updates_applied": response_updates,
                         "updated_fields": list(firestore_updates.keys()),
                         "data_source": "firestore",
                     }

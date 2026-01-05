@@ -43,14 +43,19 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 async def get_user_training_with_modules(
-    firestore_manager, user_id: str
+    firestore_manager, user_id: str, organization_id: str = None
 ) -> List[Dict[str, Any]]:
-    """Get user's training assignments with module details"""
+    """Get user's training assignments with module details, filtered by organization"""
     try:
+        # Build filters - always filter by user_id, optionally by organization_id
+        filters = [{"field": "user_id", "operator": "==", "value": user_id}]
+        if organization_id:
+            filters.append({"field": "organization_id", "operator": "==", "value": organization_id})
+
         # Get user training records
         user_training = await firestore_manager.get_collection(
             "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
+            filters=filters,
         )
 
         # Enrich with module details
@@ -91,14 +96,21 @@ async def get_user_training_with_modules(
 
 
 async def get_available_training_modules(
-    firestore_manager, user_id: str
+    firestore_manager, user_id: str, organization_id: str = None
 ) -> List[Dict[str, Any]]:
-    """Get training modules not assigned to the user"""
+    """Get training modules not assigned to the user, filtered by organization"""
     try:
-        # Get all modules
-        all_modules = await firestore_manager.get_collection(
-            "training_modules", order_by="-created_at"
-        )
+        # Get modules - filter by organization if provided
+        if organization_id:
+            all_modules = await firestore_manager.get_collection(
+                "training_modules",
+                order_by="-created_at",
+                filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
+            )
+        else:
+            all_modules = await firestore_manager.get_collection(
+                "training_modules", order_by="-created_at"
+            )
 
         # Get user's assigned modules
         user_training = await firestore_manager.get_collection(
@@ -208,14 +220,15 @@ async def training_center(request: Request):
         return RedirectResponse(url="/auth/login?next=/training/", status_code=302)
 
     user_id = current_user.uid
+    organization_id = current_user.organization_id  # Multi-tenant filtering
     firestore_manager = get_firestore_manager()
     try:
-        # Get user's assigned training with module details
-        my_training = await get_user_training_with_modules(firestore_manager, user_id)
+        # Get user's assigned training with module details (org-scoped)
+        my_training = await get_user_training_with_modules(firestore_manager, user_id, organization_id)
 
-        # Get available modules (modules not assigned to user)
+        # Get available modules (modules not assigned to user, org-scoped)
         available_modules = await get_available_training_modules(
-            firestore_manager, user_id
+            firestore_manager, user_id, organization_id
         )
 
         # Get completion stats

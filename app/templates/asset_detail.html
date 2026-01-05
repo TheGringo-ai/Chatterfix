@@ -1129,16 +1129,56 @@
     // Add single AI-generated PM
     async function addSingleAIPM(index) {
         const pm = aiGeneratedPMs[index];
-        await savePMSchedule(pm);
+        const success = await savePMSchedule(pm);
 
-        // Remove from list
-        const item = document.querySelector(`.ai-pm-item[data-index="${index}"]`);
-        if (item) item.remove();
+        if (success) {
+            // Add row to table dynamically for immediate feedback
+            addPMRowToTable(pm);
 
-        // Check if any left
-        if (document.querySelectorAll('.ai-pm-item').length === 0) {
-            dismissAIRecommendations();
+            // Remove from AI recommendations list
+            const item = document.querySelector(`.ai-pm-item[data-index="${index}"]`);
+            if (item) item.remove();
+
+            // Hide "no PM" message if visible
+            const noMsg = document.getElementById('no-pm-message');
+            if (noMsg) noMsg.style.display = 'none';
+
+            // Check if any recommendations left
+            if (document.querySelectorAll('.ai-pm-item').length === 0) {
+                dismissAIRecommendations();
+            }
         }
+    }
+
+    // Add PM row to table dynamically
+    function addPMRowToTable(pm) {
+        const tbody = document.getElementById('pm-schedule-body');
+        const row = document.createElement('tr');
+
+        let typeIcon = '📋';
+        if (pm.schedule_type === 'time_based') typeIcon = '⏰ Time';
+        else if (pm.schedule_type === 'usage_based') typeIcon = '📊 Usage';
+        else if (pm.schedule_type === 'condition_based') typeIcon = '🔍 Condition';
+
+        let frequency = 'As needed';
+        if (pm.interval_days) frequency = `Every ${pm.interval_days} days`;
+        else if (pm.interval_hours) frequency = `Every ${pm.interval_hours} hours`;
+
+        row.innerHTML = `
+            <td>
+                <strong>${pm.title}</strong>
+                ${pm.description ? `<div style="font-size: 0.8rem; opacity: 0.7;">${pm.description.substring(0, 50)}${pm.description.length > 50 ? '...' : ''}</div>` : ''}
+            </td>
+            <td><span class="cmms-badge" style="font-size: 0.75rem;">${typeIcon}</span></td>
+            <td>${frequency}</td>
+            <td>${pm.next_due_date || 'Not scheduled'}</td>
+            <td><span class="cmms-badge badge-${(pm.priority || 'medium').toLowerCase()}">${pm.priority || 'Medium'}</span></td>
+            <td>
+                <button class="cmms-btn cmms-btn-sm" style="padding: 4px 8px;"><i class="fas fa-edit"></i></button>
+                <button class="cmms-btn cmms-btn-sm" style="padding: 4px 8px; background: #c0392b;"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(row);
     }
 
     // Add all selected AI PMs

@@ -212,7 +212,7 @@
         <div
             style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6; display: flex; justify-content: flex-end; gap: 0.5rem;">
             <button class="cmms-btn cmms-btn-sm"
-                onclick="openEditModal('{{ wo.id }}', '{{ wo.title }}', '{{ wo.description }}', '{{ wo.priority }}', '{{ wo.assigned_to }}', '{{ wo.due_date }}')">Edit</button>
+                onclick="openEditModal('{{ wo.id }}', '{{ wo.title }}', '{{ wo.description }}', '{{ wo.priority }}', '{{ wo.status }}', '{{ wo.assigned_to }}', '{{ wo.due_date }}')">Edit</button>
             {% if wo.status != 'Completed' %}
             <button onclick="openCompletionModal('{{ wo.id }}', '{{ wo.title }}')" 
                 class="cmms-btn cmms-btn-success cmms-btn-sm">Complete</button>
@@ -421,6 +421,18 @@
                         <option value="Medium" style="color: black;">Medium</option>
                         <option value="High" style="color: black;">High</option>
                         <option value="Critical" style="color: black;">Critical</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Status</label>
+                    <select name="status" id="edit-status"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="Open" style="color: black;">Open</option>
+                        <option value="In Progress" style="color: black;">In Progress</option>
+                        <option value="On Hold" style="color: black;">On Hold</option>
+                        <option value="Completed" style="color: black;">Completed</option>
+                        <option value="Cancelled" style="color: black;">Cancelled</option>
                     </select>
                 </div>
 
@@ -751,7 +763,7 @@
         });
     });
 
-    function openEditModal(id, title, description, priority, assignedTo, dueDate) {
+    function openEditModal(id, title, description, priority, status, assignedTo, dueDate) {
         const modal = document.getElementById('editWOModal');
         const form = document.getElementById('edit-wo-form');
 
@@ -759,6 +771,7 @@
         document.getElementById('edit-title').value = title;
         document.getElementById('edit-description').value = description;
         document.getElementById('edit-priority').value = priority;
+        document.getElementById('edit-status').value = status || 'Open';
         document.getElementById('edit-due-date').value = dueDate;
 
         // Populate dropdowns if available parts are loaded

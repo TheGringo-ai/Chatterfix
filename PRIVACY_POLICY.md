@@ -2,7 +2,7 @@
 
 **ChatterFix CMMS Platform**
 
-*Last Updated: December 21, 2024*
+*Last Updated: January 5, 2026*
 
 ---
 
@@ -315,4 +315,4 @@ For GDPR inquiries: dpo@chatterfix.com
 
 ---
 
-*© 2024 Fred Taylor. All Rights Reserved.*
+*© 2026 Fred Taylor. All Rights Reserved.*

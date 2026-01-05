@@ -212,7 +212,7 @@
         <div
             style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6; display: flex; justify-content: flex-end; gap: 0.5rem;">
             <button class="cmms-btn cmms-btn-sm"
-                onclick="openEditModal('{{ wo.id }}', '{{ wo.title }}', '{{ wo.description }}', '{{ wo.priority }}', '{{ wo.status }}', '{{ wo.assigned_to }}', '{{ wo.due_date }}')">Edit</button>
+                onclick="openEditModal('{{ wo.id }}', '{{ wo.title }}', '{{ wo.description }}', '{{ wo.priority }}', '{{ wo.status }}', '{{ wo.assigned_to }}', '{{ wo.due_date }}', '{{ wo.scheduled_time }}')">Edit</button>
             {% if wo.status != 'Completed' %}
             <button onclick="openCompletionModal('{{ wo.id }}', '{{ wo.title }}')" 
                 class="cmms-btn cmms-btn-success cmms-btn-sm">Complete</button>
@@ -763,7 +763,7 @@
         });
     });
 
-    function openEditModal(id, title, description, priority, status, assignedTo, dueDate) {
+    function openEditModal(id, title, description, priority, status, assignedTo, dueDate, scheduledTime) {
         const modal = document.getElementById('editWOModal');
         const form = document.getElementById('edit-wo-form');
 
@@ -773,6 +773,7 @@
         document.getElementById('edit-priority').value = priority;
         document.getElementById('edit-status').value = status || 'Open';
         document.getElementById('edit-due-date').value = dueDate;
+        document.getElementById('edit-scheduled-time').value = scheduledTime || '';
 
         // Populate dropdowns if available parts are loaded
         if (availableParts && availableParts.length > 0) {

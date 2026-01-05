@@ -283,6 +283,7 @@ async def update_work_order(
     status: str = Form(...),
     assigned_to_uid: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
+    scheduled_time: Optional[str] = Form(None),
     current_user: User = Depends(require_permission_cookie("update_status")),
 ):
     """Update an existing work order"""
@@ -298,13 +299,20 @@ async def update_work_order(
     allowed_statuses = {"Open", "In Progress", "On Hold", "Completed", "Cancelled"}
     safe_status = status if status in allowed_statuses else "Open"
 
+    # If scheduled_time is provided, extract date for due_date (calendar uses due_date)
+    effective_due_date = due_date
+    if scheduled_time:
+        # Extract date portion from scheduled_time (format: YYYY-MM-DDTHH:MM)
+        effective_due_date = scheduled_time[:10] if len(scheduled_time) >= 10 else due_date
+
     update_data = {
         "title": safe_title,
         "description": safe_description,
         "priority": safe_priority,
         "status": safe_status,
         "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else None,
-        "due_date": due_date,
+        "due_date": effective_due_date,
+        "scheduled_time": scheduled_time,
     }
     # Multi-tenant: validate work order belongs to user's organization
     await work_order_service.update_work_order(

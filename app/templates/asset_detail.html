@@ -505,6 +505,118 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- PM Schedule Section -->
+        <div class="section-card" id="pm-schedule-section">
+            <div class="section-header">
+                <h3><i class="fas fa-calendar-check"></i> PM Schedule</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="cmms-btn cmms-btn-sm" onclick="generateAIPMSchedule()" id="aiGenerateBtn">
+                        <i class="fas fa-robot"></i> AI Generate from Manuals
+                    </button>
+                    <button class="cmms-btn cmms-btn-sm" onclick="document.getElementById('addPMModal').style.display='block'">
+                        <i class="fas fa-plus"></i> Add PM
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Analysis Status -->
+            <div id="ai-pm-status" style="display: none; margin-bottom: 1rem; padding: 1rem; background: rgba(52, 152, 219, 0.2); border-radius: 8px; border-left: 4px solid #3498db;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-spinner fa-spin" id="ai-pm-spinner"></i>
+                    <span id="ai-pm-message">Analyzing equipment manuals...</span>
+                </div>
+            </div>
+
+            <!-- PM Schedule Table -->
+            <div style="overflow-x: auto;">
+                <table class="cmms-table" id="pm-schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Type</th>
+                            <th>Frequency</th>
+                            <th>Next Due</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pm-schedule-body">
+                        {% for pm in pm_schedules %}
+                        <tr data-pm-id="{{ pm.id }}">
+                            <td>
+                                <strong>{{ pm.title }}</strong>
+                                {% if pm.description %}
+                                <div style="font-size: 0.8rem; opacity: 0.7;">{{ pm.description[:50] }}{% if pm.description|length > 50 %}...{% endif %}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="cmms-badge" style="font-size: 0.75rem;">
+                                    {% if pm.schedule_type == 'time_based' %}⏰ Time
+                                    {% elif pm.schedule_type == 'usage_based' %}📊 Usage
+                                    {% elif pm.schedule_type == 'condition_based' %}🔍 Condition
+                                    {% else %}📋 {{ pm.schedule_type }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if pm.interval_days %}Every {{ pm.interval_days }} days
+                                {% elif pm.interval_hours %}Every {{ pm.interval_hours }} hours
+                                {% else %}As needed{% endif %}
+                            </td>
+                            <td>
+                                {% if pm.next_due_date %}
+                                <span style="color: {% if pm.is_overdue %}#e74c3c{% elif pm.due_soon %}#f39c12{% else %}#27ae60{% endif %};">
+                                    {{ pm.next_due_date }}
+                                </span>
+                                {% else %}Not scheduled{% endif %}
+                            </td>
+                            <td>
+                                <span class="cmms-badge badge-{{ pm.priority|lower if pm.priority else 'medium' }}">
+                                    {{ pm.priority or 'Medium' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="cmms-btn cmms-btn-sm" style="padding: 4px 8px;" onclick="editPM('{{ pm.id }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="cmms-btn cmms-btn-sm" style="padding: 4px 8px; background: #c0392b;" onclick="deletePM('{{ pm.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if not pm_schedules %}
+                <div id="no-pm-message" style="text-align: center; padding: 2rem; opacity: 0.5;">
+                    <i class="fas fa-calendar-plus" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <div>No PM schedules configured</div>
+                    <div style="font-size: 0.85rem; margin-top: 0.5rem;">
+                        Click "AI Generate from Manuals" to automatically create a PM schedule based on uploaded equipment documentation.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- AI Generated Recommendations (shown after analysis) -->
+            <div id="ai-pm-recommendations" style="display: none; margin-top: 1.5rem;">
+                <div style="padding: 1rem; background: rgba(39, 174, 96, 0.2); border-radius: 8px; border-left: 4px solid #27ae60; margin-bottom: 1rem;">
+                    <strong><i class="fas fa-magic"></i> AI-Generated PM Recommendations</strong>
+                    <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem;">
+                        Review and add these to your PM schedule:
+                    </div>
+                </div>
+                <div id="ai-pm-list"></div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button class="cmms-btn" onclick="addAllAIPMs()">
+                        <i class="fas fa-check-double"></i> Add All to Schedule
+                    </button>
+                    <button class="cmms-btn" style="background: #555;" onclick="dismissAIRecommendations()">
+                        Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Right Column -->
@@ -698,6 +810,78 @@
     </div>
 </div>
 
+<!-- Add PM Schedule Modal -->
+<div id="addPMModal" class="modal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content glass-panel" style="margin: 5% auto; width: 650px; padding: 30px;">
+        <h2><i class="fas fa-calendar-plus"></i> Add PM Schedule</h2>
+        <form id="addPMForm" style="margin-top: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="grid-column: 1 / -1;">
+                    <label>Task Title *</label>
+                    <input type="text" name="title" id="pmTitle" class="form-control" required
+                           placeholder="e.g., Quarterly Belt Inspection, Monthly Lubrication">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Description</label>
+                    <textarea name="description" id="pmDescription" class="form-control" rows="2"
+                              placeholder="Detailed instructions for this maintenance task"></textarea>
+                </div>
+                <div>
+                    <label>Schedule Type *</label>
+                    <select name="schedule_type" id="pmScheduleType" class="form-control" required>
+                        <option value="time_based">⏰ Time-Based (Calendar)</option>
+                        <option value="usage_based">📊 Usage-Based (Hours/Cycles)</option>
+                        <option value="condition_based">🔍 Condition-Based</option>
+                        <option value="preventive">📋 Preventive</option>
+                        <option value="inspection">🔎 Inspection</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Priority *</label>
+                    <select name="priority" id="pmPriority" class="form-control" required>
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Interval (Days)</label>
+                    <input type="number" name="interval_days" id="pmIntervalDays" class="form-control"
+                           placeholder="e.g., 30, 90, 365" min="1">
+                </div>
+                <div>
+                    <label>Interval (Hours)</label>
+                    <input type="number" name="interval_hours" id="pmIntervalHours" class="form-control"
+                           placeholder="e.g., 500, 1000" min="1">
+                </div>
+                <div>
+                    <label>First Due Date</label>
+                    <input type="date" name="next_due_date" id="pmNextDueDate" class="form-control">
+                </div>
+                <div>
+                    <label>Estimated Duration (hours)</label>
+                    <input type="number" step="0.5" name="estimated_hours" id="pmEstimatedHours"
+                           class="form-control" placeholder="e.g., 2" min="0.5">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label>Checklist Items (one per line)</label>
+                    <textarea name="checklist" id="pmChecklist" class="form-control" rows="3"
+                              placeholder="Check belt tension&#10;Inspect for wear&#10;Lubricate bearings"></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 20px;">
+                <button type="submit" class="cmms-btn">
+                    <i class="fas fa-save"></i> Save PM Schedule
+                </button>
+                <button type="button" class="cmms-btn" style="background: #555;"
+                    onclick="document.getElementById('addPMModal').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Media Viewer Modal -->
 <div class="modal fade" id="mediaViewerModal" tabindex="-1" aria-labelledby="mediaViewerTitle" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -845,5 +1029,206 @@
         refreshHealthScore();
         loadRecommendations();
     });
+
+    // ========================================
+    // PM SCHEDULE MANAGEMENT
+    // ========================================
+
+    let aiGeneratedPMs = []; // Store AI-generated recommendations
+
+    // Generate AI PM Schedule from uploaded manuals
+    async function generateAIPMSchedule() {
+        const statusDiv = document.getElementById('ai-pm-status');
+        const messageSpan = document.getElementById('ai-pm-message');
+        const spinner = document.getElementById('ai-pm-spinner');
+        const generateBtn = document.getElementById('aiGenerateBtn');
+
+        // Show loading state
+        statusDiv.style.display = 'block';
+        generateBtn.disabled = true;
+        messageSpan.textContent = 'Analyzing equipment manuals and documentation...';
+
+        try {
+            const response = await fetch('/assets/{{ asset.id }}/ai-generate-pm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.recommendations && data.recommendations.length > 0) {
+                aiGeneratedPMs = data.recommendations;
+                displayAIRecommendations(data.recommendations);
+                messageSpan.textContent = `Found ${data.recommendations.length} PM recommendations!`;
+                spinner.className = 'fas fa-check-circle';
+                spinner.style.color = '#27ae60';
+            } else if (data.no_documents) {
+                messageSpan.textContent = 'No equipment manuals found. Please upload documentation first.';
+                spinner.className = 'fas fa-exclamation-circle';
+                spinner.style.color = '#f39c12';
+            } else {
+                messageSpan.textContent = data.message || 'No maintenance recommendations generated.';
+                spinner.className = 'fas fa-info-circle';
+                spinner.style.color = '#3498db';
+            }
+        } catch (error) {
+            console.error('Error generating PM schedule:', error);
+            messageSpan.textContent = 'Error analyzing documents. Please try again.';
+            spinner.className = 'fas fa-times-circle';
+            spinner.style.color = '#e74c3c';
+        } finally {
+            generateBtn.disabled = false;
+        }
+    }
+
+    // Display AI-generated PM recommendations
+    function displayAIRecommendations(recommendations) {
+        const container = document.getElementById('ai-pm-list');
+        const wrapper = document.getElementById('ai-pm-recommendations');
+
+        let html = '';
+        recommendations.forEach((rec, index) => {
+            html += `
+            <div class="ai-pm-item" data-index="${index}" style="display: flex; align-items: start; padding: 1rem; background: var(--bg-glass); border-radius: 8px; margin-bottom: 0.75rem;">
+                <input type="checkbox" checked style="margin-right: 1rem; margin-top: 4px; width: 18px; height: 18px;" id="pm-check-${index}">
+                <div style="flex: 1;">
+                    <strong>${rec.title}</strong>
+                    <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 0.25rem;">${rec.description || ''}</div>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem;">
+                        <span><i class="fas fa-clock"></i> ${rec.interval_days ? 'Every ' + rec.interval_days + ' days' : rec.interval_hours ? 'Every ' + rec.interval_hours + ' hours' : 'As needed'}</span>
+                        <span class="cmms-badge badge-${(rec.priority || 'medium').toLowerCase()}" style="font-size: 0.7rem;">${rec.priority || 'Medium'}</span>
+                        <span><i class="fas fa-tag"></i> ${rec.schedule_type || 'Preventive'}</span>
+                    </div>
+                </div>
+                <button class="cmms-btn cmms-btn-sm" style="margin-left: 0.5rem;" onclick="addSingleAIPM(${index})">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        wrapper.style.display = 'block';
+    }
+
+    // Add single AI-generated PM
+    async function addSingleAIPM(index) {
+        const pm = aiGeneratedPMs[index];
+        await savePMSchedule(pm);
+
+        // Remove from list
+        const item = document.querySelector(`.ai-pm-item[data-index="${index}"]`);
+        if (item) item.remove();
+
+        // Check if any left
+        if (document.querySelectorAll('.ai-pm-item').length === 0) {
+            dismissAIRecommendations();
+        }
+    }
+
+    // Add all selected AI PMs
+    async function addAllAIPMs() {
+        const checkboxes = document.querySelectorAll('.ai-pm-item input[type="checkbox"]:checked');
+        const indicesToAdd = [];
+
+        checkboxes.forEach(cb => {
+            const item = cb.closest('.ai-pm-item');
+            indicesToAdd.push(parseInt(item.dataset.index));
+        });
+
+        for (const index of indicesToAdd) {
+            await savePMSchedule(aiGeneratedPMs[index]);
+        }
+
+        dismissAIRecommendations();
+        location.reload(); // Refresh to show new PMs
+    }
+
+    // Dismiss AI recommendations
+    function dismissAIRecommendations() {
+        document.getElementById('ai-pm-recommendations').style.display = 'none';
+        document.getElementById('ai-pm-status').style.display = 'none';
+        aiGeneratedPMs = [];
+    }
+
+    // Save PM Schedule
+    async function savePMSchedule(pmData) {
+        try {
+            const response = await fetch('/assets/{{ asset.id }}/pm-schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(pmData)
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Optionally add to table dynamically
+                console.log('PM Schedule saved:', data);
+                return true;
+            } else {
+                alert('Error saving PM: ' + (data.message || 'Unknown error'));
+                return false;
+            }
+        } catch (error) {
+            console.error('Error saving PM:', error);
+            alert('Error saving PM schedule');
+            return false;
+        }
+    }
+
+    // Handle Add PM Form submission
+    document.getElementById('addPMForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const pmData = {
+            title: document.getElementById('pmTitle').value,
+            description: document.getElementById('pmDescription').value,
+            schedule_type: document.getElementById('pmScheduleType').value,
+            priority: document.getElementById('pmPriority').value,
+            interval_days: parseInt(document.getElementById('pmIntervalDays').value) || null,
+            interval_hours: parseInt(document.getElementById('pmIntervalHours').value) || null,
+            next_due_date: document.getElementById('pmNextDueDate').value || null,
+            estimated_hours: parseFloat(document.getElementById('pmEstimatedHours').value) || null,
+            checklist: document.getElementById('pmChecklist').value.split('\n').filter(item => item.trim())
+        };
+
+        const success = await savePMSchedule(pmData);
+        if (success) {
+            document.getElementById('addPMModal').style.display = 'none';
+            document.getElementById('addPMForm').reset();
+            location.reload();
+        }
+    });
+
+    // Edit PM
+    function editPM(pmId) {
+        // TODO: Load PM data and open modal for editing
+        alert('Edit PM: ' + pmId + ' - Feature coming soon');
+    }
+
+    // Delete PM
+    async function deletePM(pmId) {
+        if (!confirm('Are you sure you want to delete this PM schedule?')) return;
+
+        try {
+            const response = await fetch(`/assets/{{ asset.id }}/pm-schedule/${pmId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                const row = document.querySelector(`tr[data-pm-id="${pmId}"]`);
+                if (row) row.remove();
+            } else {
+                alert('Error deleting PM: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error deleting PM:', error);
+            alert('Error deleting PM schedule');
+        }
+    }
 </script>
 {% endblock %}

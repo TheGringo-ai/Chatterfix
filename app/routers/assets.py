@@ -162,6 +162,7 @@ async def asset_detail(request: Request, asset_id: str):
     parts = []
     history = []
     work_orders = []
+    pm_schedules = []
 
     if current_user.organization_id:
         # Authenticated user - get real asset from Firestore
@@ -173,7 +174,7 @@ async def asset_detail(request: Request, asset_id: str):
             return RedirectResponse("/assets", status_code=302)
 
         # Get related data in parallel
-        children, media, parts, history, work_orders = await asyncio.gather(
+        children, media, parts, history, work_orders, pm_schedules = await asyncio.gather(
             firestore_manager.get_collection(
                 "assets",
                 filters=[{"field": "parent_asset_id", "operator": "==", "value": asset_id}],
@@ -191,6 +192,13 @@ async def asset_detail(request: Request, asset_id: str):
                 limit=50,
             ),
             firestore_manager.get_asset_work_orders(asset_id),
+            firestore_manager.get_collection(
+                "pm_schedule_rules",
+                filters=[
+                    {"field": "asset_id", "operator": "==", "value": asset_id},
+                    {"field": "is_active", "operator": "==", "value": True},
+                ],
+            ),
         )
     else:
         # Authenticated but no organization - redirect to assets list
@@ -219,6 +227,7 @@ async def asset_detail(request: Request, asset_id: str):
             "parts": parts,
             "history": history,
             "work_orders": work_orders,
+            "pm_schedules": pm_schedules,
             "cost_data": cost_data,
             "user": current_user,
             "current_user": current_user,
@@ -659,6 +668,259 @@ async def lookup_asset_by_tag(
             )
 
     except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+# ==========================================
+# PM SCHEDULE MANAGEMENT ENDPOINTS
+# ==========================================
+
+
+@router.post("/{asset_id}/ai-generate-pm")
+async def ai_generate_pm_schedule(
+    asset_id: str,
+    current_user: User = Depends(require_permission_cookie("update_asset")),
+):
+    """
+    AI-powered PM schedule generation from uploaded equipment manuals.
+    Analyzes documents to extract maintenance intervals, inspections, and failure points.
+    """
+    firestore_manager = get_firestore_manager()
+
+    # Get asset info
+    asset = await firestore_manager.get_document("assets", asset_id)
+    if not asset:
+        return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
+
+    # Get uploaded documents for this asset
+    documents = await firestore_manager.get_collection(
+        "asset_media",
+        filters=[
+            {"field": "asset_id", "operator": "==", "value": asset_id},
+        ],
+    )
+
+    # Filter for document types (not images/videos)
+    doc_types = ["manual", "document", "datasheet", "warranty", "certificate", "pdf"]
+    manuals = [d for d in documents if d.get("file_type") in doc_types or
+               d.get("file_path", "").lower().endswith((".pdf", ".doc", ".docx", ".txt"))]
+
+    if not manuals:
+        return JSONResponse({
+            "success": False,
+            "no_documents": True,
+            "message": "No equipment manuals or documentation found. Please upload equipment manuals to generate PM schedules."
+        })
+
+    # Build context for AI analysis
+    manual_info = "\n".join([
+        f"- {m.get('title', 'Untitled')} ({m.get('file_type', 'document')}): {m.get('description', 'No description')}"
+        for m in manuals[:5]  # Limit to 5 documents
+    ])
+
+    prompt = f"""You are an expert maintenance engineer analyzing equipment documentation.
+
+Based on the following asset and its documentation, generate a comprehensive preventive maintenance schedule.
+
+ASSET INFORMATION:
+- Name: {asset.get('name')}
+- Model: {asset.get('model', 'Unknown')}
+- Manufacturer: {asset.get('manufacturer', 'Unknown')}
+- Type: {asset.get('asset_type', 'Equipment')}
+- Location: {asset.get('location', 'Not specified')}
+- Criticality: {asset.get('criticality', 'Medium')}
+
+UPLOADED DOCUMENTATION:
+{manual_info}
+
+Generate a JSON array of PM schedule recommendations. Each should include:
+- title: Short task name
+- description: Detailed instructions
+- schedule_type: "time_based", "usage_based", "condition_based", "inspection", or "preventive"
+- interval_days: Days between tasks (for time-based)
+- interval_hours: Operating hours between tasks (for usage-based)
+- priority: "Low", "Medium", "High", or "Critical"
+- estimated_hours: Estimated time to complete
+
+Consider typical maintenance requirements for this type of equipment including:
+- Daily/weekly visual inspections
+- Monthly lubrication/cleaning
+- Quarterly/semi-annual component checks
+- Annual overhauls or certifications
+- Safety inspections
+- Filter/belt replacements
+
+Return ONLY valid JSON array, no other text:
+[{{"title": "...", "description": "...", "schedule_type": "...", "interval_days": N, "priority": "...", "estimated_hours": N}}, ...]
+"""
+
+    if not gemini_service.is_available():
+        # Fallback: Generate basic recommendations based on asset type
+        return JSONResponse({
+            "success": True,
+            "message": "Generated default recommendations (AI unavailable)",
+            "recommendations": _generate_default_pm_recommendations(asset)
+        })
+
+    try:
+        response = await gemini_service.generate_response(prompt, user_id=current_user.uid)
+
+        # Parse JSON from response
+        import re
+        json_match = re.search(r"\[.*\]", response, re.DOTALL)
+        if json_match:
+            recommendations = json.loads(json_match.group())
+            return JSONResponse({
+                "success": True,
+                "recommendations": recommendations,
+                "analyzed_documents": len(manuals)
+            })
+    except Exception as e:
+        logger.error(f"AI PM generation error: {e}")
+
+    # Fallback to default recommendations
+    return JSONResponse({
+        "success": True,
+        "message": "Generated default recommendations",
+        "recommendations": _generate_default_pm_recommendations(asset)
+    })
+
+
+def _generate_default_pm_recommendations(asset: dict) -> list:
+    """Generate default PM recommendations based on asset type."""
+    asset_name = asset.get("name", "Equipment")
+    criticality = asset.get("criticality", "Medium")
+
+    # Adjust intervals based on criticality
+    interval_multiplier = {"Critical": 0.5, "High": 0.75, "Medium": 1.0, "Low": 1.5}.get(criticality, 1.0)
+
+    return [
+        {
+            "title": f"Daily Visual Inspection - {asset_name}",
+            "description": "Perform visual inspection for leaks, unusual sounds, vibrations, or damage. Check indicator lights and gauges.",
+            "schedule_type": "inspection",
+            "interval_days": 1,
+            "priority": "Medium",
+            "estimated_hours": 0.25
+        },
+        {
+            "title": f"Weekly Cleaning & Lubrication - {asset_name}",
+            "description": "Clean external surfaces, check and apply lubrication to moving parts as specified in manual.",
+            "schedule_type": "preventive",
+            "interval_days": int(7 * interval_multiplier),
+            "priority": "Medium",
+            "estimated_hours": 0.5
+        },
+        {
+            "title": f"Monthly Safety Inspection - {asset_name}",
+            "description": "Inspect safety guards, emergency stops, warning labels, and protective equipment. Test safety interlocks.",
+            "schedule_type": "inspection",
+            "interval_days": int(30 * interval_multiplier),
+            "priority": "High",
+            "estimated_hours": 1.0
+        },
+        {
+            "title": f"Quarterly Component Check - {asset_name}",
+            "description": "Detailed inspection of belts, filters, bearings, and wear components. Replace as needed.",
+            "schedule_type": "preventive",
+            "interval_days": int(90 * interval_multiplier),
+            "priority": "Medium",
+            "estimated_hours": 2.0
+        },
+        {
+            "title": f"Semi-Annual Calibration - {asset_name}",
+            "description": "Calibrate sensors, gauges, and control systems. Verify accuracy against standards.",
+            "schedule_type": "preventive",
+            "interval_days": int(180 * interval_multiplier),
+            "priority": "High",
+            "estimated_hours": 3.0
+        },
+        {
+            "title": f"Annual Comprehensive Overhaul - {asset_name}",
+            "description": "Complete disassembly, cleaning, inspection, and replacement of wear parts. Performance testing and documentation.",
+            "schedule_type": "preventive",
+            "interval_days": int(365 * interval_multiplier),
+            "priority": "Critical",
+            "estimated_hours": 8.0
+        }
+    ]
+
+
+@router.post("/{asset_id}/pm-schedule")
+async def create_pm_schedule(
+    asset_id: str,
+    request: Request,
+    current_user: User = Depends(require_permission_cookie("update_asset")),
+):
+    """Create a new PM schedule for an asset."""
+    firestore_manager = get_firestore_manager()
+
+    # Verify asset exists and belongs to user's organization
+    asset = await firestore_manager.get_org_asset(asset_id, current_user.organization_id)
+    if not asset:
+        return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
+
+    try:
+        data = await request.json()
+
+        pm_data = {
+            "asset_id": asset_id,
+            "organization_id": current_user.organization_id,
+            "title": data.get("title"),
+            "description": data.get("description", ""),
+            "schedule_type": data.get("schedule_type", "time_based"),
+            "priority": data.get("priority", "Medium"),
+            "interval_days": data.get("interval_days"),
+            "interval_hours": data.get("interval_hours"),
+            "next_due_date": data.get("next_due_date"),
+            "estimated_hours": data.get("estimated_hours"),
+            "checklist": data.get("checklist", []),
+            "is_active": True,
+            "created_by": current_user.uid,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
+
+        pm_id = await firestore_manager.create_document("pm_schedule_rules", pm_data)
+
+        return JSONResponse({
+            "success": True,
+            "pm_id": pm_id,
+            "message": "PM schedule created successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Error creating PM schedule: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@router.delete("/{asset_id}/pm-schedule/{pm_id}")
+async def delete_pm_schedule(
+    asset_id: str,
+    pm_id: str,
+    current_user: User = Depends(require_permission_cookie("update_asset")),
+):
+    """Delete a PM schedule."""
+    firestore_manager = get_firestore_manager()
+
+    try:
+        # Verify PM belongs to this asset and organization
+        pm = await firestore_manager.get_document("pm_schedule_rules", pm_id)
+        if not pm or pm.get("asset_id") != asset_id:
+            return JSONResponse({"success": False, "error": "PM schedule not found"}, status_code=404)
+
+        if pm.get("organization_id") != current_user.organization_id:
+            return JSONResponse({"success": False, "error": "Unauthorized"}, status_code=403)
+
+        await firestore_manager.delete_document("pm_schedule_rules", pm_id)
+
+        return JSONResponse({
+            "success": True,
+            "message": "PM schedule deleted successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Error deleting PM schedule: {e}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 

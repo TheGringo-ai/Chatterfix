@@ -221,6 +221,7 @@ class AIAssistantWidget {
         this.stream = null;
         this.cameraStream = null;
         this.recognition = null;
+        this.pendingWorkOrder = null; // Store pending work order data for confirmation
 
         this.init();
     }
@@ -541,6 +542,24 @@ class AIAssistantWidget {
             chatInput.value = '';
         }
 
+        // Check for confirmation of pending work order
+        const commandLower = command.toLowerCase().trim();
+        if (this.pendingWorkOrder &&
+            (commandLower === 'yes' || commandLower === 'create it' ||
+             commandLower === 'confirm' || commandLower === 'yes create it' ||
+             commandLower === 'ok' || commandLower === 'do it')) {
+            await this.confirmWorkOrder();
+            return;
+        }
+
+        // Check for cancellation
+        if (this.pendingWorkOrder &&
+            (commandLower === 'no' || commandLower === 'cancel' ||
+             commandLower === 'nevermind' || commandLower === 'stop')) {
+            this.cancelWorkOrder();
+            return;
+        }
+
         this.updateVoiceStatus('processing', 'Processing...');
 
         const responseEl = document.getElementById('ai-response');
@@ -596,6 +615,42 @@ class AIAssistantWidget {
                 } else if (result.action === 'modal') {
                     // Could trigger modal opening here
                     console.log('Modal action requested:', result.modal);
+                } else if (result.action === 'create_work_order') {
+                    // Store pending work order and show confirmation buttons
+                    this.pendingWorkOrder = {
+                        command: result.command,
+                        response: result.response
+                    };
+
+                    // Parse work order details from response
+                    const responseText = result.response || '';
+                    const titleMatch = responseText.match(/\*\*Title:\*\*\s*(.+)/);
+                    const priorityMatch = responseText.match(/\*\*Priority:\*\*\s*(\w+)/);
+                    const typeMatch = responseText.match(/\*\*Type:\*\*\s*(\w+)/);
+                    const equipmentMatch = responseText.match(/\*\*Equipment:\*\*\s*(\w+)/);
+
+                    this.pendingWorkOrder.title = titleMatch ? titleMatch[1].trim() : result.command;
+                    this.pendingWorkOrder.priority = priorityMatch ? priorityMatch[1] : 'Medium';
+                    this.pendingWorkOrder.type = typeMatch ? typeMatch[1] : 'Corrective';
+                    this.pendingWorkOrder.equipment = equipmentMatch ? equipmentMatch[1] : 'Unknown';
+
+                    // Update response with confirmation buttons
+                    responseEl.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="font-medium text-purple-800">AI Response:</div>
+                            <div class="text-sm">${result.response.replace(/\n/g, '<br>')}</div>
+                            <div class="flex gap-2 mt-3">
+                                <button onclick="window.aiAssistantWidget.confirmWorkOrder()"
+                                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    ✓ Create Work Order
+                                </button>
+                                <button onclick="window.aiAssistantWidget.cancelWorkOrder()"
+                                        class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                    ✗ Cancel
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
 
             } else {
@@ -806,6 +861,105 @@ class AIAssistantWidget {
             context_type: 'find_manual',
             equipment_name: equipmentName
         });
+    }
+
+    async confirmWorkOrder() {
+        const responseEl = document.getElementById('ai-response');
+
+        if (!this.pendingWorkOrder) {
+            responseEl.innerHTML = '<div class="text-red-600">❌ No pending work order to create</div>';
+            return;
+        }
+
+        responseEl.innerHTML = '<div class="flex items-center"><i class="fas fa-cog animate-spin mr-2"></i>Creating work order...</div>';
+
+        try {
+            // Create form data to submit to work orders endpoint
+            const formData = new FormData();
+            formData.append('title', this.pendingWorkOrder.title);
+            formData.append('description', `Voice command: ${this.pendingWorkOrder.command}\n\nEquipment: ${this.pendingWorkOrder.equipment}`);
+            formData.append('priority', this.pendingWorkOrder.priority);
+            formData.append('work_order_type', this.pendingWorkOrder.type);
+            formData.append('status', 'Open');
+
+            const response = await fetch('/work-orders', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json().catch(() => ({}));
+                const workOrderId = result.work_order_id || 'Created';
+
+                responseEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="font-medium text-green-700">✓ Work Order Created!</div>
+                        <div class="text-sm text-green-600">
+                            <strong>Title:</strong> ${this.pendingWorkOrder.title}<br>
+                            <strong>Priority:</strong> ${this.pendingWorkOrder.priority}<br>
+                            <strong>Type:</strong> ${this.pendingWorkOrder.type}
+                        </div>
+                        <div class="mt-2">
+                            <a href="/work-orders" class="text-blue-600 hover:underline text-sm">
+                                → View Work Orders
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                // Clear pending work order
+                this.pendingWorkOrder = null;
+            } else if (response.status === 302 || response.redirected) {
+                // Handle redirect (successful creation often redirects)
+                responseEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="font-medium text-green-700">✓ Work Order Created!</div>
+                        <div class="text-sm text-green-600">
+                            Work order has been successfully created.
+                        </div>
+                        <div class="mt-2">
+                            <a href="/work-orders" class="text-blue-600 hover:underline text-sm">
+                                → View Work Orders
+                            </a>
+                        </div>
+                    </div>
+                `;
+                this.pendingWorkOrder = null;
+            } else {
+                const errorText = await response.text();
+                responseEl.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="font-medium text-red-700">❌ Failed to create work order</div>
+                        <div class="text-sm text-red-600">${errorText || 'Please try again or create manually'}</div>
+                        <div class="mt-2">
+                            <a href="/work-orders/new" class="text-blue-600 hover:underline text-sm">
+                                → Create Manually
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Work order creation error:', error);
+            responseEl.innerHTML = `
+                <div class="space-y-2">
+                    <div class="font-medium text-red-700">❌ Error creating work order</div>
+                    <div class="text-sm text-red-600">${error.message}</div>
+                    <div class="mt-2">
+                        <a href="/work-orders/new" class="text-blue-600 hover:underline text-sm">
+                            → Create Manually
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    cancelWorkOrder() {
+        const responseEl = document.getElementById('ai-response');
+        this.pendingWorkOrder = null;
+        responseEl.innerHTML = '<div class="text-gray-600">Work order creation cancelled. AI assistant ready to help...</div>';
     }
 }
 

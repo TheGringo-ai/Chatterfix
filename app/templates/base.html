@@ -2719,17 +2719,6 @@
                     body.setAttribute('data-theme', 'light');
                 }
                 
-                // Force CSS refresh
-                const timestamp = Date.now();
-                const forceStyle = document.createElement('style');
-                forceStyle.textContent = `/* AI Team Force Refresh ${timestamp} */ body { --refresh: ${timestamp}; }`;
-                document.head.appendChild(forceStyle);
-                setTimeout(() => {
-                    if (forceStyle.parentNode) {
-                        forceStyle.parentNode.removeChild(forceStyle);
-                    }
-                }, 100);
-                
                 updateIcon(isDark);
             }
             

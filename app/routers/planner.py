@@ -794,94 +794,182 @@ async def get_all_work_orders():
 
 
 @router.get("/work-orders/{work_order_id}")
-async def get_work_order_detail(work_order_id: str):
-    """Get detailed information for a specific work order"""
+async def get_work_order_detail(request: Request, work_order_id: str):
+    """Get detailed information for a specific work order - Firestore for authenticated, mock for demo"""
     try:
-        backlog_data = planner_service.get_work_order_backlog()
-        work_orders = backlog_data.get("work_orders", [])
-
-        # Find the specific work order
+        current_user = await get_current_user_from_cookie(request)
         work_order = None
-        for wo in work_orders:
-            if wo.get("id") == work_order_id:
-                work_order = wo
-                break
+
+        # Authenticated user - get from Firestore
+        if current_user and current_user.organization_id:
+            try:
+                firestore_manager = get_firestore_manager()
+                wo_data = await firestore_manager.get_document("work_orders", work_order_id)
+
+                if wo_data:
+                    # Verify organization access
+                    if wo_data.get("organization_id") == current_user.organization_id:
+                        # Normalize dates
+                        due_date = wo_data.get("due_date")
+                        if hasattr(due_date, 'strftime'):
+                            due_date = due_date.strftime("%Y-%m-%d")
+
+                        work_order = {
+                            "id": work_order_id,
+                            "title": wo_data.get("title", "Untitled"),
+                            "description": wo_data.get("description", ""),
+                            "priority": wo_data.get("priority", "Medium"),
+                            "status": wo_data.get("status", "Open"),
+                            "due_date": due_date,
+                            "scheduled_date": wo_data.get("scheduled_date") or due_date,
+                            "estimated_duration": wo_data.get("estimated_hours", 2),
+                            "assigned_to": wo_data.get("assigned_to_uid", ""),
+                            "asset_name": wo_data.get("asset_name", ""),
+                            "asset_id": wo_data.get("asset_id", ""),
+                            "work_order_type": wo_data.get("work_order_type", "Corrective"),
+                            "parts_required": wo_data.get("parts_required", []),
+                            "tools_required": wo_data.get("tools_required", ["Standard Tools"]),
+                            "procedures": wo_data.get("procedures", [
+                                "1. Review safety protocols",
+                                "2. Gather required tools and parts",
+                                "3. Perform maintenance tasks",
+                                "4. Test functionality",
+                                "5. Update work order status",
+                            ]),
+                            "asset_details": {
+                                "location": wo_data.get("location", "Not specified"),
+                                "serial_number": wo_data.get("serial_number", "N/A"),
+                                "last_maintenance": wo_data.get("last_maintenance", "Unknown"),
+                            },
+                        }
+            except Exception as e:
+                logger.error(f"Error fetching work order from Firestore: {e}")
+                # Fall through to mock data
+
+        # Fall back to mock data for unauthenticated or on error
+        if not work_order:
+            backlog_data = planner_service.get_work_order_backlog()
+            work_orders = backlog_data.get("work_orders", [])
+
+            for wo in work_orders:
+                if wo.get("id") == work_order_id:
+                    work_order = wo
+                    break
+
+            if work_order:
+                # Add additional mock data for editing interface
+                work_order.update({
+                    "description": f"Detailed description for {work_order.get('title', 'work order')}",
+                    "scheduled_date": work_order.get("due_date"),
+                    "assigned_to": "tech_001",
+                    "parts_required": ["Part-A", "Part-B"] if "urgent" in work_order.get("priority", "") else ["Standard-Part"],
+                    "tools_required": ["Wrench Set", "Multimeter", "Safety Equipment"],
+                    "procedures": [
+                        "1. Review safety protocols",
+                        "2. Gather required tools and parts",
+                        "3. Perform maintenance tasks",
+                        "4. Test functionality",
+                        "5. Update work order status",
+                    ],
+                    "asset_details": {
+                        "location": "Building A - Floor 2",
+                        "serial_number": f"SN-{work_order_id[-3:]}",
+                        "last_maintenance": "2024-11-01",
+                    },
+                })
 
         if not work_order:
             raise HTTPException(status_code=404, detail="Work order not found")
-
-        # Add additional mock data for editing interface
-        work_order.update(
-            {
-                "description": f"Detailed description for {work_order.get('title', 'work order')}",
-                "scheduled_date": work_order.get("due_date"),  # Default to due date
-                "assigned_to": "tech_001",  # Default assignment
-                "parts_required": (
-                    ["Part-A", "Part-B"]
-                    if "urgent" in work_order.get("priority", "")
-                    else ["Standard-Part"]
-                ),
-                "tools_required": ["Wrench Set", "Multimeter", "Safety Equipment"],
-                "procedures": [
-                    "1. Review safety protocols",
-                    "2. Gather required tools and parts",
-                    "3. Perform maintenance tasks",
-                    "4. Test functionality",
-                    "5. Update work order status",
-                ],
-                "asset_details": {
-                    "location": "Building A - Floor 2",
-                    "serial_number": f"SN-{work_order_id[-3:]}",
-                    "last_maintenance": "2024-11-01",
-                },
-            }
-        )
 
         return JSONResponse(content=work_order)
 
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to get work order {work_order_id}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get work order: {str(e)}"
         )
 
 
 @router.put("/work-orders/{work_order_id}")
-async def update_work_order(work_order_id: str, updates: WorkOrderUpdate):
-    """Update a work order with new information"""
+async def update_work_order(request: Request, work_order_id: str, updates: WorkOrderUpdate):
+    """Update a work order with new information - Firestore for authenticated, mock response for demo"""
     try:
-        # Get current work order data
-        backlog_data = planner_service.get_work_order_backlog()
-        work_orders = backlog_data.get("work_orders", [])
-
-        # Find the work order to update
-        work_order_found = False
-        for wo in work_orders:
-            if wo.get("id") == work_order_id:
-                work_order_found = True
-                break
-
-        if not work_order_found:
-            raise HTTPException(status_code=404, detail="Work order not found")
-
-        # In a real system, this would update the database
-        # For now, we'll return a success response with the updated data
+        current_user = await get_current_user_from_cookie(request)
         update_data = updates.dict(exclude_unset=True)
 
+        # Authenticated user - update in Firestore
+        if current_user and current_user.organization_id:
+            try:
+                firestore_manager = get_firestore_manager()
+
+                # Verify the work order belongs to user's organization
+                wo_data = await firestore_manager.get_document("work_orders", work_order_id)
+                if not wo_data:
+                    raise HTTPException(status_code=404, detail="Work order not found")
+
+                if wo_data.get("organization_id") != current_user.organization_id:
+                    raise HTTPException(status_code=403, detail="Access denied")
+
+                # Map frontend field names to Firestore field names
+                firestore_updates = {}
+                field_mapping = {
+                    "title": "title",
+                    "description": "description",
+                    "priority": "priority",
+                    "status": "status",
+                    "due_date": "due_date",
+                    "scheduled_date": "scheduled_date",
+                    "estimated_duration": "estimated_hours",
+                    "assigned_to": "assigned_to_uid",
+                    "parts_required": "parts_required",
+                }
+
+                for frontend_field, firestore_field in field_mapping.items():
+                    if frontend_field in update_data and update_data[frontend_field] is not None:
+                        firestore_updates[firestore_field] = update_data[frontend_field]
+
+                # Add updated_at timestamp
+                from datetime import datetime, timezone
+                firestore_updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+                firestore_updates["updated_by"] = current_user.uid
+
+                # Update in Firestore
+                await firestore_manager.update_document("work_orders", work_order_id, firestore_updates)
+
+                return JSONResponse(
+                    content={
+                        "status": "success",
+                        "message": f"Work order {work_order_id} updated successfully",
+                        "work_order_id": work_order_id,
+                        "updates_applied": firestore_updates,
+                        "updated_fields": list(firestore_updates.keys()),
+                        "data_source": "firestore",
+                    }
+                )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Error updating work order in Firestore: {e}")
+                raise HTTPException(status_code=500, detail=f"Failed to update work order: {str(e)}")
+
+        # Demo mode - return success without actually updating
         return JSONResponse(
             content={
                 "status": "success",
-                "message": f"Work order {work_order_id} updated successfully",
+                "message": f"Work order {work_order_id} updated successfully (demo mode)",
                 "work_order_id": work_order_id,
                 "updates_applied": update_data,
                 "updated_fields": list(update_data.keys()),
+                "data_source": "demo",
             }
         )
 
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Failed to update work order {work_order_id}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to update work order: {str(e)}"
         )

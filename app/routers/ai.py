@@ -1227,6 +1227,57 @@ async def process_voice_command_endpoint(request: VoiceCommandRequest):
                 "I'll help you create a new work order. Opening the form now."
             )
 
+        # === EQUIPMENT PROBLEM DETECTION - Auto-create work order ===
+        elif any(
+            phrase in command_lower
+            for phrase in [
+                "not working", "broken", "stopped", "leaking", "overheating",
+                "making noise", "squeaking", "grinding", "won't start",
+                "needs repair", "needs fixing", "failed", "down", "malfunction"
+            ]
+        ):
+            # Extract equipment name from the command
+            equipment_keywords = ["pump", "motor", "conveyor", "hvac", "compressor",
+                                  "press", "belt", "fan", "valve", "machine", "unit",
+                                  "line", "system", "equipment"]
+            detected_equipment = None
+            for keyword in equipment_keywords:
+                if keyword in command_lower:
+                    # Try to get more context around the keyword
+                    detected_equipment = keyword.title()
+                    break
+
+            # Determine priority based on keywords
+            if any(word in command_lower for word in ["urgent", "emergency", "critical", "dangerous", "safety"]):
+                priority = "Critical"
+            elif any(word in command_lower for word in ["important", "asap", "production"]):
+                priority = "High"
+            else:
+                priority = "Medium"
+
+            # Determine work order type
+            if any(word in command_lower for word in ["emergency", "urgent"]):
+                wo_type = "Emergency"
+            elif any(word in command_lower for word in ["inspect", "check"]):
+                wo_type = "Inspection"
+            else:
+                wo_type = "Corrective"
+
+            # Generate title from the command
+            title = request.command[:60] + ("..." if len(request.command) > 60 else "")
+
+            action = "create_work_order"
+            response_text = f"""I've detected an equipment issue. Let me create a work order for you:
+
+**Title:** {title}
+**Priority:** {priority}
+**Type:** {wo_type}
+**Equipment:** {detected_equipment or 'Unknown'}
+
+**Safety Reminder:** Lockout/Tagout before inspection.
+
+Would you like me to create this work order? Say "yes" or "create it" to confirm, or provide more details."""
+
         # === AI-POWERED RESPONSES (call the real AI) ===
         else:
             # Build context for the AI

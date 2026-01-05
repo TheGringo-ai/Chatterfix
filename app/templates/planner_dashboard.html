@@ -2261,12 +2261,19 @@
     // Work Order Editor Functions
     async function openWorkOrderEditor(workOrderId) {
         try {
+            console.log('📝 Opening work order editor for ID:', workOrderId);
+
             // Fetch work order details
             const response = await fetch(`/planner/work-orders/${workOrderId}`, { credentials: 'include' });
+            console.log('📝 API Response status:', response.status);
+
             if (!response.ok) {
-                throw new Error('Failed to fetch work order details');
+                const errorText = await response.text();
+                console.error('📝 API Error:', errorText);
+                throw new Error(`Failed to fetch work order: ${response.status} - ${errorText}`);
             }
             const workOrder = await response.json();
+            console.log('📝 Work order loaded:', workOrder);
 
             // Populate form fields
             document.getElementById('editWorkOrderId').value = workOrderId;
@@ -2307,7 +2314,7 @@
 
         } catch (error) {
             console.error('Error opening work order editor:', error);
-            alert('❌ Failed to load work order details. Please try again.');
+            alert(`❌ Failed to load work order details.\n\nError: ${error.message}\n\nCheck browser console for details.`);
         }
     }
 

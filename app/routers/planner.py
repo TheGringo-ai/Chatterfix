@@ -800,11 +800,15 @@ async def get_work_order_detail(request: Request, work_order_id: str):
         current_user = await get_current_user_from_cookie(request)
         work_order = None
 
+        logger.info(f"GET work order detail: {work_order_id}, User: {current_user.email if current_user else 'None'}, Org: {current_user.organization_id if current_user else 'None'}")
+
         # Authenticated user - get from Firestore
         if current_user and current_user.organization_id:
             try:
                 firestore_manager = get_firestore_manager()
                 wo_data = await firestore_manager.get_document("work_orders", work_order_id)
+
+                logger.info(f"Firestore lookup result: found={wo_data is not None}, wo_org={wo_data.get('organization_id') if wo_data else 'N/A'}, user_org={current_user.organization_id}")
 
                 if wo_data:
                     # Verify organization access
@@ -848,6 +852,7 @@ async def get_work_order_detail(request: Request, work_order_id: str):
 
         # Fall back to mock data for unauthenticated or on error
         if not work_order:
+            logger.info(f"Work order not found in Firestore, falling back to mock data for ID: {work_order_id}")
             backlog_data = planner_service.get_work_order_backlog()
             work_orders = backlog_data.get("work_orders", [])
 
@@ -877,9 +882,11 @@ async def get_work_order_detail(request: Request, work_order_id: str):
                         "last_maintenance": "2024-11-01",
                     },
                 })
+            else:
+                logger.warning(f"Work order {work_order_id} not found in mock data either (mock IDs: {[wo.get('id') for wo in work_orders[:5]]})")
 
         if not work_order:
-            raise HTTPException(status_code=404, detail="Work order not found")
+            raise HTTPException(status_code=404, detail=f"Work order '{work_order_id}' not found")
 
         return JSONResponse(content=work_order)
 

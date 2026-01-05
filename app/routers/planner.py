@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
+import logging
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -11,7 +12,9 @@ from app.services.advanced_scheduler_service import advanced_scheduler
 from app.services.planner_service import planner_service
 from app.services.pm_automation_engine import pm_automation_engine
 from app.services.scheduler_mock_data import scheduler_mock_service
+from app.core.firestore_db import get_firestore_manager
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/planner", tags=["planner"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -70,8 +73,65 @@ async def scheduler_analytics_dashboard(request: Request):
 
 
 @router.get("/pm-schedule")
-async def get_pm_schedule(days_ahead: int = 30):
-    """Get preventive maintenance schedule"""
+async def get_pm_schedule(request: Request, days_ahead: int = 30):
+    """Get preventive maintenance schedule - real Firestore data for authenticated users"""
+    current_user = await get_current_user_from_cookie(request)
+
+    if current_user and current_user.organization_id:
+        try:
+            firestore_manager = get_firestore_manager()
+
+            # Get PM schedule rules from Firestore
+            pm_rules = await firestore_manager.get_collection(
+                "pm_schedule_rules",
+                filters=[
+                    {"field": "organization_id", "operator": "==", "value": current_user.organization_id},
+                    {"field": "is_active", "operator": "==", "value": True}
+                ]
+            )
+
+            today = datetime.now()
+            end_date = today + timedelta(days=days_ahead)
+            schedule_by_date = {}
+
+            for rule in pm_rules:
+                # Calculate next due date based on interval
+                next_due = rule.get("next_due_date")
+                if next_due:
+                    if hasattr(next_due, 'strftime'):
+                        date_str = next_due.strftime("%Y-%m-%d")
+                    else:
+                        date_str = str(next_due)[:10]
+                else:
+                    # Use interval to calculate
+                    interval_days = rule.get("interval_days", 30)
+                    date_str = (today + timedelta(days=interval_days)).strftime("%Y-%m-%d")
+
+                if date_str not in schedule_by_date:
+                    schedule_by_date[date_str] = []
+
+                schedule_by_date[date_str].append({
+                    "id": rule.get("id"),
+                    "asset_name": rule.get("asset_name", "Asset"),
+                    "pm_type": rule.get("schedule_type", "time_based"),
+                    "title": rule.get("title", "PM Task"),
+                    "estimated_duration": rule.get("estimated_hours", 2),
+                    "priority": rule.get("priority", "Medium"),
+                })
+
+            return JSONResponse(content={
+                "schedule": schedule_by_date,
+                "total_scheduled": len(pm_rules),
+                "date_range": {
+                    "start": today.strftime("%Y-%m-%d"),
+                    "end": end_date.strftime("%Y-%m-%d"),
+                },
+            })
+        except Exception as e:
+            logger.error(f"Error fetching PM schedule: {e}")
+            # Fall through to mock data
+
+    # Demo/unauthenticated - use mock data
     schedule = planner_service.get_pm_schedule(days_ahead)
     return JSONResponse(content=schedule)
 
@@ -84,8 +144,64 @@ async def get_resource_capacity():
 
 
 @router.get("/backlog")
-async def get_backlog():
-    """Get work order backlog"""
+async def get_backlog(request: Request):
+    """Get work order backlog - real Firestore data for authenticated users"""
+    current_user = await get_current_user_from_cookie(request)
+
+    if current_user and current_user.organization_id:
+        # Authenticated user - get real data from Firestore
+        try:
+            firestore_manager = get_firestore_manager()
+            work_orders_data = await firestore_manager.get_collection(
+                "work_orders",
+                filters=[{"field": "organization_id", "operator": "==", "value": current_user.organization_id}],
+                order_by="-created_at",
+                limit=100
+            )
+
+            today = datetime.now().strftime("%Y-%m-%d")
+            work_orders = []
+            for wo in work_orders_data:
+                # Normalize the work order format for the calendar
+                due_date = wo.get("due_date")
+                if hasattr(due_date, 'strftime'):
+                    due_date = due_date.strftime("%Y-%m-%d")
+                elif due_date is None:
+                    due_date = today
+
+                work_orders.append({
+                    "id": wo.get("id"),
+                    "title": wo.get("title", "Untitled"),
+                    "asset_name": wo.get("asset_name", ""),
+                    "priority": wo.get("priority", "Medium"),
+                    "status": wo.get("status", "Open"),
+                    "due_date": due_date,
+                    "estimated_duration": wo.get("estimated_hours", 2),
+                    "assigned_to": wo.get("assigned_to_uid"),
+                    "work_order_type": wo.get("work_order_type", "Corrective"),
+                })
+
+            # Calculate statistics
+            overdue = [wo for wo in work_orders if wo["due_date"] < today and wo["status"] != "Completed"]
+            due_today = [wo for wo in work_orders if wo["due_date"] == today]
+
+            by_priority = {}
+            for wo in work_orders:
+                priority = wo["priority"].lower()
+                by_priority[priority] = by_priority.get(priority, 0) + 1
+
+            return JSONResponse(content={
+                "work_orders": work_orders,
+                "total_backlog": len([wo for wo in work_orders if wo["status"] != "Completed"]),
+                "overdue_count": len(overdue),
+                "due_today_count": len(due_today),
+                "by_priority": by_priority,
+            })
+        except Exception as e:
+            logger.error(f"Error fetching work orders for planner: {e}")
+            # Fall through to mock data
+
+    # Demo/unauthenticated - use mock data
     backlog = planner_service.get_work_order_backlog()
     return JSONResponse(content=backlog)
 

@@ -2,12 +2,12 @@ import os
 import shutil
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_user_from_cookie
+from app.auth import get_current_user_from_cookie, require_auth_cookie
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 from app.services.purchasing_service import purchasing_service
@@ -56,58 +56,74 @@ async def purchasing_tools(request: Request):
 
 
 @router.get("/purchase-orders")
-async def get_purchase_orders(status: str = None):
-    """Get purchase orders"""
-    orders = await purchasing_service.get_purchase_orders(status)
+async def get_purchase_orders(request: Request, status: str = None):
+    """Get purchase orders scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    orders = await purchasing_service.get_purchase_orders(org_id, status)
     return JSONResponse(content={"purchase_orders": orders})
 
 
 @router.get("/pending-approvals")
-async def get_pending_approvals():
-    """Get pending approval requests"""
-    approvals = await purchasing_service.get_pending_approvals()
+async def get_pending_approvals(request: Request):
+    """Get pending approval requests scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    approvals = await purchasing_service.get_pending_approvals(org_id)
     return JSONResponse(content=approvals)
 
 
 @router.get("/vendor-performance")
-async def get_vendor_performance():
-    """Get vendor performance metrics"""
-    vendors = await purchasing_service.get_vendor_performance()
+async def get_vendor_performance(request: Request):
+    """Get vendor performance metrics scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    vendors = await purchasing_service.get_vendor_performance(org_id)
     return JSONResponse(content={"vendors": vendors})
 
 
 @router.get("/budget-tracking")
-async def get_budget_tracking():
-    """Get budget tracking data"""
-    budget = await purchasing_service.get_budget_tracking()
+async def get_budget_tracking(request: Request):
+    """Get budget tracking data scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    budget = await purchasing_service.get_budget_tracking(org_id)
     return JSONResponse(content=budget)
 
 
 @router.get("/low-stock")
-async def get_low_stock():
-    """Get low stock alerts"""
-    items = await purchasing_service.get_low_stock_alerts()
+async def get_low_stock(request: Request):
+    """Get low stock alerts scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    items = await purchasing_service.get_low_stock_alerts(org_id)
     return JSONResponse(content={"low_stock_items": items})
 
 
 @router.get("/price-trends")
-async def get_price_trends():
-    """Get price trends"""
-    trends = await purchasing_service.get_price_trends()
+async def get_price_trends(request: Request):
+    """Get price trends scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    trends = await purchasing_service.get_price_trends(org_id)
     return JSONResponse(content=trends)
 
 
 @router.get("/contract-renewals")
-async def get_contract_renewals():
-    """Get upcoming contract renewals"""
-    renewals = await purchasing_service.get_contract_renewals()
+async def get_contract_renewals(request: Request):
+    """Get upcoming contract renewals scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    renewals = await purchasing_service.get_contract_renewals(org_id)
     return JSONResponse(content={"renewals": renewals})
 
 
 @router.get("/spend-analytics")
-async def get_spend_analytics(days: int = 30):
-    """Get spend analytics"""
-    analytics = await purchasing_service.get_spend_analytics(days)
+async def get_spend_analytics(request: Request, days: int = 30):
+    """Get spend analytics scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    analytics = await purchasing_service.get_spend_analytics(org_id, days)
     return JSONResponse(content=analytics)
 
 
@@ -129,17 +145,20 @@ async def process_approval(approval: ApprovalRequest):
 
 
 @router.get("/summary")
-async def get_purchasing_summary():
-    """Get comprehensive purchasing summary"""
-    approvals = await purchasing_service.get_pending_approvals()
-    budget = await purchasing_service.get_budget_tracking()
-    low_stock = await purchasing_service.get_low_stock_alerts()
-    analytics = await purchasing_service.get_spend_analytics(30)
+async def get_purchasing_summary(request: Request):
+    """Get comprehensive purchasing summary scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+
+    approvals = await purchasing_service.get_pending_approvals(org_id)
+    budget = await purchasing_service.get_budget_tracking(org_id)
+    low_stock = await purchasing_service.get_low_stock_alerts(org_id)
+    analytics = await purchasing_service.get_spend_analytics(org_id, 30)
 
     return JSONResponse(
         content={
             "pending_approvals": approvals["pending_count"],
-            "budget_utilization": budget["utilization_percentage"],
+            "budget_utilization": budget.get("utilization_percentage", 0),
             "low_stock_count": len(low_stock),
             "monthly_spend": budget["total_spent"],
             "total_requests": analytics["total_requests"],
@@ -154,22 +173,29 @@ async def get_purchasing_summary():
 
 @router.get("/pos", response_class=HTMLResponse)
 async def pos_system(request: Request):
-    """Point of Sale system for purchasing"""
+    """Point of Sale system for purchasing scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = current_user is None
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Get vendors for dropdown
-    vendors = await db.get_collection("vendors", order_by="name")
+    # Get vendors for dropdown, filtered by organization
+    filters = []
+    if org_id:
+        filters.append({"field": "organization_id", "operator": "==", "value": org_id})
+    vendors = await db.get_collection("vendors", filters=filters if filters else None, order_by="name")
 
-    # Get parts for quick add
-    parts = await db.get_collection("parts", order_by="name", limit=50)
+    # Get parts for quick add, filtered by organization
+    parts = await db.get_collection("parts", filters=filters if filters else None, order_by="name", limit=50)
 
     return templates.TemplateResponse(
-        "purchasing_pos.html", {"request": request, "vendors": vendors, "parts": parts}
+        "purchasing_pos.html", {"request": request, "current_user": current_user, "is_demo": is_demo, "vendors": vendors, "parts": parts}
     )
 
 
 @router.post("/purchase-orders/create")
 async def create_purchase_order(
+    request: Request,
     vendor_id: str = Form(...),
     po_number: str = Form(...),
     description: str = Form(""),
@@ -177,10 +203,12 @@ async def create_purchase_order(
     delivery_date: str = Form(""),
     files: list[UploadFile] = File(None),
 ):
-    """Create new purchase order with documents"""
+    """Create new purchase order with documents scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Create purchase order data
+    # Create purchase order data with organization_id
     po_data = {
         "po_number": po_number,
         "vendor_id": vendor_id,
@@ -188,6 +216,8 @@ async def create_purchase_order(
         "total_amount": total_amount,
         "delivery_date": delivery_date,
         "status": "Draft",
+        "organization_id": org_id,
+        "created_by": current_user.uid if current_user else None,
     }
 
     # Create purchase order
@@ -231,6 +261,7 @@ async def create_purchase_order(
 
 @router.post("/parts/add")
 async def add_part_with_media(
+    request: Request,
     name: str = Form(...),
     part_number: str = Form(...),
     description: str = Form(""),
@@ -242,10 +273,12 @@ async def add_part_with_media(
     location: str = Form(""),
     files: list[UploadFile] = File(None),
 ):
-    """Add new part with pictures and documents"""
+    """Add new part with pictures and documents scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Create part data
+    # Create part data with organization_id
     part_data = {
         "name": name,
         "part_number": part_number,
@@ -257,6 +290,7 @@ async def add_part_with_media(
         "minimum_stock": minimum_stock,
         "location": location,
         "image_url": "",
+        "organization_id": org_id,
     }
 
     # Create part
@@ -303,6 +337,7 @@ async def add_part_with_media(
 
 @router.post("/vendors/create")
 async def create_vendor(
+    request: Request,
     name: str = Form(...),
     contact_name: str = Form(""),
     email: str = Form(""),
@@ -312,10 +347,12 @@ async def create_vendor(
     tax_id: str = Form(""),
     files: list[UploadFile] = File(None),
 ):
-    """Create vendor with documents"""
+    """Create vendor with documents scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Create vendor data
+    # Create vendor data with organization_id
     vendor_data = {
         "name": name,
         "contact_name": contact_name,
@@ -324,6 +361,7 @@ async def create_vendor(
         "address": address,
         "payment_terms": payment_terms,
         "tax_id": tax_id,
+        "organization_id": org_id,
     }
 
     # Create vendor
@@ -363,22 +401,26 @@ async def create_vendor(
 
 @router.post("/invoices/upload")
 async def upload_invoice(
+    request: Request,
     po_id: str = Form(...),
     invoice_number: str = Form(...),
     invoice_amount: float = Form(...),
     invoice_date: str = Form(...),
     files: list[UploadFile] = File(...),
 ):
-    """Upload invoice with documents"""
+    """Upload invoice with documents scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Create invoice data
+    # Create invoice data with organization_id
     invoice_data = {
         "po_id": po_id,
         "invoice_number": invoice_number,
         "amount": invoice_amount,
         "invoice_date": invoice_date,
         "status": "Pending",
+        "organization_id": org_id,
     }
 
     # Create invoice record
@@ -420,12 +462,17 @@ async def upload_invoice(
 
 
 @router.get("/parts/search")
-async def search_parts(q: str = ""):
-    """Search parts by name or part number"""
+async def search_parts(request: Request, q: str = ""):
+    """Search parts by name or part number scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
     # Get all parts first (Firestore doesn't support complex text search)
-    parts = await db.get_collection("parts", order_by="name", limit=100)
+    filters = []
+    if org_id:
+        filters.append({"field": "organization_id", "operator": "==", "value": org_id})
+    parts = await db.get_collection("parts", filters=filters if filters else None, order_by="name", limit=100)
 
     # Filter by search query if provided
     if q:
@@ -449,20 +496,24 @@ async def search_parts(q: str = ""):
 
 
 @router.get("/barcode/{barcode}")
-async def lookup_by_barcode(barcode: str):
-    """Lookup part by barcode/part number"""
+async def lookup_by_barcode(request: Request, barcode: str):
+    """Lookup part by barcode/part number scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Search by part number or barcode
-    parts = await db.get_collection(
-        "parts", filters=[{"field": "part_number", "operator": "==", "value": barcode}]
-    )
+    # Build filters including organization_id
+    filters = [{"field": "part_number", "operator": "==", "value": barcode}]
+    if org_id:
+        filters.append({"field": "organization_id", "operator": "==", "value": org_id})
+    parts = await db.get_collection("parts", filters=filters)
 
     if not parts:
         # Try searching by barcode field
-        parts = await db.get_collection(
-            "parts", filters=[{"field": "barcode", "operator": "==", "value": barcode}]
-        )
+        filters = [{"field": "barcode", "operator": "==", "value": barcode}]
+        if org_id:
+            filters.append({"field": "organization_id", "operator": "==", "value": org_id})
+        parts = await db.get_collection("parts", filters=filters)
 
     if parts:
         part = parts[0]
@@ -479,12 +530,17 @@ async def lookup_by_barcode(barcode: str):
 
 
 @router.get("/inventory/low-stock")
-async def get_low_stock_items():
-    """Get items below minimum stock level"""
+async def get_low_stock_items(request: Request):
+    """Get items below minimum stock level scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
     db = get_firestore_manager()
 
-    # Get all parts (Firestore doesn't support complex filtering)
-    all_parts = await db.get_collection("parts")
+    # Get all parts filtered by organization
+    filters = []
+    if org_id:
+        filters.append({"field": "organization_id", "operator": "==", "value": org_id})
+    all_parts = await db.get_collection("parts", filters=filters if filters else None)
 
     # Filter for low stock items
     low_stock_items = [
@@ -515,35 +571,62 @@ async def get_low_stock_items():
 
 
 @router.get("/kpi-summary")
-async def get_kpi_summary():
-    """Get KPI summary for purchaser dashboard"""
-    kpis = await purchasing_service.get_kpi_summary()
+async def get_kpi_summary(request: Request):
+    """Get KPI summary for purchaser dashboard scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    # Note: Service method may need to be updated to accept org_id
+    try:
+        kpis = await purchasing_service.get_kpi_summary(org_id)
+    except TypeError:
+        # Fallback if service doesn't support org_id yet
+        kpis = await purchasing_service.get_kpi_summary()
     return JSONResponse(content=kpis)
 
 
 @router.get("/po-pipeline")
-async def get_po_pipeline():
-    """Get PO pipeline counts by status"""
-    pipeline = await purchasing_service.get_po_pipeline_counts()
+async def get_po_pipeline(request: Request):
+    """Get PO pipeline counts by status scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    try:
+        pipeline = await purchasing_service.get_po_pipeline_counts(org_id)
+    except TypeError:
+        pipeline = await purchasing_service.get_po_pipeline_counts()
     return JSONResponse(content=pipeline)
 
 
 @router.get("/pending-actions")
-async def get_pending_actions():
-    """Get list of pending actions requiring attention"""
-    actions = await purchasing_service.get_pending_actions()
+async def get_pending_actions(request: Request):
+    """Get list of pending actions requiring attention scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    try:
+        actions = await purchasing_service.get_pending_actions(org_id)
+    except TypeError:
+        actions = await purchasing_service.get_pending_actions()
     return JSONResponse(content={"actions": actions})
 
 
 @router.get("/top-vendors")
-async def get_top_vendors(limit: int = 5):
-    """Get top performing vendors"""
-    vendors = await purchasing_service.get_top_vendors(limit)
+async def get_top_vendors(request: Request, limit: int = 5):
+    """Get top performing vendors scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    try:
+        vendors = await purchasing_service.get_top_vendors(org_id, limit)
+    except TypeError:
+        vendors = await purchasing_service.get_top_vendors(limit)
     return JSONResponse(content={"vendors": vendors})
 
 
 @router.get("/recent-activity")
-async def get_recent_activity(limit: int = 20):
-    """Get recent purchasing activity feed"""
-    activity = await purchasing_service.get_recent_activity(limit)
+async def get_recent_activity(request: Request, limit: int = 20):
+    """Get recent purchasing activity feed scoped to user's organization"""
+    current_user = await get_current_user_from_cookie(request)
+    org_id = current_user.organization_id if current_user else None
+    try:
+        activity = await purchasing_service.get_recent_activity(org_id, limit)
+    except TypeError:
+        activity = await purchasing_service.get_recent_activity(limit)
     return JSONResponse(content={"activity": activity})

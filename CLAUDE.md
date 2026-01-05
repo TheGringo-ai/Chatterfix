@@ -741,6 +741,46 @@ else:
 - Add console.log debugging in modal event handlers to trace issues
 - Test both demo mode AND authenticated mode separately
 
+#### **LESSON #18: Router Import Failure - Silent Fallback to Simple Router**
+**Problem**: Production endpoints return stale/different data than expected despite correct Docker image deployment
+**Root Cause**: Python `NameError` at module load time causes router to fail import, and main.py silently falls back to a simpler backup router
+**Symptoms**:
+- Debug markers or new code not appearing in production responses
+- Cloud Run shows correct image tag/commit hash but behavior differs
+- Docker logs show: `❌ Failed to import planner router: NameError: name 'X' is not defined`
+- Simple/fallback router is loaded instead: `✅ Included planner_simple router`
+
+**Investigation Steps:**
+1. Pull the Docker image: `docker pull gcr.io/fredfix/chatterfix-cmms:latest`
+2. Run locally with logs: `docker run --rm -p 8082:8080 gcr.io/fredfix/chatterfix-cmms:latest`
+3. Look for router import errors in startup logs
+4. Check which router was actually loaded (e.g., `planner` vs `planner_simple`)
+
+**Solution:**
+1. Fix the import/syntax error in the failing router
+2. Ensure all dependencies are imported at the top of the file
+3. Commit and push to trigger redeployment
+
+**Example Fix:**
+```python
+# WRONG: Using function without importing
+from app.auth import get_current_user_from_cookie
+...
+current_user = Depends(get_optional_current_user)  # NameError!
+
+# CORRECT: Import all required functions
+from app.auth import get_current_user_from_cookie, get_optional_current_user
+...
+current_user = Depends(get_optional_current_user)  # ✅ Works
+```
+
+**Prevention**:
+- Always test router imports locally before deploying: `python -c "from app.routers import module_name"`
+- Check Docker startup logs after deployment for import errors
+- Consider adding import validation in CI/CD pipeline
+- Be careful when adding new Depends() parameters - ensure the dependency is imported
+- Review main.py router loading logic to understand fallback behavior
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

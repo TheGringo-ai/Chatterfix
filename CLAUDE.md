@@ -781,6 +781,62 @@ current_user = Depends(get_optional_current_user)  # ✅ Works
 - Be careful when adding new Depends() parameters - ensure the dependency is imported
 - Review main.py router loading logic to understand fallback behavior
 
+#### **LESSON #19: Firestore Composite Index Required for Multi-Field Queries**
+**Problem**: Planner calendar shows no work orders for authenticated users, even though data exists in Firestore
+**Root Cause**: Firestore queries with a filter AND ordering require a composite index. Without it, the query silently fails and returns empty results.
+**Symptoms**:
+- Authenticated users see empty calendar/backlog despite having work orders
+- Cloud Run logs show: `Missing Firestore index for work_orders query - returning empty results`
+- Mock data works (unauthenticated) but real data doesn't (authenticated)
+- No obvious error in UI - just empty results
+
+**Investigation Steps:**
+1. Check Cloud Run logs for "Missing Firestore index" warnings
+2. Look for Firestore error logs with index creation URLs
+3. Verify data exists: `python3 -c "... query Firestore directly ..."`
+4. Check existing indexes: `gcloud firestore indexes composite list --project=PROJECT_ID`
+
+**Solution:**
+Create the required composite index:
+```bash
+gcloud firestore indexes composite create \
+  --project=fredfix \
+  --collection-group=work_orders \
+  --field-config=field-path=organization_id,order=ascending \
+  --field-config=field-path=created_at,order=descending
+```
+
+**Index Requirements Pattern:**
+| Query Pattern | Index Needed |
+|---------------|--------------|
+| filter only (no order) | Single-field index (automatic) |
+| order only (no filter) | Single-field index (automatic) |
+| filter + order on same field | Single-field index (automatic) |
+| **filter + order on DIFFERENT fields** | **COMPOSITE INDEX REQUIRED** |
+| multiple filters on different fields | Composite index often required |
+
+**Code Pattern (defensive handling):**
+```python
+try:
+    results = await db.collection("work_orders") \
+        .where("organization_id", "==", org_id) \
+        .order_by("created_at", direction=firestore.Query.DESCENDING) \
+        .stream()
+except Exception as e:
+    if "requires an index" in str(e).lower():
+        logger.warning(f"Missing index - {e}")
+        # Return empty or fallback, don't crash
+        return []
+    raise
+```
+
+**Prevention**:
+- When adding new queries with filter + order_by, check if index exists
+- Add required indexes to a `firestore.indexes.json` file in the project
+- Run `gcloud firestore indexes composite list` periodically to audit
+- Log index errors clearly so they're easy to diagnose
+- Consider adding index verification to deployment pipeline
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

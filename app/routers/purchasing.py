@@ -469,10 +469,13 @@ async def search_parts(request: Request, q: str = ""):
     db = get_firestore_manager()
 
     # Get all parts first (Firestore doesn't support complex text search)
+    # Note: Avoid order_by with filters to prevent composite index requirement
     filters = []
     if org_id:
         filters.append({"field": "organization_id", "operator": "==", "value": org_id})
-    parts = await db.get_collection("parts", filters=filters if filters else None, order_by="name", limit=100)
+    parts = await db.get_collection("parts", filters=filters if filters else None, limit=100)
+    # Sort in Python instead of Firestore to avoid composite index
+    parts = sorted(parts, key=lambda x: x.get("name", "").lower())
 
     # Filter by search query if provided
     if q:

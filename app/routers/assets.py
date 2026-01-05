@@ -994,7 +994,7 @@ async def create_pm_schedule(
                     f"\n\nChecklist:\n" + "\n".join(f"• {item}" for item in pm_data.get("checklist", []))
                     if pm_data.get("checklist") else ""
                 ),
-                "type": "Preventive",
+                "work_order_type": "Preventive",  # Must match WorkOrder model field name
                 "status": "Open",
                 "priority": pm_data.get("priority", "Medium"),
                 "asset_id": asset_id,
@@ -1003,6 +1003,7 @@ async def create_pm_schedule(
                 "due_date": pm_data.get("next_due_date"),
                 "estimated_hours": pm_data.get("estimated_hours"),
                 "created_by": current_user.uid,
+                "created_date": datetime.now(timezone.utc),  # Must match WorkOrder model
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc),
             }

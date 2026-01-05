@@ -1060,7 +1060,21 @@
             if (data.success && data.recommendations && data.recommendations.length > 0) {
                 aiGeneratedPMs = data.recommendations;
                 displayAIRecommendations(data.recommendations);
-                messageSpan.textContent = `Found ${data.recommendations.length} PM recommendations!`;
+
+                // Show what data sources were used
+                let sourceInfo = `Found ${data.recommendations.length} PM recommendations`;
+                if (data.data_sources && data.data_sources.length > 0) {
+                    const sourceNames = {
+                        'uploaded_documents': '📄 Manuals',
+                        'work_order_history': '🔧 Work Orders',
+                        'maintenance_history': '📋 Maintenance History',
+                        'ai_knowledge': '🤖 AI Knowledge',
+                        'default_templates': '📝 Templates'
+                    };
+                    const sources = data.data_sources.map(s => sourceNames[s] || s).join(', ');
+                    sourceInfo += ` using: ${sources}`;
+                }
+                messageSpan.textContent = sourceInfo;
                 spinner.className = 'fas fa-check-circle';
                 spinner.style.color = '#27ae60';
             } else if (data.no_documents) {

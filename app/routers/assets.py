@@ -682,8 +682,11 @@ async def ai_generate_pm_schedule(
     current_user: User = Depends(require_permission_cookie("update_asset")),
 ):
     """
-    AI-powered PM schedule generation from uploaded equipment manuals.
-    Analyzes documents to extract maintenance intervals, inspections, and failure points.
+    AI-powered PM schedule generation using ALL available data:
+    - Uploaded equipment manuals and documentation
+    - Work order history (patterns, common repairs)
+    - Maintenance history (what's been done before)
+    - AI's general knowledge about this equipment type/manufacturer
     """
     firestore_manager = get_firestore_manager()
 
@@ -692,12 +695,19 @@ async def ai_generate_pm_schedule(
     if not asset:
         return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
 
-    # Get uploaded documents for this asset
-    documents = await firestore_manager.get_collection(
-        "asset_media",
-        filters=[
-            {"field": "asset_id", "operator": "==", "value": asset_id},
-        ],
+    # Get ALL available data in parallel for comprehensive analysis
+    documents, work_orders, maintenance_history = await asyncio.gather(
+        firestore_manager.get_collection(
+            "asset_media",
+            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+        ),
+        firestore_manager.get_asset_work_orders(asset_id),
+        firestore_manager.get_collection(
+            "maintenance_history",
+            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            order_by="-created_date",
+            limit=50,
+        ),
     )
 
     # Filter for document types (not images/videos)
@@ -705,50 +715,90 @@ async def ai_generate_pm_schedule(
     manuals = [d for d in documents if d.get("file_type") in doc_types or
                d.get("file_path", "").lower().endswith((".pdf", ".doc", ".docx", ".txt"))]
 
-    if not manuals:
-        return JSONResponse({
-            "success": False,
-            "no_documents": True,
-            "message": "No equipment manuals or documentation found. Please upload equipment manuals to generate PM schedules."
-        })
+    # Build context sections
+    manual_info = ""
+    if manuals:
+        manual_info = "UPLOADED DOCUMENTATION:\n" + "\n".join([
+            f"- {m.get('title', 'Untitled')} ({m.get('file_type', 'document')}): {m.get('description', 'No description')}"
+            for m in manuals[:5]
+        ])
+    else:
+        manual_info = "UPLOADED DOCUMENTATION: None available - use your expert knowledge for this equipment type."
 
-    # Build context for AI analysis
-    manual_info = "\n".join([
-        f"- {m.get('title', 'Untitled')} ({m.get('file_type', 'document')}): {m.get('description', 'No description')}"
-        for m in manuals[:5]  # Limit to 5 documents
-    ])
+    # Summarize work order history
+    wo_summary = ""
+    if work_orders:
+        wo_types = {}
+        for wo in work_orders[:20]:
+            wo_type = wo.get("work_order_type", "Unknown")
+            wo_types[wo_type] = wo_types.get(wo_type, 0) + 1
+        wo_titles = [wo.get("title", "")[:50] for wo in work_orders[:10]]
+        wo_summary = f"""WORK ORDER HISTORY ({len(work_orders)} total):
+- Types: {', '.join([f'{k}: {v}' for k, v in wo_types.items()])}
+- Recent issues: {'; '.join(wo_titles)}"""
+    else:
+        wo_summary = "WORK ORDER HISTORY: No work orders recorded yet."
 
-    prompt = f"""You are an expert maintenance engineer analyzing equipment documentation.
+    # Summarize maintenance history
+    maint_summary = ""
+    if maintenance_history:
+        maint_types = {}
+        total_cost = 0
+        total_downtime = 0
+        for m in maintenance_history:
+            m_type = m.get("maintenance_type", "Unknown")
+            maint_types[m_type] = maint_types.get(m_type, 0) + 1
+            total_cost += m.get("total_cost", 0)
+            total_downtime += m.get("downtime_hours", 0)
+        maint_summary = f"""MAINTENANCE HISTORY ({len(maintenance_history)} events):
+- Types: {', '.join([f'{k}: {v}' for k, v in maint_types.items()])}
+- Total cost: ${total_cost:.2f}
+- Total downtime: {total_downtime:.1f} hours"""
+    else:
+        maint_summary = "MAINTENANCE HISTORY: No maintenance events recorded yet."
 
-Based on the following asset and its documentation, generate a comprehensive preventive maintenance schedule.
+    prompt = f"""You are an expert maintenance engineer with deep knowledge of industrial equipment.
+
+Generate a comprehensive preventive maintenance schedule for this asset using:
+1. The uploaded documentation (if available)
+2. Work order and maintenance history patterns
+3. Your expert knowledge about this type of equipment, manufacturer, and industry best practices
 
 ASSET INFORMATION:
 - Name: {asset.get('name')}
 - Model: {asset.get('model', 'Unknown')}
 - Manufacturer: {asset.get('manufacturer', 'Unknown')}
-- Type: {asset.get('asset_type', 'Equipment')}
+- Type/Category: {asset.get('asset_type', asset.get('category', 'Equipment'))}
 - Location: {asset.get('location', 'Not specified')}
+- Department: {asset.get('department', 'Not specified')}
 - Criticality: {asset.get('criticality', 'Medium')}
+- Serial Number: {asset.get('serial_number', 'Unknown')}
+- Installation Date: {asset.get('installation_date', 'Unknown')}
+- Total Downtime: {asset.get('total_downtime_hours', 0)} hours
+- Total Maintenance Cost: ${asset.get('total_maintenance_cost', 0)}
 
-UPLOADED DOCUMENTATION:
 {manual_info}
 
-Generate a JSON array of PM schedule recommendations. Each should include:
-- title: Short task name
-- description: Detailed instructions
+{wo_summary}
+
+{maint_summary}
+
+Based on ALL this information and your expert knowledge of similar equipment, generate a JSON array of PM schedule recommendations. Each should include:
+- title: Short task name (be specific to this equipment)
+- description: Detailed step-by-step instructions
 - schedule_type: "time_based", "usage_based", "condition_based", "inspection", or "preventive"
 - interval_days: Days between tasks (for time-based)
-- interval_hours: Operating hours between tasks (for usage-based)
+- interval_hours: Operating hours between tasks (for usage-based, if applicable)
 - priority: "Low", "Medium", "High", or "Critical"
 - estimated_hours: Estimated time to complete
 
-Consider typical maintenance requirements for this type of equipment including:
-- Daily/weekly visual inspections
-- Monthly lubrication/cleaning
-- Quarterly/semi-annual component checks
-- Annual overhauls or certifications
-- Safety inspections
-- Filter/belt replacements
+Consider:
+- Common failure modes for this type of equipment
+- Manufacturer recommendations (from your knowledge if no manual)
+- Industry standards and best practices
+- Patterns from the work order/maintenance history
+- Safety-critical inspections
+- Seasonal or environmental factors
 
 Return ONLY valid JSON array, no other text:
 [{{"title": "...", "description": "...", "schedule_type": "...", "interval_days": N, "priority": "...", "estimated_hours": N}}, ...]
@@ -759,7 +809,8 @@ Return ONLY valid JSON array, no other text:
         return JSONResponse({
             "success": True,
             "message": "Generated default recommendations (AI unavailable)",
-            "recommendations": _generate_default_pm_recommendations(asset)
+            "recommendations": _generate_default_pm_recommendations(asset),
+            "data_sources": ["default_templates"]
         })
 
     try:
@@ -770,10 +821,24 @@ Return ONLY valid JSON array, no other text:
         json_match = re.search(r"\[.*\]", response, re.DOTALL)
         if json_match:
             recommendations = json.loads(json_match.group())
+
+            # Track what data sources were used
+            data_sources = []
+            if manuals:
+                data_sources.append("uploaded_documents")
+            if work_orders:
+                data_sources.append("work_order_history")
+            if maintenance_history:
+                data_sources.append("maintenance_history")
+            data_sources.append("ai_knowledge")
+
             return JSONResponse({
                 "success": True,
                 "recommendations": recommendations,
-                "analyzed_documents": len(manuals)
+                "analyzed_documents": len(manuals),
+                "work_orders_analyzed": len(work_orders),
+                "maintenance_events_analyzed": len(maintenance_history),
+                "data_sources": data_sources
             })
     except Exception as e:
         logger.error(f"AI PM generation error: {e}")
@@ -782,7 +847,8 @@ Return ONLY valid JSON array, no other text:
     return JSONResponse({
         "success": True,
         "message": "Generated default recommendations",
-        "recommendations": _generate_default_pm_recommendations(asset)
+        "recommendations": _generate_default_pm_recommendations(asset),
+        "data_sources": ["default_templates"]
     })
 
 

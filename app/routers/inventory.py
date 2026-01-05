@@ -31,6 +31,10 @@ from app.auth import (
 )
 from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
+from app.services.audit_log_service import log_part_checkout, AuditAction, audit_log_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -592,3 +596,206 @@ async def bulk_import_parts(
             {"success": False, "error": f"Error processing file: {str(e)}"},
             status_code=500,
         )
+
+
+# ==========================================
+# 📦 PARTS CHECKOUT ENDPOINTS
+# ==========================================
+
+
+@router.post("/api/parts/checkout", response_class=JSONResponse)
+async def checkout_part(
+    request: Request,
+    part_id: str = Form(...),
+    quantity: int = Form(...),
+    work_order_id: str = Form(None),
+    notes: str = Form(""),
+):
+    """Checkout a part from inventory (deduct stock)"""
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"success": False, "error": "Not authenticated"}, status_code=401)
+
+    firestore_manager = get_firestore_manager()
+
+    # Get the part and validate organization
+    if current_user.organization_id:
+        part = await firestore_manager.get_org_document(
+            "parts", part_id, current_user.organization_id
+        )
+    else:
+        part = await firestore_manager.get_document("parts", part_id)
+
+    if not part:
+        return JSONResponse({"success": False, "error": "Part not found"}, status_code=404)
+
+    # Check stock availability
+    current_stock = part.get("current_stock", 0)
+    if quantity > current_stock:
+        return JSONResponse({
+            "success": False,
+            "error": f"Insufficient stock. Available: {current_stock}, Requested: {quantity}"
+        }, status_code=400)
+
+    # Update stock
+    new_stock = current_stock - quantity
+    await firestore_manager.update_document("parts", part_id, {"current_stock": new_stock})
+
+    # Create checkout record
+    checkout_data = {
+        "part_id": part_id,
+        "part_name": part.get("name", "Unknown"),
+        "part_number": part.get("part_number", ""),
+        "quantity": quantity,
+        "work_order_id": work_order_id,
+        "checked_out_by": current_user.uid,
+        "checked_out_by_name": current_user.full_name or current_user.email,
+        "organization_id": current_user.organization_id,
+        "notes": notes,
+        "checkout_time": datetime.now().isoformat(),
+        "previous_stock": current_stock,
+        "new_stock": new_stock,
+    }
+    checkout_id = await firestore_manager.create_document("parts_checkout", checkout_data)
+
+    # Log the checkout for audit trail
+    await log_part_checkout(
+        part_id=part_id,
+        part_name=part.get("name", "Unknown"),
+        quantity=quantity,
+        work_order_id=work_order_id,
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+    )
+
+    logger.info(f"Part checkout: {part.get('name')} x{quantity} by {current_user.full_name} for WO {work_order_id}")
+
+    return JSONResponse({
+        "success": True,
+        "checkout_id": checkout_id,
+        "part_name": part.get("name"),
+        "quantity_checked_out": quantity,
+        "new_stock": new_stock,
+        "message": f"Successfully checked out {quantity} x {part.get('name')}"
+    })
+
+
+@router.post("/api/parts/checkin", response_class=JSONResponse)
+async def checkin_part(
+    request: Request,
+    part_id: str = Form(...),
+    quantity: int = Form(...),
+    notes: str = Form(""),
+):
+    """Check in a part to inventory (add stock back)"""
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"success": False, "error": "Not authenticated"}, status_code=401)
+
+    firestore_manager = get_firestore_manager()
+
+    # Get the part and validate organization
+    if current_user.organization_id:
+        part = await firestore_manager.get_org_document(
+            "parts", part_id, current_user.organization_id
+        )
+    else:
+        part = await firestore_manager.get_document("parts", part_id)
+
+    if not part:
+        return JSONResponse({"success": False, "error": "Part not found"}, status_code=404)
+
+    # Update stock
+    current_stock = part.get("current_stock", 0)
+    new_stock = current_stock + quantity
+    await firestore_manager.update_document("parts", part_id, {"current_stock": new_stock})
+
+    # Create checkin record
+    checkin_data = {
+        "part_id": part_id,
+        "part_name": part.get("name", "Unknown"),
+        "part_number": part.get("part_number", ""),
+        "quantity": quantity,
+        "action": "checkin",
+        "checked_in_by": current_user.uid,
+        "checked_in_by_name": current_user.full_name or current_user.email,
+        "organization_id": current_user.organization_id,
+        "notes": notes,
+        "checkin_time": datetime.now().isoformat(),
+        "previous_stock": current_stock,
+        "new_stock": new_stock,
+    }
+    await firestore_manager.create_document("parts_checkout", checkin_data)
+
+    # Log the checkin for audit trail
+    await audit_log_service.log_action(
+        action=AuditAction.PART_CHECKED_IN,
+        entity_type="part",
+        entity_id=part_id,
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+        new_values={"quantity_checked_in": quantity},
+        metadata={"part_name": part.get("name")},
+    )
+
+    logger.info(f"Part checkin: {part.get('name')} x{quantity} by {current_user.full_name}")
+
+    return JSONResponse({
+        "success": True,
+        "part_name": part.get("name"),
+        "quantity_checked_in": quantity,
+        "new_stock": new_stock,
+        "message": f"Successfully checked in {quantity} x {part.get('name')}"
+    })
+
+
+@router.get("/api/parts/checkout-history", response_class=JSONResponse)
+async def get_checkout_history(
+    request: Request,
+    part_id: str = None,
+    work_order_id: str = None,
+    days: int = 30,
+    limit: int = 100,
+):
+    """Get parts checkout history"""
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    firestore_manager = get_firestore_manager()
+
+    filters = []
+    if current_user.organization_id:
+        filters.append({
+            "field": "organization_id",
+            "operator": "==",
+            "value": current_user.organization_id
+        })
+
+    if part_id:
+        filters.append({"field": "part_id", "operator": "==", "value": part_id})
+
+    if work_order_id:
+        filters.append({"field": "work_order_id", "operator": "==", "value": work_order_id})
+
+    # Get checkout records
+    checkouts = await firestore_manager.get_collection(
+        "parts_checkout",
+        filters=filters if filters else None,
+        limit=limit,
+    )
+
+    # Sort by checkout time descending
+    checkouts = sorted(
+        checkouts,
+        key=lambda x: x.get("checkout_time") or x.get("checkin_time") or "",
+        reverse=True
+    )
+
+    return JSONResponse({
+        "checkouts": checkouts,
+        "count": len(checkouts),
+        "organization_id": current_user.organization_id,
+    })

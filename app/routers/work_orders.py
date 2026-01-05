@@ -35,6 +35,11 @@ from app.models.user import User
 from typing import Optional as OptionalType
 from app.services.work_order_service import work_order_service
 from app.services.notification_service import NotificationService
+from app.services.audit_log_service import (
+    log_work_order_created,
+    log_work_order_updated,
+    log_work_order_completed,
+)
 from app.utils.sanitization import sanitize_text, sanitize_identifier
 
 logger = logging.getLogger(__name__)
@@ -262,6 +267,15 @@ async def create_work_order(
         work_order_data, organization_id=current_user.organization_id
     )
 
+    # Log the work order creation for audit trail
+    await log_work_order_created(
+        wo_id=wo_id,
+        wo_data=work_order_data,
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+    )
+
     # Notification logic would also be in the service layer
     if assigned_to_uid:
         await NotificationService.notify_work_order_assigned(
@@ -335,6 +349,27 @@ async def update_work_order(
     await work_order_service.update_work_order(
         wo_id, update_data, organization_id=current_user.organization_id
     )
+
+    # Log the work order update for audit trail
+    await log_work_order_updated(
+        wo_id=wo_id,
+        old_data=existing_data,
+        new_data=update_data,
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+    )
+
+    # If status changed to Completed, also log completion
+    if update_data.get("status") == "Completed" and existing_data.get("status") != "Completed":
+        await log_work_order_completed(
+            wo_id=wo_id,
+            wo_data=update_data,
+            user_id=current_user.uid,
+            user_name=current_user.full_name or current_user.email,
+            organization_id=current_user.organization_id,
+        )
+
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 
 
@@ -617,8 +652,16 @@ async def bulk_import_work_orders(
                 # Create work order in Firestore with organization scoping
                 if current_user and current_user.organization_id:
                     # SECURITY: Use org-scoped method to ensure data isolation
-                    await firestore_manager.create_org_document(
+                    wo_id = await firestore_manager.create_org_document(
                         "work_orders", wo_data, current_user.organization_id
+                    )
+                    # Log the bulk import creation
+                    await log_work_order_created(
+                        wo_id=wo_id or f"bulk_{idx}",
+                        wo_data=wo_data,
+                        user_id=current_user.uid,
+                        user_name=current_user.full_name or "bulk_import",
+                        organization_id=current_user.organization_id,
                     )
                 else:
                     # Fallback for users without org (should not happen in production)
@@ -644,3 +687,94 @@ async def bulk_import_work_orders(
             {"success": False, "error": f"Error processing file: {str(e)}"},
             status_code=500,
         )
+
+
+# ==========================================
+# 📋 AUDIT LOG API ENDPOINTS
+# ==========================================
+
+
+@router.get("/api/audit-logs", response_class=JSONResponse)
+async def get_audit_logs(
+    request: Request,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[str] = None,
+    days: int = 7,
+    limit: int = 100,
+):
+    """Get audit logs for the current organization"""
+    from app.services.audit_log_service import audit_log_service
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    org_id = current_user.organization_id
+
+    if entity_type and entity_id:
+        # Get history for specific entity
+        logs = await audit_log_service.get_entity_history(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            organization_id=org_id,
+            limit=limit,
+        )
+    else:
+        # Get all organization activity
+        logs = await audit_log_service.get_organization_activity(
+            organization_id=org_id,
+            days=days,
+            limit=limit,
+        )
+
+    return JSONResponse({
+        "logs": logs,
+        "count": len(logs),
+        "organization_id": org_id,
+    })
+
+
+@router.get("/api/audit-logs/summary", response_class=JSONResponse)
+async def get_audit_summary(
+    request: Request,
+    days: int = 30,
+):
+    """Get audit activity summary for the current organization"""
+    from app.services.audit_log_service import audit_log_service
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    summary = await audit_log_service.get_activity_summary(
+        organization_id=current_user.organization_id,
+        days=days,
+    )
+
+    return JSONResponse(summary)
+
+
+@router.get("/{wo_id}/audit-history", response_class=JSONResponse)
+async def get_work_order_audit_history(
+    request: Request,
+    wo_id: str,
+):
+    """Get audit history for a specific work order"""
+    from app.services.audit_log_service import audit_log_service
+
+    current_user = await get_current_user_from_cookie(request)
+    if not current_user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    logs = await audit_log_service.get_entity_history(
+        entity_type="work_order",
+        entity_id=wo_id,
+        organization_id=current_user.organization_id,
+        limit=50,
+    )
+
+    return JSONResponse({
+        "work_order_id": wo_id,
+        "history": logs,
+        "count": len(logs),
+    })

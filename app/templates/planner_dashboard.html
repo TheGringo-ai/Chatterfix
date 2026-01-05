@@ -735,6 +735,13 @@
     {% if advanced_mode %}
     <!-- Advanced Scheduler Views -->
     <div style="margin-top: 2rem;">
+        <!-- View Toggle Buttons -->
+        <div class="btn-group mb-3" role="group" aria-label="View selection">
+            <button type="button" class="btn btn-primary" onclick="switchView('calendar')">📅 Calendar</button>
+            <button type="button" class="btn btn-outline-primary" onclick="switchView('list')">📋 All Work Orders</button>
+            <button type="button" class="btn btn-outline-primary" onclick="switchView('gantt')">📊 Gantt Chart</button>
+        </div>
+
         <!-- Calendar View -->
         <div id="calendar-view" style="background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
             <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -1281,16 +1288,69 @@
         document.getElementById('calendar-view').style.display = 'none';
         document.getElementById('gantt-view').style.display = 'none';
         document.getElementById('list-view').style.display = 'none';
-        
+
         // Show selected view
         document.getElementById(view + '-view').style.display = 'block';
         currentView = view;
-        
-        // Update button states
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.className = btn.className.replace('btn-primary', 'btn-outline-primary');
-        });
-        event.target.className = event.target.className.replace('btn-outline-primary', 'btn-primary');
+
+        // Update button states in the view toggle group
+        const btnGroup = document.querySelector('.btn-group[aria-label="View selection"]');
+        if (btnGroup) {
+            btnGroup.querySelectorAll('.btn').forEach(btn => {
+                btn.className = btn.className.replace('btn-primary', 'btn-outline-primary');
+            });
+            // Find and highlight the active button
+            const activeBtn = [...btnGroup.querySelectorAll('.btn')].find(btn =>
+                btn.textContent.toLowerCase().includes(view === 'calendar' ? 'calendar' : view === 'list' ? 'all' : 'gantt')
+            );
+            if (activeBtn) {
+                activeBtn.className = activeBtn.className.replace('btn-outline-primary', 'btn-primary');
+            }
+        }
+
+        // Load data for the selected view
+        if (view === 'list') {
+            loadListViewData();
+        }
+    }
+
+    // Load work orders into the list view table
+    async function loadListViewData() {
+        try {
+            const response = await fetch('/planner/backlog', { credentials: 'include' });
+            const data = await response.json();
+
+            const tbody = document.getElementById('work-order-tbody');
+
+            if (!data.work_orders || data.work_orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No work orders found</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.work_orders.forEach(wo => {
+                const priorityClass = wo.priority?.toLowerCase() || 'medium';
+                const statusClass = wo.status?.toLowerCase().replace(' ', '-') || '';
+                html += `
+                    <tr onclick="openWorkOrderEditor('${wo.id}')" style="cursor: pointer;">
+                        <td><code>${wo.id?.slice(0, 8) || 'N/A'}...</code></td>
+                        <td>${wo.title || 'Untitled'}</td>
+                        <td><span class="badge bg-${priorityClass === 'critical' ? 'danger' : priorityClass === 'high' ? 'warning' : priorityClass === 'low' ? 'info' : 'primary'}">${wo.priority || 'Medium'}</span></td>
+                        <td>${wo.assigned_to ? getTechnicianName(wo.assigned_to) : 'Unassigned'}</td>
+                        <td>${wo.due_date || 'Not set'}</td>
+                        <td><span class="badge bg-${wo.status === 'Completed' ? 'success' : wo.status === 'In Progress' ? 'info' : 'secondary'}">${wo.status || 'Open'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); openWorkOrderEditor('${wo.id}')">✏️ Edit</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading list view:', error);
+            document.getElementById('work-order-tbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading work orders</td></tr>';
+        }
     }
 
     // Store calendar events globally for reference

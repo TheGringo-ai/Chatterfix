@@ -1358,7 +1358,7 @@
     // Load calendar events from the backlog API
     async function loadCalendarEvents(startDate, endDate) {
         try {
-            const response = await fetch('/planner/backlog');
+            const response = await fetch('/planner/backlog', { credentials: 'include' });
             const data = await response.json();
 
             const events = [];
@@ -1470,7 +1470,7 @@
     // Load technician availability for a specific date
     async function loadTechAvailability(dateStr) {
         try {
-            const response = await fetch('/planner/resource-capacity');
+            const response = await fetch('/planner/resource-capacity', { credentials: 'include' });
             const data = await response.json();
 
             const container = document.getElementById('techAvailability');
@@ -1844,7 +1844,7 @@
 
     async function loadSummary() {
         try {
-            const response = await fetch('/planner/summary');
+            const response = await fetch('/planner/summary', { credentials: 'include' });
             const data = await response.json();
 
             document.getElementById('backlogCount').textContent = data.backlog_count;
@@ -1858,7 +1858,7 @@
 
     async function loadCapacity() {
         try {
-            const response = await fetch('/planner/resource-capacity');
+            const response = await fetch('/planner/resource-capacity', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('capacityContent');
@@ -1894,7 +1894,7 @@
 
     async function loadBacklog() {
         try {
-            const response = await fetch('/planner/backlog');
+            const response = await fetch('/planner/backlog', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('backlogContent');
@@ -1936,7 +1936,7 @@
 
     async function loadAssetPM() {
         try {
-            const response = await fetch('/planner/asset-pm-status');
+            const response = await fetch('/planner/asset-pm-status', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('assetPMContent');
@@ -1970,7 +1970,7 @@
 
     async function loadConflicts() {
         try {
-            const response = await fetch('/planner/conflicts');
+            const response = await fetch('/planner/conflicts', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('conflictsContent');
@@ -2003,7 +2003,7 @@
 
     async function loadParts() {
         try {
-            const response = await fetch('/planner/parts-availability');
+            const response = await fetch('/planner/parts-availability', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('partsContent');
@@ -2051,7 +2051,7 @@
 
     async function loadCompliance() {
         try {
-            const response = await fetch('/planner/compliance');
+            const response = await fetch('/planner/compliance', { credentials: 'include' });
             const data = await response.json();
 
             const content = document.getElementById('complianceContent');
@@ -2087,7 +2087,7 @@
     async function openWorkOrderEditor(workOrderId) {
         try {
             // Fetch work order details
-            const response = await fetch(`/planner/work-orders/${workOrderId}`);
+            const response = await fetch(`/planner/work-orders/${workOrderId}`, { credentials: 'include' });
             if (!response.ok) {
                 throw new Error('Failed to fetch work order details');
             }
@@ -2165,6 +2165,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(updates)
             });
 

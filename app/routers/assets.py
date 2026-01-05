@@ -987,6 +987,14 @@ async def create_pm_schedule(
         # Also create a work order for this PM if it has a due date
         work_order_id = None
         if pm_data.get("next_due_date"):
+            # Convert due_date string to datetime if needed
+            due_date_val = pm_data.get("next_due_date")
+            if isinstance(due_date_val, str):
+                try:
+                    due_date_val = datetime.strptime(due_date_val, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                except ValueError:
+                    due_date_val = None
+
             work_order_data = {
                 "organization_id": current_user.organization_id,
                 "title": f"[PM] {pm_data['title']}",
@@ -1000,7 +1008,7 @@ async def create_pm_schedule(
                 "asset_id": asset_id,
                 "asset_name": asset.get("name", ""),
                 "pm_schedule_id": pm_id,
-                "due_date": pm_data.get("next_due_date"),
+                "due_date": due_date_val,
                 "estimated_hours": pm_data.get("estimated_hours"),
                 "created_by": current_user.uid,
                 "created_date": datetime.now(timezone.utc),  # Must match WorkOrder model

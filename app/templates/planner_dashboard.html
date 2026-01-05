@@ -1250,14 +1250,14 @@
     // Load team members from Firestore via API
     async function loadTeamMembers() {
         try {
-            const response = await fetch('/org/team', { credentials: 'include' });
+            const response = await fetch('/organization/team', { credentials: 'include' });
             if (response.ok) {
                 const data = await response.json();
                 teamMembers = data.members || [];
                 populateTechnicianDropdown();
-                console.log('📋 Loaded', teamMembers.length, 'team members');
+                console.log('📋 Loaded', teamMembers.length, 'team members:', teamMembers.map(m => m.full_name || m.email));
             } else {
-                console.warn('Could not load team members, using empty list');
+                console.warn('Could not load team members:', response.status, response.statusText);
                 teamMembers = [];
             }
         } catch (error) {

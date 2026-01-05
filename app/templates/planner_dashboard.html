@@ -742,6 +742,7 @@
                 <small style="color: var(--text-secondary); font-size: 0.8rem; margin-left: 1rem;">
                     Drag & drop to reschedule • Double-click to edit
                 </small>
+                <span id="data-source-indicator" class="badge bg-secondary" style="margin-left: auto;">Loading...</span>
             </h3>
             <div id="fullcalendar" style="min-height: 600px;"></div>
         </div>
@@ -1361,6 +1362,16 @@
             const response = await fetch('/planner/backlog', { credentials: 'include' });
             const data = await response.json();
 
+            // Debug: Log data source to help diagnose calendar issues
+            console.log('📅 Calendar Data Debug:', {
+                dataSource: data._debug?.data_source,
+                userAuthenticated: data._debug?.user_authenticated,
+                userEmail: data._debug?.user_email,
+                organizationId: data._debug?.organization_id,
+                workOrderCount: data.work_orders?.length,
+                totalBacklog: data.total_backlog
+            });
+
             const events = [];
             const priorityColors = {
                 'critical': '#dc3545',
@@ -1408,6 +1419,23 @@
                     type: 'PM'
                 }
             });
+
+            // Debug: Log final events list
+            const workOrderEvents = events.filter(e => !e.id?.startsWith('pm_'));
+            console.log('📅 Calendar Events Created:', {
+                totalEvents: events.length,
+                workOrderEvents: workOrderEvents.length,
+                samplePMEvents: events.length - workOrderEvents.length,
+                workOrderDates: workOrderEvents.map(e => ({ title: e.title?.slice(0, 30), date: e.start?.slice(0, 10) }))
+            });
+
+            // Update data source indicator in UI
+            const indicator = document.getElementById('data-source-indicator');
+            if (indicator) {
+                const source = data._debug?.data_source || 'unknown';
+                indicator.textContent = `Data: ${source}`;
+                indicator.className = source === 'firestore' ? 'badge bg-success' : 'badge bg-warning text-dark';
+            }
 
             return events;
         } catch (error) {

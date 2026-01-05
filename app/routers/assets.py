@@ -696,7 +696,7 @@ async def ai_generate_pm_schedule(
         return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
 
     # Get ALL available data in parallel for comprehensive analysis
-    documents, work_orders, maintenance_history = await asyncio.gather(
+    documents, work_orders, maintenance_history, parts = await asyncio.gather(
         firestore_manager.get_collection(
             "asset_media",
             filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
@@ -708,6 +708,7 @@ async def ai_generate_pm_schedule(
             order_by="-created_date",
             limit=50,
         ),
+        firestore_manager.get_asset_parts(asset_id),
     )
 
     # Filter for document types (not images/videos)
@@ -757,6 +758,35 @@ async def ai_generate_pm_schedule(
     else:
         maint_summary = "MAINTENANCE HISTORY: No maintenance events recorded yet."
 
+    # Summarize parts and their maintenance requirements
+    parts_summary = ""
+    if parts:
+        parts_info = []
+        for p in parts[:15]:  # Limit to 15 parts
+            part_info = f"- {p.get('name', 'Unknown Part')}"
+            if p.get('part_number'):
+                part_info += f" (P/N: {p.get('part_number')})"
+            if p.get('manufacturer'):
+                part_info += f" by {p.get('manufacturer')}"
+            # Include any maintenance notes or recommended replacement intervals
+            if p.get('maintenance_notes'):
+                part_info += f"\n  Maintenance: {p.get('maintenance_notes')}"
+            if p.get('replacement_interval_days'):
+                part_info += f"\n  Replace every: {p.get('replacement_interval_days')} days"
+            if p.get('replacement_interval_hours'):
+                part_info += f"\n  Replace every: {p.get('replacement_interval_hours')} operating hours"
+            if p.get('inspection_interval'):
+                part_info += f"\n  Inspect every: {p.get('inspection_interval')}"
+            if p.get('description'):
+                part_info += f"\n  Notes: {p.get('description')[:100]}"
+            parts_info.append(part_info)
+        parts_summary = f"""INSTALLED PARTS & COMPONENTS ({len(parts)} total):
+{chr(10).join(parts_info)}
+
+Consider each part's manufacturer recommendations for replacement/inspection intervals."""
+    else:
+        parts_summary = "INSTALLED PARTS: No parts recorded - use standard component maintenance intervals for this equipment type."
+
     prompt = f"""You are an expert maintenance engineer with deep knowledge of industrial equipment.
 
 Generate a comprehensive preventive maintenance schedule for this asset using:
@@ -782,6 +812,8 @@ ASSET INFORMATION:
 {wo_summary}
 
 {maint_summary}
+
+{parts_summary}
 
 Based on ALL this information and your expert knowledge of similar equipment, generate a JSON array of PM schedule recommendations. Each should include:
 - title: Short task name (be specific to this equipment)
@@ -830,6 +862,8 @@ Return ONLY valid JSON array, no other text:
                 data_sources.append("work_order_history")
             if maintenance_history:
                 data_sources.append("maintenance_history")
+            if parts:
+                data_sources.append("parts_components")
             data_sources.append("ai_knowledge")
 
             return JSONResponse({
@@ -838,6 +872,7 @@ Return ONLY valid JSON array, no other text:
                 "analyzed_documents": len(manuals),
                 "work_orders_analyzed": len(work_orders),
                 "maintenance_events_analyzed": len(maintenance_history),
+                "parts_analyzed": len(parts),
                 "data_sources": data_sources
             })
     except Exception as e:
@@ -949,10 +984,36 @@ async def create_pm_schedule(
 
         pm_id = await firestore_manager.create_document("pm_schedule_rules", pm_data)
 
+        # Also create a work order for this PM if it has a due date
+        work_order_id = None
+        if pm_data.get("next_due_date"):
+            work_order_data = {
+                "organization_id": current_user.organization_id,
+                "title": f"[PM] {pm_data['title']}",
+                "description": pm_data.get("description", "") + (
+                    f"\n\nChecklist:\n" + "\n".join(f"• {item}" for item in pm_data.get("checklist", []))
+                    if pm_data.get("checklist") else ""
+                ),
+                "type": "Preventive",
+                "status": "Open",
+                "priority": pm_data.get("priority", "Medium"),
+                "asset_id": asset_id,
+                "asset_name": asset.get("name", ""),
+                "pm_schedule_id": pm_id,
+                "due_date": pm_data.get("next_due_date"),
+                "estimated_hours": pm_data.get("estimated_hours"),
+                "created_by": current_user.uid,
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc),
+            }
+            work_order_id = await firestore_manager.create_document("work_orders", work_order_data)
+            logger.info(f"Created work order {work_order_id} for PM {pm_id}")
+
         return JSONResponse({
             "success": True,
             "pm_id": pm_id,
-            "message": "PM schedule created successfully"
+            "work_order_id": work_order_id,
+            "message": "PM schedule created" + (" with work order" if work_order_id else "")
         })
 
     except Exception as e:

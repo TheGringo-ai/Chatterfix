@@ -319,10 +319,13 @@ class OrganizationService:
 
             members = org.get("members", [])
             detailed_members = []
+            seen_user_ids = set()
 
+            # First, add all existing members
             for member in members:
                 user_id = member.get("user_id")
                 if user_id:
+                    seen_user_ids.add(user_id)
                     user_ref = self.db.collection("users").document(user_id)
                     user_doc = user_ref.get()
                     if user_doc.exists:
@@ -338,6 +341,22 @@ class OrganizationService:
                         )
                     else:
                         detailed_members.append(member)
+
+            # Always include the owner if not already in members list
+            owner_id = org.get("owner_id")
+            if owner_id and owner_id not in seen_user_ids:
+                user_ref = self.db.collection("users").document(owner_id)
+                user_doc = user_ref.get()
+                if user_doc.exists:
+                    user_data = user_doc.to_dict()
+                    detailed_members.insert(0, {
+                        "user_id": owner_id,
+                        "role": "owner",
+                        "full_name": user_data.get("full_name")
+                        or user_data.get("display_name", "Unknown"),
+                        "email": user_data.get("email", org.get("owner_email")),
+                        "status": user_data.get("status", "active"),
+                    })
 
             return detailed_members
 

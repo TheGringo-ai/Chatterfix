@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import get_current_user_from_cookie
+from app.auth import get_current_user_from_cookie, get_optional_current_user
 from app.models.user import User
 from app.services.advanced_scheduler_service import advanced_scheduler
 from app.services.planner_service import planner_service

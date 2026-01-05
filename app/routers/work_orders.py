@@ -121,9 +121,11 @@ async def work_orders_list(request: Request):
         if current_user.organization_id:
             # Has organization - show real Firestore data
             try:
-                work_orders = await work_order_service.get_work_orders(
+                work_order_objects = await work_order_service.get_work_orders(
                     organization_id=current_user.organization_id
                 )
+                # Convert Pydantic objects to dicts for template compatibility
+                work_orders = [wo.model_dump() if hasattr(wo, 'model_dump') else wo.dict() for wo in work_order_objects]
             except Exception as e:
                 logger.error(f"Error loading work orders: {e}")
                 # Show empty list on error, not demo data (user is still authenticated)

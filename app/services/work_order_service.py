@@ -49,7 +49,19 @@ class WorkOrderService:
             order_by="-created_date" if not filters else None,  # Avoid composite index
             filters=filters if filters else None,
         )
-        return [WorkOrder(**wo) for wo in work_orders_data]
+
+        # Parse work orders with graceful error handling
+        work_orders = []
+        for wo_data in work_orders_data:
+            try:
+                work_orders.append(WorkOrder(**wo_data))
+            except Exception as e:
+                # Log the specific work order that failed validation
+                wo_id = wo_data.get("id", "unknown")
+                logger.warning(f"Skipping invalid work order {wo_id}: {e}")
+                logger.debug(f"Invalid work order data: {wo_data}")
+
+        return work_orders
 
     async def get_work_order(
         self, wo_id: str, organization_id: Optional[str] = None

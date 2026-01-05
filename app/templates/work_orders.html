@@ -1051,16 +1051,36 @@
         });
     }
 
+    // Store technicians for later use in edit modal
+    let availableTechnicians = [];
+
     function populateTechnicianDropdown(technicians) {
-        const select = document.getElementById('technicianSelect');
-        select.innerHTML = '<option value="">Select Technician...</option>';
-        
-        technicians.forEach(tech => {
-            const option = document.createElement('option');
-            option.value = tech.id;
-            option.textContent = tech.full_name || tech.name;
-            select.appendChild(option);
-        });
+        // Store for later use
+        availableTechnicians = technicians;
+
+        // Populate create form dropdown
+        const createSelect = document.getElementById('technicianSelect');
+        if (createSelect) {
+            createSelect.innerHTML = '<option value="">Select Technician...</option>';
+            technicians.forEach(tech => {
+                const option = document.createElement('option');
+                option.value = tech.id;
+                option.textContent = tech.full_name || tech.name;
+                createSelect.appendChild(option);
+            });
+        }
+
+        // Also populate edit modal dropdown
+        const editSelect = document.getElementById('edit-assigned-to');
+        if (editSelect) {
+            editSelect.innerHTML = '<option value="">Select Technician...</option>';
+            technicians.forEach(tech => {
+                const option = document.createElement('option');
+                option.value = tech.id;
+                option.textContent = tech.full_name || tech.name;
+                editSelect.appendChild(option);
+            });
+        }
     }
 
     let availableParts = [];

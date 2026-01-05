@@ -277,42 +277,48 @@ async def create_work_order(
 @router.post("/{wo_id}/update")
 async def update_work_order(
     wo_id: str,
-    title: str = Form(...),
-    description: str = Form(...),
-    priority: str = Form(...),
-    status: str = Form(...),
+    title: str = Form(""),
+    description: str = Form(""),
+    priority: str = Form("Medium"),
+    status: str = Form("Open"),
     assigned_to_uid: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
     scheduled_time: Optional[str] = Form(None),
     current_user: User = Depends(require_permission_cookie("update_status")),
 ):
-    """Update an existing work order"""
+    """Update an existing work order - all fields have defaults for robustness"""
+    # First, get the existing work order to preserve values if form fields are empty
+    existing_wo = await work_order_service.get_work_order(wo_id, organization_id=current_user.organization_id)
+    if not existing_wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
     # Sanitize user inputs to prevent XSS/injection
-    safe_title = sanitize_text(title, max_length=200)
-    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True)
+    # Use existing values if form fields are empty (fallback for form issues)
+    safe_title = sanitize_text(title, max_length=200) if title else existing_wo.get("title", "Untitled")
+    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True) if description else existing_wo.get("description", "")
 
-    # Validate priority against whitelist
+    # Validate priority against whitelist, fallback to existing
     allowed_priorities = {"Low", "Medium", "High", "Critical"}
-    safe_priority = priority if priority in allowed_priorities else "Medium"
+    safe_priority = priority if priority in allowed_priorities else existing_wo.get("priority", "Medium")
 
-    # Validate status against whitelist
+    # Validate status against whitelist, fallback to existing
     allowed_statuses = {"Open", "In Progress", "On Hold", "Completed", "Cancelled"}
-    safe_status = status if status in allowed_statuses else "Open"
+    safe_status = status if status in allowed_statuses else existing_wo.get("status", "Open")
 
     # If scheduled_time is provided, extract date for due_date (calendar uses due_date)
-    effective_due_date = due_date
+    effective_due_date = due_date if due_date else existing_wo.get("due_date")
     if scheduled_time:
         # Extract date portion from scheduled_time (format: YYYY-MM-DDTHH:MM)
-        effective_due_date = scheduled_time[:10] if len(scheduled_time) >= 10 else due_date
+        effective_due_date = scheduled_time[:10] if len(scheduled_time) >= 10 else effective_due_date
 
     update_data = {
         "title": safe_title,
         "description": safe_description,
         "priority": safe_priority,
         "status": safe_status,
-        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else None,
+        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else existing_wo.get("assigned_to_uid"),
         "due_date": effective_due_date,
-        "scheduled_time": scheduled_time,
+        "scheduled_time": scheduled_time if scheduled_time else existing_wo.get("scheduled_time"),
     }
     # Multi-tenant: validate work order belongs to user's organization
     await work_order_service.update_work_order(

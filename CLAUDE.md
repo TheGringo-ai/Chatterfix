@@ -837,6 +837,73 @@ except Exception as e:
 - Log index errors clearly so they're easy to diagnose
 - Consider adding index verification to deployment pipeline
 
+#### **LESSON #20: Organization Data Integrity - owner_id and members Array**
+**Problem**: Technician dropdowns empty, team members not loading, features dependent on organization data fail silently
+**Root Cause**: Organizations created by older code have missing `owner_id` and empty `members` array. We keep patching the database manually instead of fixing at the source.
+**Symptoms**:
+- Technician dropdown shows no options
+- `/organization/team` API returns empty members array
+- User is logged in but can't see themselves in team-related features
+- Recurring issue that gets "fixed" but comes back
+
+**Investigation Steps:**
+1. Check organization data in Firestore:
+```bash
+python3 -c "
+import asyncio
+from google.cloud import firestore
+async def check():
+    db = firestore.AsyncClient(project='fredfix')
+    orgs = db.collection('organizations').stream()
+    async for org in orgs:
+        data = org.to_dict()
+        print(f'{data.get(\"name\")}: owner_id={data.get(\"owner_id\")}, members={len(data.get(\"members\", []))}')
+asyncio.run(check())
+"
+```
+2. Verify the organization has `owner_id` set (not None)
+3. Verify `members` array contains at least the owner
+
+**Solution:**
+1. **Run migration for ALL organizations:**
+```python
+# Fix all orgs with missing owner_id or empty members
+for org in organizations:
+    if not org.owner_id and org.owner_email:
+        user = find_user_by_email(org.owner_email)
+        org.update({'owner_id': user.id})
+    if not org.members:
+        org.update({'members': [{'user_id': owner_id, 'role': 'owner', ...}]})
+```
+
+2. **Ensure create_organization always sets both:**
+```python
+org_data = {
+    "owner_id": owner_user_id,  # MUST be set
+    "members": [{               # MUST include owner
+        "user_id": owner_user_id,
+        "email": owner_email,
+        "role": "owner",
+        "joined_at": datetime.now(timezone.utc).isoformat()
+    }],
+    ...
+}
+```
+
+3. **get_organization_members should always include owner:**
+```python
+# Even if members array is empty, include the owner
+if owner_id and owner_id not in seen_user_ids:
+    detailed_members.insert(0, {...owner data...})
+```
+
+**Prevention**:
+- NEVER patch database manually without also fixing the code
+- When organization issues occur, run a MIGRATION to fix ALL organizations, not just the current one
+- Add validation in create_organization to fail if owner_user_id is None
+- Add startup check that logs organizations with missing owner_id
+- Test organization features with a FRESH signup, not just existing accounts
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

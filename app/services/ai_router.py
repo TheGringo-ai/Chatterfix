@@ -1076,7 +1076,10 @@ Collaborate as a team to provide the best possible guidance.
 
             return response
         else:
-            return result.get("final_result", "AI team analysis complete.")
+            # Raise exception to trigger Gemini fallback
+            error_msg = result.get("collaboration_summary", "AI team unavailable")
+            logger.warning(f"⚠️ AI Team failed: {error_msg}, triggering Gemini fallback")
+            raise Exception(f"AI Team failed: {error_msg}")
 
 
 # Global instance

@@ -1285,7 +1285,7 @@
             // Add team members
             teamMembers.forEach(member => {
                 const option = document.createElement('option');
-                option.value = member.uid || member.id;
+                option.value = member.uid || member.user_id || member.id;
                 option.textContent = member.full_name || member.email || 'Unknown';
                 select.appendChild(option);
             });
@@ -1329,7 +1329,7 @@
     // Get technician name from ID using loaded team members
     function getTechnicianNameFromMembers(techId) {
         if (!techId) return 'Unassigned';
-        const member = teamMembers.find(m => m.uid === techId || m.id === techId);
+        const member = teamMembers.find(m => m.uid === techId || m.user_id === techId || m.id === techId);
         return member ? (member.full_name || member.email) : techId;
     }
 

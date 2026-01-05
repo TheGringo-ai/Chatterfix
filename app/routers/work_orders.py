@@ -292,33 +292,44 @@ async def update_work_order(
     if not existing_wo:
         raise HTTPException(status_code=404, detail="Work order not found")
 
+    # Convert Pydantic model to dict for easier access
+    existing_data = existing_wo.model_dump() if hasattr(existing_wo, 'model_dump') else existing_wo.dict()
+
+    # Convert datetime to string for due_date if needed
+    existing_due_date = existing_data.get("due_date")
+    if hasattr(existing_due_date, 'strftime'):
+        existing_due_date = existing_due_date.strftime("%Y-%m-%d")
+
     # Sanitize user inputs to prevent XSS/injection
     # Use existing values if form fields are empty (fallback for form issues)
-    safe_title = sanitize_text(title, max_length=200) if title else existing_wo.get("title", "Untitled")
-    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True) if description else existing_wo.get("description", "")
+    safe_title = sanitize_text(title, max_length=200) if title else existing_data.get("title", "Untitled")
+    safe_description = sanitize_text(description, max_length=5000, preserve_newlines=True) if description else existing_data.get("description", "")
 
     # Validate priority against whitelist, fallback to existing
     allowed_priorities = {"Low", "Medium", "High", "Critical"}
-    safe_priority = priority if priority in allowed_priorities else existing_wo.get("priority", "Medium")
+    safe_priority = priority if priority in allowed_priorities else existing_data.get("priority", "Medium")
 
     # Validate status against whitelist, fallback to existing
     allowed_statuses = {"Open", "In Progress", "On Hold", "Completed", "Cancelled"}
-    safe_status = status if status in allowed_statuses else existing_wo.get("status", "Open")
+    safe_status = status if status in allowed_statuses else existing_data.get("status", "Open")
 
     # If scheduled_time is provided, extract date for due_date (calendar uses due_date)
-    effective_due_date = due_date if due_date else existing_wo.get("due_date")
+    effective_due_date = due_date if due_date else existing_due_date
     if scheduled_time:
         # Extract date portion from scheduled_time (format: YYYY-MM-DDTHH:MM)
         effective_due_date = scheduled_time[:10] if len(scheduled_time) >= 10 else effective_due_date
+
+    # Log what we're saving for debugging
+    logger.info(f"Updating work order {wo_id}: due_date={effective_due_date}, scheduled_time={scheduled_time}")
 
     update_data = {
         "title": safe_title,
         "description": safe_description,
         "priority": safe_priority,
         "status": safe_status,
-        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else existing_wo.get("assigned_to_uid"),
+        "assigned_to_uid": sanitize_identifier(assigned_to_uid) if assigned_to_uid else existing_data.get("assigned_to_uid"),
         "due_date": effective_due_date,
-        "scheduled_time": scheduled_time if scheduled_time else existing_wo.get("scheduled_time"),
+        "scheduled_time": scheduled_time if scheduled_time else existing_data.get("scheduled_time"),
     }
     # Multi-tenant: validate work order belongs to user's organization
     await work_order_service.update_work_order(

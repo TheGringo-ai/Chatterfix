@@ -237,6 +237,16 @@ async def debug_auth(request: Request):
 async def get_backlog(request: Request):
     """Get work order backlog - real Firestore data for authenticated users"""
     current_user = await get_current_user_from_cookie(request)
+    session_token = request.cookies.get("session_token")
+
+    # Debug info to include in response
+    debug_info = {
+        "has_session_token": session_token is not None,
+        "user_authenticated": current_user is not None,
+        "user_email": current_user.email if current_user else None,
+        "organization_id": current_user.organization_id if current_user else None,
+        "data_source": "unknown"
+    }
 
     # Debug logging
     logger.info(f"Backlog request - User: {current_user.email if current_user else 'None'}, Org: {current_user.organization_id if current_user else 'None'}")
@@ -283,19 +293,24 @@ async def get_backlog(request: Request):
                 priority = wo["priority"].lower()
                 by_priority[priority] = by_priority.get(priority, 0) + 1
 
+            debug_info["data_source"] = "firestore"
             return JSONResponse(content={
                 "work_orders": work_orders,
                 "total_backlog": len([wo for wo in work_orders if wo["status"] != "Completed"]),
                 "overdue_count": len(overdue),
                 "due_today_count": len(due_today),
                 "by_priority": by_priority,
+                "_debug": debug_info,
             })
         except Exception as e:
             logger.error(f"Error fetching work orders for planner: {e}")
+            debug_info["data_source"] = f"error: {str(e)}"
             # Fall through to mock data
 
     # Demo/unauthenticated - use mock data
+    debug_info["data_source"] = "mock_data"
     backlog = planner_service.get_work_order_backlog()
+    backlog["_debug"] = debug_info
     return JSONResponse(content=backlog)
 
 

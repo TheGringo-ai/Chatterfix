@@ -415,6 +415,22 @@ async def complete_work_order(
         organization_id=current_user.organization_id,
     )
 
+    # Update asset's last_maintenance_date if work order is linked to an asset
+    asset_id = existing_data.get("asset_id")
+    if asset_id:
+        try:
+            asset_update = {
+                "last_maintenance_date": update_data["completed_at"],
+                "base_health_score": 100.0,  # Reset health score after maintenance
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await firestore_manager.update_document("assets", asset_id, asset_update)
+            logging.getLogger(__name__).info(
+                f"Updated asset {asset_id} last_maintenance_date after WO {wo_id} completion"
+            )
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Error updating asset after WO completion: {e}")
+
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 
 
@@ -564,6 +580,22 @@ async def complete_work_order_enhanced(
         organization_id=current_user.organization_id,
         completion_notes=completion_notes,
     )
+
+    # Update asset's last_maintenance_date if work order is linked to an asset
+    asset_id = existing_data.get("asset_id")
+    if asset_id:
+        try:
+            asset_update = {
+                "last_maintenance_date": completion_timestamp,
+                "base_health_score": 100.0,  # Reset health score after maintenance
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await firestore_manager.update_document("assets", asset_id, asset_update)
+            logging.getLogger(__name__).info(
+                f"Updated asset {asset_id} last_maintenance_date after WO {wo_id} completion"
+            )
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Error updating asset after WO completion: {e}")
 
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 

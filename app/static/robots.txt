@@ -1,0 +1,29 @@
+# ChatterFix CMMS - Robots.txt
+# Allow search engines to crawl public pages
+
+User-agent: *
+Allow: /
+Allow: /demo
+Allow: /demo/
+Allow: /features
+Allow: /pricing
+Allow: /about
+Allow: /contact
+
+# Disallow authenticated/private areas
+Disallow: /dashboard
+Disallow: /work-orders
+Disallow: /assets
+Disallow: /inventory
+Disallow: /team
+Disallow: /training
+Disallow: /settings
+Disallow: /analytics
+Disallow: /planner
+Disallow: /api/
+Disallow: /auth/
+Disallow: /scheduled/
+Disallow: /health/
+
+# Sitemap location
+Sitemap: https://chatterfix.com/sitemap.xml

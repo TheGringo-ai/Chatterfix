@@ -547,6 +547,40 @@ async def root(request: Request):
     return RedirectResponse(url="/demo", status_code=302)
 
 
+# ========== SEO ENDPOINTS ==========
+from fastapi.responses import FileResponse, Response
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    """Serve robots.txt for search engine crawlers"""
+    robots_path = os.path.join(app_dir, "app", "static", "robots.txt")
+    if os.path.exists(robots_path):
+        return FileResponse(robots_path, media_type="text/plain")
+    # Fallback if file doesn't exist
+    return Response(
+        content="User-agent: *\nAllow: /\nSitemap: https://chatterfix.com/sitemap.xml",
+        media_type="text/plain"
+    )
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    """Serve sitemap.xml for search engine indexing"""
+    sitemap_path = os.path.join(app_dir, "app", "static", "sitemap.xml")
+    if os.path.exists(sitemap_path):
+        return FileResponse(sitemap_path, media_type="application/xml")
+    # Fallback with basic sitemap
+    return Response(
+        content='''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://chatterfix.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://chatterfix.com/demo</loc><priority>0.9</priority></url>
+</urlset>''',
+        media_type="application/xml"
+    )
+
+
 # Simple test endpoint to verify deployment
 @app.get("/test")
 async def test_endpoint():

@@ -2,10 +2,10 @@ import csv
 import io
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
@@ -369,6 +369,51 @@ async def update_work_order(
             user_name=current_user.full_name or current_user.email,
             organization_id=current_user.organization_id,
         )
+
+    return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
+
+
+# ==========================================
+# ✅ COMPLETE WORK ORDER ENDPOINT
+# ==========================================
+
+
+@router.post("/{wo_id}/complete")
+async def complete_work_order(
+    request: Request,
+    wo_id: str,
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Complete a work order - sets status to Completed"""
+    from app.core.firestore_db import get_firestore_manager
+
+    firestore_manager = get_firestore_manager()
+
+    # Get the existing work order
+    existing_data = await firestore_manager.get_document("work_orders", wo_id)
+    if not existing_data:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
+    # Update status to Completed
+    update_data = {
+        "status": "Completed",
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "completed_by_uid": current_user.uid,
+        "completed_by_name": current_user.full_name or current_user.email,
+    }
+
+    await firestore_manager.update_document(
+        "work_orders", wo_id, update_data, organization_id=current_user.organization_id
+    )
+
+    # Log the completion for audit trail
+    await log_work_order_completed(
+        wo_id=wo_id,
+        wo_data={**existing_data, **update_data},
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+    )
 
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 

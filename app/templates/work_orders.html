@@ -1055,10 +1055,14 @@
             }
 
             // Load technicians for dropdown (credentials needed for org filtering)
-            const techResponse = await fetch('/api/users', { credentials: 'include' });
+            const techResponse = await fetch('/team/users', { credentials: 'include' });
             if (techResponse.ok) {
-                const technicians = await techResponse.json();
+                const techData = await techResponse.json();
+                // Handle both {users: [...]} and [...] response formats
+                const technicians = techData.users || techData;
                 populateTechnicianDropdown(technicians);
+            } else {
+                console.error('Failed to load technicians:', techResponse.status);
             }
 
             // Load parts for parts checkout
@@ -1090,6 +1094,7 @@
     function populateTechnicianDropdown(technicians) {
         // Store for later use
         availableTechnicians = technicians;
+        console.log('Loaded technicians:', technicians.length);
 
         // Populate create form dropdown
         const createSelect = document.getElementById('technicianSelect');
@@ -1097,8 +1102,8 @@
             createSelect.innerHTML = '<option value="">Select Technician...</option>';
             technicians.forEach(tech => {
                 const option = document.createElement('option');
-                option.value = tech.id;
-                option.textContent = tech.full_name || tech.name;
+                option.value = tech.uid || tech.id;
+                option.textContent = tech.full_name || tech.email || tech.name || 'Unknown';
                 createSelect.appendChild(option);
             });
         }
@@ -1109,8 +1114,8 @@
             editSelect.innerHTML = '<option value="">Select Technician...</option>';
             technicians.forEach(tech => {
                 const option = document.createElement('option');
-                option.value = tech.id;
-                option.textContent = tech.full_name || tech.name;
+                option.value = tech.uid || tech.id;
+                option.textContent = tech.full_name || tech.email || tech.name || 'Unknown';
                 editSelect.appendChild(option);
             });
         }

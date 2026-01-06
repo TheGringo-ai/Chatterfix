@@ -17,7 +17,6 @@ Usage:
 import asyncio
 import os
 import sys
-from datetime import datetime, timezone
 
 # Add project root for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -60,7 +59,7 @@ class BootstrapE2ETest:
         log("Cleaning up test data...")
         try:
             # Delete test work orders
-            for collection in ["work_orders", "pm_schedule_rules", "assets", "parts", "vendors", "pm_evaluations"]:
+            for collection in ["work_orders", "pm_schedule_rules", "assets", "parts", "vendors", "pm_evaluations", "asset_categories", "locations"]:
                 docs = list(
                     self.db.collection(collection)
                     .where("organization_id", "==", TEST_ORG_ID)
@@ -97,19 +96,19 @@ class BootstrapE2ETest:
         """Test that bootstrap creates organization and required documents."""
         log("TEST 1: Bootstrap creates organization + rate limits + user")
 
-        from app.routers.org_bootstrap import bootstrap_organization, BootstrapRequest, SubscriptionTier
+        from app.services.org_bootstrap_service import bootstrap_org, SubscriptionTier
 
-        request = BootstrapRequest(
+        result = await bootstrap_org(
+            org_id=TEST_ORG_ID,
             org_name="Test Bootstrap Corp",
-            owner_email=TEST_OWNER_EMAIL,
             owner_user_id=TEST_OWNER_UID,
+            owner_email=TEST_OWNER_EMAIL,
             owner_name="Test Owner",
             tier=SubscriptionTier.STARTER,
-            timezone="America/New_York",
+            timezone_str="America/New_York",
             include_sample_data=False,
+            force=True,
         )
-
-        result = await bootstrap_organization(TEST_ORG_ID, request, force=True)
 
         if not result.success:
             log(f"   ❌ FAIL: Bootstrap returned success=False: {result.message}")
@@ -164,17 +163,17 @@ class BootstrapE2ETest:
         """Test that bootstrap is idempotent (doesn't overwrite without force)."""
         log("TEST 2: Bootstrap is idempotent")
 
-        from app.routers.org_bootstrap import bootstrap_organization, BootstrapRequest, SubscriptionTier
+        from app.services.org_bootstrap_service import bootstrap_org, SubscriptionTier
 
         # Try to bootstrap again without force
-        request = BootstrapRequest(
+        result = await bootstrap_org(
+            org_id=TEST_ORG_ID,
             org_name="Different Name",
-            owner_email="different@example.com",
             owner_user_id="different_uid",
+            owner_email="different@example.com",
             tier=SubscriptionTier.ENTERPRISE,  # Different tier
+            force=False,
         )
-
-        result = await bootstrap_organization(TEST_ORG_ID, request, force=False)
 
         # Should return existing org, not overwrite
         if not result.success:
@@ -203,35 +202,35 @@ class BootstrapE2ETest:
         """Test that status endpoint returns correct data."""
         log("TEST 3: Status endpoint returns correct data")
 
-        from app.routers.org_bootstrap import get_org_status
+        from app.services.org_bootstrap_service import get_org_status
 
-        response = await get_org_status(TEST_ORG_ID)
+        status = await get_org_status(TEST_ORG_ID)
 
-        # Parse JSON response
-        import json
-        status = json.loads(response.body.decode())
-
-        if status.get("org_id") != TEST_ORG_ID:
-            log(f"   ❌ FAIL: Wrong org_id: {status.get('org_id')}")
+        if status is None:
+            log("   ❌ FAIL: Status returned None")
             return False
 
-        if status.get("tier") != "starter":
-            log(f"   ❌ FAIL: Wrong tier: {status.get('tier')}")
+        if status.org_id != TEST_ORG_ID:
+            log(f"   ❌ FAIL: Wrong org_id: {status.org_id}")
             return False
 
-        if status.get("status") != "ready":
-            log(f"   ❌ FAIL: Status not 'ready': {status.get('status')}")
+        if status.tier != "starter":
+            log(f"   ❌ FAIL: Wrong tier: {status.tier}")
             return False
 
-        if "rate_limits" not in status or status["rate_limits"] is None:
+        if status.status != "ready":
+            log(f"   ❌ FAIL: Status not 'ready': {status.status}")
+            return False
+
+        if status.rate_limits is None:
             log("   ❌ FAIL: Rate limits not in status")
             return False
 
-        if "counts" not in status:
+        if status.counts is None:
             log("   ❌ FAIL: Counts not in status")
             return False
 
-        log(f"   Status: tier={status.get('tier')}, counts={status.get('counts')}", 1)
+        log(f"   Status: tier={status.tier}, counts={status.counts}", 1)
         log("   ✅ PASS: Status endpoint returns correct data")
         return True
 
@@ -239,17 +238,18 @@ class BootstrapE2ETest:
         """Test that bootstrap can seed sample data."""
         log("TEST 4: Bootstrap with sample data creates assets + PM rules")
 
-        from app.routers.org_bootstrap import bootstrap_organization, BootstrapRequest
+        from app.services.org_bootstrap_service import bootstrap_org, SubscriptionTier
 
         # Bootstrap with sample data (force to overwrite)
-        request = BootstrapRequest(
+        result = await bootstrap_org(
+            org_id=TEST_ORG_ID,
             org_name="Sample Data Corp",
-            owner_email=TEST_OWNER_EMAIL,
             owner_user_id=TEST_OWNER_UID,
+            owner_email=TEST_OWNER_EMAIL,
+            tier=SubscriptionTier.FREE,
             include_sample_data=True,  # KEY: Include sample data
+            force=True,
         )
-
-        result = await bootstrap_organization(TEST_ORG_ID, request, force=True)
 
         if not result.success:
             log(f"   ❌ FAIL: Bootstrap with sample data failed: {result.message}")
@@ -299,30 +299,16 @@ class BootstrapE2ETest:
         """Test that delete removes all organization data."""
         log("TEST 5: Delete removes all organization data")
 
-        from app.routers.org_bootstrap import delete_organization
+        from app.services.org_bootstrap_service import delete_org
 
-        # Delete without confirm should fail
-        try:
-            await delete_organization(TEST_ORG_ID, confirm=False)
-            log("   ❌ FAIL: Delete without confirm should raise HTTPException")
-            return False
-        except Exception as e:
-            if "confirm=true" in str(e):
-                log("   ✓ Delete without confirm correctly rejected", 1)
-            else:
-                log(f"   ❌ FAIL: Wrong exception: {e}")
-                return False
+        # Delete should work
+        result = await delete_org(TEST_ORG_ID)
 
-        # Delete with confirm should work
-        response = await delete_organization(TEST_ORG_ID, confirm=True)
-        import json
-        result = json.loads(response.body.decode())
-
-        if not result.get("success"):
-            log(f"   ❌ FAIL: Delete returned success=False")
+        if not result.success:
+            log(f"   ❌ FAIL: Delete returned success=False: {result.error}")
             return False
 
-        log(f"   Deleted counts: {result.get('deleted')}", 1)
+        log(f"   Deleted counts: {result.deleted_counts}", 1)
 
         # Verify organization gone
         org = self.db.collection("organizations").document(TEST_ORG_ID).get()

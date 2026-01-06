@@ -568,6 +568,39 @@
                 </div>
             </div>
 
+            <!-- Technicians Who Worked Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f4fd; border-radius: 8px; border: 1px solid #b8daff;">
+                <h3 style="margin-bottom: 1rem; color: #004085;"><i class="fas fa-users"></i> Technicians Who Worked</h3>
+                <div id="completionTechniciansContainer">
+                    <div class="completion-tech-row" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Technician Name *</label>
+                            <select name="completion_technicians[0][technician_id]" class="completion-tech-select" required
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                                <option value="">Select Technician...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Hours Worked</label>
+                            <input type="number" name="completion_technicians[0][hours_worked]" min="0" step="0.25" placeholder="2.5"
+                                style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        </div>
+                        <div>
+                            <button type="button" onclick="removeCompletionTechnician(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;" title="Remove technician">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addCompletionTechnician()" class="cmms-btn-secondary">
+                    <i class="fas fa-user-plus"></i> Add Another Technician
+                </button>
+                <div style="font-size: 0.9em; color: #004085; margin-top: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Add all technicians who helped with this work order
+                </div>
+            </div>
+
             <!-- Work Summary Section -->
             <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f5e8; border-radius: 8px; border: 1px solid #c3e6cb;">
                 <h3 style="margin-bottom: 1rem; color: #155724;"><i class="fas fa-clipboard-check"></i> Work Performed Summary</h3>
@@ -1319,6 +1352,84 @@
 
     // Completion modal functions
     let completionPartCounter = 0;
+    let completionTechCounter = 0;
+
+    function updateCompletionTechnicianSelects() {
+        // Populate all technician dropdowns in completion modal
+        const selects = document.querySelectorAll('.completion-tech-select');
+        selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Select Technician...</option>';
+
+            availableTechnicians.forEach(tech => {
+                const option = document.createElement('option');
+                option.value = tech.uid || tech.id;
+                option.textContent = tech.full_name || tech.email || 'Unknown';
+                select.appendChild(option);
+            });
+
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+    }
+
+    function addCompletionTechnician() {
+        completionTechCounter++;
+        const container = document.getElementById('completionTechniciansContainer');
+
+        const techRow = document.createElement('div');
+        techRow.className = 'completion-tech-row';
+        techRow.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;';
+
+        techRow.innerHTML = `
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Technician Name</label>
+                <select name="completion_technicians[${completionTechCounter}][technician_id]" class="completion-tech-select"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <option value="">Select Technician...</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Hours Worked</label>
+                <input type="number" name="completion_technicians[${completionTechCounter}][hours_worked]" min="0" step="0.25" placeholder="2.5"
+                    style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            </div>
+            <div>
+                <button type="button" onclick="removeCompletionTechnician(this)"
+                    style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;" title="Remove technician">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+
+        container.appendChild(techRow);
+
+        // Populate the new select with available technicians
+        const newSelect = techRow.querySelector('.completion-tech-select');
+        availableTechnicians.forEach(tech => {
+            const option = document.createElement('option');
+            option.value = tech.uid || tech.id;
+            option.textContent = tech.full_name || tech.email || 'Unknown';
+            newSelect.appendChild(option);
+        });
+    }
+
+    function removeCompletionTechnician(button) {
+        const techRow = button.closest('.completion-tech-row');
+        const container = document.getElementById('completionTechniciansContainer');
+
+        // Don't remove if it's the last row
+        if (container.querySelectorAll('.completion-tech-row').length > 1) {
+            techRow.remove();
+        } else {
+            // Reset the row instead of removing
+            const select = techRow.querySelector('select');
+            const input = techRow.querySelector('input');
+            if (select) select.value = '';
+            if (input) input.value = '';
+        }
+    }
 
     function openCompletionModal(woId, woTitle) {
         const modal = document.getElementById('completionModal');
@@ -1335,7 +1446,10 @@
         
         // Populate parts selects
         updateCompletionPartSelects();
-        
+
+        // Populate technician selects
+        updateCompletionTechnicianSelects();
+
         modal.style.display = 'block';
     }
 
@@ -1375,6 +1489,32 @@
         
         updateCompletionPartSelects();
         completionPartCounter = 0;
+
+        // Reset technicians container to single row
+        const techContainer = document.getElementById('completionTechniciansContainer');
+        techContainer.innerHTML = `
+            <div class="completion-tech-row" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Technician Name *</label>
+                    <select name="completion_technicians[0][technician_id]" class="completion-tech-select" required
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                        <option value="">Select Technician...</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: #212529;">Hours Worked</label>
+                    <input type="number" name="completion_technicians[0][hours_worked]" min="0" step="0.25" placeholder="2.5"
+                        style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                </div>
+                <div>
+                    <button type="button" onclick="removeCompletionTechnician(this)" style="padding: 0.8rem 1rem; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;" title="Remove technician">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        updateCompletionTechnicianSelects();
+        completionTechCounter = 0;
     }
 
     function addCompletionPart() {

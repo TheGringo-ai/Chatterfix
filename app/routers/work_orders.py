@@ -445,15 +445,42 @@ async def complete_work_order_enhanced(
     if not existing_data:
         raise HTTPException(status_code=404, detail="Work order not found")
 
-    # Parse form data for parts used
+    # Parse form data for parts used and technicians
     form_data = await request.form()
     parts_used = []
+    technicians_worked = []
+
+    # Extract technicians from form (completion_technicians[0][technician_id], etc.)
+    tech_index = 0
+    while True:
+        tech_id = form_data.get(f"completion_technicians[{tech_index}][technician_id]")
+        if tech_id is None:
+            break
+        if tech_id:  # Only add if technician was selected
+            hours_worked = form_data.get(f"completion_technicians[{tech_index}][hours_worked]", "0")
+            try:
+                hours = float(hours_worked) if hours_worked else 0
+            except ValueError:
+                hours = 0
+
+            # Look up technician name from users collection
+            tech_data = await firestore_manager.get_document("users", tech_id)
+            tech_name = "Unknown"
+            if tech_data:
+                tech_name = tech_data.get("full_name") or tech_data.get("email", "Unknown")
+
+            technicians_worked.append({
+                "technician_id": tech_id,
+                "technician_name": tech_name,
+                "hours_worked": hours
+            })
+        tech_index += 1
 
     # Extract parts from form (completion_parts[0][part_id], completion_parts[0][quantity_used], etc.)
     part_index = 0
     while True:
         part_id = form_data.get(f"completion_parts[{part_index}][part_id]")
-        if not part_id:
+        if part_id is None:
             break
         quantity_used = form_data.get(f"completion_parts[{part_index}][quantity_used]")
         if part_id and quantity_used:
@@ -510,14 +537,18 @@ async def complete_work_order_enhanced(
     # Update work order with completion data
     completion_timestamp = completion_time or datetime.now(timezone.utc).isoformat()
 
+    # Calculate total labor hours from all technicians
+    total_tech_hours = sum(t["hours_worked"] for t in technicians_worked) if technicians_worked else labor_hours
+
     update_data = {
         "status": "Completed",
         "completed_at": completion_timestamp,
         "completed_by_uid": current_user.uid,
         "completed_by_name": current_user.full_name or current_user.email,
         "completion_notes": completion_notes,
-        "labor_hours": labor_hours,
+        "labor_hours": total_tech_hours,
         "parts_used": parts_checkout_results,
+        "technicians_worked": technicians_worked,
     }
 
     await firestore_manager.update_document(

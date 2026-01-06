@@ -99,27 +99,26 @@ DEMO_ASSETS = [
 
 @router.get("/", response_class=HTMLResponse)
 async def assets_list(request: Request):
-    """Display assets - requires authentication"""
+    """Display assets - demo data for guests, real data for authenticated users"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    # Require authentication - no more demo mode
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/assets", status_code=302)
-
     assets = []
+    is_demo = False
 
-    if current_user.organization_id:
+    if current_user and current_user.organization_id:
         # Authenticated user with organization - show real Firestore data
         firestore_manager = get_firestore_manager()
         try:
             assets = await firestore_manager.get_org_assets(current_user.organization_id)
         except Exception as e:
             logger.error(f"Error loading assets: {e}")
-            assets = []
+            assets = DEMO_ASSETS
+            is_demo = True
     else:
-        # Authenticated but no organization yet
-        assets = []
+        # Not authenticated or no org - show demo data
+        assets = DEMO_ASSETS
+        is_demo = True
 
     stats = {
         "total": len(assets),
@@ -142,20 +141,16 @@ async def assets_list(request: Request):
             "stats": stats,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
-            "demo_mode": False,
+            "is_demo": is_demo,
+            "demo_mode": is_demo,
         },
     )
 
 
 @router.get("/{asset_id}", response_class=HTMLResponse)
 async def asset_detail(request: Request, asset_id: str):
-    """Asset detail view - requires authentication"""
+    """Asset detail view - demo data for guests, real data for authenticated users"""
     current_user = await get_current_user_from_cookie(request)
-
-    # Require authentication - no more demo mode
-    if not current_user:
-        return RedirectResponse(url=f"/auth/login?next=/assets/{asset_id}", status_code=302)
 
     asset = None
     children = []
@@ -164,8 +159,9 @@ async def asset_detail(request: Request, asset_id: str):
     history = []
     work_orders = []
     pm_schedules = []
+    is_demo = False
 
-    if current_user.organization_id:
+    if current_user and current_user.organization_id:
         # Authenticated user - get real asset from Firestore
         firestore_manager = get_firestore_manager()
         asset = await firestore_manager.get_org_document(
@@ -202,8 +198,24 @@ async def asset_detail(request: Request, asset_id: str):
             ),
         )
     else:
-        # Authenticated but no organization - redirect to assets list
-        return RedirectResponse("/assets", status_code=302)
+        # Not authenticated or no org - show demo data
+        is_demo = True
+        # Find demo asset by ID or show first demo asset
+        demo_asset = next((a for a in DEMO_ASSETS if str(a.get("id")) == asset_id), None)
+        if not demo_asset:
+            demo_asset = DEMO_ASSETS[0] if DEMO_ASSETS else None
+        if not demo_asset:
+            return RedirectResponse("/assets", status_code=302)
+        asset = demo_asset
+        # Demo related data
+        work_orders = [
+            {"id": "WO-DEMO-1", "title": "Quarterly Inspection", "status": "Open", "priority": "Medium"},
+            {"id": "WO-DEMO-2", "title": "Belt Replacement", "status": "Completed", "priority": "High"},
+        ]
+        history = [
+            {"description": "Replaced drive belt", "total_cost": 450, "labor_cost": 200, "parts_cost": 250, "downtime_hours": 2},
+            {"description": "Lubrication service", "total_cost": 75, "labor_cost": 75, "parts_cost": 0, "downtime_hours": 0.5},
+        ]
 
     # Simplified cost analytics
     total_cost = sum(h.get("total_cost", 0) for h in history)
@@ -232,7 +244,7 @@ async def asset_detail(request: Request, asset_id: str):
             "cost_data": cost_data,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 

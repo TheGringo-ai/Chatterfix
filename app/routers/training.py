@@ -211,13 +211,73 @@ async def update_user_performance_training_hours(
 
 @router.get("/", response_class=HTMLResponse)
 async def training_center(request: Request):
-    """Training center dashboard"""
+    """Training center dashboard - demo data for guests, real data for authenticated users"""
     # Use cookie-based auth for web pages
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/training/", status_code=302)
+    is_demo = False
+    user_id = "demo"
+
+    # Demo training data for unauthenticated users
+    demo_training = [
+        {
+            "id": "demo-1",
+            "title": "HVAC Fundamentals",
+            "description": "Introduction to heating, ventilation, and air conditioning systems",
+            "skill_category": "HVAC",
+            "status": "in_progress",
+            "progress": 65,
+            "estimated_hours": 4,
+            "completed_at": None,
+        },
+        {
+            "id": "demo-2",
+            "title": "Safety Protocols",
+            "description": "Essential workplace safety procedures and OSHA compliance",
+            "skill_category": "Safety",
+            "status": "completed",
+            "progress": 100,
+            "score": 92,
+            "estimated_hours": 2,
+            "completed_at": "2024-12-01",
+        },
+    ]
+    demo_available_modules = [
+        {
+            "id": "demo-3",
+            "title": "Electrical Systems",
+            "description": "Basic electrical troubleshooting and maintenance",
+            "skill_category": "Electrical",
+            "estimated_hours": 6,
+            "difficulty": "Intermediate",
+        },
+        {
+            "id": "demo-4",
+            "title": "Preventive Maintenance",
+            "description": "Best practices for PM scheduling and execution",
+            "skill_category": "Maintenance",
+            "estimated_hours": 3,
+            "difficulty": "Beginner",
+        },
+    ]
+    demo_stats = {"total_assigned": 2, "completed": 1, "in_progress": 1, "avg_score": 92}
+
+    if not current_user or not current_user.organization_id:
+        # Not authenticated or no org - show demo data
+        is_demo = True
+        return templates.TemplateResponse(
+            "training_center.html",
+            {
+                "request": request,
+                "my_training": demo_training,
+                "available_modules": demo_available_modules,
+                "stats": demo_stats,
+                "user_id": user_id,
+                "user": current_user,
+                "current_user": current_user,
+                "is_demo": True,
+            },
+        )
 
     user_id = current_user.uid
     organization_id = current_user.organization_id  # Multi-tenant filtering
@@ -253,18 +313,13 @@ async def training_center(request: Request):
             "training_center.html",
             {
                 "request": request,
-                "my_training": [],
-                "available_modules": [],
-                "stats": {
-                    "total_assigned": 0,
-                    "completed": 0,
-                    "in_progress": 0,
-                    "avg_score": 0,
-                },
+                "my_training": demo_training,
+                "available_modules": demo_available_modules,
+                "stats": demo_stats,
                 "user_id": user_id,
                 "user": current_user,
                 "current_user": current_user,
-                "is_demo": False,
+                "is_demo": True,
                 "error": "Failed to load training data",
             },
         )

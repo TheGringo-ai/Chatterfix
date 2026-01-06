@@ -48,7 +48,12 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Assigned To</label>
-                                <input type="text" class="form-control" name="assigned_to" value="{{ wo.assigned_to }}">
+                                <select class="form-select" name="assigned_to_uid" id="assignedToSelect">
+                                    <option value="">Select Technician...</option>
+                                </select>
+                                <!-- Store current assignment for JS to pre-select -->
+                                <input type="hidden" id="currentAssignedUid" value="{{ wo.assigned_to_uid or '' }}">
+                                <input type="hidden" id="currentAssignedName" value="{{ wo.assigned_to_name or wo.assigned_to or '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Due Date</label>
@@ -166,4 +171,78 @@
         </div>
     </div>
 </div>
+
+<!-- Technician Dropdown Loader Script -->
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load technicians for the dropdown
+    const assignedToSelect = document.getElementById('assignedToSelect');
+    const currentAssignedUid = document.getElementById('currentAssignedUid')?.value || '';
+    const currentAssignedName = document.getElementById('currentAssignedName')?.value || '';
+
+    if (!assignedToSelect) return;
+
+    try {
+        // LESSON #8: Use credentials: 'include' for cookie-based auth
+        const response = await fetch('/team/users', {
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // Handle both {users: [...]} and [...] response formats
+            const users = data.users || data;
+
+            if (Array.isArray(users) && users.length > 0) {
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.uid || user.id || '';
+                    option.textContent = user.full_name || user.email || 'Unknown';
+
+                    // Pre-select if this is the current assignee
+                    if (currentAssignedUid && (user.uid === currentAssignedUid || user.id === currentAssignedUid)) {
+                        option.selected = true;
+                    }
+
+                    assignedToSelect.appendChild(option);
+                });
+                console.log(`Loaded ${users.length} technicians for dropdown`);
+            } else {
+                console.warn('No technicians found in response');
+                // Add fallback option with current assignment if available
+                if (currentAssignedName) {
+                    const option = document.createElement('option');
+                    option.value = currentAssignedUid;
+                    option.textContent = currentAssignedName;
+                    option.selected = true;
+                    assignedToSelect.appendChild(option);
+                }
+            }
+        } else {
+            console.error('Failed to load technicians:', response.status);
+            // Add fallback option with current assignment if available
+            if (currentAssignedName) {
+                const option = document.createElement('option');
+                option.value = currentAssignedUid;
+                option.textContent = currentAssignedName;
+                option.selected = true;
+                assignedToSelect.appendChild(option);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading technicians:', error);
+        // Add fallback option with current assignment if available
+        if (currentAssignedName) {
+            const option = document.createElement('option');
+            option.value = currentAssignedUid;
+            option.textContent = currentAssignedName;
+            option.selected = true;
+            assignedToSelect.appendChild(option);
+        }
+    }
+});
+</script>
 {% endblock %}

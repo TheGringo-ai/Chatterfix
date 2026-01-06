@@ -157,6 +157,36 @@ class FirestoreManager:
             logger.error(f"Error updating document {doc_id} in {collection}: {e}")
             raise
 
+    async def set_document(
+        self, collection: str, doc_id: str, data: Dict[str, Any], merge: bool = False
+    ) -> bool:
+        """
+        Set (create or overwrite) a document with a specific ID.
+
+        Unlike create_document, this doesn't add created_at/updated_at automatically.
+        Use this for configuration documents or when you control the full document structure.
+
+        Args:
+            collection: Collection name
+            doc_id: Document ID
+            data: Document data
+            merge: If True, merge with existing document instead of overwriting
+
+        Returns:
+            True if successful
+        """
+        try:
+            if not self.db:
+                raise Exception("Firestore not initialized")
+
+            doc_ref = self.db.collection(collection).document(doc_id)
+            doc_ref.set(data, merge=merge)
+            logger.info(f"Set document {doc_id} in {collection}")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting document {doc_id} in {collection}: {e}")
+            raise
+
     async def delete_document(self, collection: str, doc_id: str) -> bool:
         """Delete a document"""
         try:

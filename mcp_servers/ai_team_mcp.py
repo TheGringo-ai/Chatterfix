@@ -332,6 +332,10 @@ def run_server():
     """Run the MCP server"""
     if MCP_AVAILABLE:
         # Use proper MCP SDK
+        from mcp.server.models import InitializationOptions
+        from mcp.server import NotificationOptions
+        import mcp.server.stdio
+
         server = Server("ai-team")
 
         @server.list_tools()
@@ -345,7 +349,20 @@ def run_server():
 
         async def main():
             async with stdio_server() as (read_stream, write_stream):
-                await server.run(read_stream, write_stream)
+                notification_opts = NotificationOptions(
+                    prompts_changed=False,
+                    resources_changed=False,
+                    tools_changed=True
+                )
+                init_options = InitializationOptions(
+                    server_name="ai-team",
+                    server_version="1.0.0",
+                    capabilities=server.get_capabilities(
+                        notification_options=notification_opts,
+                        experimental_capabilities={}
+                    )
+                )
+                await server.run(read_stream, write_stream, init_options)
 
         asyncio.run(main())
     else:

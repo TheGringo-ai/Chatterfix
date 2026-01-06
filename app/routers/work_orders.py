@@ -418,6 +418,126 @@ async def complete_work_order(
     return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
 
 
+# ==========================================
+# ✅ ENHANCED COMPLETE WORK ORDER ENDPOINT
+# ==========================================
+
+
+@router.post("/{wo_id}/complete-enhanced")
+async def complete_work_order_enhanced(
+    request: Request,
+    wo_id: str,
+    completion_notes: str = Form(""),
+    completion_time: str = Form(None),
+    labor_hours: float = Form(0),
+    current_user: User = Depends(require_auth_cookie),
+):
+    """
+    Enhanced work order completion with notes, parts used, and labor tracking.
+    Handles parts checkout and inventory deduction.
+    """
+    from app.core.firestore_db import get_firestore_manager
+
+    firestore_manager = get_firestore_manager()
+
+    # Get the existing work order
+    existing_data = await firestore_manager.get_document("work_orders", wo_id)
+    if not existing_data:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
+    # Parse form data for parts used
+    form_data = await request.form()
+    parts_used = []
+
+    # Extract parts from form (completion_parts[0][part_id], completion_parts[0][quantity_used], etc.)
+    part_index = 0
+    while True:
+        part_id = form_data.get(f"completion_parts[{part_index}][part_id]")
+        if not part_id:
+            break
+        quantity_used = form_data.get(f"completion_parts[{part_index}][quantity_used]")
+        if part_id and quantity_used:
+            try:
+                qty = int(quantity_used)
+                if qty > 0:
+                    parts_used.append({
+                        "part_id": part_id,
+                        "quantity_used": qty
+                    })
+            except ValueError:
+                pass
+        part_index += 1
+
+    # Process parts checkout - deduct from inventory
+    parts_checkout_results = []
+    for part in parts_used:
+        try:
+            # Get current part data
+            part_data = await firestore_manager.get_document("parts", part["part_id"])
+            if part_data:
+                current_stock = part_data.get("current_stock", 0)
+                new_stock = max(0, current_stock - part["quantity_used"])
+
+                # Update part stock
+                await firestore_manager.update_document(
+                    "parts",
+                    part["part_id"],
+                    {"current_stock": new_stock},
+                    organization_id=current_user.organization_id
+                )
+
+                parts_checkout_results.append({
+                    "part_id": part["part_id"],
+                    "part_name": part_data.get("name", "Unknown"),
+                    "quantity_used": part["quantity_used"],
+                    "previous_stock": current_stock,
+                    "new_stock": new_stock
+                })
+
+                # Log the part checkout
+                from app.services.audit_log_service import log_part_checkout
+                await log_part_checkout(
+                    part_id=part["part_id"],
+                    part_name=part_data.get("name", "Unknown"),
+                    quantity=part["quantity_used"],
+                    work_order_id=wo_id,
+                    user_id=current_user.uid,
+                    user_name=current_user.full_name or current_user.email,
+                    organization_id=current_user.organization_id,
+                )
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Error processing part checkout: {e}")
+
+    # Update work order with completion data
+    completion_timestamp = completion_time or datetime.now(timezone.utc).isoformat()
+
+    update_data = {
+        "status": "Completed",
+        "completed_at": completion_timestamp,
+        "completed_by_uid": current_user.uid,
+        "completed_by_name": current_user.full_name or current_user.email,
+        "completion_notes": completion_notes,
+        "labor_hours": labor_hours,
+        "parts_used": parts_checkout_results,
+    }
+
+    await firestore_manager.update_document(
+        "work_orders", wo_id, update_data, organization_id=current_user.organization_id
+    )
+
+    # Log the completion for audit trail
+    await log_work_order_completed(
+        wo_id=wo_id,
+        wo_data={**existing_data, **update_data},
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+        completion_notes=completion_notes,
+    )
+
+    return RedirectResponse(url=f"/work-orders/{wo_id}", status_code=303)
+
+
 # Other endpoints like media upload, completion, etc. would also be refactored
 # to use the work_order_service.
 

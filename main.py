@@ -131,6 +131,7 @@ all_extended_routers = [
     "logistics",  # Pallet inspection and warehouse safety
     "manager",  # Manager Dashboard - Central command center for CMMS management
     "org_bootstrap",  # Organization Bootstrap - onboarding new companies
+    "signup_complete",  # Self-service signup completion (Firebase Auth → org bootstrap)
     "safety",  # SafetyFix Guardian Angel - PPE detection, fall detection, voice commands
     "planner",
     "planner_simple",

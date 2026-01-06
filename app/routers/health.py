@@ -11,6 +11,7 @@ import httpx
 
 from app.core.firestore_db import get_firestore_manager
 from app.services.pm_automation_engine import get_pm_automation_engine
+from app.services.firestore_cost_monitor import get_cost_monitor
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -572,4 +573,118 @@ async def scheduled_meter_threshold_check(
         raise HTTPException(
             status_code=500,
             detail=f"Meter threshold check failed: {str(e)}",
+        )
+
+
+# ========== FIRESTORE COST MONITORING ==========
+
+@router.get("/health/firestore-costs")
+async def firestore_cost_stats():
+    """
+    Get Firestore collection statistics and estimated costs.
+
+    Returns:
+        - Document counts per collection
+        - Estimated storage sizes
+        - Monthly cost estimates
+        - Cost warnings if thresholds exceeded
+    """
+    try:
+        cost_monitor = get_cost_monitor()
+        stats = await cost_monitor.get_all_stats()
+        return JSONResponse(content=stats)
+    except Exception as e:
+        logger.error(f"Error getting Firestore costs: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "timestamp": datetime.now(timezone.utc).isoformat()}
+        )
+
+
+@router.post("/scheduled/data-cleanup")
+async def scheduled_data_cleanup(
+    dry_run: bool = Query(True, description="If true, only report what would be deleted"),
+    authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
+):
+    """
+    Cloud Scheduler endpoint for cleaning up old log data.
+
+    Applies retention policies:
+    - Critical data (users, work_orders, assets): Never deleted
+    - Long-term (audit_logs, safety_incidents): 365 days
+    - Medium-term (ai_conversations, team_messages): 90 days
+    - Short-term (voice_logs, zone_entries): 30 days
+    - Temporary (debug_logs): 7 days
+
+    Schedule: Weekly on Sunday at 3:00 AM UTC
+    """
+    start_time = time.time()
+
+    # Verify scheduler authentication
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized - Cloud Scheduler OIDC token or valid secret required",
+        )
+
+    try:
+        cost_monitor = get_cost_monitor()
+        results = await cost_monitor.prune_old_data(dry_run=dry_run)
+        results["execution_time_ms"] = round((time.time() - start_time) * 1000, 2)
+
+        if not dry_run:
+            logger.info(f"Data cleanup complete: {results['total_documents_deleted']} documents deleted")
+
+        return JSONResponse(content=results)
+
+    except Exception as e:
+        logger.error(f"Data cleanup failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Data cleanup failed: {str(e)}",
+        )
+
+
+@router.get("/health/cost-summary")
+async def cost_summary():
+    """
+    Quick cost summary with actionable recommendations.
+
+    Returns simple metrics and warnings for dashboard display.
+    """
+    try:
+        cost_monitor = get_cost_monitor()
+        stats = await cost_monitor.get_all_stats()
+
+        summary = stats.get("summary", {})
+        warnings = stats.get("cost_warnings", [])
+
+        # Determine status
+        monthly_cost = summary.get("estimated_monthly_cost_usd", 0)
+        if monthly_cost > 10:
+            status = "high"
+            action = "Run data cleanup: POST /scheduled/data-cleanup?dry_run=false"
+        elif monthly_cost > 5:
+            status = "moderate"
+            action = "Monitor growth, consider cleanup"
+        else:
+            status = "healthy"
+            action = "No action needed"
+
+        return JSONResponse({
+            "status": status,
+            "monthly_cost_usd": round(monthly_cost, 2),
+            "total_documents": summary.get("total_documents", 0),
+            "total_size_mb": summary.get("total_size_mb", 0),
+            "action": action,
+            "warnings": warnings,
+            "cleanup_endpoint": "/scheduled/data-cleanup?dry_run=true",
+            "full_stats_endpoint": "/health/firestore-costs",
+        })
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "status": "unknown"}
         )

@@ -403,7 +403,7 @@ async def complete_work_order(
     }
 
     await firestore_manager.update_document(
-        "work_orders", wo_id, update_data, organization_id=current_user.organization_id
+        "work_orders", wo_id, update_data
     )
 
     # Log the completion for audit trail
@@ -482,8 +482,7 @@ async def complete_work_order_enhanced(
                 await firestore_manager.update_document(
                     "parts",
                     part["part_id"],
-                    {"current_stock": new_stock},
-                    organization_id=current_user.organization_id
+                    {"current_stock": new_stock}
                 )
 
                 parts_checkout_results.append({
@@ -522,7 +521,7 @@ async def complete_work_order_enhanced(
     }
 
     await firestore_manager.update_document(
-        "work_orders", wo_id, update_data, organization_id=current_user.organization_id
+        "work_orders", wo_id, update_data
     )
 
     # Log the completion for audit trail

@@ -103,11 +103,21 @@ async def team_dashboard(request: Request):
 
 
 @router.get("/users", response_class=JSONResponse)
-async def get_users(current_user: Optional[User] = Depends(get_optional_current_user)):
-    """Get users - org-scoped for authenticated, empty for guests"""
-    if not current_user or not current_user.organization_id:
-        # Return empty list for unauthenticated users
+async def get_users(request: Request):
+    """Get users - org-scoped for authenticated, empty for guests
+
+    LESSON #8: Use cookie-based auth for API calls from browser JavaScript
+    """
+    # Use cookie-based auth - browsers send cookies, not Bearer tokens
+    current_user = await get_current_user_from_cookie(request)
+
+    if not current_user:
+        logger.warning("GET /team/users - No authenticated user (cookie auth failed)")
         return JSONResponse({"users": [], "error": "Authentication required"}, status_code=401)
+
+    if not current_user.organization_id:
+        logger.warning(f"GET /team/users - User {current_user.uid} has no organization_id")
+        return JSONResponse({"users": [], "error": "No organization"}, status_code=400)
 
     firestore_manager = get_firestore_manager()
     users = []
@@ -122,6 +132,7 @@ async def get_users(current_user: Optional[User] = Depends(get_optional_current_
                 }
             ],
         )
+        logger.info(f"GET /team/users - Loaded {len(users)} users for org {current_user.organization_id}")
     except Exception as e:
         logger.error(f"Error loading users: {e}")
         return JSONResponse({"users": [], "error": str(e)}, status_code=500)

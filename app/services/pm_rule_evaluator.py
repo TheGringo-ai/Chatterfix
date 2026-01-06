@@ -164,16 +164,29 @@ class TimeBasedRule:
         else:
             status = status_str
 
+        # Handle multiple field name conventions
+        next_due = _parse_datetime(
+            data.get("next_due") or
+            data.get("next_due_date") or
+            data.get("next_due_at")
+        )
+
+        anchor = _parse_datetime(
+            data.get("anchor_date") or
+            data.get("start_date") or
+            data.get("created_at")
+        ) or datetime.now(timezone.utc)
+
         return cls(
             rule_id=data.get("id", data.get("rule_id", "unknown")),
             asset_id=data.get("asset_id", "unknown"),
             interval_days=data.get("interval_days", data.get("interval_value", 30)),
-            anchor_date=_parse_datetime(data.get("anchor_date", data.get("start_date"))) or datetime.now(timezone.utc),
+            anchor_date=anchor,
             tolerance_days=data.get("tolerance_days", 3),
             status=status,
             blocked_reason=data.get("blocked_reason"),
             last_triggered_at=_parse_datetime(data.get("last_triggered_at", data.get("last_generated"))),
-            next_due=_parse_datetime(data.get("next_due")),
+            next_due=next_due,
             cooldown_hours=data.get("cooldown_hours", 24),
         )
 

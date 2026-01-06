@@ -136,6 +136,7 @@ all_extended_routers = [
     "pm_automation",  # PM Automation API - meter readings, schedule generation, overview
     # NOTE: 'public_demo' REMOVED - security risk, exposed real data without org filtering
     "purchasing",
+    "scheduler_pm",  # PM Scheduler - evaluates rules and creates work orders
     "premium_modules",
     "quality",  # QualityFix - Visual QA, Non-Conformance, CAPA, inspections
     "quality_management",

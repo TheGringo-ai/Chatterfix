@@ -53,6 +53,7 @@ except ImportError:
     analytics_service = FirestoreAnalyticsService()
 from app.services.export_service import export_service
 from app.services.linesmart_intelligence import linesmart_intelligence
+from app.services.kpi_analytics_service import get_kpi_dashboard, kpi_analytics_service
 
 # Import gRPC client for predictor service
 try:
@@ -716,6 +717,127 @@ async def get_kpi_summary(
         data = await analytics_service.get_kpi_summary(days)
         return JSONResponse(content=data)
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ====== COMPREHENSIVE KPI DASHBOARD - ENTERPRISE ANALYTICS ======
+
+@router.get("/kpi-dashboard", response_class=HTMLResponse)
+async def kpi_dashboard_page(request: Request):
+    """
+    Render the comprehensive KPI dashboard with MTTR, MTBF, technician performance,
+    asset reliability, cost analysis, and trend charts.
+    """
+    current_user = await get_current_user_from_cookie(request)
+    is_demo = current_user is None
+
+    return templates.TemplateResponse(
+        "kpi_dashboard.html",
+        {
+            "request": request,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": is_demo,
+        },
+    )
+
+
+@router.get("/kpi/comprehensive")
+async def get_comprehensive_kpis(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+):
+    """
+    Get ALL KPIs for the organization in a single API call.
+
+    Returns:
+    - Work order metrics (completion rates, by priority/type)
+    - MTTR (Mean Time To Repair) with breakdown
+    - MTBF (Mean Time Between Failures) with asset analysis
+    - PM Compliance rates
+    - Downtime analysis
+    - Cost analysis (labor vs parts)
+    - Technician performance rankings
+    - Asset reliability scores
+    - Trend data for charts
+    """
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        if current_user and current_user.organization_id:
+            # Get real organization data
+            kpi_data = await get_kpi_dashboard(current_user.organization_id, days)
+        else:
+            # Demo mode - use demo organization
+            kpi_data = await get_kpi_dashboard("demo_org", days)
+
+        return JSONResponse(content=kpi_data)
+    except Exception as e:
+        logger.error(f"Error getting comprehensive KPIs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/kpi/technician-performance")
+async def get_technician_performance(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+):
+    """Get technician performance metrics with rankings"""
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        org_id = current_user.organization_id if current_user else "demo_org"
+        kpi_data = await get_kpi_dashboard(org_id, days)
+
+        return JSONResponse(content={
+            "technician_performance": kpi_data.get("technician_performance", {}),
+            "period_days": days,
+        })
+    except Exception as e:
+        logger.error(f"Error getting technician performance: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/kpi/asset-reliability")
+async def get_asset_reliability(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+):
+    """Get asset reliability scores and rankings"""
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        org_id = current_user.organization_id if current_user else "demo_org"
+        kpi_data = await get_kpi_dashboard(org_id, days)
+
+        return JSONResponse(content={
+            "asset_reliability": kpi_data.get("asset_reliability", {}),
+            "mtbf": kpi_data.get("mtbf", {}),
+            "period_days": days,
+        })
+    except Exception as e:
+        logger.error(f"Error getting asset reliability: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/kpi/pm-compliance")
+async def get_pm_compliance(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+):
+    """Get PM (Preventive Maintenance) compliance metrics"""
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        org_id = current_user.organization_id if current_user else "demo_org"
+        kpi_data = await get_kpi_dashboard(org_id, days)
+
+        return JSONResponse(content={
+            "pm_compliance": kpi_data.get("pm_compliance", {}),
+            "period_days": days,
+        })
+    except Exception as e:
+        logger.error(f"Error getting PM compliance: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

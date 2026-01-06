@@ -1,0 +1,841 @@
+{% extends "base.html" %}
+
+{% block title %}KPI Dashboard - ChatterFix CMMS{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .kpi-container {
+        --text-primary: #212529;
+        --text-secondary: #495057;
+        --bg-primary: #ffffff;
+        --accent-blue: #0d6efd;
+        --accent-green: #198754;
+        --accent-orange: #fd7e14;
+        --accent-red: #dc3545;
+        --accent-purple: #6f42c1;
+    }
+
+    .kpi-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+    }
+
+    .kpi-header h1 {
+        color: white !important;
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-header p {
+        color: rgba(255, 255, 255, 0.9) !important;
+        margin: 0;
+    }
+
+    .period-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .period-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        color: #495057;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .period-btn:hover, .period-btn.active {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+
+    /* Main KPI Cards */
+    .main-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .main-kpi-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .main-kpi-card .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .main-kpi-card .kpi-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+
+    .main-kpi-card .kpi-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+
+    .main-kpi-card .kpi-sublabel {
+        font-size: 0.75rem;
+        color: #adb5bd;
+    }
+
+    .icon-mttr { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .icon-mtbf { background: rgba(25, 135, 84, 0.1); color: #198754; }
+    .icon-compliance { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+    .icon-completion { background: rgba(253, 126, 20, 0.1); color: #fd7e14; }
+
+    /* Detail Grids */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .detail-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Technician Performance Table */
+    .tech-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .tech-table th {
+        text-align: left;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+        color: #6c757d;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .tech-table td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #f1f3f5;
+        color: #212529;
+        font-size: 0.875rem;
+    }
+
+    .tech-rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .rank-1 { background: #ffc107; color: #000; }
+    .rank-2 { background: #adb5bd; color: #000; }
+    .rank-3 { background: #cd7f32; color: #fff; }
+    .rank-default { background: #e9ecef; color: #495057; }
+
+    /* Asset Reliability */
+    .asset-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .asset-item:last-child {
+        border-bottom: none;
+    }
+
+    .asset-name {
+        font-weight: 500;
+        color: #212529;
+    }
+
+    .asset-score {
+        font-weight: 700;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+
+    .score-excellent { background: #d1e7dd; color: #0f5132; }
+    .score-good { background: #cfe2ff; color: #084298; }
+    .score-warning { background: #fff3cd; color: #664d03; }
+    .score-critical { background: #f8d7da; color: #842029; }
+
+    /* Work Order Breakdown */
+    .wo-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .wo-stat {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .wo-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .wo-stat-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    /* Cost Analysis */
+    .cost-bar {
+        margin-bottom: 1rem;
+    }
+
+    .cost-bar-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+
+    .cost-bar-label {
+        font-size: 0.875rem;
+        color: #495057;
+    }
+
+    .cost-bar-value {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .cost-bar-track {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .cost-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .cost-labor { background: #0d6efd; }
+    .cost-parts { background: #198754; }
+
+    /* Charts */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-card h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 1rem;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 280px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-excellent { background: #d1e7dd; color: #0f5132; }
+    .status-good { background: #cfe2ff; color: #084298; }
+    .status-warning { background: #fff3cd; color: #664d03; }
+    .status-critical { background: #f8d7da; color: #842029; }
+
+    /* Loading State */
+    .loading-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #6c757d;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #e9ecef;
+        border-top-color: #0d6efd;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .main-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        .detail-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+        .main-kpi-grid { grid-template-columns: 1fr; }
+        .chart-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-container">
+    <!-- Header -->
+    <div class="kpi-header">
+        <h1>KPI Dashboard</h1>
+        <p>Comprehensive maintenance performance analytics and insights</p>
+    </div>
+
+    <!-- Period Selector -->
+    <div class="period-selector">
+        <button class="period-btn" data-days="7">7 Days</button>
+        <button class="period-btn active" data-days="30">30 Days</button>
+        <button class="period-btn" data-days="90">90 Days</button>
+        <button class="period-btn" data-days="365">1 Year</button>
+        <button class="cmms-btn cmms-btn-sm" onclick="loadAllData()" style="margin-left: auto;">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Main KPI Cards -->
+    <div class="main-kpi-grid">
+        <!-- MTTR -->
+        <div class="main-kpi-card">
+            <div class="kpi-icon icon-mttr">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="kpi-value" id="mttr-value">--</div>
+            <div class="kpi-label">Mean Time To Repair</div>
+            <div class="kpi-sublabel" id="mttr-sublabel">Average repair duration</div>
+        </div>
+
+        <!-- MTBF -->
+        <div class="main-kpi-card">
+            <div class="kpi-icon icon-mtbf">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="kpi-value" id="mtbf-value">--</div>
+            <div class="kpi-label">Mean Time Between Failures</div>
+            <div class="kpi-sublabel" id="mtbf-sublabel">Average reliability period</div>
+        </div>
+
+        <!-- PM Compliance -->
+        <div class="main-kpi-card">
+            <div class="kpi-icon icon-compliance">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="kpi-value" id="pm-compliance-value">--%</div>
+            <div class="kpi-label">PM Compliance Rate</div>
+            <span class="status-badge status-good" id="pm-status">Loading...</span>
+        </div>
+
+        <!-- Completion Rate -->
+        <div class="main-kpi-card">
+            <div class="kpi-icon icon-completion">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-value" id="completion-rate">--%</div>
+            <div class="kpi-label">Work Order Completion</div>
+            <div class="kpi-sublabel" id="completion-sublabel">-- completed of -- total</div>
+        </div>
+    </div>
+
+    <!-- Detail Section -->
+    <div class="detail-grid">
+        <!-- Technician Performance -->
+        <div class="detail-card">
+            <h3><i class="fas fa-users"></i> Technician Performance</h3>
+            <table class="tech-table" id="tech-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Jobs</th>
+                        <th>Completion</th>
+                        <th>Hours</th>
+                    </tr>
+                </thead>
+                <tbody id="tech-body">
+                    <tr>
+                        <td colspan="5" class="loading-placeholder">
+                            <div class="spinner"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Asset Reliability -->
+        <div class="detail-card">
+            <h3><i class="fas fa-cog"></i> Asset Reliability</h3>
+            <div id="asset-reliability">
+                <div class="loading-placeholder">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work Order Breakdown -->
+        <div class="detail-card">
+            <h3><i class="fas fa-tasks"></i> Work Order Breakdown</h3>
+            <div class="wo-breakdown" id="wo-breakdown">
+                <div class="wo-stat">
+                    <div class="wo-stat-value" id="wo-open">--</div>
+                    <div class="wo-stat-label">Open</div>
+                </div>
+                <div class="wo-stat">
+                    <div class="wo-stat-value" id="wo-progress">--</div>
+                    <div class="wo-stat-label">In Progress</div>
+                </div>
+                <div class="wo-stat">
+                    <div class="wo-stat-value" id="wo-completed">--</div>
+                    <div class="wo-stat-label">Completed</div>
+                </div>
+                <div class="wo-stat">
+                    <div class="wo-stat-value" id="wo-overdue">--</div>
+                    <div class="wo-stat-label">Overdue</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Analysis Row -->
+    <div class="detail-grid" style="grid-template-columns: 1fr 1fr;">
+        <!-- Cost Analysis -->
+        <div class="detail-card">
+            <h3><i class="fas fa-dollar-sign"></i> Cost Analysis</h3>
+            <div id="cost-analysis">
+                <div class="cost-bar">
+                    <div class="cost-bar-header">
+                        <span class="cost-bar-label">Labor Costs</span>
+                        <span class="cost-bar-value" id="labor-cost">$--</span>
+                    </div>
+                    <div class="cost-bar-track">
+                        <div class="cost-bar-fill cost-labor" id="labor-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="cost-bar">
+                    <div class="cost-bar-header">
+                        <span class="cost-bar-label">Parts Costs</span>
+                        <span class="cost-bar-value" id="parts-cost">$--</span>
+                    </div>
+                    <div class="cost-bar-track">
+                        <div class="cost-bar-fill cost-parts" id="parts-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e9ecef;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6c757d;">Total Cost</span>
+                        <span style="font-weight: 700; font-size: 1.25rem;" id="total-cost">$--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                        <span style="color: #6c757d;">Avg per Work Order</span>
+                        <span style="font-weight: 600;" id="avg-cost">$--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority by Type -->
+        <div class="detail-card">
+            <h3><i class="fas fa-chart-pie"></i> Work Orders by Priority</h3>
+            <div id="priority-breakdown">
+                <div class="loading-placeholder">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="chart-grid">
+        <!-- Weekly Trend Chart -->
+        <div class="chart-card">
+            <h3>Weekly Work Order Trends</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Work Order Type Distribution -->
+        <div class="chart-card">
+            <h3>Work Orders by Type</h3>
+            <div class="chart-container">
+                <canvas id="typeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPeriod = 30;
+    let charts = {};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Period selector
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentPeriod = parseInt(this.dataset.days);
+                loadAllData();
+            });
+        });
+
+        loadAllData();
+    });
+
+    async function loadAllData() {
+        try {
+            const response = await fetch(`/analytics/kpi/comprehensive?days=${currentPeriod}`, {
+                credentials: 'include'
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                console.error('API Error:', data.error);
+                showNotification('Error loading KPI data', 'error');
+                return;
+            }
+
+            updateMainKPIs(data);
+            updateTechnicianPerformance(data.technician_performance || {});
+            updateAssetReliability(data.asset_reliability || {});
+            updateWorkOrderBreakdown(data.work_order_metrics || {});
+            updateCostAnalysis(data.cost_analysis || {});
+            updatePriorityBreakdown(data.work_order_metrics?.by_priority || {});
+            updateCharts(data);
+
+        } catch (error) {
+            console.error('Error loading KPI data:', error);
+            showNotification('Failed to load KPI data', 'error');
+        }
+    }
+
+    function updateMainKPIs(data) {
+        // MTTR
+        const mttr = data.mttr || {};
+        document.getElementById('mttr-value').textContent = mttr.overall_formatted || 'N/A';
+        document.getElementById('mttr-sublabel').textContent =
+            mttr.sample_size ? `Based on ${mttr.sample_size} completed work orders` : 'Average repair duration';
+
+        // MTBF
+        const mtbf = data.mtbf || {};
+        document.getElementById('mtbf-value').textContent = mtbf.overall_formatted || 'N/A';
+        document.getElementById('mtbf-sublabel').textContent =
+            mtbf.assets_analyzed ? `Analyzed ${mtbf.assets_analyzed} assets` : 'Average reliability period';
+
+        // PM Compliance
+        const pm = data.pm_compliance || {};
+        document.getElementById('pm-compliance-value').textContent = `${pm.compliance_rate || 0}%`;
+
+        const pmStatus = document.getElementById('pm-status');
+        const statusText = pm.status || 'No Data';
+        pmStatus.textContent = statusText;
+        pmStatus.className = 'status-badge';
+        if (statusText === 'Excellent') pmStatus.classList.add('status-excellent');
+        else if (statusText === 'Good') pmStatus.classList.add('status-good');
+        else if (statusText === 'Needs Improvement') pmStatus.classList.add('status-warning');
+        else pmStatus.classList.add('status-critical');
+
+        // Completion Rate
+        const wo = data.work_order_metrics || {};
+        document.getElementById('completion-rate').textContent = `${wo.completion_rate || 0}%`;
+        document.getElementById('completion-sublabel').textContent =
+            `${wo.completed || 0} completed of ${wo.total || 0} total`;
+    }
+
+    function updateTechnicianPerformance(techData) {
+        const tbody = document.getElementById('tech-body');
+        const technicians = techData.technicians || [];
+
+        if (technicians.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #6c757d; padding: 2rem;">
+                        No technician data available for this period
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = technicians.slice(0, 5).map((tech, index) => {
+            const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-default';
+            return `
+                <tr>
+                    <td><span class="tech-rank ${rankClass}">${index + 1}</span></td>
+                    <td>${tech.name || 'Unknown'}</td>
+                    <td>${tech.jobs_completed || 0}</td>
+                    <td>${tech.completion_rate || 0}%</td>
+                    <td>${tech.total_hours || 0}h</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updateAssetReliability(reliability) {
+        const container = document.getElementById('asset-reliability');
+        const criticalAssets = reliability.critical_assets || [];
+        const atRiskAssets = reliability.at_risk_assets || [];
+        const avgReliability = reliability.average_reliability || 0;
+
+        if (criticalAssets.length === 0 && atRiskAssets.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">✅</div>
+                    <div style="font-weight: 600; color: #198754; margin-bottom: 0.25rem;">All Assets Healthy</div>
+                    <div style="color: #6c757d; font-size: 0.875rem;">
+                        Average reliability: ${avgReliability}%
+                    </div>
+                    <div style="color: #6c757d; font-size: 0.875rem;">
+                        ${reliability.healthy_assets || 0} assets with 85%+ reliability
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <div style="margin-bottom: 1rem;">
+                <span style="color: #6c757d; font-size: 0.875rem;">
+                    Average reliability: <strong>${avgReliability}%</strong>
+                </span>
+            </div>
+        `;
+
+        const allAssets = [...criticalAssets, ...atRiskAssets].slice(0, 5);
+        allAssets.forEach(asset => {
+            const score = asset.reliability_score || 0;
+            let scoreClass = 'score-excellent';
+            if (score < 50) scoreClass = 'score-critical';
+            else if (score < 70) scoreClass = 'score-warning';
+            else if (score < 85) scoreClass = 'score-good';
+
+            html += `
+                <div class="asset-item">
+                    <div>
+                        <div class="asset-name">${asset.asset_name || 'Unknown'}</div>
+                        <div style="font-size: 0.75rem; color: #6c757d;">
+                            ${asset.failures || 0} failures | ${asset.location || ''}
+                        </div>
+                    </div>
+                    <span class="asset-score ${scoreClass}">${score}%</span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function updateWorkOrderBreakdown(metrics) {
+        document.getElementById('wo-open').textContent = metrics.open || 0;
+        document.getElementById('wo-progress').textContent = metrics.in_progress || 0;
+        document.getElementById('wo-completed').textContent = metrics.completed || 0;
+        document.getElementById('wo-overdue').textContent = metrics.overdue || 0;
+    }
+
+    function updateCostAnalysis(costs) {
+        const laborCost = costs.labor_cost || 0;
+        const partsCost = costs.parts_cost || 0;
+        const totalCost = costs.total_cost || 0;
+        const avgCost = costs.avg_per_wo || 0;
+
+        document.getElementById('labor-cost').textContent = `$${laborCost.toLocaleString()}`;
+        document.getElementById('parts-cost').textContent = `$${partsCost.toLocaleString()}`;
+        document.getElementById('total-cost').textContent = `$${totalCost.toLocaleString()}`;
+        document.getElementById('avg-cost').textContent = `$${avgCost.toLocaleString()}`;
+
+        const laborPct = totalCost > 0 ? (laborCost / totalCost) * 100 : 50;
+        const partsPct = totalCost > 0 ? (partsCost / totalCost) * 100 : 50;
+
+        document.getElementById('labor-bar').style.width = `${laborPct}%`;
+        document.getElementById('parts-bar').style.width = `${partsPct}%`;
+    }
+
+    function updatePriorityBreakdown(byPriority) {
+        const container = document.getElementById('priority-breakdown');
+        const priorities = Object.entries(byPriority);
+
+        if (priorities.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: #6c757d; padding: 1rem;">
+                    No priority data available
+                </div>
+            `;
+            return;
+        }
+
+        const colors = {
+            'Critical': '#dc3545',
+            'High': '#fd7e14',
+            'Medium': '#ffc107',
+            'Low': '#198754'
+        };
+
+        const total = priorities.reduce((sum, [_, count]) => sum + count, 0);
+
+        container.innerHTML = priorities.map(([priority, count]) => {
+            const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+            const color = colors[priority] || '#6c757d';
+            return `
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="width: 12px; height: 12px; border-radius: 3px; background: ${color};"></div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span style="font-size: 0.875rem; color: #495057;">${priority}</span>
+                            <span style="font-size: 0.875rem; font-weight: 600;">${count} (${pct}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: ${pct}%; background: ${color}; border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateCharts(data) {
+        // Trend Chart
+        const trendData = data.trend_data || {};
+        const weeklyCreated = trendData.weekly_created || [];
+        const weeklyCompleted = trendData.weekly_completed || [];
+
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        if (charts.trend) charts.trend.destroy();
+
+        charts.trend = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: weeklyCreated.map(d => d.week),
+                datasets: [
+                    {
+                        label: 'Created',
+                        data: weeklyCreated.map(d => d.count),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Completed',
+                        data: weeklyCompleted.map(d => d.count),
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Type Chart
+        const byType = data.work_order_metrics?.by_type || {};
+        const typeLabels = Object.keys(byType);
+        const typeValues = Object.values(byType);
+
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        if (charts.type) charts.type.destroy();
+
+        charts.type = new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: typeValues,
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

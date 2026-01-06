@@ -47,10 +47,14 @@ initialize_firebase_app()
 
 async def verify_id_token_and_get_user(token: str) -> Optional[User]:
     """
-    Verifies a Firebase ID token, then fetches the user's profile and permissions from Firestore.
+    Verifies a Firebase ID token or demo session token, then fetches the user's profile.
+
+    Supports two authentication methods:
+    1. Firebase ID token (JWT) - for regular authenticated users
+    2. Demo session token - for one-click demo users
 
     Args:
-        token: The Firebase ID token (JWT) from the client.
+        token: The Firebase ID token (JWT) or demo session token.
 
     Returns:
         A User model instance if the token is valid and the user exists in Firestore, otherwise None.
@@ -59,22 +63,21 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
         logger.error("Firebase not initialized. Cannot verify token.")
         return None
 
+    firestore_manager = get_firestore_manager()
+
+    # First, try to verify as a Firebase ID token
     try:
-        # Verify the token against the Firebase Auth service
         decoded_token = auth.verify_id_token(token)
         uid = decoded_token["uid"]
         email = decoded_token.get("email")
 
         # Fetch user profile from Firestore to get roles and permissions
-        firestore_manager = get_firestore_manager()
         user_doc = await firestore_manager.get_document("users", uid)
 
         if not user_doc:
             logger.warning(
                 f"User with UID '{uid}' authenticated but not found in Firestore."
             )
-            # Optionally, you could create a user profile here on first login.
-            # For now, we'll deny access if they don't have a profile.
             return None
 
         # Get permissions based on the user's role
@@ -89,7 +92,6 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
             full_name=user_doc.get("full_name") or user_doc.get("display_name"),
             disabled=user_doc.get("disabled", False),
             permissions=permissions,
-            # Multi-tenant organization fields
             organization_id=user_doc.get("organization_id"),
             organization_name=user_doc.get("organization_name"),
         )
@@ -101,11 +103,88 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
         return user
 
     except auth.InvalidIdTokenError:
-        logger.warning("Invalid Firebase ID token provided.")
-        return None
+        # Not a valid Firebase token - try demo session lookup
+        pass
     except Exception as e:
-        logger.error(f"An error occurred during token verification: {e}")
+        # Other Firebase errors - try demo session as fallback
+        logger.debug(f"Firebase token verification failed: {e}")
+
+    # Try to find a demo user by session token
+    try:
+        logger.debug(f"Attempting demo session lookup for token: {token[:20]}...")
+        demo_user = await _get_demo_user_by_session_token(token, firestore_manager)
+        if demo_user:
+            logger.info(f"Demo user found: {demo_user.uid}")
+            return demo_user
+        else:
+            logger.debug("No demo user found for token")
+    except Exception as e:
+        logger.warning(f"Demo session lookup failed: {e}")
+
+    return None
+
+
+async def _get_demo_user_by_session_token(token: str, firestore_manager) -> Optional[User]:
+    """
+    Look up a demo user by their session token.
+
+    Args:
+        token: The demo session token
+        firestore_manager: Firestore manager instance
+
+    Returns:
+        User model if valid demo session, None otherwise
+    """
+    from datetime import datetime, timezone
+
+    if not firestore_manager.db:
         return None
+
+    # Query users by session_token where is_demo=True
+    users_ref = firestore_manager.db.collection("users")
+    query = users_ref.where("session_token", "==", token).where("is_demo", "==", True).limit(1)
+
+    logger.debug(f"Querying Firestore for session_token: {token[:20]}...")
+    docs = list(query.stream())
+    logger.debug(f"Query returned {len(docs)} documents")
+    if not docs:
+        return None
+
+    user_doc = docs[0].to_dict()
+    uid = user_doc.get("uid")
+
+    # Check session expiration
+    expires_at = user_doc.get("session_expires_at")
+    if expires_at:
+        try:
+            exp_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) > exp_dt:
+                logger.info(f"Demo session expired for user {uid}")
+                return None
+        except Exception:
+            pass
+
+    # Get permissions from stored list or default
+    permissions = user_doc.get("permissions", [])
+    if not permissions:
+        permissions = get_permissions_for_role(user_doc.get("role", "technician"))
+
+    # Create User model for demo user
+    user = User(
+        uid=uid,
+        email=user_doc.get("email"),
+        role=user_doc.get("role", "owner"),
+        full_name=user_doc.get("full_name", "Demo User"),
+        disabled=False,
+        permissions=permissions,
+        organization_id=user_doc.get("organization_id"),
+        organization_name=user_doc.get("organization_name"),
+    )
+
+    # Add is_demo flag (may need to be added to User model)
+    user.is_demo = True
+
+    return user
 
 
 # --- Permission Management ---

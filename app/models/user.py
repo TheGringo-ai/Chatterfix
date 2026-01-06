@@ -31,6 +31,8 @@ class User(BaseModel):
     organization_id: Optional[str] = None
     organization_name: Optional[str] = None
     company: Optional[Dict[str, Any]] = None
+    # Demo mode flag
+    is_demo: bool = False
 
     @computed_field
     @property

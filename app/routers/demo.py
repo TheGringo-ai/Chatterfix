@@ -1,12 +1,16 @@
 import json
+import logging
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
 
 from app.routers.onboarding import ROLE_ONBOARDING_CONFIG
+from app.services.demo_service import demo_service
+
+logger = logging.getLogger(__name__)
 
 
 def generate_manager_demo_data():
@@ -218,6 +222,123 @@ env = Environment(
     autoescape=True,
 )
 templates = Jinja2Templates(env=env)
+
+
+# =============================================================================
+# ONE-CLICK DEMO API ENDPOINTS
+# =============================================================================
+
+
+@router.post("/api/v1/demo/start")
+async def start_demo_session(request: Request, response: Response):
+    """
+    Create a new isolated demo organization with seed data.
+
+    Returns session cookie and redirect URL for one-click demo access.
+    No signup required.
+
+    Rate limited to 5 demos per IP per hour.
+    """
+    # Get client IP for rate limiting (optional)
+    client_ip = request.client.host if request.client else None
+
+    logger.info(f"Starting demo session for IP: {client_ip}")
+
+    try:
+        result = await demo_service.create_demo_session(client_ip=client_ip)
+
+        if not result.get("success"):
+            return JSONResponse(
+                {"error": result.get("error", "Failed to create demo session")},
+                status_code=500,
+            )
+
+        # Set session cookie for demo user
+        json_response = JSONResponse({
+            "success": True,
+            "org_id": result["org_id"],
+            "redirect_url": result["redirect_url"],
+            "expires_at": result["expires_at"],
+            "message": "Demo workspace created! You have 2 hours to explore.",
+        })
+
+        # Set demo session cookie (same format as regular sessions)
+        json_response.set_cookie(
+            key="session_token",
+            value=result["session_token"],
+            path="/",
+            httponly=True,
+            samesite="lax",
+            max_age=7200,  # 2 hours
+        )
+
+        logger.info(f"Demo session created: org={result['org_id']}")
+
+        return json_response
+
+    except Exception as e:
+        logger.error(f"Error creating demo session: {e}")
+        return JSONResponse(
+            {"error": "Failed to create demo workspace. Please try again."},
+            status_code=500,
+        )
+
+
+@router.post("/api/v1/demo/cleanup")
+async def cleanup_expired_demos(request: Request):
+    """
+    Clean up expired demo organizations.
+
+    Should be called periodically (e.g., daily via Cloud Scheduler).
+    Protected by admin secret header.
+    """
+    import os
+
+    # Simple auth check for cleanup endpoint
+    admin_secret = request.headers.get("X-Admin-Secret")
+    expected_secret = os.environ.get("ADMIN_SECRET", "")
+
+    if not expected_secret or admin_secret != expected_secret:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    try:
+        result = await demo_service.cleanup_expired_demos()
+        return JSONResponse(result)
+    except Exception as e:
+        logger.error(f"Error cleaning up demos: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@router.get("/api/v1/demo/status")
+async def get_demo_status(request: Request):
+    """
+    Check if current session is a demo session.
+
+    Returns demo org info if in demo mode, otherwise indicates not a demo.
+    """
+    from app.auth import get_current_user_from_cookie
+
+    try:
+        current_user = await get_current_user_from_cookie(request)
+
+        if current_user and hasattr(current_user, 'is_demo') and current_user.is_demo:
+            return JSONResponse({
+                "is_demo": True,
+                "org_id": current_user.organization_id,
+                "org_name": current_user.organization_name,
+                "message": "You are using a demo workspace. Data will be deleted after 2 hours.",
+            })
+
+        return JSONResponse({
+            "is_demo": False,
+            "message": "Not a demo session",
+        })
+
+    except Exception:
+        return JSONResponse({
+            "is_demo": False,
+            "message": "Unable to determine session status",
+        })
 
 # Sample data for demo mode
 DEMO_ASSETS = [

@@ -290,19 +290,40 @@ async def cleanup_expired_demos(request: Request):
     Clean up expired demo organizations.
 
     Should be called periodically (e.g., daily via Cloud Scheduler).
-    Protected by admin secret header.
+    Protected by:
+    - X-Admin-Secret header (for manual invocation)
+    - OIDC token from Cloud Scheduler (Authorization header)
     """
     import os
 
-    # Simple auth check for cleanup endpoint
+    # Check for admin secret (manual invocation)
     admin_secret = request.headers.get("X-Admin-Secret")
     expected_secret = os.environ.get("ADMIN_SECRET", "")
 
-    if not expected_secret or admin_secret != expected_secret:
+    # Check for OIDC token from Cloud Scheduler
+    auth_header = request.headers.get("Authorization", "")
+    has_oidc_token = auth_header.startswith("Bearer ")
+
+    # Check for Cloud Scheduler user agent
+    user_agent = request.headers.get("User-Agent", "")
+    is_cloud_scheduler = "Google-Cloud-Scheduler" in user_agent
+
+    # Allow if:
+    # 1. Valid admin secret, OR
+    # 2. OIDC token from Cloud Scheduler
+    is_authorized = (
+        (expected_secret and admin_secret == expected_secret) or
+        (has_oidc_token and is_cloud_scheduler)
+    )
+
+    if not is_authorized:
+        logger.warning(f"Unauthorized cleanup attempt from {request.client.host}")
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     try:
+        logger.info("Starting scheduled demo cleanup...")
         result = await demo_service.cleanup_expired_demos()
+        logger.info(f"Demo cleanup completed: {result}")
         return JSONResponse(result)
     except Exception as e:
         logger.error(f"Error cleaning up demos: {e}")

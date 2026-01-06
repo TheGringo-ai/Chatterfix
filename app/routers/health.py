@@ -709,12 +709,19 @@ class RateLimitUpdate(BaseModel):
 
 
 @router.get("/health/rate-limits")
-async def get_rate_limits():
+async def get_rate_limits(
+    authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
+):
     """
-    Get current rate limit configurations.
+    Get current rate limit configurations (Admin only).
 
     Returns default limits and instructions for customization.
     """
+    # Require admin auth - don't leak config to public
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized - admin access required")
+
     try:
         firestore_manager = get_firestore_manager()
 

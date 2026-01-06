@@ -347,6 +347,13 @@ async def bootstrap_org(
                     "joined_at": now.isoformat(),
                 }
             ],
+            # Resource counts for quota enforcement
+            "counts": {
+                "assets": 0,
+                "users": 1,  # Owner counts as 1
+                "pm_rules": 0,
+                "work_orders": 0,
+            },
             "settings": settings,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),

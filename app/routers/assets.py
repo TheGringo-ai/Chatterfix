@@ -21,6 +21,7 @@ from app.models.user import User
 from app.core.firestore_db import get_firestore_manager
 from app.services.gemini_service import gemini_service
 from app.services.media_service import media_service
+from app.services.quota_service import quota_service, QuotaExceededError
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +258,24 @@ async def create_asset(
 ):
     """Create a new asset"""
     firestore_manager = get_firestore_manager()
+
+    # Quota enforcement: reserve a slot before creating the asset
+    if current_user.organization_id:
+        try:
+            await quota_service.reserve_asset_slot(current_user.organization_id)
+        except QuotaExceededError as e:
+            logger.warning(f"Quota exceeded for org {current_user.organization_id}: {e}")
+            return JSONResponse(
+                {
+                    "error": str(e),
+                    "error_type": "quota_exceeded",
+                    "resource_type": e.resource_type,
+                    "limit": e.limit,
+                    "current": e.current,
+                    "tier": e.tier,
+                },
+                status_code=403,
+            )
 
     asset_data = {
         "name": name,

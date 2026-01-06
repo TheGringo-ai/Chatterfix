@@ -688,3 +688,133 @@ async def cost_summary():
             status_code=500,
             content={"error": str(e), "status": "unknown"}
         )
+
+
+# ========== RATE LIMIT MANAGEMENT ==========
+
+from app.services.rate_limit_service import (
+    get_rate_limit_service,
+    seed_default_rate_limits,
+    DEFAULT_LIMITS
+)
+from pydantic import BaseModel
+
+
+class RateLimitUpdate(BaseModel):
+    """Request model for updating rate limits"""
+    rpm: int = 120
+    burst: int = 60
+    plan: str = "trial"
+    enabled: bool = True
+
+
+@router.get("/health/rate-limits")
+async def get_rate_limits():
+    """
+    Get current rate limit configurations.
+
+    Returns default limits and instructions for customization.
+    """
+    try:
+        firestore_manager = get_firestore_manager()
+
+        # Get defaults from Firestore
+        defaults = await firestore_manager.get_document("rate_limits", "defaults")
+
+        # Get any org-specific overrides
+        overrides = await firestore_manager.get_collection("rate_limits", limit=50)
+        org_overrides = [o for o in overrides if o.get("id") != "defaults"]
+
+        return JSONResponse({
+            "defaults": defaults or {k: {"rpm": v.requests_per_minute, "burst": v.burst_limit, "plan": k}
+                                     for k, v in DEFAULT_LIMITS.items()},
+            "org_overrides": org_overrides,
+            "hardcoded_fallbacks": {k: {"rpm": v.requests_per_minute, "burst": v.burst_limit}
+                                    for k, v in DEFAULT_LIMITS.items()},
+            "usage": {
+                "to_update_defaults": "POST /health/rate-limits/defaults",
+                "to_set_org_limit": "POST /health/rate-limits/org/{org_id}",
+                "to_upgrade_org": "Set higher rpm/burst for paying customers",
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting rate limits: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@router.post("/health/rate-limits/seed")
+async def seed_rate_limits(
+    authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
+):
+    """
+    Seed default rate limits to Firestore.
+
+    Run once to initialize, or to reset to defaults.
+    """
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    success = await seed_default_rate_limits()
+
+    if success:
+        return JSONResponse({"status": "success", "message": "Default rate limits seeded"})
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": "Failed to seed rate limits"}
+        )
+
+
+@router.post("/health/rate-limits/org/{org_id}")
+async def set_org_rate_limit(
+    org_id: str,
+    config: RateLimitUpdate,
+    authorization: Optional[str] = Header(None),
+    x_scheduler_secret: Optional[str] = Header(None, alias="X-Scheduler-Secret"),
+):
+    """
+    Set custom rate limits for a specific organization.
+
+    Use this when a company upgrades their plan.
+
+    Example:
+        POST /health/rate-limits/org/acme-corp
+        {"rpm": 600, "burst": 200, "plan": "pro", "enabled": true}
+    """
+    if not _verify_scheduler_auth(authorization) and not _verify_scheduler_secret(x_scheduler_secret):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        firestore_manager = get_firestore_manager()
+
+        limit_data = {
+            "org_id": org_id,
+            "rpm": config.rpm,
+            "burst": config.burst,
+            "plan": config.plan,
+            "enabled": config.enabled,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await firestore_manager.set_document("rate_limits", org_id, limit_data)
+
+        logger.info(f"Set rate limits for org {org_id}: {config.rpm} rpm, {config.plan} plan")
+
+        return JSONResponse({
+            "status": "success",
+            "org_id": org_id,
+            "config": limit_data,
+            "message": f"Rate limits updated for {org_id}"
+        })
+
+    except Exception as e:
+        logger.error(f"Error setting rate limits for {org_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )

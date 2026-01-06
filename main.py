@@ -130,6 +130,7 @@ all_extended_routers = [
     "linesmart_integration",
     "logistics",  # Pallet inspection and warehouse safety
     "manager",  # Manager Dashboard - Central command center for CMMS management
+    "org_bootstrap",  # Organization Bootstrap - onboarding new companies
     "safety",  # SafetyFix Guardian Angel - PPE detection, fall detection, voice commands
     "planner",
     "planner_simple",

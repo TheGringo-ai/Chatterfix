@@ -687,16 +687,80 @@ class FirestoreManager:
     async def get_due_pm_rules(
         self, organization_id: str, due_before: datetime
     ) -> List[Dict[str, Any]]:
-        """Get PM rules that are due before a specific date"""
+        """Get PM rules that are due before a specific date.
+
+        Uses composite index: organization_id + is_active + next_due
+        """
+        # Convert datetime to ISO string for comparison (Firestore stores ISO strings)
+        due_before_iso = due_before.isoformat() if isinstance(due_before, datetime) else due_before
         return await self.get_org_collection(
             "pm_schedule_rules",
             organization_id,
             additional_filters=[
                 {"field": "is_active", "operator": "==", "value": True},
-                {"field": "next_due", "operator": "<=", "value": due_before},
+                {"field": "next_due", "operator": "<=", "value": due_before_iso},
             ],
             order_by="next_due",
         )
+
+    async def get_all_due_pm_rules(
+        self,
+        due_before: datetime,
+        limit: int = 200,
+        exclude_demo_orgs: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get PM rules due now across ALL organizations using indexed query.
+
+        This uses the composite index: organization_id + is_active + next_due
+
+        Args:
+            due_before: Get rules where next_due <= this datetime
+            limit: Max rules to return
+            exclude_demo_orgs: If True, skip rules from demo organizations
+
+        Returns:
+            List of PM rules that are due, sorted by next_due
+        """
+        try:
+            if not self.db:
+                raise Exception("Firestore not initialized")
+
+            # Use direct Firestore query with composite index
+            query = (
+                self.db.collection("pm_schedule_rules")
+                .where(filter=FieldFilter("is_active", "==", True))
+                .where(filter=FieldFilter("next_due", "<=", due_before.isoformat()))
+                .order_by("next_due")
+                .limit(limit)
+            )
+
+            docs = query.stream()
+            results = []
+
+            for doc in docs:
+                data = doc.to_dict()
+                data["id"] = doc.id
+
+                # Skip demo orgs if requested
+                if exclude_demo_orgs:
+                    org_id = data.get("organization_id")
+                    # Simple check - real orgs don't start with "demo_" or "TEST_"
+                    if org_id and (org_id.startswith("demo_") or org_id.startswith("TEST_")):
+                        continue
+
+                results.append(convert_firestore_timestamps(data))
+
+            logger.info(f"get_all_due_pm_rules: Found {len(results)} rules due before {due_before.isoformat()}")
+            return results
+
+        except Exception as e:
+            error_str = str(e)
+            if "requires an index" in error_str.lower():
+                logger.warning(f"Missing composite index for pm_schedule_rules due query: {e}")
+                return []
+            logger.error(f"Error getting all due PM rules: {e}")
+            raise
 
     # --- Asset Meters ---
 

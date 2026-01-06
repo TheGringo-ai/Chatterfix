@@ -191,21 +191,71 @@ async def _update_rule_after_trigger(
     org_id: str,
     now: datetime,
     next_due: Optional[datetime],
+    created_wo_id: Optional[str] = None,
 ) -> bool:
-    """Update rule metadata after successful trigger."""
+    """
+    Update rule metadata after evaluation/trigger.
+
+    This is CRITICAL for the due-only query to work correctly.
+    If next_due is not updated, the rule will be picked up again next run.
+
+    Fields updated:
+    - last_evaluated_at: When we last looked at this rule
+    - last_triggered_at: When we last created a WO (if triggered)
+    - next_due: The next target date (MUST be updated for due-only query)
+    - last_work_order_id: Reference to created WO
+    - updated_at: General timestamp
+    """
     try:
         update_data = {
-            "last_triggered_at": now.isoformat(),
+            "last_evaluated_at": now.isoformat(),
             "updated_at": now.isoformat(),
         }
+
+        if created_wo_id:
+            update_data["last_triggered_at"] = now.isoformat()
+            update_data["last_work_order_id"] = created_wo_id
+
         if next_due:
-            update_data["next_due_date"] = next_due.isoformat()
+            # Use consistent field name "next_due" (not "next_due_date")
+            update_data["next_due"] = next_due.isoformat()
 
         # Use org-scoped update
         await firestore.update_pm_schedule_rule(rule_id, update_data, org_id)
+        logger.debug(f"Updated rule {rule_id}: next_due={next_due.isoformat() if next_due else 'None'}")
         return True
     except Exception as e:
         logger.error(f"Failed to update rule {rule_id}: {e}")
+        return False
+
+
+async def _update_rule_after_evaluation(
+    firestore,
+    rule_id: str,
+    org_id: str,
+    result: EvaluationResult,
+    now: datetime,
+) -> bool:
+    """
+    Update rule after evaluation (even if not triggered).
+
+    For blocked rules, store the blocked reason.
+    This helps with debugging and monitoring.
+    """
+    try:
+        update_data = {
+            "last_evaluated_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+
+        if result.blocked_reason:
+            update_data["blocked_reason"] = result.blocked_reason.value
+            update_data["blocked_at"] = now.isoformat()
+
+        await firestore.update_pm_schedule_rule(rule_id, update_data, org_id)
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to update evaluation status for rule {rule_id}: {e}")
         return False
 
 
@@ -276,13 +326,21 @@ async def process_rule(
             created_wo_id = await _create_pm_work_order(
                 firestore, rule, result, org_id, now
             )
-            if created_wo_id:
-                # Calculate next due for time-based rules
-                interval_days = rule.get("interval_days", 30)
-                next_due = now + timedelta(days=interval_days)
-                await _update_rule_after_trigger(
-                    firestore, rule_id, org_id, now, next_due
-                )
+
+            # Calculate next due for time-based rules
+            interval_days = rule.get("interval_days", 30)
+            next_due = now + timedelta(days=interval_days)
+
+            # ALWAYS update rule state after trigger attempt
+            # This moves next_due forward so rule won't be picked up again
+            await _update_rule_after_trigger(
+                firestore, rule_id, org_id, now, next_due, created_wo_id
+            )
+        elif result.decision == TriggerDecision.BLOCKED and not dry_run:
+            # Update blocked reason in rule
+            await _update_rule_after_evaluation(
+                firestore, rule_id, org_id, result, now
+            )
 
         # 4. Log evaluation
         await _log_evaluation(
@@ -317,7 +375,13 @@ async def run_pm_scheduler(
     org_id: Optional[str] = None,
 ) -> RunnerResult:
     """
-    Run PM scheduler for all active rules.
+    Run PM scheduler for rules that are DUE NOW.
+
+    This uses an indexed query to fetch only rules where:
+    - is_active == True
+    - next_due <= now
+
+    This is MUCH more efficient than fetching all active rules and filtering.
 
     Args:
         batch_size: Max rules to process per run
@@ -334,43 +398,26 @@ async def run_pm_scheduler(
     try:
         firestore = get_firestore_manager()
 
-        all_rules: List[Dict[str, Any]] = []
+        # =====================================================
+        # KEY CHANGE: Use indexed "due-only" query
+        # This drops Firestore reads from O(all_rules) to O(due_rules)
+        # =====================================================
 
         if org_id:
-            # Single org mode - use simple query to avoid index requirement
-            rules = await firestore.get_collection(
-                "pm_schedule_rules",
-                filters=[
-                    {"field": "organization_id", "operator": "==", "value": org_id},
-                ],
-                limit=batch_size,
-            )
-            # Filter for active rules in Python
-            active_rules = [r for r in rules if r.get("is_active", False)]
-            all_rules.extend(active_rules)
+            # Single org mode - use org-scoped due query
+            due_rules = await firestore.get_due_pm_rules(org_id, now)
+            logger.info(f"PM Scheduler (org={org_id}): Found {len(due_rules)} due rules")
         else:
-            # All orgs mode - get organizations first
-            orgs = await firestore.get_collection("organizations", limit=100)
-            for org in orgs:
-                if org.get("is_demo"):
-                    continue  # Skip demo orgs
-                org_id_iter = org.get("id")
-                if org_id_iter and len(all_rules) < batch_size:
-                    rules = await firestore.get_collection(
-                        "pm_schedule_rules",
-                        filters=[
-                            {"field": "organization_id", "operator": "==", "value": org_id_iter},
-                        ],
-                        limit=batch_size - len(all_rules),
-                    )
-                    # Filter for active rules in Python
-                    active_rules = [r for r in rules if r.get("is_active", False)]
-                    all_rules.extend(active_rules)
+            # All orgs mode - use cross-org indexed query
+            due_rules = await firestore.get_all_due_pm_rules(
+                due_before=now,
+                limit=batch_size,
+                exclude_demo_orgs=True,
+            )
+            logger.info(f"PM Scheduler (all orgs): Found {len(due_rules)} due rules")
 
-        logger.info(f"PM Scheduler: Found {len(all_rules)} active rules (dry_run={dry_run})")
-
-        # Process each rule
-        for rule in all_rules:
+        # Process only due rules (no more "wait" decisions expected)
+        for rule in due_rules:
             result.rules_checked += 1
 
             rule_result = await process_rule(firestore, rule, now, dry_run)
@@ -384,6 +431,7 @@ async def run_pm_scheduler(
             elif decision == "blocked":
                 result.blocked += 1
             elif decision == "wait":
+                # Shouldn't happen with due-only query, but handle gracefully
                 result.wait += 1
             elif decision == "error":
                 result.errors += 1

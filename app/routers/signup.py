@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from app.services import auth_service
 from app.services.firebase_auth import firebase_auth_service
 from app.services.organization_service import get_organization_service
+from app.routers.org_bootstrap import create_rate_limits_for_org, SubscriptionTier
 
 router = APIRouter(prefix="/signup", tags=["signup"])
 templates = Jinja2Templates(directory="app/templates")
@@ -75,6 +76,12 @@ async def signup(
             )
             org_id = org_data.get("id")
 
+            # Create rate limits for the organization (FREE tier for self-service)
+            try:
+                await create_rate_limits_for_org(org_id, SubscriptionTier.FREE)
+            except Exception as rate_limit_error:
+                print(f"Rate limits creation failed (non-critical): {rate_limit_error}")
+
             # Update user profile with organization info
             if firebase_auth_service.db:
                 user_ref = firebase_auth_service.db.collection("users").document(
@@ -128,6 +135,10 @@ async def signup(
                 owner_user_id=str(user_id),
                 owner_email=email,
             )
+            # Create rate limits for local development too
+            org_id = org_data.get("id")
+            if org_id:
+                await create_rate_limits_for_org(org_id, SubscriptionTier.FREE)
         except Exception as org_error:
             # Log but don't fail - org creation is enhancement
             print(f"Organization creation failed (non-critical): {org_error}")

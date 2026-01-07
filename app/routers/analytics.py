@@ -767,9 +767,11 @@ async def get_comprehensive_kpis(
         if current_user and current_user.organization_id:
             # Get real organization data
             kpi_data = await get_kpi_dashboard(current_user.organization_id, days)
+            kpi_data["is_demo"] = False
         else:
             # Demo mode - use demo organization
             kpi_data = await get_kpi_dashboard("demo_org", days)
+            kpi_data["is_demo"] = True
 
         return JSONResponse(content=kpi_data)
     except Exception as e:
@@ -786,12 +788,14 @@ async def get_technician_performance(
     current_user = await get_current_user_from_cookie(request)
 
     try:
+        is_demo = not (current_user and current_user.organization_id)
         org_id = current_user.organization_id if current_user else "demo_org"
         kpi_data = await get_kpi_dashboard(org_id, days)
 
         return JSONResponse(content={
             "technician_performance": kpi_data.get("technician_performance", {}),
             "period_days": days,
+            "is_demo": is_demo,
         })
     except Exception as e:
         logger.error(f"Error getting technician performance: {e}")
@@ -848,8 +852,19 @@ async def get_mttr(
 ):
     """Get Mean Time To Repair (MTTR) metrics"""
     try:
-        data = await analytics_service.calculate_mttr(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        mttr_data = kpi_data.get("mttr", {})
+        mttr_data["is_demo"] = is_demo
+        return JSONResponse(content=mttr_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -861,8 +876,19 @@ async def get_mtbf(
 ):
     """Get Mean Time Between Failures (MTBF) metrics"""
     try:
-        data = await analytics_service.calculate_mtbf(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        mtbf_data = kpi_data.get("mtbf", {})
+        mtbf_data["is_demo"] = is_demo
+        return JSONResponse(content=mtbf_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -874,8 +900,19 @@ async def get_asset_utilization(
 ):
     """Get asset utilization metrics"""
     try:
-        data = await analytics_service.calculate_asset_utilization(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        util_data = kpi_data.get("asset_reliability", {})
+        util_data["is_demo"] = is_demo
+        return JSONResponse(content=util_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -887,8 +924,19 @@ async def get_cost_tracking(
 ):
     """Get cost tracking metrics"""
     try:
-        data = await analytics_service.get_cost_tracking(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        cost_data = kpi_data.get("cost_analysis", {})
+        cost_data["is_demo"] = is_demo
+        return JSONResponse(content=cost_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -900,8 +948,19 @@ async def get_work_order_metrics(
 ):
     """Get work order metrics"""
     try:
-        data = await analytics_service.get_work_order_metrics(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        wo_data = kpi_data.get("work_order_metrics", {})
+        wo_data["is_demo"] = is_demo
+        return JSONResponse(content=wo_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -913,8 +972,19 @@ async def get_compliance_metrics(
 ):
     """Get compliance and PM adherence metrics"""
     try:
-        data = await analytics_service.get_compliance_metrics(days)
-        return JSONResponse(content=data)
+        # Get org_id for multi-tenant data isolation
+        if current_user and current_user.organization_id:
+            org_id = current_user.organization_id
+            is_demo = False
+        else:
+            org_id = "demo_org"
+            is_demo = True
+
+        # Use consolidated KPI service for consistent calculations
+        kpi_data = await get_kpi_dashboard(org_id, days)
+        compliance_data = kpi_data.get("pm_compliance", {})
+        compliance_data["is_demo"] = is_demo
+        return JSONResponse(content=compliance_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

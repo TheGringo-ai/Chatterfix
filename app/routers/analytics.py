@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 import grpc
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -74,6 +74,13 @@ except ImportError:
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
+
+
+# Root route redirect to main analytics dashboard
+@router.get("/", include_in_schema=False)
+async def analytics_root():
+    """Redirect /analytics/ to /analytics/dashboard"""
+    return RedirectResponse(url="/analytics/dashboard", status_code=302)
 
 
 class ExportRequest(BaseModel):

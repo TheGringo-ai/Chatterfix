@@ -226,6 +226,199 @@ DEMO_VENDORS = [
 ]
 
 
+# ====== INVENTORY KPI ENDPOINTS ======
+
+@router.get("/inventory/api/kpis")
+async def get_inventory_kpis(request: Request):
+    """
+    Get comprehensive inventory KPIs.
+    Returns total value, low stock alerts, category breakdown, turnover metrics.
+    """
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        if current_user and current_user.organization_id:
+            firestore_manager = get_firestore_manager()
+            parts = await firestore_manager.get_org_parts(current_user.organization_id)
+            is_demo = False
+        else:
+            parts = DEMO_PARTS
+            is_demo = True
+
+        # Calculate comprehensive KPIs
+        total_parts = len(parts)
+        total_value = 0
+        low_stock_items = []
+        out_of_stock_items = []
+        by_category = {}
+        by_location = {}
+
+        for part in parts:
+            current = part.get("current_stock", 0)
+            minimum = part.get("minimum_stock", 5)
+            unit_cost = part.get("unit_cost", 0)
+            category = part.get("category", "General")
+            location = part.get("location", "Unknown")
+
+            # Total value
+            total_value += current * unit_cost
+
+            # Low stock tracking
+            if current == 0:
+                out_of_stock_items.append({
+                    "id": part.get("id"),
+                    "name": part.get("name"),
+                    "part_number": part.get("part_number", "N/A"),
+                    "minimum_stock": minimum,
+                    "severity": "critical"
+                })
+            elif current <= minimum:
+                low_stock_items.append({
+                    "id": part.get("id"),
+                    "name": part.get("name"),
+                    "part_number": part.get("part_number", "N/A"),
+                    "current_stock": current,
+                    "minimum_stock": minimum,
+                    "severity": "warning"
+                })
+
+            # Category breakdown
+            if category not in by_category:
+                by_category[category] = {"count": 0, "value": 0}
+            by_category[category]["count"] += 1
+            by_category[category]["value"] += current * unit_cost
+
+            # Location breakdown
+            if location not in by_location:
+                by_location[location] = {"count": 0}
+            by_location[location]["count"] += 1
+
+        return JSONResponse(content={
+            "is_demo": is_demo,
+            "summary": {
+                "total_parts": total_parts,
+                "total_value": round(total_value, 2),
+                "low_stock_count": len(low_stock_items),
+                "out_of_stock_count": len(out_of_stock_items),
+                "categories_count": len(by_category),
+                "locations_count": len(by_location),
+            },
+            "low_stock_alerts": low_stock_items[:10],
+            "out_of_stock_alerts": out_of_stock_items[:10],
+            "by_category": by_category,
+            "by_location": by_location,
+            "health_score": _calculate_inventory_health(total_parts, len(low_stock_items), len(out_of_stock_items)),
+        })
+    except Exception as e:
+        logger.error(f"Error calculating inventory KPIs: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.get("/inventory/api/low-stock")
+async def get_low_stock_items(request: Request):
+    """Get all low stock and out of stock items for alerts."""
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        if current_user and current_user.organization_id:
+            firestore_manager = get_firestore_manager()
+            parts = await firestore_manager.get_org_parts(current_user.organization_id)
+        else:
+            parts = DEMO_PARTS
+
+        alerts = []
+        for part in parts:
+            current = part.get("current_stock", 0)
+            minimum = part.get("minimum_stock", 5)
+
+            if current <= minimum:
+                alerts.append({
+                    "id": part.get("id"),
+                    "name": part.get("name"),
+                    "part_number": part.get("part_number", "N/A"),
+                    "category": part.get("category", "General"),
+                    "current_stock": current,
+                    "minimum_stock": minimum,
+                    "unit_cost": part.get("unit_cost", 0),
+                    "vendor_name": part.get("vendor_name", "N/A"),
+                    "severity": "critical" if current == 0 else "warning",
+                    "reorder_quantity": max(minimum * 2 - current, minimum),
+                })
+
+        # Sort by severity (critical first) then by current stock
+        alerts.sort(key=lambda x: (0 if x["severity"] == "critical" else 1, x["current_stock"]))
+
+        return JSONResponse(content={
+            "alert_count": len(alerts),
+            "critical_count": len([a for a in alerts if a["severity"] == "critical"]),
+            "warning_count": len([a for a in alerts if a["severity"] == "warning"]),
+            "alerts": alerts,
+        })
+    except Exception as e:
+        logger.error(f"Error getting low stock items: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.get("/inventory/api/value-by-category")
+async def get_inventory_value_by_category(request: Request):
+    """Get inventory value breakdown by category for charts."""
+    current_user = await get_current_user_from_cookie(request)
+
+    try:
+        if current_user and current_user.organization_id:
+            firestore_manager = get_firestore_manager()
+            parts = await firestore_manager.get_org_parts(current_user.organization_id)
+        else:
+            parts = DEMO_PARTS
+
+        by_category = {}
+        for part in parts:
+            category = part.get("category", "General")
+            current = part.get("current_stock", 0)
+            unit_cost = part.get("unit_cost", 0)
+            value = current * unit_cost
+
+            if category not in by_category:
+                by_category[category] = 0
+            by_category[category] += value
+
+        # Format for Chart.js
+        return JSONResponse(content={
+            "labels": list(by_category.keys()),
+            "data": [round(v, 2) for v in by_category.values()],
+            "total_value": round(sum(by_category.values()), 2),
+        })
+    except Exception as e:
+        logger.error(f"Error getting inventory value by category: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+def _calculate_inventory_health(total: int, low_stock: int, out_of_stock: int) -> dict:
+    """Calculate inventory health score (0-100)."""
+    if total == 0:
+        return {"score": 100, "status": "N/A", "description": "No inventory tracked"}
+
+    # Deduct points for issues
+    critical_penalty = out_of_stock * 10
+    warning_penalty = low_stock * 3
+    score = max(0, 100 - critical_penalty - warning_penalty)
+
+    if score >= 90:
+        status = "Excellent"
+        description = "Inventory levels are healthy"
+    elif score >= 75:
+        status = "Good"
+        description = "Minor reorder needed"
+    elif score >= 50:
+        status = "Fair"
+        description = "Several items need attention"
+    else:
+        status = "Poor"
+        description = "Immediate action required"
+
+    return {"score": score, "status": status, "description": description}
+
+
 @router.get("/inventory", response_class=HTMLResponse)
 async def inventory_list(request: Request):
     """Render the inventory list - demo data for guests, real data for authenticated"""

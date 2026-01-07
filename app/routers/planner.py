@@ -215,24 +215,6 @@ async def get_resource_capacity(request: Request):
     return JSONResponse(content=capacity)
 
 
-@router.get("/debug-auth")
-async def debug_auth(request: Request):
-    """Debug endpoint to check authentication status"""
-    current_user = await get_current_user_from_cookie(request)
-    session_token = request.cookies.get("session_token")
-
-    return JSONResponse(content={
-        "has_session_token": session_token is not None,
-        "session_token_preview": session_token[:20] + "..." if session_token else None,
-        "user_authenticated": current_user is not None,
-        "user_email": current_user.email if current_user else None,
-        "user_uid": current_user.uid if current_user else None,
-        "organization_id": current_user.organization_id if current_user else None,
-        "organization_name": current_user.organization_name if current_user else None,
-        "role": current_user.role if current_user else None,
-    })
-
-
 @router.get("/backlog")
 async def get_backlog(request: Request):
     """Get work order backlog - real Firestore data for authenticated users - BUILD_ID_20260105_0200"""

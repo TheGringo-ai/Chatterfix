@@ -389,8 +389,9 @@ async def complete_work_order(
 
     firestore_manager = get_firestore_manager()
 
-    # Get the existing work order
-    existing_data = await firestore_manager.get_document("work_orders", wo_id)
+    # Get org-scoped work order (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    existing_data = await firestore_manager.get_org_document("work_orders", wo_id, org_id)
     if not existing_data:
         raise HTTPException(status_code=404, detail="Work order not found")
 
@@ -456,8 +457,9 @@ async def complete_work_order_enhanced(
 
     firestore_manager = get_firestore_manager()
 
-    # Get the existing work order
-    existing_data = await firestore_manager.get_document("work_orders", wo_id)
+    # Get org-scoped work order (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    existing_data = await firestore_manager.get_org_document("work_orders", wo_id, org_id)
     if not existing_data:
         raise HTTPException(status_code=404, detail="Work order not found")
 
@@ -622,10 +624,9 @@ async def get_my_work_orders(
     # Get user ID - use demo user if not authenticated
     user_id = current_user.id if current_user else "demo_user"
 
-    # Get all work orders and filter by assigned_to_uid
-    all_work_orders = await firestore_manager.get_collection(
-        "work_orders", order_by="-created_at"
-    )
+    # Get org-scoped work orders only (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    all_work_orders = await firestore_manager.get_org_work_orders(org_id)
 
     # Filter work orders assigned to this user
     my_work_orders = []

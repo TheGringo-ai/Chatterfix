@@ -429,6 +429,14 @@ async def upload_media(
     current_user: User = Depends(require_permission_cookie("update_asset")),
 ):
     """Upload photo, video, or document"""
+    firestore_manager = get_firestore_manager()
+
+    # Verify asset belongs to user's organization (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
     asset_dir = os.path.join(UPLOAD_DIR, str(asset_id))
     os.makedirs(asset_dir, exist_ok=True)
 
@@ -438,9 +446,9 @@ async def upload_media(
 
     rel_path = f"/static/uploads/assets/{asset_id}/{file.filename}"
 
-    firestore_manager = get_firestore_manager()
     media_data = {
         "asset_id": asset_id,
+        "organization_id": org_id,  # Tag with org for multi-tenant isolation
         "file_path": rel_path,
         "file_type": file_type,
         "title": title,
@@ -468,8 +476,15 @@ async def log_maintenance(
     total_cost = labor_cost + parts_cost
     firestore_manager = get_firestore_manager()
 
+    # Verify asset belongs to user's organization (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
     history_data = {
         "asset_id": asset_id,
+        "organization_id": org_id,  # Tag with org for multi-tenant isolation
         "maintenance_type": maintenance_type,
         "description": description,
         "technician": technician,
@@ -481,20 +496,18 @@ async def log_maintenance(
     }
     await firestore_manager.create_document("maintenance_history", history_data)
 
-    # This should be a transaction in a real app
-    asset = await firestore_manager.get_document("assets", asset_id)
-    if asset:
-        new_downtime = asset.get("total_downtime_hours", 0) + downtime_hours
-        new_cost = asset.get("total_maintenance_cost", 0) + total_cost
-        await firestore_manager.update_document(
-            "assets",
-            asset_id,
-            {
-                "total_downtime_hours": new_downtime,
-                "total_maintenance_cost": new_cost,
-                "last_service_date": datetime.now(timezone.utc),
-            },
-        )
+    # Update asset totals (already verified above)
+    new_downtime = asset.get("total_downtime_hours", 0) + downtime_hours
+    new_cost = asset.get("total_maintenance_cost", 0) + total_cost
+    await firestore_manager.update_document(
+        "assets",
+        asset_id,
+        {
+            "total_downtime_hours": new_downtime,
+            "total_maintenance_cost": new_cost,
+            "last_service_date": datetime.now(timezone.utc),
+        },
+    )
 
     return RedirectResponse(f"/assets/{asset_id}", status_code=303)
 
@@ -508,11 +521,17 @@ async def ai_health_analysis(
         return JSONResponse({"health_score": 0, "analysis": "AI unavailable"})
 
     firestore_manager = get_firestore_manager()
+
+    # Get org-scoped asset (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
     asset, history = await asyncio.gather(
-        firestore_manager.get_document("assets", asset_id),
+        firestore_manager.get_org_document("assets", asset_id, org_id),
         firestore_manager.get_collection(
             "maintenance_history",
-            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            filters=[
+                {"field": "asset_id", "operator": "==", "value": asset_id},
+                {"field": "organization_id", "operator": "==", "value": org_id},
+            ],
             order_by="-created_date",
             limit=10,
         ),
@@ -570,8 +589,11 @@ async def ai_recommendations(
         return JSONResponse({"recommendations": []})
 
     firestore_manager = get_firestore_manager()
+
+    # Get org-scoped asset (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
     asset, parts = await asyncio.gather(
-        firestore_manager.get_document("assets", asset_id),
+        firestore_manager.get_org_document("assets", asset_id, org_id),
         firestore_manager.get_asset_parts(asset_id),
     )
     if not asset:
@@ -721,21 +743,28 @@ async def ai_generate_pm_schedule(
     """
     firestore_manager = get_firestore_manager()
 
-    # Get asset info
-    asset = await firestore_manager.get_document("assets", asset_id)
+    # Get org-scoped asset (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
     if not asset:
         return JSONResponse({"success": False, "error": "Asset not found"}, status_code=404)
 
-    # Get ALL available data in parallel for comprehensive analysis
+    # Get ALL available data in parallel for comprehensive analysis (org-scoped)
     documents, work_orders, maintenance_history, parts = await asyncio.gather(
         firestore_manager.get_collection(
             "asset_media",
-            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            filters=[
+                {"field": "asset_id", "operator": "==", "value": asset_id},
+                {"field": "organization_id", "operator": "==", "value": org_id},
+            ],
         ),
         firestore_manager.get_asset_work_orders(asset_id),
         firestore_manager.get_collection(
             "maintenance_history",
-            filters=[{"field": "asset_id", "operator": "==", "value": asset_id}],
+            filters=[
+                {"field": "asset_id", "operator": "==", "value": asset_id},
+                {"field": "organization_id", "operator": "==", "value": org_id},
+            ],
             order_by="-created_date",
             limit=50,
         ),

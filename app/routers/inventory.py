@@ -604,6 +604,14 @@ async def upload_part_media(
     current_user: User = Depends(require_permission_cookie("manage_inventory")),
 ):
     """Upload media for part"""
+    firestore_manager = get_firestore_manager()
+
+    # Verify part belongs to user's organization (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    part = await firestore_manager.get_org_document("parts", part_id, org_id)
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
     part_dir = os.path.join(UPLOAD_DIR, str(part_id))
     os.makedirs(part_dir, exist_ok=True)
     file_path = os.path.join(part_dir, file.filename)
@@ -612,9 +620,9 @@ async def upload_part_media(
 
     rel_path = f"/static/uploads/parts/{part_id}/{file.filename}"
 
-    firestore_manager = get_firestore_manager()
     media_data = {
         "part_id": part_id,
+        "organization_id": org_id,  # Tag with org for multi-tenant isolation
         "file_path": rel_path,
         "file_type": "image" if "image" in file.content_type else "document",
         "title": file.filename,
@@ -703,8 +711,9 @@ async def search_parts(
             {"parts": [], "message": "Enter at least 2 characters to search"}
         )
 
-    # Get all parts and filter (Firestore doesn't support full-text search natively)
-    all_parts = await firestore_manager.get_collection("parts", order_by="name")
+    # Get org-scoped parts only (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    all_parts = await firestore_manager.get_org_parts(org_id)
 
     search_term = q.lower()
     matching_parts = []
@@ -747,12 +756,13 @@ async def get_parts_by_asset(
     """Get all parts assigned to a specific asset"""
     firestore_manager = get_firestore_manager()
 
-    # Get asset info
-    asset = await firestore_manager.get_document("assets", asset_id)
+    # Get org-scoped asset only (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
     if not asset:
         return JSONResponse({"parts": [], "asset": None, "message": "Asset not found"})
 
-    # Get parts for this asset
+    # Get parts for this asset (already org-scoped via asset validation)
     parts = await firestore_manager.get_asset_parts(asset_id)
 
     return JSONResponse(
@@ -773,7 +783,10 @@ async def get_parts_by_asset(
 async def get_assets_list(current_user: User = Depends(require_auth_cookie)):
     """Get a simple list of all assets for dropdowns"""
     firestore_manager = get_firestore_manager()
-    assets = await firestore_manager.get_collection("assets", order_by="name")
+
+    # Get org-scoped assets only (multi-tenant data isolation)
+    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
+    assets = await firestore_manager.get_org_assets(org_id)
 
     asset_list = [
         {

@@ -42,31 +42,229 @@ templates = Jinja2Templates(directory="app/templates")
 UPLOAD_DIR = "app/static/uploads/parts"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Comprehensive demo inventory data - looks like a real maintenance operation
+DEMO_PARTS = [
+    {
+        "id": "part-001",
+        "name": "Hydraulic Filter Element",
+        "part_number": "HF-2045-A",
+        "category": "Filters",
+        "description": "High-efficiency hydraulic filter for industrial pumps",
+        "current_stock": 24,
+        "minimum_stock": 10,
+        "location": "Warehouse A - Shelf 12",
+        "unit_cost": 45.99,
+        "vendor_name": "FluidPro Supply",
+        "image_url": "",
+    },
+    {
+        "id": "part-002",
+        "name": "SKF Ball Bearing 6205-2RS",
+        "part_number": "SKF-6205-2RS",
+        "category": "Bearings",
+        "description": "Deep groove ball bearing, sealed, 25x52x15mm",
+        "current_stock": 48,
+        "minimum_stock": 20,
+        "location": "Warehouse A - Shelf 5",
+        "unit_cost": 12.75,
+        "vendor_name": "BearingWorld Inc",
+        "image_url": "",
+    },
+    {
+        "id": "part-003",
+        "name": "V-Belt A68",
+        "part_number": "VB-A68-IND",
+        "category": "Belts & Drives",
+        "description": "Industrial V-belt, 68 inch, heavy duty",
+        "current_stock": 15,
+        "minimum_stock": 8,
+        "location": "Warehouse B - Rack 3",
+        "unit_cost": 28.50,
+        "vendor_name": "PowerTrans Supply",
+        "image_url": "",
+    },
+    {
+        "id": "part-004",
+        "name": "Mechanical Seal Kit",
+        "part_number": "MSK-150-SS",
+        "category": "Seals & Gaskets",
+        "description": "Stainless steel mechanical seal kit for centrifugal pumps",
+        "current_stock": 6,
+        "minimum_stock": 4,
+        "location": "Warehouse A - Shelf 8",
+        "unit_cost": 189.00,
+        "vendor_name": "SealTech Industries",
+        "image_url": "",
+    },
+    {
+        "id": "part-005",
+        "name": "Contactor 3-Pole 40A",
+        "part_number": "LC1D40-240V",
+        "category": "Electrical",
+        "description": "3-pole contactor, 40 amp, 240V coil",
+        "current_stock": 8,
+        "minimum_stock": 3,
+        "location": "Electrical Room - Cabinet 2",
+        "unit_cost": 67.50,
+        "vendor_name": "ElectroParts Direct",
+        "image_url": "",
+    },
+    {
+        "id": "part-006",
+        "name": "Lubricant - Shell Omala S4",
+        "part_number": "SHELL-OMALA-S4-5G",
+        "category": "Lubricants",
+        "description": "Synthetic gear oil, 5 gallon pail, ISO 220",
+        "current_stock": 12,
+        "minimum_stock": 4,
+        "location": "Lubrication Storage",
+        "unit_cost": 245.00,
+        "vendor_name": "Shell Industrial",
+        "image_url": "",
+    },
+    {
+        "id": "part-007",
+        "name": "Proximity Sensor",
+        "part_number": "PS-M18-NPN",
+        "category": "Sensors",
+        "description": "Inductive proximity sensor, M18, NPN, 8mm range",
+        "current_stock": 3,
+        "minimum_stock": 5,
+        "location": "Electrical Room - Cabinet 4",
+        "unit_cost": 42.00,
+        "vendor_name": "AutoSense Corp",
+        "status": "low_stock",
+        "image_url": "",
+    },
+    {
+        "id": "part-008",
+        "name": "Conveyor Roller",
+        "part_number": "CR-48-HD",
+        "category": "Conveyor Parts",
+        "description": "Heavy duty conveyor roller, 48 inch width",
+        "current_stock": 18,
+        "minimum_stock": 6,
+        "location": "Warehouse B - Floor Storage",
+        "unit_cost": 125.00,
+        "vendor_name": "ConveyorParts Plus",
+        "image_url": "",
+    },
+    {
+        "id": "part-009",
+        "name": "Air Filter Element",
+        "part_number": "AF-24X24X2-MERV13",
+        "category": "HVAC Filters",
+        "description": "HVAC air filter, 24x24x2, MERV 13 rating",
+        "current_stock": 36,
+        "minimum_stock": 24,
+        "location": "HVAC Storage Room",
+        "unit_cost": 18.99,
+        "vendor_name": "AirQuality Supply",
+        "image_url": "",
+    },
+    {
+        "id": "part-010",
+        "name": "Pressure Gauge 0-300 PSI",
+        "part_number": "PG-300-SS",
+        "category": "Instrumentation",
+        "description": "Stainless steel pressure gauge, 0-300 PSI, 2.5 inch dial",
+        "current_stock": 7,
+        "minimum_stock": 4,
+        "location": "Instrument Cabinet",
+        "unit_cost": 35.00,
+        "vendor_name": "InstruTech Supply",
+        "image_url": "",
+    },
+]
+
+DEMO_VENDORS = [
+    {
+        "id": "vendor-001",
+        "name": "FluidPro Supply",
+        "contact_name": "John Martinez",
+        "email": "orders@fluidpro.com",
+        "phone": "(555) 234-5678",
+        "address": "1234 Industrial Blvd, Houston, TX 77001",
+        "payment_terms": "Net 30",
+    },
+    {
+        "id": "vendor-002",
+        "name": "BearingWorld Inc",
+        "contact_name": "Sarah Thompson",
+        "email": "sales@bearingworld.com",
+        "phone": "(555) 345-6789",
+        "address": "5678 Manufacturing Way, Chicago, IL 60601",
+        "payment_terms": "Net 45",
+    },
+    {
+        "id": "vendor-003",
+        "name": "PowerTrans Supply",
+        "contact_name": "Mike Chen",
+        "email": "mike@powertrans.com",
+        "phone": "(555) 456-7890",
+        "address": "9012 Power Drive, Detroit, MI 48201",
+        "payment_terms": "Net 30",
+    },
+    {
+        "id": "vendor-004",
+        "name": "ElectroParts Direct",
+        "contact_name": "Lisa Anderson",
+        "email": "lisa@electroparts.com",
+        "phone": "(555) 567-8901",
+        "address": "3456 Circuit Lane, Phoenix, AZ 85001",
+        "payment_terms": "Net 15",
+    },
+    {
+        "id": "vendor-005",
+        "name": "SealTech Industries",
+        "contact_name": "David Wilson",
+        "email": "david.wilson@sealtech.com",
+        "phone": "(555) 678-9012",
+        "address": "7890 Seal Street, Cleveland, OH 44101",
+        "payment_terms": "Net 30",
+    },
+]
+
 
 @router.get("/inventory", response_class=HTMLResponse)
 async def inventory_list(request: Request):
-    """Render the inventory list (filtered by organization)"""
-    # Use cookie-based auth for web pages
+    """Render the inventory list - demo data for guests, real data for authenticated"""
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/inventory", status_code=302)
+    parts = []
+    is_demo = False
 
-    firestore_manager = get_firestore_manager()
-    # Multi-tenant: filter by user's organization
-    if current_user.organization_id:
-        parts = await firestore_manager.get_org_parts(current_user.organization_id)
+    if current_user and current_user.organization_id:
+        # Authenticated user with organization - show real Firestore data
+        firestore_manager = get_firestore_manager()
+        try:
+            parts = await firestore_manager.get_org_parts(current_user.organization_id)
+        except Exception as e:
+            logger.error(f"Error loading parts: {e}")
+            parts = DEMO_PARTS
+            is_demo = True
     else:
-        parts = await firestore_manager.get_collection("parts", order_by="name")
+        # Not authenticated or no org - show demo data
+        parts = DEMO_PARTS
+        is_demo = True
+
+    # Calculate inventory stats
+    stats = {
+        "total_parts": len(parts),
+        "low_stock": len([p for p in parts if p.get("current_stock", 0) < p.get("minimum_stock", 5)]),
+        "total_value": sum(p.get("current_stock", 0) * p.get("unit_cost", 0) for p in parts),
+        "categories": len(set(p.get("category", "General") for p in parts)),
+    }
+
     return templates.TemplateResponse(
         "inventory/list.html",
         {
             "request": request,
             "parts": parts,
+            "stats": stats,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 
@@ -151,42 +349,46 @@ async def add_part(
 
 @router.get("/inventory/{part_id}", response_class=HTMLResponse)
 async def part_detail(request: Request, part_id: str):
-    """Render part details (validates organization ownership)"""
-    # Use cookie-based auth for web pages
+    """Render part details - demo data for guests, real data for authenticated"""
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(
-            url=f"/auth/login?next=/inventory/{part_id}", status_code=302
-        )
+    part = None
+    media = []
+    is_demo = False
 
-    firestore_manager = get_firestore_manager()
-    # Multi-tenant: validate part belongs to user's organization
-    if current_user.organization_id:
+    if current_user and current_user.organization_id:
+        # Authenticated user - get real data
+        firestore_manager = get_firestore_manager()
         part = await firestore_manager.get_org_document(
             "parts", part_id, current_user.organization_id
         )
-    else:
-        part = await firestore_manager.get_document("parts", part_id)
-    if not part:
-        return RedirectResponse(url="/inventory")
+        if part:
+            vendor = None
+            if part.get("vendor_id"):
+                vendor = await firestore_manager.get_org_document(
+                    "vendors", part["vendor_id"], current_user.organization_id
+                )
+            part["vendor_name"] = vendor.get("name") if vendor else "N/A"
 
-    vendor = None
-    if part.get("vendor_id"):
-        # SECURITY: Validate vendor belongs to same organization
-        if current_user.organization_id:
-            vendor = await firestore_manager.get_org_document(
-                "vendors", part["vendor_id"], current_user.organization_id
+            media = await firestore_manager.get_collection(
+                "part_media", filters=[{"field": "part_id", "operator": "==", "value": part_id}]
             )
-        else:
-            vendor = await firestore_manager.get_document("vendors", part["vendor_id"])
+    else:
+        # Not authenticated - show demo part
+        is_demo = True
+        part = next((p for p in DEMO_PARTS if p.get("id") == part_id), None)
+        if not part:
+            part = DEMO_PARTS[0] if DEMO_PARTS else None
 
-    media = await firestore_manager.get_collection(
-        "part_media", filters=[{"field": "part_id", "operator": "==", "value": part_id}]
-    )
+    if not part:
+        return RedirectResponse(url="/inventory", status_code=302)
 
-    part["vendor_name"] = vendor.get("name") if vendor else "N/A"
+    # Demo checkout history
+    demo_checkout_history = [
+        {"date": "2024-12-18", "quantity": 2, "work_order": "WO-2024-045", "technician": "Mike Johnson"},
+        {"date": "2024-12-10", "quantity": 1, "work_order": "WO-2024-038", "technician": "Sarah Chen"},
+        {"date": "2024-11-28", "quantity": 3, "work_order": "WO-2024-029", "technician": "Alex Rodriguez"},
+    ] if is_demo else []
 
     return templates.TemplateResponse(
         "inventory/detail.html",
@@ -194,9 +396,10 @@ async def part_detail(request: Request, part_id: str):
             "request": request,
             "part": part,
             "media": media,
+            "checkout_history": demo_checkout_history,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 
@@ -232,20 +435,26 @@ async def upload_part_media(
 # Vendor Routes
 @router.get("/vendors", response_class=HTMLResponse)
 async def vendor_list(request: Request):
-    """Render vendor list (filtered by organization)"""
-    # Use cookie-based auth for web pages
+    """Render vendor list - demo data for guests, real data for authenticated"""
     current_user = await get_current_user_from_cookie(request)
 
-    # Redirect to login if not authenticated
-    if not current_user:
-        return RedirectResponse(url="/auth/login?next=/vendors", status_code=302)
+    vendors = []
+    is_demo = False
 
-    firestore_manager = get_firestore_manager()
-    # Multi-tenant: filter vendors by user's organization
-    if current_user.organization_id:
-        vendors = await firestore_manager.get_org_vendors(current_user.organization_id)
+    if current_user and current_user.organization_id:
+        # Authenticated user with organization - show real data
+        firestore_manager = get_firestore_manager()
+        try:
+            vendors = await firestore_manager.get_org_vendors(current_user.organization_id)
+        except Exception as e:
+            logger.error(f"Error loading vendors: {e}")
+            vendors = DEMO_VENDORS
+            is_demo = True
     else:
-        vendors = await firestore_manager.get_collection("vendors", order_by="name")
+        # Not authenticated or no org - show demo data
+        vendors = DEMO_VENDORS
+        is_demo = True
+
     return templates.TemplateResponse(
         "inventory/vendors.html",
         {
@@ -253,7 +462,7 @@ async def vendor_list(request: Request):
             "vendors": vendors,
             "user": current_user,
             "current_user": current_user,
-            "is_demo": False,
+            "is_demo": is_demo,
         },
     )
 

@@ -501,8 +501,52 @@ class AITeamIntelligence:
             return await self._handle_changes_query(query)
 
         else:
-            # General context query
-            return await self.get_context(query)
+            # General knowledge or context query
+            return await self._handle_general_query(query)
+
+    async def _handle_general_query(self, query: str) -> Dict[str, Any]:
+        """Handle general questions with CMMS domain knowledge"""
+        query_lower = query.lower()
+
+        # Common CMMS knowledge base
+        cmms_knowledge = {
+            "mttr": "MTTR (Mean Time To Repair) is a key maintenance metric that measures the average time required to repair a failed equipment and restore it to operational status. Lower MTTR indicates more efficient maintenance operations. ChatterFix tracks MTTR automatically by monitoring work order completion times.",
+            "mtbf": "MTBF (Mean Time Between Failures) measures the average time between equipment breakdowns. Higher MTBF indicates more reliable equipment. ChatterFix calculates MTBF using work order history and equipment failure patterns.",
+            "pm": "PM (Preventive Maintenance) refers to scheduled maintenance tasks performed to prevent equipment failures before they occur. ChatterFix helps you schedule and track PM tasks, generate PM schedules based on AI recommendations, and monitor PM compliance rates.",
+            "cmms": "CMMS (Computerized Maintenance Management System) is software that centralizes maintenance information and facilitates maintenance operations. ChatterFix is a voice-first CMMS designed for technicians, featuring hands-free operation, AI-powered insights, and real-time analytics.",
+            "work order": "A work order is a document that provides details about maintenance work to be performed. ChatterFix allows you to create work orders via voice commands, track their status, assign technicians, and monitor completion rates.",
+            "asset": "An asset is any piece of equipment or property that requires maintenance. ChatterFix tracks asset health, maintenance history, and provides AI-powered health predictions and recommendations.",
+            "inventory": "Inventory management in CMMS tracks spare parts and supplies needed for maintenance. ChatterFix monitors stock levels, alerts on low stock, and tracks part checkout history.",
+            "oee": "OEE (Overall Equipment Effectiveness) measures manufacturing productivity by combining Availability, Performance, and Quality metrics. OEE = Availability × Performance × Quality. A world-class OEE is typically 85% or higher.",
+            "5s": "5S is a workplace organization methodology: Sort, Set in order, Shine, Standardize, and Sustain. It helps maintain clean, organized, and efficient workspaces for maintenance operations.",
+        }
+
+        # Check for matching knowledge
+        response = None
+        for keyword, knowledge in cmms_knowledge.items():
+            if keyword in query_lower:
+                response = knowledge
+                break
+
+        # If no direct match, get context and generate a response
+        if not response:
+            context = await self.get_context(query)
+            lessons = context.get("lessons", [])
+            solutions = context.get("solutions", [])
+
+            if lessons:
+                response = f"Based on our learned lessons: {lessons[0].get('content', 'No specific information found.')}"
+            elif solutions:
+                response = f"Here's a relevant solution: {solutions[0].get('description', 'No specific information found.')}"
+            else:
+                response = f"I don't have specific information about '{query}' in my knowledge base. Try asking about MTTR, MTBF, preventive maintenance, work orders, assets, or inventory management."
+
+        return {
+            "query_type": "general",
+            "query": query,
+            "response": response,
+            "context": await self.get_context(query) if not response else {},
+        }
 
     async def _handle_mistake_query(self, query: str) -> Dict[str, Any]:
         """Handle queries about past mistakes"""

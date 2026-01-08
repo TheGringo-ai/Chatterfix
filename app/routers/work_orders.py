@@ -51,6 +51,7 @@ UPLOAD_DIR = "app/static/uploads/work_orders"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Demo work orders for unauthenticated users
+# Some are assigned to "demo" user so "My Work Orders" shows data
 DEMO_WORK_ORDERS = [
     {
         "id": "WO-2024-001",
@@ -58,7 +59,8 @@ DEMO_WORK_ORDERS = [
         "asset": "HVAC Unit B-2",
         "priority": "High",
         "status": "In Progress",
-        "assigned_to": "Mike Johnson",
+        "assigned_to": "Demo Visitor",
+        "assigned_to_uid": "demo",  # Assigned to demo user
         "created_date": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d %H:%M"),
         "due_date": (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d"),
         "description": "Quarterly filter replacement for optimal air quality and system efficiency.",
@@ -69,7 +71,8 @@ DEMO_WORK_ORDERS = [
         "asset": "Compressor C-5",
         "priority": "Critical",
         "status": "Overdue",
-        "assigned_to": "Sarah Chen",
+        "assigned_to": "Demo Visitor",
+        "assigned_to_uid": "demo",  # Assigned to demo user
         "created_date": (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d %H:%M"),
         "due_date": (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d"),
         "description": "Emergency maintenance required. Compressor showing signs of oil contamination.",
@@ -81,6 +84,7 @@ DEMO_WORK_ORDERS = [
         "priority": "Medium",
         "status": "Scheduled",
         "assigned_to": "Alex Rodriguez",
+        "assigned_to_uid": "tech-003",
         "created_date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M"),
         "due_date": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
         "description": "Monthly calibration of production line sensors and equipment.",
@@ -91,7 +95,8 @@ DEMO_WORK_ORDERS = [
         "asset": "Conveyor System C-1",
         "priority": "Low",
         "status": "Open",
-        "assigned_to": "Mike Johnson",
+        "assigned_to": "Demo Visitor",
+        "assigned_to_uid": "demo",  # Assigned to demo user
         "created_date": (datetime.now() - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M"),
         "due_date": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
         "description": "Routine tension check and adjustment for conveyor belt system.",
@@ -374,6 +379,72 @@ async def update_work_order(
 
 
 # ==========================================
+# 🗑️ DELETE WORK ORDER ENDPOINT (Soft Delete)
+# ==========================================
+
+
+@router.post("/{wo_id}/delete")
+async def delete_work_order(
+    wo_id: str,
+    current_user: User = Depends(require_permission_cookie("delete_wo")),
+):
+    """Soft delete a work order (marks as deleted but retains data for audit)"""
+    # Get existing work order to verify ownership
+    existing_wo = await work_order_service.get_work_order(wo_id, organization_id=current_user.organization_id)
+    if not existing_wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
+    # Soft delete by marking status as Deleted
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await work_order_service.update_work_order(
+        wo_id, update_data, organization_id=current_user.organization_id
+    )
+
+    # Log the deletion for audit trail
+    await audit_log_service.log_action(
+        action=AuditAction.DELETE,
+        entity_type="work_order",
+        entity_id=wo_id,
+        user_id=current_user.uid,
+        user_name=current_user.full_name or current_user.email,
+        organization_id=current_user.organization_id,
+        details={"title": existing_wo.title if hasattr(existing_wo, 'title') else "Unknown"},
+    )
+
+    return RedirectResponse(url="/work-orders", status_code=303)
+
+
+@router.delete("/{wo_id}")
+async def delete_work_order_api(
+    wo_id: str,
+    current_user: User = Depends(require_permission_cookie("delete_wo")),
+):
+    """API endpoint for soft deleting a work order (returns JSON)"""
+    # Get existing work order to verify ownership
+    existing_wo = await work_order_service.get_work_order(wo_id, organization_id=current_user.organization_id)
+    if not existing_wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+
+    # Soft delete by marking status as Deleted
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await work_order_service.update_work_order(
+        wo_id, update_data, organization_id=current_user.organization_id
+    )
+
+    return JSONResponse({"success": True, "message": f"Work order {wo_id} deleted"})
+
+
+# ==========================================
 # ✅ COMPLETE WORK ORDER ENDPOINT
 # ==========================================
 
@@ -620,28 +691,32 @@ async def get_my_work_orders(
     from app.core.firestore_db import get_firestore_manager
 
     firestore_manager = get_firestore_manager()
+    is_demo = False
 
-    # Get user ID - use demo user if not authenticated
-    user_id = current_user.id if current_user else "demo_user"
-
-    # Get org-scoped work orders only (multi-tenant data isolation)
-    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
-    all_work_orders = await firestore_manager.get_org_work_orders(org_id)
+    # Get user ID - use "demo" for demo user
+    if current_user and current_user.organization_id:
+        user_id = current_user.id
+        org_id = current_user.organization_id
+        all_work_orders = await firestore_manager.get_org_work_orders(org_id)
+    else:
+        # Demo mode - use demo work orders
+        user_id = "demo"
+        is_demo = True
+        all_work_orders = DEMO_WORK_ORDERS
 
     # Filter work orders assigned to this user
     my_work_orders = []
     for wo in all_work_orders:
-        assigned_to = wo.get("assigned_to_uid") or wo.get("assigned_to")
-        if assigned_to == user_id or assigned_to == (
-            current_user.username if current_user else None
-        ):
+        assigned_to_uid = wo.get("assigned_to_uid")
+        if assigned_to_uid == user_id:
             # Convert datetime objects to strings
-            for key, value in wo.items():
+            wo_copy = dict(wo)
+            for key, value in wo_copy.items():
                 if hasattr(value, "strftime"):
-                    wo[key] = value.strftime("%Y-%m-%d %H:%M")
+                    wo_copy[key] = value.strftime("%Y-%m-%d %H:%M")
                 elif hasattr(value, "timestamp"):
-                    wo[key] = str(value)
-            my_work_orders.append(wo)
+                    wo_copy[key] = str(value)
+            my_work_orders.append(wo_copy)
 
     # Apply status filter if provided
     if status and status != "all":
@@ -689,7 +764,7 @@ async def get_my_work_orders(
     }
 
     return JSONResponse(
-        {"work_orders": my_work_orders, "summary": summary, "user_id": user_id}
+        {"work_orders": my_work_orders, "summary": summary, "user_id": user_id, "is_demo": is_demo}
     )
 
 

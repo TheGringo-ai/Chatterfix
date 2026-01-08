@@ -403,6 +403,38 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
+# 404 Not Found handler - serve branded page for HTML requests
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Handle HTTP exceptions with branded error pages for browser requests"""
+    from fastapi.templating import Jinja2Templates
+    from fastapi.responses import JSONResponse
+
+    # Check if this is a browser request (wants HTML)
+    accept = request.headers.get("accept", "")
+    wants_html = "text/html" in accept
+
+    if exc.status_code == 404 and wants_html:
+        # Serve branded 404 page
+        try:
+            templates = Jinja2Templates(directory="app/templates")
+            return templates.TemplateResponse(
+                "404.html",
+                {"request": request},
+                status_code=404
+            )
+        except Exception:
+            pass  # Fall through to JSON response
+
+    # Return JSON for API requests or other errors
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail or "An error occurred"}
+    )
+
+
 # Global exception handler for uncaught exceptions
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

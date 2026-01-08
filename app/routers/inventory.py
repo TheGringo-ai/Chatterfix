@@ -2,7 +2,7 @@ import csv
 import io
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import (
@@ -597,6 +597,105 @@ async def part_detail(request: Request, part_id: str):
     )
 
 
+@router.post("/inventory/{part_id}/update")
+async def update_part(
+    part_id: str,
+    name: str = Form(...),
+    part_number: str = Form(""),
+    category: str = Form(""),
+    description: str = Form(""),
+    current_stock: int = Form(0),
+    minimum_stock: int = Form(0),
+    location: str = Form(""),
+    unit_cost: float = Form(0.0),
+    vendor_name: str = Form(""),
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
+):
+    """Update an existing part"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    # Verify part exists
+    existing_part = await firestore_manager.get_org_document("parts", part_id, org_id)
+    if not existing_part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    update_data = {
+        "name": name,
+        "part_number": part_number,
+        "category": category,
+        "description": description,
+        "current_stock": current_stock,
+        "minimum_stock": minimum_stock,
+        "location": location,
+        "unit_cost": unit_cost,
+        "vendor_name": vendor_name,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("parts", part_id, update_data, org_id)
+
+    return RedirectResponse(f"/inventory/{part_id}", status_code=303)
+
+
+@router.post("/inventory/{part_id}/delete")
+async def delete_part(
+    part_id: str,
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
+):
+    """Soft delete a part (marks as deleted but retains data for audit)"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    part = await firestore_manager.get_org_document("parts", part_id, org_id)
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("parts", part_id, update_data, org_id)
+
+    return RedirectResponse("/inventory", status_code=303)
+
+
+@router.delete("/inventory/{part_id}")
+async def delete_part_api(
+    part_id: str,
+    current_user: User = Depends(require_permission_cookie("manage_inventory")),
+):
+    """API endpoint for soft deleting a part (returns JSON)"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    part = await firestore_manager.get_org_document("parts", part_id, org_id)
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("parts", part_id, update_data, org_id)
+
+    return JSONResponse({"success": True, "message": f"Part {part_id} deleted"})
+
+
 @router.post("/inventory/{part_id}/media")
 async def upload_part_media(
     part_id: str,
@@ -694,6 +793,136 @@ async def add_vendor(
     return RedirectResponse(url="/vendors", status_code=303)
 
 
+@router.get("/vendors/{vendor_id}", response_class=HTMLResponse)
+async def vendor_detail(request: Request, vendor_id: str):
+    """Render vendor detail page"""
+    current_user = await get_current_user_from_cookie(request)
+
+    vendor = None
+    is_demo = False
+
+    if current_user and current_user.organization_id:
+        firestore_manager = get_firestore_manager()
+        try:
+            vendor = await firestore_manager.get_org_document(
+                "vendors", vendor_id, current_user.organization_id
+            )
+        except Exception as e:
+            logger.error(f"Error loading vendor: {e}")
+
+    if not vendor:
+        # Try demo vendors
+        vendor = next((v for v in DEMO_VENDORS if str(v.get("id")) == vendor_id), None)
+        is_demo = True
+
+    if not vendor:
+        return RedirectResponse(url="/vendors", status_code=302)
+
+    return templates.TemplateResponse(
+        "inventory/vendor_detail.html",
+        {
+            "request": request,
+            "vendor": vendor,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": is_demo,
+        },
+    )
+
+
+@router.post("/vendors/{vendor_id}/update")
+async def update_vendor(
+    vendor_id: str,
+    name: str = Form(...),
+    contact_name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    address: str = Form(""),
+    notes: str = Form(""),
+    current_user: User = Depends(require_permission_cookie("manage_vendors")),
+):
+    """Update an existing vendor"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    # Verify vendor exists
+    existing_vendor = await firestore_manager.get_org_document("vendors", vendor_id, org_id)
+    if not existing_vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    update_data = {
+        "name": name,
+        "contact_name": contact_name,
+        "email": email,
+        "phone": phone,
+        "address": address,
+        "notes": notes,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("vendors", vendor_id, update_data, org_id)
+
+    return RedirectResponse(f"/vendors/{vendor_id}", status_code=303)
+
+
+@router.post("/vendors/{vendor_id}/delete")
+async def delete_vendor(
+    vendor_id: str,
+    current_user: User = Depends(require_permission_cookie("manage_vendors")),
+):
+    """Soft delete a vendor"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    vendor = await firestore_manager.get_org_document("vendors", vendor_id, org_id)
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("vendors", vendor_id, update_data, org_id)
+
+    return RedirectResponse("/vendors", status_code=303)
+
+
+@router.delete("/vendors/{vendor_id}")
+async def delete_vendor_api(
+    vendor_id: str,
+    current_user: User = Depends(require_permission_cookie("manage_vendors")),
+):
+    """API endpoint for soft deleting a vendor"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    vendor = await firestore_manager.get_org_document("vendors", vendor_id, org_id)
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("vendors", vendor_id, update_data, org_id)
+
+    return JSONResponse({"success": True, "message": f"Vendor {vendor_id} deleted"})
+
+
 # ==========================================
 # 🔍 PART LOOKUP API ENDPOINTS
 # ==========================================
@@ -701,9 +930,9 @@ async def add_vendor(
 
 @router.get("/api/parts/search", response_class=JSONResponse)
 async def search_parts(
-    q: str = "", current_user: User = Depends(require_auth_cookie)
+    request: Request, q: str = ""
 ):
-    """Search parts by part number, name, or description"""
+    """Search parts by part number, name, or description. Allows demo users."""
     firestore_manager = get_firestore_manager()
 
     if not q or len(q) < 2:
@@ -711,9 +940,18 @@ async def search_parts(
             {"parts": [], "message": "Enter at least 2 characters to search"}
         )
 
-    # Get org-scoped parts only (multi-tenant data isolation)
-    org_id = current_user.organization_id if current_user and current_user.organization_id else "demo_org"
-    all_parts = await firestore_manager.get_org_parts(org_id)
+    # Get current user (optional - allows demo users)
+    current_user = await get_current_user_from_cookie(request)
+
+    # Get org-scoped parts or demo parts for unauthenticated users
+    if current_user and current_user.organization_id:
+        org_id = current_user.organization_id
+        all_parts = await firestore_manager.get_org_parts(org_id)
+        is_demo = False
+    else:
+        # Use demo parts for unauthenticated users
+        all_parts = DEMO_PARTS
+        is_demo = True
 
     search_term = q.lower()
     matching_parts = []
@@ -745,6 +983,7 @@ async def search_parts(
             "parts": matching_parts[:50],  # Limit to 50 results
             "total": len(matching_parts),
             "query": q,
+            "is_demo": is_demo,
         }
     )
 

@@ -419,6 +419,62 @@ async def update_asset(
     return RedirectResponse(f"/assets/{asset_id}", status_code=303)
 
 
+@router.post("/{asset_id}/delete")
+async def delete_asset(
+    asset_id: str,
+    current_user: User = Depends(require_permission_cookie("delete_asset")),
+):
+    """Soft delete an asset (marks as deleted but retains data for audit)"""
+    firestore_manager = get_firestore_manager()
+
+    # Verify asset belongs to user's organization
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    # Soft delete by updating status
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("assets", asset_id, update_data, org_id)
+
+    return RedirectResponse("/assets", status_code=303)
+
+
+@router.delete("/{asset_id}")
+async def delete_asset_api(
+    asset_id: str,
+    current_user: User = Depends(require_permission_cookie("delete_asset")),
+):
+    """API endpoint for soft deleting an asset (returns JSON)"""
+    firestore_manager = get_firestore_manager()
+
+    org_id = current_user.organization_id if current_user and current_user.organization_id else None
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Organization required")
+
+    asset = await firestore_manager.get_org_document("assets", asset_id, org_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    update_data = {
+        "status": "Deleted",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": current_user.uid,
+    }
+
+    await firestore_manager.update_org_document("assets", asset_id, update_data, org_id)
+
+    return JSONResponse({"success": True, "message": f"Asset {asset_id} deleted"})
+
+
 @router.post("/{asset_id}/media")
 async def upload_media(
     asset_id: str,

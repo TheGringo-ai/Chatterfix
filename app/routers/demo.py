@@ -361,6 +361,62 @@ async def get_demo_status(request: Request):
             "message": "Unable to determine session status",
         })
 
+
+# ==================== DEMO DATA API ENDPOINTS ====================
+# These endpoints provide demo data for unauthenticated users
+
+
+@router.get("/api/demo/parts")
+async def get_demo_parts():
+    """Return demo parts data for unauthenticated users."""
+    from app.routers.inventory import DEMO_PARTS
+    return JSONResponse({
+        "parts": DEMO_PARTS,
+        "is_demo": True,
+        "message": "Demo parts data - sign up for your own inventory"
+    })
+
+
+@router.get("/api/demo/assets")
+async def get_demo_assets():
+    """Return demo assets data for unauthenticated users."""
+    return JSONResponse({
+        "assets": DEMO_ASSETS,
+        "is_demo": True,
+        "message": "Demo assets data - sign up for your own asset management"
+    })
+
+
+@router.get("/api/demo/work-orders")
+async def get_demo_work_orders():
+    """Return demo work orders data for unauthenticated users."""
+    return JSONResponse({
+        "work_orders": DEMO_WORK_ORDERS,
+        "is_demo": True,
+        "message": "Demo work orders - sign up to create your own"
+    })
+
+
+@router.get("/api/demo/team")
+async def get_demo_team():
+    """Return demo team data for unauthenticated users."""
+    return JSONResponse({
+        "team": DEMO_TEAM,
+        "is_demo": True,
+        "message": "Demo team data - sign up to manage your own team"
+    })
+
+
+@router.get("/api/demo/stats")
+async def get_demo_stats():
+    """Return demo statistics for unauthenticated users."""
+    return JSONResponse({
+        "stats": DEMO_STATS,
+        "is_demo": True,
+        "message": "Demo statistics - sign up to track your own metrics"
+    })
+
+
 # Sample data for demo mode
 DEMO_ASSETS = [
     {

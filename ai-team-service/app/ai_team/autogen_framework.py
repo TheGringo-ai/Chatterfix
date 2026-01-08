@@ -271,8 +271,8 @@ class AutogenOrchestrator:
             # Replace Claude with GPT-4o as Lead Analyst
             AgentConfig("gpt4-analyst", ModelType.CHATGPT, "Lead Analyst", ["analysis", "reasoning", "planning"], "gpt-4o"),
             AgentConfig("chatgpt-coder", ModelType.CHATGPT, "Senior Developer", ["coding", "debugging", "architecture"], "gpt-4"),
-            AgentConfig("gemini-creative", ModelType.GEMINI, "Creative Director", ["creativity", "design", "innovation"], "gemini-1.5-flash"),
-            AgentConfig("gemini-analyst", ModelType.GEMINI, "AI Specialist", ["analysis", "reasoning", "technical-docs"], "gemini-1.5-pro"),
+            AgentConfig("gemini-creative", ModelType.GEMINI, "Creative Director", ["creativity", "design", "innovation"], "gemini-2.0-flash"),
+            AgentConfig("gemini-analyst", ModelType.GEMINI, "AI Specialist", ["analysis", "reasoning", "technical-docs"], "gemini-2.0-flash"),
             AgentConfig("grok-coder", ModelType.GROK, "Speed Coder", ["fast-coding", "optimization", "debugging"], "grok-code-fast-1"),
             AgentConfig("grok-reasoner", ModelType.GROK, "Strategic Thinker", ["reasoning", "analysis", "strategy"], "grok-3"),
         ]

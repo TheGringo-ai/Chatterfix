@@ -65,7 +65,7 @@ async def submit_feedback(
         ai_analysis = ""
         if GEMINI_API_KEY and GENAI_AVAILABLE and feedback_type == "immediate_failure":
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-2.0-flash")
                 prompt = f"""
                 Analyze this maintenance failure and provide insights:
 

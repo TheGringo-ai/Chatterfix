@@ -50,7 +50,7 @@ class TrainingGenerator:
                 manual_content = f.read()
 
             # Use Gemini to analyze and extract training content
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
 
             prompt = f"""
             You are an expert technical trainer creating a comprehensive training module for maintenance technicians.
@@ -132,7 +132,7 @@ class TrainingGenerator:
             return "GEMINI_API_KEY not configured or Google Generative AI not available"
 
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
 
             prompt = f"""
             Create a concise, step-by-step quick reference guide for a maintenance technician.
@@ -167,7 +167,7 @@ class TrainingGenerator:
             return "GEMINI_API_KEY not configured or Google Generative AI not available"
 
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel("gemini-2.0-flash")
 
             prompt = f"""
             You are an expert maintenance technician assistant. Answer this question clearly and practically.

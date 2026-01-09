@@ -59,7 +59,7 @@ async def login(
             value=token,
             httponly=True,
             secure=is_production,  # HTTPS only in production
-            max_age=3600,  # 1 hour
+            max_age=604800,  # 7 days
             samesite="lax",  # Lax allows cookie on same-site navigations
             path="/",  # Cookie available for all paths
         )
@@ -342,7 +342,7 @@ async def firebase_signin(request: Request):
             value=session_token,
             httponly=True,
             secure=is_production,  # HTTPS only in production
-            max_age=3600,  # 1 hour
+            max_age=604800,  # 7 days
             samesite="lax",  # Lax allows cookie on same-site navigations
             path="/",  # Cookie available for all paths
         )

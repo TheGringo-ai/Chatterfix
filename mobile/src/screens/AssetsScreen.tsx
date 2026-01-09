@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 15,
-    paddingBottom: 80,
+    paddingBottom: 160, // Extra padding for FAB positioned above tab bar
   },
   assetCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 90, // Positioned above tab bar (tab bar ~60px + padding)
     width: 60,
     height: 60,
     borderRadius: 30,

@@ -57,9 +57,15 @@ export default function WorkOrdersScreen() {
         {
           text: 'START',
           style: 'default',
-          onPress: () => {
-            // TODO: Update work order status to "In Progress"
-            Alert.alert('Started', `Work order ${workOrder.id} is now in progress.`);
+          onPress: async () => {
+            try {
+              await apiService.updateWorkOrder(workOrder.id, { status: 'In Progress' });
+              Alert.alert('Started', `Work order ${workOrder.id} is now in progress.`);
+              refetch(); // Refresh the list to show updated status
+            } catch (error) {
+              Alert.alert('Error', 'Failed to update work order. Please try again.');
+              console.error('Failed to start work order:', error);
+            }
           },
         },
       ]
@@ -312,7 +318,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 15,
-    paddingBottom: 80,
+    paddingBottom: 160, // Extra padding for FAB positioned above tab bar
   },
   workOrderCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -382,7 +388,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 90, // Positioned above tab bar (tab bar ~60px + padding)
     width: 60,
     height: 60,
     borderRadius: 30,

@@ -65,12 +65,27 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
 
     firestore_manager = get_firestore_manager()
 
-    # First, try to verify as a Firebase ID token
+    # Try to verify as Firebase session cookie first, then ID token
+    uid = None
+    email = None
+
     try:
-        decoded_token = auth.verify_id_token(token)
+        # Try session cookie first (longer-lasting, created with create_session_cookie)
+        decoded_token = auth.verify_session_cookie(token, check_revoked=True)
         uid = decoded_token["uid"]
         email = decoded_token.get("email")
+    except Exception:
+        # Not a valid session cookie, try as ID token
+        try:
+            decoded_token = auth.verify_id_token(token)
+            uid = decoded_token["uid"]
+            email = decoded_token.get("email")
+        except Exception:
+            # Neither worked - will fall through to demo session lookup below
+            pass
 
+    # If we got a valid Firebase user, fetch their profile
+    if uid:
         # Fetch user profile from Firestore to get roles and permissions
         user_doc = await firestore_manager.get_document("users", uid)
 
@@ -102,13 +117,7 @@ async def verify_id_token_and_get_user(token: str) -> Optional[User]:
 
         return user
 
-    except auth.InvalidIdTokenError:
-        # Not a valid Firebase token - try demo session lookup
-        pass
-    except Exception as e:
-        # Other Firebase errors - try demo session as fallback
-        logger.debug(f"Firebase token verification failed: {e}")
-
+    # Not a valid Firebase token - try demo session lookup
     # Try to find a demo user by session token
     try:
         logger.debug(f"Attempting demo session lookup for token: {token[:20]}...")

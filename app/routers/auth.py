@@ -4,6 +4,7 @@ Login, logout, and user authentication endpoints
 Firebase Authentication Only - No SQLite fallback
 """
 
+import datetime
 import logging
 import os
 from typing import Optional
@@ -316,8 +317,16 @@ async def firebase_signin(request: Request):
                 logger.error(f"Failed to create organization for user {uid}: {org_error}")
                 # Don't fail login - just log the error
 
-        # Use the ID token as session token (Firebase ID tokens are self-validating)
-        session_token = id_token
+        # Create Firebase session cookie (lasts up to 2 weeks, unlike ID tokens which expire in 1 hour)
+        try:
+            # Session cookie expires in 7 days (in milliseconds for Firebase)
+            expires_in = datetime.timedelta(days=7)
+            session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
+            session_token = session_cookie
+        except Exception as cookie_error:
+            logger.warning(f"Failed to create session cookie, falling back to ID token: {cookie_error}")
+            # Fallback to ID token if session cookie creation fails
+            session_token = id_token
 
         # Create response with user data
         json_response = JSONResponse(

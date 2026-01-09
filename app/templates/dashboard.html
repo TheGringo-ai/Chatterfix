@@ -418,11 +418,11 @@
                     <span x-show="analyzing"><i class="fas fa-spinner fa-spin"></i> Analyzing...</span>
                 </button>
                 
-                <button class="cmms-btn animate-hover-scale" 
+                <button class="cmms-btn animate-hover-scale"
                         @click="generatePredictiveInsights()"
                         :disabled="predicting">
-                    <span x-show="!predicting">📊 Predictive Insights</span>
-                    <span x-show="predicting"><i class="fas fa-spinner fa-spin"></i> Predicting...</span>
+                    <span x-show="!predicting">📊 AI Insights</span>
+                    <span x-show="predicting"><i class="fas fa-spinner fa-spin"></i> Analyzing...</span>
                 </button>
                 
                 <button class="cmms-btn animate-hover-scale" 
@@ -463,10 +463,10 @@
         </div>
     </div>
 
-    <!-- Interactive Predictive Analytics -->
+    <!-- Interactive AI Analytics -->
     <div class="cmms-card predictions animate-hover-lift" x-data="predictiveAnalytics" data-feature="predictive-analytics">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div style="font-size: 1.3rem; font-weight: 600;">🔮 Predictive Analytics</div>
+            <div style="font-size: 1.3rem; font-weight: 600;">🤖 AI Analytics</div>
             <div style="font-size: 2rem;">📈</div>
         </div>
         
@@ -695,9 +695,8 @@
 
         <div class="capability-card" onclick="window.location.href='{{ '/demo/planner' if is_demo else '/planner' }}'">
             <span class="capability-icon">📅</span>
-            <div class="capability-title">Predictive Scheduling</div>
-            <div class="capability-description">Optimize maintenance schedules using machine learning and historical
-                data analysis</div>
+            <div class="capability-title">Smart Scheduling</div>
+            <div class="capability-description">Plan and optimize maintenance schedules with calendar views and drag-drop scheduling</div>
         </div>
 
         <div class="capability-card" onclick="voiceWorkflow()">
@@ -829,7 +828,7 @@
     }
 
     function predictiveScheduling() {
-        alert('📅 Predictive Scheduling\n\n🤖 AI is analyzing optimal maintenance windows based on:\n• Equipment usage patterns\n• Historical failure data\n• Production schedules\n• Weather forecasts\n\nScheduling optimization complete! 23% reduction in downtime projected.');
+        alert('📅 Smart Scheduling\n\nThe scheduling planner helps you:\n• View maintenance tasks on a calendar\n• Drag and drop to reschedule\n• See technician availability\n• Track PM compliance\n\nOpen the Planner to manage your schedule!');
     }
 
     function voiceWorkflow() {

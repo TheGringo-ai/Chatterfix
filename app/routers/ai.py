@@ -1,5 +1,6 @@
 import os
 import shutil
+import logging
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -397,6 +398,303 @@ async def get_voice_suggestions():
     """Get intelligent voice command suggestions and golden workflows"""
     suggestions = await get_voice_command_suggestions()
     return JSONResponse(suggestions)
+
+
+# ============ MOBILE VOICE CONTEXT ENDPOINTS ============
+# These endpoints support the mobile app's context-aware voice commands
+# with asset/location awareness for technicians in the field
+
+
+class GeoLocation(BaseModel):
+    """GPS location data from mobile device"""
+    latitude: float
+    longitude: float
+    accuracy: float = None
+    altitude: float = None
+
+
+class AssetContext(BaseModel):
+    """Asset context from QR/NFC scan or manual selection"""
+    asset_id: str
+    asset_name: str = None
+    asset_type: str = None
+    location: str = None
+    source: str = "manual"  # "qr", "nfc", "manual", "gps"
+    confidence: float = None
+    scanned_at: str = None
+
+
+class VoiceCommandPayload(BaseModel):
+    """Voice command with full context from mobile app"""
+    voice_text: str
+    technician_id: str = None
+    current_asset: AssetContext = None
+    location: GeoLocation = None
+    session_context: dict = None
+    audio_duration_ms: int = None
+    noise_level: str = None  # "low", "medium", "high"
+    confidence_score: float = None
+
+
+class VoiceCommandContextResponse(BaseModel):
+    """Response for context-aware voice commands"""
+    success: bool
+    original_text: str
+    processed_text: str
+    context_used: bool
+    resolved_asset_id: str = None
+    resolved_asset_name: str = None
+    resolved_location: str = None
+    action: str = None
+    action_result: dict = None
+    response_text: str = None
+    processing_time_ms: int = None
+    ai_model_used: str = None
+
+
+@router.post("/voice-command-context")
+async def voice_command_with_context(payload: VoiceCommandPayload):
+    """
+    Process voice command with full asset and location context.
+
+    This endpoint is used by the mobile app to process voice commands
+    with awareness of:
+    - Current scanned asset (QR/NFC)
+    - GPS location
+    - Technician identity
+    - Session context
+
+    The AI uses this context to provide more accurate responses and
+    can reference "this pump" or "here" without the technician needing
+    to specify the asset explicitly.
+    """
+    import time
+    start_time = time.time()
+
+    try:
+        # Build enhanced context from payload
+        context_parts = []
+        context_used = False
+
+        # Add asset context if available
+        if payload.current_asset:
+            context_used = True
+            asset = payload.current_asset
+            context_parts.append(f"CURRENT ASSET: {asset.asset_name or asset.asset_id}")
+            if asset.asset_type:
+                context_parts.append(f"Asset Type: {asset.asset_type}")
+            if asset.location:
+                context_parts.append(f"Asset Location: {asset.location}")
+            context_parts.append(f"Source: {asset.source} scan")
+
+        # Add location context if available
+        if payload.location:
+            context_used = True
+            context_parts.append(
+                f"GPS: {payload.location.latitude:.6f}, {payload.location.longitude:.6f}"
+            )
+            if payload.location.accuracy:
+                context_parts.append(f"Accuracy: {payload.location.accuracy}m")
+
+        # Add technician context
+        if payload.technician_id:
+            context_parts.append(f"Technician ID: {payload.technician_id}")
+
+        # Add noise level for transcription quality indication
+        if payload.noise_level:
+            context_parts.append(f"Noise Level: {payload.noise_level}")
+
+        # Add session context if any
+        if payload.session_context:
+            for key, value in payload.session_context.items():
+                context_parts.append(f"{key}: {value}")
+
+        # Build context string
+        enhanced_context = "\n".join(context_parts) if context_parts else ""
+
+        # Process the voice command with context
+        voice_result = await process_voice_command(
+            payload.voice_text,
+            int(payload.technician_id) if payload.technician_id and payload.technician_id.isdigit() else None
+        )
+
+        # If voice command succeeded, also get AI response for richer feedback
+        ai_response = None
+        if voice_result.get("success"):
+            try:
+                ai_response = await chatterfix_ai.process_message(
+                    message=payload.voice_text,
+                    context=enhanced_context,
+                    context_type="voice_command",
+                    fast_mode=True,
+                )
+            except Exception:
+                pass  # AI response is supplementary
+
+        processing_time_ms = int((time.time() - start_time) * 1000)
+
+        return JSONResponse({
+            "success": True,
+            "original_text": payload.voice_text,
+            "processed_text": voice_result.get("processed_command", payload.voice_text),
+            "context_used": context_used,
+            "resolved_asset_id": payload.current_asset.asset_id if payload.current_asset else None,
+            "resolved_asset_name": payload.current_asset.asset_name if payload.current_asset else None,
+            "resolved_location": payload.current_asset.location if payload.current_asset else None,
+            "action": voice_result.get("action"),
+            "action_result": {
+                "work_order_id": voice_result.get("work_order_id"),
+                "message": voice_result.get("message"),
+                "suggestions": voice_result.get("suggestions", []),
+            },
+            "response_text": ai_response or voice_result.get("message", "Command processed."),
+            "processing_time_ms": processing_time_ms,
+            "ai_model_used": "gemini-2.0-flash",
+        })
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Voice command context error: {e}")
+        return JSONResponse({
+            "success": False,
+            "original_text": payload.voice_text,
+            "processed_text": payload.voice_text,
+            "context_used": False,
+            "response_text": f"Sorry, I couldn't process that command. Error: {str(e)}",
+            "processing_time_ms": int((time.time() - start_time) * 1000),
+            "ai_model_used": None,
+        }, status_code=500)
+
+
+@router.post("/voice-audio-context")
+async def voice_audio_with_context(
+    audio: UploadFile = File(...),
+    technician_id: str = Form(None),
+    current_asset: str = Form(None),  # JSON string of AssetContext
+    location: str = Form(None),  # JSON string of GeoLocation
+):
+    """
+    Upload audio with context for transcription and processing.
+
+    This endpoint:
+    1. Transcribes the audio using server-side speech-to-text
+    2. Uses asset/location context to understand commands like "this pump"
+    3. Processes the command with full context awareness
+    4. Returns structured response for mobile UI
+
+    Audio format: m4a, wav, or webm (16kHz recommended)
+    """
+    import time
+    start_time = time.time()
+
+    try:
+        # Parse JSON context if provided
+        parsed_asset = None
+        parsed_location = None
+
+        if current_asset:
+            try:
+                asset_data = json.loads(current_asset)
+                parsed_asset = AssetContext(**asset_data)
+            except (json.JSONDecodeError, Exception) as e:
+                logging.getLogger(__name__).warning(f"Could not parse asset context: {e}")
+
+        if location:
+            try:
+                location_data = json.loads(location)
+                parsed_location = GeoLocation(**location_data)
+            except (json.JSONDecodeError, Exception) as e:
+                logging.getLogger(__name__).warning(f"Could not parse location: {e}")
+
+        # Step 1: Transcribe audio
+        transcript = ""
+        confidence = 0.0
+
+        if SPEECH_SERVICE_AVAILABLE:
+            try:
+                speech_service = get_speech_service()
+                audio_data = await audio.read()
+
+                # Determine encoding from filename
+                filename = audio.filename or "audio.m4a"
+                if filename.endswith(".wav"):
+                    encoding = AudioEncoding.LINEAR16
+                elif filename.endswith(".webm"):
+                    encoding = AudioEncoding.WEBM_OPUS
+                else:
+                    encoding = AudioEncoding.LINEAR16  # Default
+
+                result = await speech_service.transcribe_audio(
+                    audio_data=audio_data,
+                    encoding=encoding,
+                    sample_rate_hertz=16000,
+                    language_code="en-US",
+                )
+                transcript = result.transcript
+                confidence = result.confidence
+            except Exception as e:
+                logging.getLogger(__name__).error(f"Transcription error: {e}")
+                return JSONResponse({
+                    "success": False,
+                    "original_text": "",
+                    "processed_text": "",
+                    "context_used": False,
+                    "response_text": f"Could not transcribe audio: {str(e)}",
+                    "processing_time_ms": int((time.time() - start_time) * 1000),
+                    "ai_model_used": None,
+                }, status_code=500)
+        else:
+            return JSONResponse({
+                "success": False,
+                "original_text": "",
+                "processed_text": "",
+                "context_used": False,
+                "response_text": "Speech-to-text service not available. Please check server configuration.",
+                "processing_time_ms": int((time.time() - start_time) * 1000),
+                "ai_model_used": None,
+            }, status_code=503)
+
+        if not transcript:
+            return JSONResponse({
+                "success": False,
+                "original_text": "",
+                "processed_text": "",
+                "context_used": False,
+                "response_text": "Could not understand the audio. Please try speaking more clearly.",
+                "processing_time_ms": int((time.time() - start_time) * 1000),
+                "ai_model_used": None,
+            })
+
+        # Step 2: Process the transcribed text with context
+        payload = VoiceCommandPayload(
+            voice_text=transcript,
+            technician_id=technician_id,
+            current_asset=parsed_asset,
+            location=parsed_location,
+            confidence_score=confidence,
+        )
+
+        # Use the text-based endpoint for processing
+        result = await voice_command_with_context(payload)
+
+        # Parse the JSONResponse to update processing time
+        result_data = json.loads(result.body)
+        result_data["processing_time_ms"] = int((time.time() - start_time) * 1000)
+
+        return JSONResponse(result_data)
+
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Voice audio context error: {e}")
+        return JSONResponse({
+            "success": False,
+            "original_text": "",
+            "processed_text": "",
+            "context_used": False,
+            "response_text": f"Error processing audio: {str(e)}",
+            "processing_time_ms": int((time.time() - start_time) * 1000),
+            "ai_model_used": None,
+        }, status_code=500)
 
 
 @router.post("/recognize-part")

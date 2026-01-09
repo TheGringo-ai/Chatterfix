@@ -4,84 +4,803 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <div class="header-section">
-        <h1>Inventory Management</h1>
-        <div class="actions">
+    <!-- Header with Search -->
+    <div class="inventory-header">
+        <div class="header-left">
+            <h1><i class="fas fa-boxes"></i> Inventory</h1>
+            <span class="part-count" id="partCount">{{ parts|length }} parts</span>
+        </div>
+        <div class="header-actions">
             <a href="/inventory/add" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add Part
             </a>
-            <a href="/vendors" class="btn btn-secondary">
+            <a href="/vendors" class="btn btn-outline-light">
                 <i class="fas fa-building"></i> Vendors
             </a>
         </div>
     </div>
 
-    <div class="glass-panel">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Part #</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Stock</th>
-                        <th>Location</th>
-                        <th>Vendor</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for part in parts %}
-                    <tr>
-                        <td>{{ part.part_number }}</td>
-                        <td>
-                            <div class="part-info">
-                                {% if part.image_url %}
-                                <img src="{{ part.image_url }}" alt="{{ part.name }}" class="part-thumb">
-                                {% endif %}
-                                <a href="/inventory/{{ part.id }}">{{ part.name }}</a>
-                            </div>
-                        </td>
-                        <td><span class="badge">{{ part.category }}</span></td>
-                        <td>
-                            <span
-                                class="stock-level {% if part.current_stock <= part.minimum_stock %}low-stock{% endif %}">
-                                {{ part.current_stock }}
-                            </span>
-                        </td>
-                        <td>{{ part.location }}</td>
-                        <td>{{ part.vendor_name or '-' }}</td>
-                        <td>
-                            <a href="/inventory/{{ part.id }}" class="btn btn-sm btn-info">View</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-bar glass-panel">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by part name, number, or description..." autocomplete="off">
+            <button type="button" class="voice-search-btn" onclick="startVoiceSearch()" title="Voice Search">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+
+        <div class="filters">
+            <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>
+                {% set categories = [] %}
+                {% for part in parts %}
+                    {% if part.category and part.category not in categories %}
+                        {% set _ = categories.append(part.category) %}
+                    {% endif %}
+                {% endfor %}
+                {% for cat in categories|sort %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="locationFilter" class="filter-select">
+                <option value="">All Locations</option>
+                {% set locations = [] %}
+                {% for part in parts %}
+                    {% if part.location and part.location not in locations %}
+                        {% set _ = locations.append(part.location) %}
+                    {% endif %}
+                {% endfor %}
+                {% for loc in locations|sort %}
+                <option value="{{ loc }}">{{ loc }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="stockFilter" class="filter-select">
+                <option value="">All Stock Levels</option>
+                <option value="low">Low Stock</option>
+                <option value="ok">In Stock</option>
+                <option value="out">Out of Stock</option>
+            </select>
+        </div>
+
+        <div class="view-toggle">
+            <button type="button" class="view-btn active" data-view="card" title="Card View">
+                <i class="fas fa-th-large"></i>
+            </button>
+            <button type="button" class="view-btn" data-view="table" title="Table View">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Card View -->
+    <div id="cardView" class="parts-grid">
+        {% for part in parts %}
+        <div class="part-card glass-panel"
+             data-name="{{ part.name|lower }}"
+             data-number="{{ part.part_number|lower }}"
+             data-description="{{ part.description|lower if part.description else '' }}"
+             data-category="{{ part.category|lower if part.category else '' }}"
+             data-location="{{ part.location|lower if part.location else '' }}"
+             data-stock="{{ part.current_stock }}"
+             data-min-stock="{{ part.minimum_stock }}">
+
+            <div class="card-header">
+                <div class="part-image">
+                    {% if part.image_url %}
+                    <img src="{{ part.image_url }}" alt="{{ part.name }}">
+                    {% else %}
+                    <div class="part-placeholder">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="stock-badge {% if part.current_stock <= 0 %}out{% elif part.current_stock <= part.minimum_stock %}low{% else %}ok{% endif %}">
+                    {% if part.current_stock <= 0 %}
+                    OUT
+                    {% elif part.current_stock <= part.minimum_stock %}
+                    LOW
+                    {% else %}
+                    {{ part.current_stock }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="part-number">{{ part.part_number }}</div>
+                <h3 class="part-name">{{ part.name }}</h3>
+
+                <div class="part-meta">
+                    {% if part.category %}
+                    <span class="meta-tag category">
+                        <i class="fas fa-tag"></i> {{ part.category }}
+                    </span>
+                    {% endif %}
+                    {% if part.location %}
+                    <span class="meta-tag location">
+                        <i class="fas fa-map-marker-alt"></i> {{ part.location }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="stock-info">
+                    <div class="stock-bar">
+                        <div class="stock-fill {% if part.current_stock <= 0 %}out{% elif part.current_stock <= part.minimum_stock %}low{% else %}ok{% endif %}"
+                             style="width: {{ [100, (part.current_stock / (part.minimum_stock * 2) * 100) if part.minimum_stock > 0 else 100]|min }}%"></div>
+                    </div>
+                    <span class="stock-text">{{ part.current_stock }} / {{ part.minimum_stock }} min</span>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <a href="/inventory/{{ part.id }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> View
+                </a>
+                <button class="btn btn-sm btn-success" onclick="quickCheckout('{{ part.id }}', '{{ part.name }}', {{ part.current_stock }})">
+                    <i class="fas fa-hand-holding"></i> Checkout
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Table View (Hidden by default) -->
+    <div id="tableView" class="parts-table glass-panel" style="display: none;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Part #</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Stock</th>
+                    <th>Location</th>
+                    <th>Vendor</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for part in parts %}
+                <tr data-name="{{ part.name|lower }}"
+                    data-number="{{ part.part_number|lower }}"
+                    data-description="{{ part.description|lower if part.description else '' }}"
+                    data-category="{{ part.category|lower if part.category else '' }}"
+                    data-location="{{ part.location|lower if part.location else '' }}"
+                    data-stock="{{ part.current_stock }}"
+                    data-min-stock="{{ part.minimum_stock }}">
+                    <td><code>{{ part.part_number }}</code></td>
+                    <td>
+                        <div class="part-info">
+                            {% if part.image_url %}
+                            <img src="{{ part.image_url }}" alt="{{ part.name }}" class="part-thumb">
+                            {% endif %}
+                            <a href="/inventory/{{ part.id }}">{{ part.name }}</a>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-secondary">{{ part.category }}</span></td>
+                    <td>
+                        <span class="stock-level {% if part.current_stock <= 0 %}out-stock{% elif part.current_stock <= part.minimum_stock %}low-stock{% endif %}">
+                            {{ part.current_stock }}
+                        </span>
+                    </td>
+                    <td>{{ part.location }}</td>
+                    <td>{{ part.vendor_name or '-' }}</td>
+                    <td>
+                        <a href="/inventory/{{ part.id }}" class="btn btn-sm btn-info">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="no-results glass-panel" style="display: none;">
+        <i class="fas fa-search"></i>
+        <h3>No parts found</h3>
+        <p>Try adjusting your search or filters</p>
+    </div>
+</div>
+
+<!-- Quick Checkout Modal -->
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-hand-holding"></i> Quick Checkout</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Checking out: <strong id="checkoutPartName"></strong></p>
+                <p>Available: <span id="checkoutAvailable"></span></p>
+                <div class="mb-3">
+                    <label for="checkoutQty" class="form-label">Quantity</label>
+                    <input type="number" class="form-control" id="checkoutQty" value="1" min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="checkoutWO" class="form-label">Work Order (optional)</label>
+                    <input type="text" class="form-control" id="checkoutWO" placeholder="WO-12345">
+                </div>
+                <input type="hidden" id="checkoutPartId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitCheckout()">
+                    <i class="fas fa-check"></i> Checkout
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .part-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+/* Header */
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-left h1 {
+    margin: 0;
+    font-size: 1.75rem;
+}
+
+.part-count {
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Search & Filter Bar */
+.search-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    color: #888;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 45px 10px 40px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    color: white;
+    font-size: 1rem;
+}
+
+.search-box input::placeholder {
+    color: #888;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.2);
+}
+
+.voice-search-btn {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: color 0.2s;
+}
+
+.voice-search-btn:hover {
+    color: #00d4ff;
+}
+
+.voice-search-btn.listening {
+    color: #ff4444;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    background: rgba(0,0,0,0.3);
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #00d4ff;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.3);
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.view-btn {
+    background: none;
+    border: none;
+    color: #888;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    color: white;
+}
+
+.view-btn.active {
+    background: rgba(0,212,255,0.2);
+    color: #00d4ff;
+}
+
+/* Card Grid */
+.parts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.part-card {
+    padding: 0;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.part-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.card-header {
+    position: relative;
+    height: 120px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.part-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.part-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.part-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    font-size: 2rem;
+    color: #666;
+}
+
+.stock-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.stock-badge.ok {
+    background: #22c55e;
+    color: white;
+}
+
+.stock-badge.low {
+    background: #f59e0b;
+    color: white;
+}
+
+.stock-badge.out {
+    background: #ef4444;
+    color: white;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.part-number {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.25rem;
+}
+
+.part-name {
+    font-size: 1rem;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.3;
+}
+
+.part-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.meta-tag {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.meta-tag i {
+    font-size: 0.65rem;
+}
+
+.stock-info {
+    margin-top: auto;
+}
+
+.stock-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.stock-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.stock-fill.ok { background: #22c55e; }
+.stock-fill.low { background: #f59e0b; }
+.stock-fill.out { background: #ef4444; width: 100% !important; }
+
+.stock-text {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.card-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.card-footer .btn {
+    flex: 1;
+    font-size: 0.8rem;
+}
+
+/* Table View */
+.parts-table {
+    padding: 0;
+    overflow: hidden;
+}
+
+.parts-table .table {
+    margin: 0;
+}
+
+.part-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.part-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.stock-level {
+    font-weight: bold;
+    color: #22c55e;
+}
+
+.stock-level.low-stock {
+    color: #f59e0b;
+}
+
+.stock-level.out-stock {
+    color: #ef4444;
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: 3rem;
+}
+
+.no-results i {
+    font-size: 3rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.no-results h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.no-results p {
+    color: #888;
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .inventory-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    .part-thumb {
-        width: 30px;
-        height: 30px;
-        object-fit: cover;
-        border-radius: 4px;
+    .search-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .stock-level {
-        font-weight: bold;
+    .search-box {
+        min-width: 100%;
     }
 
-    .stock-level.low-stock {
-        color: #ff4444;
+    .filters {
+        width: 100%;
     }
+
+    .filter-select {
+        flex: 1;
+    }
+
+    .view-toggle {
+        align-self: flex-end;
+    }
+
+    .parts-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
+
+<script>
+// Search and Filter Logic
+const searchInput = document.getElementById('searchInput');
+const categoryFilter = document.getElementById('categoryFilter');
+const locationFilter = document.getElementById('locationFilter');
+const stockFilter = document.getElementById('stockFilter');
+
+function filterParts() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const category = categoryFilter.value.toLowerCase();
+    const location = locationFilter.value.toLowerCase();
+    const stockStatus = stockFilter.value;
+
+    const cards = document.querySelectorAll('.part-card');
+    const rows = document.querySelectorAll('#tableBody tr');
+    let visibleCount = 0;
+
+    function matchesFilters(el) {
+        const name = el.dataset.name || '';
+        const number = el.dataset.number || '';
+        const desc = el.dataset.description || '';
+        const cat = el.dataset.category || '';
+        const loc = el.dataset.location || '';
+        const stock = parseInt(el.dataset.stock) || 0;
+        const minStock = parseInt(el.dataset.minStock) || 0;
+
+        // Search match
+        const searchMatch = !searchTerm ||
+            name.includes(searchTerm) ||
+            number.includes(searchTerm) ||
+            desc.includes(searchTerm);
+
+        // Category match
+        const categoryMatch = !category || cat === category;
+
+        // Location match
+        const locationMatch = !location || loc === location;
+
+        // Stock status match
+        let stockMatch = true;
+        if (stockStatus === 'low') {
+            stockMatch = stock > 0 && stock <= minStock;
+        } else if (stockStatus === 'ok') {
+            stockMatch = stock > minStock;
+        } else if (stockStatus === 'out') {
+            stockMatch = stock <= 0;
+        }
+
+        return searchMatch && categoryMatch && locationMatch && stockMatch;
+    }
+
+    // Filter cards
+    cards.forEach(card => {
+        if (matchesFilters(card)) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Filter table rows
+    rows.forEach(row => {
+        row.style.display = matchesFilters(row) ? '' : 'none';
+    });
+
+    // Update count and no results message
+    document.getElementById('partCount').textContent = visibleCount + ' parts';
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+// Event listeners
+searchInput.addEventListener('input', filterParts);
+categoryFilter.addEventListener('change', filterParts);
+locationFilter.addEventListener('change', filterParts);
+stockFilter.addEventListener('change', filterParts);
+
+// View Toggle
+document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const view = this.dataset.view;
+        document.getElementById('cardView').style.display = view === 'card' ? 'grid' : 'none';
+        document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+    });
+});
+
+// Voice Search
+let recognition;
+function startVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Voice search not supported in this browser');
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    const btn = document.querySelector('.voice-search-btn');
+    btn.classList.add('listening');
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        searchInput.value = transcript;
+        filterParts();
+        btn.classList.remove('listening');
+    };
+
+    recognition.onerror = function() {
+        btn.classList.remove('listening');
+    };
+
+    recognition.onend = function() {
+        btn.classList.remove('listening');
+    };
+
+    recognition.start();
+}
+
+// Quick Checkout
+function quickCheckout(partId, partName, available) {
+    document.getElementById('checkoutPartId').value = partId;
+    document.getElementById('checkoutPartName').textContent = partName;
+    document.getElementById('checkoutAvailable').textContent = available;
+    document.getElementById('checkoutQty').max = available;
+    document.getElementById('checkoutQty').value = 1;
+    document.getElementById('checkoutWO').value = '';
+
+    new bootstrap.Modal(document.getElementById('checkoutModal')).show();
+}
+
+async function submitCheckout() {
+    const partId = document.getElementById('checkoutPartId').value;
+    const qty = parseInt(document.getElementById('checkoutQty').value);
+    const wo = document.getElementById('checkoutWO').value;
+
+    try {
+        const response = await fetch('/api/parts/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                part_id: partId,
+                quantity: qty,
+                work_order_id: wo || null
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('checkoutModal')).hide();
+            // Refresh the page to show updated stock
+            location.reload();
+        } else {
+            alert('Checkout failed: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Checkout failed: ' + error.message);
+    }
+}
+
+// Keyboard shortcut: Focus search on '/'
+document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        searchInput.focus();
+    }
+});
+</script>
 {% endblock %}

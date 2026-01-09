@@ -524,12 +524,12 @@
             }
 
             const data = await response.json();
-            
+
             // Hide typing indicator
             typingIndicator.style.display = 'none';
 
-            // Add Fred's response
-            const fredResponse = data.solution || data.message || "I've analyzed your issue and have some recommendations. Let me walk you through the troubleshooting steps.";
+            // Add Fred's response (backend returns fred_says field)
+            const fredResponse = data.fred_says || data.solution || data.message || "I've analyzed your issue and have some recommendations. Let me walk you through the troubleshooting steps.";
             addMessage('fred', fredResponse);
 
             // Update stats (simulated)

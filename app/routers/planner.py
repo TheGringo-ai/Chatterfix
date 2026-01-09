@@ -29,6 +29,7 @@ async def planner_dashboard(request: Request):
         "planner_dashboard.html",
         {
             "request": request,
+            "user": current_user,
             "current_user": current_user,
             "is_demo": is_demo,
             "advanced_mode": True,  # Enable FullCalendar drag-drop scheduling
@@ -44,7 +45,7 @@ async def advanced_scheduler_dashboard(request: Request):
     is_demo = current_user is None
     return templates.TemplateResponse(
         "advanced_scheduler.html",
-        {"request": request, "current_user": current_user, "is_demo": is_demo},
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": is_demo},
     )
 
 
@@ -56,7 +57,7 @@ async def mobile_scheduler_dashboard(request: Request):
     is_demo = current_user is None
     return templates.TemplateResponse(
         "mobile_scheduler.html",
-        {"request": request, "current_user": current_user, "is_demo": is_demo},
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": is_demo},
     )
 
 
@@ -68,7 +69,7 @@ async def scheduler_analytics_dashboard(request: Request):
     is_demo = current_user is None
     return templates.TemplateResponse(
         "scheduler_analytics.html",
-        {"request": request, "current_user": current_user, "is_demo": is_demo},
+        {"request": request, "user": current_user, "current_user": current_user, "is_demo": is_demo},
     )
 
 

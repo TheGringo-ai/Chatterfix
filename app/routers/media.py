@@ -19,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.services.media_service import media_service
 from app.services.firebase_auth import firebase_auth_service
+from app.auth import get_current_user_from_cookie
 
 logger = logging.getLogger(__name__)
 
@@ -365,4 +366,14 @@ async def camera_interface(request: Request):
     """
     Camera interface for taking photos/videos
     """
-    return templates.TemplateResponse("camera_interface.html", {"request": request})
+    # LESSON #22: Always get user from cookie for HTML pages
+    current_user = await get_current_user_from_cookie(request)
+    return templates.TemplateResponse(
+        "camera_interface.html",
+        {
+            "request": request,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": current_user is None,
+        },
+    )

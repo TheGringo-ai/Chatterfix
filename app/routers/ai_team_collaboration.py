@@ -14,6 +14,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from app.auth import get_current_user_from_cookie
+
 # Use HTTP client instead of gRPC
 from app.services.ai_team_http_client import get_ai_team_client
 
@@ -166,7 +168,17 @@ async def rebuild_knowledge_index():
 @router.get("/dashboard", response_class=HTMLResponse)
 async def ai_team_dashboard(request: Request):
     """Enhanced AI team collaboration dashboard with memory system"""
-    return templates.TemplateResponse("ai_team_dashboard.html", {"request": request})
+    # LESSON #22: Always get user from cookie for HTML pages
+    current_user = await get_current_user_from_cookie(request)
+    return templates.TemplateResponse(
+        "ai_team_dashboard.html",
+        {
+            "request": request,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": current_user is None,
+        },
+    )
 
 
 # Keep old inline HTML as backup reference (commented out)

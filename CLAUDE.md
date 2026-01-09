@@ -960,6 +960,81 @@ if (userDropdown) {
 - Use the "move to body" pattern for dropdowns in sticky navigation
 - This fix is in `base.html` and applies to ALL pages - DO NOT REMOVE IT
 
+#### **LESSON #22: HTML Page Routes MUST Pass User to Template (CRITICAL - RECURRING)**
+**Problem**: Logged-in users see login banner and login button even though they're authenticated
+**Root Cause**: HTML page routes don't fetch the user from cookie and/or don't pass user variable to template
+**Symptoms**:
+- Login/signup banner shows for logged-in users
+- "Log In" button shows instead of user avatar
+- User dropdown doesn't appear
+- This issue keeps recurring because it's easy to forget
+
+**THE RULE - EVERY HTML PAGE ROUTE MUST:**
+1. Call `await get_current_user_from_cookie(request)` to get user
+2. Pass BOTH `"user": current_user` AND `"current_user": current_user` to template
+3. Set `"is_demo": current_user is None` (NOT based on organization_id)
+
+**CORRECT Pattern for ALL HTML page routes:**
+```python
+from app.auth import get_current_user_from_cookie
+
+@router.get("/my-page", response_class=HTMLResponse)
+async def my_page(request: Request):
+    # ALWAYS get user from cookie for HTML pages
+    current_user = await get_current_user_from_cookie(request)
+
+    return templates.TemplateResponse(
+        "my_template.html",
+        {
+            "request": request,
+            "user": current_user,           # REQUIRED for base.html auth_user
+            "current_user": current_user,   # REQUIRED for base.html auth_user
+            "is_demo": current_user is None,  # True ONLY if not logged in
+            # ... other variables
+        },
+    )
+```
+
+**WRONG Patterns (NEVER DO THESE):**
+```python
+# WRONG: Not getting user at all
+@router.get("/page")
+async def page(request: Request):
+    return templates.TemplateResponse("page.html", {"request": request})
+
+# WRONG: Unused parameter with default None
+@router.get("/page")
+async def page(request: Request, current_user: Optional[User] = None):
+    # current_user is ALWAYS None because nothing sets it!
+
+# WRONG: Checking organization_id for is_demo
+is_demo = not (current_user and current_user.organization_id)  # NO!
+# Should be:
+is_demo = current_user is None  # YES!
+
+# WRONG: Only passing one variable
+"current_user": current_user  # Missing "user"!
+```
+
+**Files That Have Been Fixed (Reference):**
+- `app/routers/dashboard.py` - /dashboard, /app, /classic routes
+- `app/routers/settings.py` - /settings route
+- `app/routers/import_service.py` - /api/v1/import/page route
+- `app/templates/base.html` - Uses `{% set auth_user = current_user or user %}`
+
+**Prevention Checklist (Before ANY Deploy):**
+- [ ] Every `TemplateResponse` passes both `user` and `current_user`
+- [ ] Every HTML route calls `get_current_user_from_cookie(request)`
+- [ ] `is_demo` is set to `current_user is None`, NOT based on organization_id
+- [ ] Test while logged in that user avatar shows (not login button)
+
+**If You See Login Banner When Logged In:**
+1. Check the router for that page
+2. Verify it calls `get_current_user_from_cookie(request)`
+3. Verify it passes `user` and `current_user` to template
+4. Verify `is_demo` logic is correct
+5. FIX IT and add to the "Files That Have Been Fixed" list above
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

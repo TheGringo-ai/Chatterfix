@@ -1112,6 +1112,13 @@
                     </a>
                 </li>
 
+                <li class="nav-tab {% if request.url and request.url.path and ('/inventory' in request.url.path) %}active{% endif %}">
+                    <a href="{{ nav_prefix }}/inventory" class="nav-tab-link">
+                        <i class="nav-tab-icon fas fa-boxes"></i>
+                        Inventory
+                    </a>
+                </li>
+
                 <li class="nav-tab {% if request.url and request.url.path and ('/planner' in request.url.path) %}active{% endif %}">
                     <a href="{{ nav_prefix }}/planner" class="nav-tab-link">
                         <i class="nav-tab-icon fas fa-calendar-alt"></i>

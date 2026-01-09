@@ -1440,6 +1440,12 @@ Added conversational AI assistant for creating work orders hands-free:
 - [ ] Test AI work order creation with real Gemini API
 - [ ] Add more AI context types (asset creation, inventory management)
 - [ ] Consider adding voice command integration to AI assistant modal
+- [ ] **Mobile App Deployment**: Set up EAS Build for iOS/Android distribution
+  - Configure `eas.json` for cloud builds
+  - Set up Apple Developer account ($99/year) for App Store
+  - Set up Google Play Console ($25 one-time) for Play Store
+  - Run `npx eas build:configure` and `npx eas build --platform all`
+  - Currently mobile app runs locally via Expo Go, not deployed to stores
 
 ---
 

@@ -43,14 +43,23 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 async def get_user_training_with_modules(
-    firestore_manager, user_id: str, organization_id: str = None
+    firestore_manager, user_id: str, organization_id: str
 ) -> List[Dict[str, Any]]:
-    """Get user's training assignments with module details, filtered by organization"""
+    """Get user's training assignments with module details, filtered by organization
+
+    LESSON #23: organization_id is REQUIRED for multi-tenant safety.
+    Never make this parameter optional - data leaks occur when org filtering is skipped.
+    """
+    if not organization_id:
+        logger.warning("get_user_training_with_modules called without organization_id - returning empty")
+        return []
+
     try:
-        # Build filters - always filter by user_id, optionally by organization_id
-        filters = [{"field": "user_id", "operator": "==", "value": user_id}]
-        if organization_id:
-            filters.append({"field": "organization_id", "operator": "==", "value": organization_id})
+        # Build filters - ALWAYS filter by both user_id AND organization_id
+        filters = [
+            {"field": "user_id", "operator": "==", "value": user_id},
+            {"field": "organization_id", "operator": "==", "value": organization_id},
+        ]
 
         # Get user training records
         user_training = await firestore_manager.get_collection(
@@ -96,26 +105,24 @@ async def get_user_training_with_modules(
 
 
 async def get_available_training_modules(
-    firestore_manager, user_id: str, organization_id: str = None
+    firestore_manager, user_id: str, organization_id: str
 ) -> List[Dict[str, Any]]:
-    """Get training modules not assigned to the user, filtered by organization"""
-    try:
-        # Get modules - filter by organization if provided
-        if organization_id:
-            all_modules = await firestore_manager.get_collection(
-                "training_modules",
-                order_by="-created_at",
-                filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
-            )
-        else:
-            all_modules = await firestore_manager.get_collection(
-                "training_modules", order_by="-created_at"
-            )
+    """Get training modules not assigned to the user, filtered by organization
 
-        # Get user's assigned modules
-        user_training = await firestore_manager.get_collection(
-            "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
+    LESSON #23: organization_id is REQUIRED for multi-tenant safety.
+    """
+    if not organization_id:
+        logger.warning("get_available_training_modules called without organization_id - returning empty")
+        return []
+
+    try:
+        # Get modules - ALWAYS filter by organization
+        all_modules = await firestore_manager.get_org_training_modules(organization_id)
+
+        # Get user's assigned modules - ALSO filter by org
+        user_training = await firestore_manager.get_org_user_training(
+            organization_id=organization_id,
+            user_id=user_id,
         )
 
         assigned_module_ids = {t.get("training_module_id") for t in user_training}
@@ -133,12 +140,18 @@ async def get_available_training_modules(
         return []
 
 
-async def get_user_training_stats(firestore_manager, user_id: str) -> Dict[str, Any]:
-    """Get user training completion statistics"""
+async def get_user_training_stats(
+    firestore_manager, user_id: str, organization_id: str
+) -> Dict[str, Any]:
+    """Get user training completion statistics - org-scoped"""
+    if not organization_id:
+        logger.warning("get_user_training_stats called without organization_id")
+        return {"total_assigned": 0, "completed": 0, "in_progress": 0, "avg_score": None}
+
     try:
-        user_training = await firestore_manager.get_collection(
-            "user_training",
-            filters=[{"field": "user_id", "operator": "==", "value": user_id}],
+        user_training = await firestore_manager.get_org_user_training(
+            organization_id=organization_id,
+            user_id=user_id,
         )
 
         total_assigned = len(user_training)
@@ -291,8 +304,8 @@ async def training_center(request: Request):
             firestore_manager, user_id, organization_id
         )
 
-        # Get completion stats
-        stats = await get_user_training_stats(firestore_manager, user_id)
+        # Get completion stats (org-scoped)
+        stats = await get_user_training_stats(firestore_manager, user_id, organization_id)
 
         return templates.TemplateResponse(
             "training_center.html",
@@ -541,11 +554,12 @@ async def complete_training(
 
 @router.get("/my-training")
 async def get_my_training(current_user: User = Depends(require_auth_cookie)):
-    """Get current user's training assignments"""
+    """Get current user's training assignments - org-scoped"""
     firestore_manager = get_firestore_manager()
     user_id = current_user.uid
+    organization_id = current_user.organization_id
     try:
-        training = await get_user_training_with_modules(firestore_manager, user_id)
+        training = await get_user_training_with_modules(firestore_manager, user_id, organization_id)
         return training
     except Exception as e:
         logger.error(f"Error getting training for user {user_id}: {e}")
@@ -558,10 +572,15 @@ async def assign_training(
     module_id: str = Form(...),
     current_user: User = Depends(require_permission_cookie("manager")),
 ):
-    """Assign training to a user (manager only)"""
+    """Assign training to a user (manager only) - org-scoped"""
     firestore_manager = get_firestore_manager()
+    organization_id = current_user.organization_id
+
+    if not organization_id:
+        return {"success": False, "error": "Organization required"}
+
     try:
-        # Create training assignment
+        # Create training assignment with org-scoping
         training_data = {
             "user_id": user_id,
             "training_module_id": module_id,
@@ -572,7 +591,7 @@ async def assign_training(
             "score": None,
         }
 
-        await firestore_manager.create_document("user_training", training_data)
+        await firestore_manager.create_org_user_training(training_data, organization_id)
 
         # Get module title for notification
         module = await firestore_manager.get_document("training_modules", module_id)

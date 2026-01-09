@@ -1035,6 +1035,89 @@ is_demo = current_user is None  # YES!
 4. Verify `is_demo` logic is correct
 5. FIX IT and add to the "Files That Have Been Fixed" list above
 
+#### **LESSON #23: Multi-Tenant Data Isolation - ALWAYS Filter by organization_id (CRITICAL)**
+**Problem**: Data leaks between organizations because queries don't filter by organization_id
+**Root Cause**: Helper functions have OPTIONAL organization_id parameters, or use deprecated non-org-scoped DB methods
+**Symptoms**:
+- Users see data from other organizations
+- Training modules, user progress, AI interactions visible across orgs
+- Functions work in single-tenant scenarios but leak in multi-tenant
+
+**THE RULE - ALL DATA QUERIES MUST:**
+1. REQUIRE organization_id (never make it optional)
+2. Use `create_org_document()` and `get_org_*()` methods from firestore_db.py
+3. Pass organization_id from `current_user.organization_id`
+4. Return empty results if organization_id is missing (fail safe)
+
+**Collections That ARE Org-Scoped (SAFE):**
+- ✅ work_orders - via `get_org_work_orders()`
+- ✅ assets - via `get_org_assets()`
+- ✅ parts - via `get_org_parts()`
+- ✅ vendors - via `get_org_vendors()`
+- ✅ pm_templates, pm_schedule_rules, asset_meters
+- ✅ training_modules - via `get_org_training_modules()` (FIXED Jan 2026)
+- ✅ user_training - via `get_org_user_training()` (FIXED Jan 2026)
+- ✅ ai_interactions - via `get_org_ai_interactions()` (FIXED Jan 2026)
+
+**CORRECT Pattern:**
+```python
+# Helper function - organization_id REQUIRED
+async def get_user_training_with_modules(
+    firestore_manager, user_id: str, organization_id: str  # NOT Optional!
+) -> List[Dict[str, Any]]:
+    if not organization_id:
+        logger.warning("Called without organization_id - returning empty")
+        return []  # Fail safe
+
+    # Use org-scoped DB method
+    user_training = await firestore_manager.get_org_user_training(
+        organization_id=organization_id,
+        user_id=user_id,
+    )
+    # ...
+
+# Router - get org_id from authenticated user
+@router.get("/my-training")
+async def get_my_training(current_user: User = Depends(require_auth_cookie)):
+    organization_id = current_user.organization_id  # Get from user
+    training = await get_user_training_with_modules(
+        firestore_manager, current_user.uid, organization_id  # Pass it
+    )
+```
+
+**WRONG Patterns:**
+```python
+# WRONG: Optional organization_id - ALLOWS data leaks!
+async def get_data(user_id: str, organization_id: str = None):
+    filters = [{"field": "user_id", "operator": "==", "value": user_id}]
+    if organization_id:  # Skipped if not provided!
+        filters.append(...)
+
+# WRONG: Using deprecated non-org-scoped methods
+await firestore_manager.create_document("user_training", data)  # NO!
+# Should use:
+await firestore_manager.create_org_user_training(data, organization_id)  # YES!
+
+# WRONG: Using get_collection without org filter
+await firestore_manager.get_collection("training_modules")  # Returns ALL orgs!
+# Should use:
+await firestore_manager.get_org_training_modules(organization_id)  # YES!
+```
+
+**Org-Scoped Methods Available in firestore_db.py:**
+- `create_org_document()` - Auto-adds organization_id to any collection
+- `get_org_collection()` - Queries with org_id filter
+- `get_org_work_orders()`, `get_org_assets()`, `get_org_parts()`, `get_org_vendors()`
+- `get_org_training_modules()`, `get_org_user_training()`, `get_org_user_performance()`
+- `get_org_ai_interactions()`, `save_ai_interaction()` (now accepts user_id, organization_id)
+
+**Prevention Checklist:**
+- [ ] Helper functions have REQUIRED organization_id parameter (not Optional)
+- [ ] All data queries use `get_org_*()` methods
+- [ ] Creating documents uses `create_org_*()` methods
+- [ ] Router gets org_id from `current_user.organization_id`
+- [ ] Missing org_id returns empty (not unfiltered data)
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

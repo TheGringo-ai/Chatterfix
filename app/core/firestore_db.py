@@ -1112,14 +1112,33 @@ class FirestoreManager:
         )
         return users[0] if users else None
 
-    async def save_ai_interaction(self, user_message: str, ai_response: str) -> str:
-        """Save AI interaction"""
+    async def save_ai_interaction(
+        self,
+        user_message: str,
+        ai_response: str,
+        user_id: Optional[str] = None,
+        organization_id: Optional[str] = None,
+    ) -> str:
+        """Save AI interaction with org-scoping for multi-tenant safety"""
         interaction_data = {
             "user_message": user_message,
             "ai_response": ai_response,
             "timestamp": datetime.now(timezone.utc),
+            "user_id": user_id,
+            "organization_id": organization_id,
         }
         return await self.create_document("ai_interactions", interaction_data)
+
+    async def get_org_ai_interactions(
+        self, organization_id: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Get AI interactions for an organization"""
+        return await self.get_collection(
+            "ai_interactions",
+            filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
+            order_by="-timestamp",
+            limit=limit,
+        )
 
     async def get_dashboard_data(self, user_id: str) -> Dict[str, Any]:
         """DEPRECATED: Use get_org_dashboard_data() for multi-tenant safety - Returns ALL data without org filtering!"""
@@ -1273,9 +1292,82 @@ class FirestoreManager:
             logger.error(f"Error counting asset parts: {e}")
             return 0
 
-    # Training-specific methods
+    # Training-specific methods (org-scoped)
+    async def create_org_training_module(
+        self, module_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create a training module with org-scoping for multi-tenant safety"""
+        return await self.create_org_document("training_modules", module_data, organization_id)
+
+    async def get_org_training_modules(
+        self,
+        organization_id: str,
+        skill_category: Optional[str] = None,
+        asset_type: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get training modules filtered by organization"""
+        filters = [{"field": "organization_id", "operator": "==", "value": organization_id}]
+        if skill_category:
+            filters.append(
+                {"field": "skill_category", "operator": "==", "value": skill_category}
+            )
+        if asset_type:
+            filters.append(
+                {"field": "asset_type", "operator": "==", "value": asset_type}
+            )
+        return await self.get_collection(
+            "training_modules",
+            order_by="-created_at",
+            filters=filters,
+        )
+
+    async def create_org_user_training(
+        self, training_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create user training assignment with org-scoping"""
+        return await self.create_org_document("user_training", training_data, organization_id)
+
+    async def get_org_user_training(
+        self,
+        organization_id: str,
+        user_id: str,
+        status: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get user training assignments filtered by organization"""
+        filters = [
+            {"field": "organization_id", "operator": "==", "value": organization_id},
+            {"field": "user_id", "operator": "==", "value": user_id},
+        ]
+        if status:
+            filters.append({"field": "status", "operator": "==", "value": status})
+        return await self.get_collection("user_training", filters=filters)
+
+    async def create_org_user_performance(
+        self, performance_data: Dict[str, Any], organization_id: str
+    ) -> str:
+        """Create user performance record with org-scoping"""
+        return await self.create_org_document("user_performance", performance_data, organization_id)
+
+    async def get_org_user_performance(
+        self,
+        organization_id: str,
+        user_id: str,
+        period: str = "monthly",
+    ) -> List[Dict[str, Any]]:
+        """Get user performance metrics filtered by organization"""
+        filters = [
+            {"field": "organization_id", "operator": "==", "value": organization_id},
+            {"field": "user_id", "operator": "==", "value": user_id},
+            {"field": "period", "operator": "==", "value": period},
+        ]
+        return await self.get_collection(
+            "user_performance", order_by="-period_date", filters=filters
+        )
+
+    # DEPRECATED: Legacy training methods without org-scoping
     async def create_training_module(self, module_data: Dict[str, Any]) -> str:
-        """Create a new training module"""
+        """DEPRECATED: Use create_org_training_module() for multi-tenant safety"""
+        logger.warning("DEPRECATED: create_training_module() called - use create_org_training_module()")
         return await self.create_document("training_modules", module_data)
 
     async def get_training_modules(

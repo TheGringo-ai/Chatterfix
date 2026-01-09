@@ -5,6 +5,11 @@ from datetime import datetime
 
 class WorkOrder(BaseModel):
     id: Optional[str] = Field(None, alias="id")
+    organization_id: Optional[str] = Field(
+        None,
+        description="Organization ID for multi-tenant data isolation. "
+        "Added at database layer via create_org_document()."
+    )
     title: str
     description: str
     priority: str

@@ -5,6 +5,11 @@ from datetime import datetime, timezone
 
 class Asset(BaseModel):
     id: Optional[str] = Field(None, alias="id")
+    organization_id: Optional[str] = Field(
+        None,
+        description="Organization ID for multi-tenant data isolation. "
+        "Added at database layer via create_org_document()."
+    )
     name: str
     description: Optional[str] = None
     asset_tag: Optional[str] = None

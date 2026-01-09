@@ -261,15 +261,22 @@
             transform: translateY(-1px);
         }
 
-        /* User dropdown menu styling */
+        /* User dropdown menu - must appear above nav-tabs */
         .nav-header .dropdown-menu {
             min-width: 220px;
+            z-index: 100010 !important;
+        }
+
+        /* Nav tabs wrapper must be BELOW the header dropdown */
+        .nav-tabs-wrapper {
+            position: relative;
+            z-index: 1 !important;
         }
 
         /* Ensure nav-tabs-container doesn't overlap the dropdown */
         .nav-tabs-container {
             position: relative;
-            z-index: 100;
+            z-index: 1;
         }
 
         .nav-quick-action.emergency {
@@ -1763,8 +1770,18 @@
             // Fix user dropdown positioning to appear above all content
             const userDropdown = document.getElementById('dropdownUser1');
             if (userDropdown) {
+                const menu = userDropdown.nextElementSibling;
+                let originalParent = null;
+
+                userDropdown.addEventListener('show.bs.dropdown', function() {
+                    if (menu) {
+                        // Store original parent and move to body to escape stacking context
+                        originalParent = menu.parentElement;
+                        document.body.appendChild(menu);
+                    }
+                });
+
                 userDropdown.addEventListener('shown.bs.dropdown', function() {
-                    const menu = this.nextElementSibling;
                     if (menu) {
                         const rect = this.getBoundingClientRect();
                         menu.style.position = 'fixed';
@@ -1772,6 +1789,18 @@
                         menu.style.right = (window.innerWidth - rect.right) + 'px';
                         menu.style.left = 'auto';
                         menu.style.zIndex = '2147483647';
+                    }
+                });
+
+                userDropdown.addEventListener('hidden.bs.dropdown', function() {
+                    if (menu && originalParent) {
+                        // Move back to original position
+                        originalParent.appendChild(menu);
+                        menu.style.position = '';
+                        menu.style.top = '';
+                        menu.style.right = '';
+                        menu.style.left = '';
+                        menu.style.zIndex = '';
                     }
                 });
             }

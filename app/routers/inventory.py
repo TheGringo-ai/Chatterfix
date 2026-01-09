@@ -432,12 +432,21 @@ async def inventory_list(request: Request):
         firestore_manager = get_firestore_manager()
         try:
             parts = await firestore_manager.get_org_parts(current_user.organization_id)
+            # If no parts found, show demo data with indicator
+            if not parts:
+                logger.info(f"No parts found for org {current_user.organization_id}, showing demo data")
+                parts = DEMO_PARTS
+                is_demo = True
         except Exception as e:
             logger.error(f"Error loading parts: {e}")
             parts = DEMO_PARTS
             is_demo = True
+    elif current_user:
+        # Logged in but no organization - show demo data
+        parts = DEMO_PARTS
+        is_demo = True
     else:
-        # Not authenticated or no org - show demo data
+        # Not authenticated - show demo data
         parts = DEMO_PARTS
         is_demo = True
 

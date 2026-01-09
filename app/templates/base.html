@@ -1261,19 +1261,31 @@
         <!-- Active subscription - no banner needed -->
         {% endif %}
 
+        {% if not current_user %}
+        <!-- Login/Signup CTA Banner for Unauthenticated Users -->
+        <div class="signup-cta-banner" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 50%, #0077b6 100%); padding: 14px 20px; margin-bottom: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);">
+            <div style="display: flex; align-items: center; gap: 10px; color: white;">
+                <i class="fas fa-unlock-alt" style="font-size: 1.2rem;"></i>
+                <span>
+                    <strong>Unlock Full Features</strong> — Create work orders, track assets, manage inventory & more
+                </span>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/auth/login" class="btn btn-light btn-sm" style="font-weight: 600; padding: 6px 16px; border-radius: 20px;">
+                    <i class="fas fa-sign-in-alt me-1"></i> Login
+                </a>
+                <a href="/signup" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; font-weight: 600; padding: 6px 16px; border-radius: 20px; border: 2px solid white;">
+                    <i class="fas fa-rocket me-1"></i> Sign Up Free
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
         {% if is_demo %}
         <!-- Demo Mode Disclaimer Banner -->
-        <div class="demo-mode-banner" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931a 100%); color: white; padding: 12px 20px; margin-bottom: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-flask" style="font-size: 1.2rem;"></i>
-                <div>
-                    <strong>Demo Mode</strong> - You're exploring with sample data.
-                    <span style="opacity: 0.9;">Metrics shown are illustrative examples, not real-time data.</span>
-                </div>
-            </div>
-            <a href="/signup" class="btn btn-light btn-sm" style="white-space: nowrap; font-weight: 600;">
-                <i class="fas fa-rocket me-1"></i> Start Free Trial
-            </a>
+        <div class="demo-mode-banner" style="background: rgba(0,0,0,0.6); color: white; padding: 10px 20px; margin-bottom: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem;">
+            <i class="fas fa-flask"></i>
+            <span><strong>Demo Mode</strong> - Viewing sample data for illustration purposes</span>
         </div>
         {% endif %}
 

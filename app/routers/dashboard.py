@@ -49,11 +49,12 @@ async def root_dashboard(request: Request):
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(
-    request: Request,
-    current_user: Optional[User] = None,
-):
+async def dashboard(request: Request, current_user: Optional[User] = None):
     """Render the ChatterFix Workforce Intelligence Homepage"""
+    # Get current user from cookie if not provided (Lesson #8)
+    if current_user is None:
+        current_user = await get_current_user_from_cookie(request)
+
     user_id = "demo"
     is_demo = True
     error_message = None
@@ -142,6 +143,7 @@ async def dashboard(
         "index.html",
         {
             "request": request,
+            "user": current_user,
             "current_user": current_user,
             "work_orders": work_orders,
             "assets": assets,
@@ -264,6 +266,7 @@ async def classic_dashboard(request: Request):
         "dashboard.html",
         {
             "request": request,
+            "user": current_user,
             "current_user": current_user,
             "workload": workload,
             "performance": performance,

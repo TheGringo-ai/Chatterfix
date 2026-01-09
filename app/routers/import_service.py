@@ -24,6 +24,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
+from app.auth import get_current_user_from_cookie
+
 # Rate limiting
 from collections import defaultdict
 import time
@@ -41,10 +43,16 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/page", response_class=HTMLResponse, include_in_schema=False)
 async def import_page(request: Request):
     """Serve the data import page"""
+    # Get current user from cookie for proper auth display
+    current_user = await get_current_user_from_cookie(request)
+
     return templates.TemplateResponse(
         "data_import.html",
         {
             "request": request,
+            "user": current_user,
+            "current_user": current_user,
+            "is_demo": current_user is None,
             "title": "Smart Data Import",
             "supported_formats": ["CSV", "XLSX", "PDF"],
             "entity_types": ["assets", "parts", "users"],

@@ -117,6 +117,8 @@ async def settings_page(request: Request):
         {
             "request": request,
             "user": current_user,
+            "current_user": current_user,
+            "is_demo": False if current_user else True,
             "api_settings": api_settings,
             "org_settings": org_settings,
         },

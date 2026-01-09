@@ -1043,13 +1043,16 @@
                 
                 <!-- Demo banner removed - full app mode only -->
 
-                {% if current_user %}
+                {# Normalize user variable - some routes pass 'user', others 'current_user' #}
+                {% set auth_user = current_user or user %}
+
+                {% if auth_user %}
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
                         id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                         <div style="position: relative; display: inline-block;">
-                            <img src="{{ current_user.avatar_url or 'https://placehold.co/200x200?text=User' }}"
-                                alt="{{ current_user.username }}" width="28" height="28"
+                            <img src="{{ auth_user.avatar_url or 'https://placehold.co/200x200?text=User' }}"
+                                alt="{{ auth_user.username }}" width="28" height="28"
                                 class="rounded-circle border border-1 border-light">
                             <span style="position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; background: #22c55e; border: 2px solid white; border-radius: 50%;" title="Logged In"></span>
                         </div>
@@ -1057,7 +1060,7 @@
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark text-small shadow">
                         <!-- Authenticated User Menu -->
                         <li class="dropdown-header" style="color: #adb5bd; font-size: 12px;">
-                            <i class="fas fa-check-circle text-success me-1"></i> Signed in as {{ current_user.email or current_user.username }}
+                            <i class="fas fa-check-circle text-success me-1"></i> Signed in as {{ auth_user.email or auth_user.username }}
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i> My Dashboard</a></li>
@@ -1256,7 +1259,7 @@
         <!-- Active subscription - no banner needed -->
         {% endif %}
 
-        {% if not current_user or is_demo %}
+        {% if not auth_user or is_demo %}
         <!-- Login/Signup CTA Banner for Unauthenticated/Demo Users -->
         <div class="signup-cta-banner" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 50%, #0077b6 100%); padding: 14px 20px; margin-bottom: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);">
             <div style="display: flex; align-items: center; gap: 10px; color: white;">

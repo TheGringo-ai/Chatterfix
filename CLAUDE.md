@@ -904,6 +904,62 @@ if owner_id and owner_id not in seen_user_ids:
 - Add startup check that logs organizations with missing owner_id
 - Test organization features with a FRESH signup, not just existing accounts
 
+#### **LESSON #21: User Dropdown Hidden Behind Page Content - Stacking Context**
+**Problem**: User dropdown menu in navigation header is hidden behind page content when clicked
+**Root Cause**: The `.cmms-navigation` has `position: sticky` which creates a stacking context. Child elements (including dropdowns) are limited to that context and can't appear above sibling elements that come after in the DOM.
+**Symptoms**:
+- Clicking user avatar shows dropdown but it's hidden behind tabs or page content
+- Increasing z-index doesn't help (even maximum values)
+- Issue appears on some pages but not others depending on content
+
+**Solution**: Move the dropdown to `<body>` when it opens to escape the stacking context:
+```javascript
+// In base.html DOMContentLoaded handler
+const userDropdown = document.getElementById('dropdownUser1');
+if (userDropdown) {
+    const menu = userDropdown.nextElementSibling;
+    let originalParent = null;
+
+    userDropdown.addEventListener('show.bs.dropdown', function() {
+        if (menu) {
+            originalParent = menu.parentElement;
+            document.body.appendChild(menu);  // Move to body
+        }
+    });
+
+    userDropdown.addEventListener('shown.bs.dropdown', function() {
+        if (menu) {
+            const rect = this.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = (rect.bottom + 5) + 'px';
+            menu.style.right = (window.innerWidth - rect.right) + 'px';
+            menu.style.left = 'auto';
+            menu.style.zIndex = '2147483647';
+        }
+    });
+
+    userDropdown.addEventListener('hidden.bs.dropdown', function() {
+        if (menu && originalParent) {
+            originalParent.appendChild(menu);  // Move back
+            // Reset inline styles
+            menu.style.position = '';
+            menu.style.top = '';
+            menu.style.right = '';
+            menu.style.left = '';
+            menu.style.zIndex = '';
+        }
+    });
+}
+```
+
+**Key Insight**: z-index only works within the same stacking context. Elements with `position: sticky`, `position: fixed`, `transform`, `filter`, `opacity < 1`, or `isolation: isolate` create new stacking contexts. To escape, move the element to `<body>`.
+
+**Prevention**:
+- NEVER try to fix dropdown z-index issues with just CSS z-index values
+- When dropdowns are hidden, check if parent has sticky/fixed positioning
+- Use the "move to body" pattern for dropdowns in sticky navigation
+- This fix is in `base.html` and applies to ALL pages - DO NOT REMOVE IT
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

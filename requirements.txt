@@ -75,4 +75,4 @@ tensorflow==2.20.0
 # bandit==1.9.2
 # safety==3.7.0
 # pre-commit==4.2.0
-openpyxl==3.1.2
+openpyxl==3.1.5

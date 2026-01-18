@@ -15,7 +15,7 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { apiService } from '../services/api';
 
@@ -45,7 +45,7 @@ export default function CameraScreen() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
 
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera>(null);
 
   useEffect(() => {
     checkPermissions();
@@ -280,10 +280,10 @@ export default function CameraScreen() {
         {capturedImage ? (
           <Image source={{ uri: capturedImage }} style={styles.previewImage} />
         ) : (
-          <CameraView
+          <Camera
             ref={cameraRef}
             style={styles.camera}
-            facing={facing}
+            type={facing}
             onCameraReady={() => setCameraReady(true)}
           >
             {/* Camera Overlay */}
@@ -304,7 +304,7 @@ export default function CameraScreen() {
                 <Text style={styles.flipButtonText}>🔄</Text>
               </TouchableOpacity>
             </View>
-          </CameraView>
+          </Camera>
         )}
 
         {isAnalyzing && (

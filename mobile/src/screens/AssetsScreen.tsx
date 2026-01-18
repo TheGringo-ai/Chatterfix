@@ -74,8 +74,8 @@ export default function AssetsScreen() {
     return '🔴';
   };
 
-  const filteredAssets = assets?.filter((asset) =>
-    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredAssets = (assets || []).filter((asset) =>
+    asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     asset.asset_tag?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     asset.location?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -151,24 +151,24 @@ export default function AssetsScreen() {
       {/* Asset Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{assets?.length || 0}</Text>
+          <Text style={styles.statValue}>{(assets || []).length}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: '#27ae60' }]}>
-            {assets?.filter((a) => a.status === 'Active').length || 0}
+            {(assets || []).filter((a) => a.status === 'Active').length}
           </Text>
           <Text style={styles.statLabel}>Active</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: '#f39c12' }]}>
-            {assets?.filter((a) => a.status === 'Maintenance').length || 0}
+            {(assets || []).filter((a) => a.status === 'Maintenance').length}
           </Text>
           <Text style={styles.statLabel}>Maintenance</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: '#e74c3c' }]}>
-            {assets?.filter((a) => a.criticality === 'Critical').length || 0}
+            {(assets || []).filter((a) => a.criticality === 'Critical').length}
           </Text>
           <Text style={styles.statLabel}>Critical</Text>
         </View>

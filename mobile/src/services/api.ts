@@ -219,9 +219,10 @@ class ApiService {
       const params = status ? `?status=${status}` : '';
       const response = await this.client.get(`/work-orders${params}`);
       await this.cacheData('work_orders', response.data);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      return this.getCachedData('work_orders') || [];
+      const cached = await this.getCachedData('work_orders');
+      return Array.isArray(cached) ? cached : [];
     }
   }
 
@@ -262,9 +263,10 @@ class ApiService {
     try {
       const response = await this.client.get('/assets/');
       await this.cacheData('assets', response.data);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      return this.getCachedData('assets') || [];
+      const cached = await this.getCachedData('assets');
+      return Array.isArray(cached) ? cached : [];
     }
   }
 
@@ -637,3 +639,6 @@ class ApiService {
 
 // Export singleton instance
 export const apiService = new ApiService();
+
+// Default export for compatibility with `import api from './api'`
+export default apiService;

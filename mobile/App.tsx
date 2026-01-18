@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import authentication context
@@ -21,6 +21,13 @@ import SignupScreen from './src/screens/SignupScreen';
 import VoiceCommandsScreen from './src/screens/VoiceCommandsScreen';
 import WorkOrdersScreen from './src/screens/WorkOrdersScreen';
 import GlassesHUDScreen from './src/screens/GlassesHUDScreen';
+
+// Safety Module Screens
+import SafetyDashboardScreen from './src/screens/SafetyDashboardScreen';
+import IncidentReportScreen from './src/screens/IncidentReportScreen';
+import SafetyChatScreen from './src/screens/SafetyChatScreen';
+import SafetyObservationScreen from './src/screens/SafetyObservationScreen';
+import SafetyInspectionScreen from './src/screens/SafetyInspectionScreen';
 
 // Import components
 import OfflineIndicator from './src/components/OfflineIndicator';
@@ -102,6 +109,15 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="Safety"
+        component={SafetyDashboardScreen}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24 }}>🦺</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Assets"
         component={AssetsScreen}
         options={{
@@ -166,6 +182,51 @@ function RootNavigator() {
           headerShown: false,
         }}
       />
+      {/* Safety Module Screens */}
+      <Stack.Screen
+        name="IncidentReport"
+        component={IncidentReportScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          headerTitle: 'Report Incident',
+          headerStyle: { backgroundColor: '#1e3c72' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen
+        name="SafetyChat"
+        component={SafetyChatScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          headerTitle: 'SafetyFred AI Coach',
+          headerStyle: { backgroundColor: '#1e3c72' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen
+        name="SafetyObservation"
+        component={SafetyObservationScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          headerTitle: 'Safety Observation',
+          headerStyle: { backgroundColor: '#1e3c72' },
+          headerTintColor: '#fff',
+        }}
+      />
+      <Stack.Screen
+        name="SafetyInspection"
+        component={SafetyInspectionScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          headerTitle: 'Safety Inspection',
+          headerStyle: { backgroundColor: '#1e3c72' },
+          headerTintColor: '#fff',
+        }}
+      />
     </Stack.Navigator>
   );
 }
@@ -190,9 +251,3 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0c0c0c',
-  },
-});

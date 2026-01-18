@@ -101,9 +101,9 @@ export default function WorkOrdersScreen() {
     }
   };
 
-  const filteredWorkOrders = workOrders?.filter((wo) => {
+  const filteredWorkOrders = (workOrders || []).filter((wo) => {
     const matchesSearch =
-      wo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      wo.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       wo.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = !filter || wo.status === filter;
     return matchesSearch && matchesFilter;

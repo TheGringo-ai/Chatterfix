@@ -3,9 +3,10 @@
  * Uses environment variables from app.config.ts via Expo Constants
  */
 
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Get Firebase config from Expo Constants (loaded from environment via app.config.ts)
@@ -34,11 +35,26 @@ if (__DEV__ && !firebaseConfig.apiKey) {
   );
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (check if already initialized for hot reload)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Firebase services
-export const auth = getAuth(app);
+// Initialize Firebase Auth with AsyncStorage persistence
+// Use try-catch to handle hot reload scenarios where auth is already initialized
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+  });
+} catch (error: any) {
+  // Auth already initialized, get the existing instance
+  if (error.code === 'auth/already-initialized') {
+    auth = getAuth(app);
+  } else {
+    throw error;
+  }
+}
+
+export { auth };
 export const db = getFirestore(app);
 
 // Export config for debugging

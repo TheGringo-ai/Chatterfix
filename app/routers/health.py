@@ -206,7 +206,7 @@ async def check_database_health() -> Dict[str, Any]:
 
             db_adapter = get_db_adapter()
             # Simple test to verify connection
-            await db_adapter.get_all_work_orders()  # This will test the connection
+            await db_adapter.get_work_orders()  # This will test the connection
 
             db_info["status"] = "ok"
             db_info["type"] = "firestore"

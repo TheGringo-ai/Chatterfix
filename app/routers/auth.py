@@ -412,11 +412,19 @@ async def try_demo(request: Request):
     5. Returns success for client redirect
     """
     try:
-        body = await request.json()
+        # Parse request body with proper error handling
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid request. This endpoint requires a JSON body with 'idToken' from Firebase Anonymous Auth."
+            )
+
         id_token = body.get("idToken")
 
         if not id_token:
-            raise HTTPException(status_code=400, detail="ID token required")
+            raise HTTPException(status_code=400, detail="ID token required. Use Firebase Anonymous Auth first.")
 
         # Verify the anonymous Firebase token
         from firebase_admin import auth

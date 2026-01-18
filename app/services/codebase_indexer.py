@@ -142,8 +142,8 @@ class CodebaseIndexer:
             except SyntaxError:
                 pass
 
-        # Generate content hash for change detection
-        content_hash = hashlib.md5(content.encode()).hexdigest()[:8]
+        # Generate content hash for change detection (not used for security)
+        content_hash = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:8]
 
         # Generate summary
         summary = self._generate_file_summary(file_path.name, functions, classes)

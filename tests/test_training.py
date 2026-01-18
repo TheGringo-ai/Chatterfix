@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routers.training import router
-from app.auth import get_current_active_user, require_permission
+from app.auth import require_auth_cookie
 from app.models.user import User
 
 # Create test app
@@ -27,9 +27,15 @@ mock_user = User(
     permissions=["all"],  # Manager has all permissions
 )
 
+
+# Sync wrapper for the async mock user function
+def get_mock_user():
+    return mock_user
+
+
 # Override auth dependencies for testing
-app.dependency_overrides[get_current_active_user] = lambda: mock_user
-app.dependency_overrides[require_permission("manager")] = lambda: mock_user
+# require_auth_cookie is what the training routes actually use
+app.dependency_overrides[require_auth_cookie] = get_mock_user
 
 app.include_router(router)
 client = TestClient(app)
@@ -341,7 +347,8 @@ class TestTrainingHelperFunctions:
             "difficulty_level": 1,
         }
 
-        result = await get_user_training_with_modules(mock_firestore_manager, "1")
+        # organization_id is required for multi-tenant safety (Lesson #23)
+        result = await get_user_training_with_modules(mock_firestore_manager, "1", "test_org")
 
         assert len(result) == 1
         assert result[0]["title"] == "Safety Training"
@@ -365,7 +372,8 @@ class TestTrainingHelperFunctions:
             {"status": "assigned", "score": None},
         ]
 
-        result = await get_user_training_stats(mock_firestore_manager, "1")
+        # organization_id is required for multi-tenant safety (Lesson #23)
+        result = await get_user_training_stats(mock_firestore_manager, "1", "test_org")
 
         assert result["total_assigned"] == 4
         assert result["completed"] == 2

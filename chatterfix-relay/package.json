@@ -45,5 +45,10 @@
     "tailwindcss": "^3.4.16",
     "typescript": "~5.3.3"
   },
+  "overrides": {
+    "@babel/runtime": "^7.26.10",
+    "tar": "^7.5.3",
+    "undici": "^6.23.0"
+  },
   "private": true
 }

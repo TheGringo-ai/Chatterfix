@@ -8,9 +8,11 @@
   --bg-overlay: rgba(0, 0, 0, 0.05);
   --bg-overlay-medium: rgba(0, 0, 0, 0.1);
   --bg-tertiary: rgba(241, 245, 249, 0.9);
+  --bg-secondary: rgba(241, 245, 249, 0.95); /* Added for compatibility */
   --bg-card: #ffffff;
   --card-bg: #ffffff; /* Alias for --bg-card for backward compatibility */
   --border-glass: rgba(79, 172, 254, 0.2);
+  --border-color: rgba(226, 232, 240, 0.8); /* Added for compatibility */
   --text-primary: #2d3748;
   --text-secondary: #4a5568;
   --text-muted: #718096;
@@ -41,9 +43,11 @@
   --bg-overlay: rgba(0, 0, 0, 0.3);
   --bg-overlay-medium: rgba(0, 0, 0, 0.4);
   --bg-tertiary: rgba(30, 41, 59, 0.9);
+  --bg-secondary: rgba(30, 41, 59, 0.95); /* Added for compatibility */
   --bg-card: #1a202c;
   --card-bg: #1a202c; /* Alias for --bg-card for backward compatibility */
   --border-glass: rgba(81, 97, 125, 0.3);
+  --border-color: rgba(74, 85, 104, 0.3); /* Added for compatibility */
   --text-primary: #f7fafc;
   --text-secondary: #e2e8f0;
   --text-muted: #a0aec0;
@@ -2730,4 +2734,96 @@ div.modal .modal-close {
 
 div.modal .modal-close:hover {
   opacity: 1;
+}
+
+/* ========================================
+   ADDITIONAL DARK MODE FIXES FOR DASHBOARDS
+   ======================================== */
+
+/* Stat boxes in asset cards */
+:root.dark-mode .stat-box {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark-mode .stat-box div[style*="color: #2c3e50"],
+:root.dark-mode .stat-box div[style*="color: #6c757d"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Health bar background */
+:root.dark-mode .health-bar-bg,
+:root.dark-mode div[style*="background: #e9ecef"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Asset card image placeholder */
+:root.dark-mode .asset-card-image {
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+:root.dark-mode .asset-card-image div[style*="color: #6c757d"] {
+  color: var(--text-muted) !important;
+}
+
+/* Filter bar dark mode */
+:root.dark-mode .filter-bar label {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure form inputs in filter bar are readable */
+:root.dark-mode .filter-bar input,
+:root.dark-mode .filter-bar select {
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Purchasing dashboard specific */
+:root.dark-mode .purchasing-widget {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+:root.dark-mode .approval-item,
+:root.dark-mode .vendor-card {
+  background: var(--bg-secondary) !important;
+}
+
+/* Pipeline stages dark mode */
+:root.dark-mode .pipeline-stage::after,
+:root.dark-mode .pipeline-stage::before {
+  background: var(--border-color) !important;
+}
+
+/* Action items and vendor items */
+:root.dark-mode .action-item,
+:root.dark-mode .vendor-item {
+  border-color: var(--border-color) !important;
+}
+
+/* Activity section */
+:root.dark-mode .activity-item {
+  border-color: var(--border-color) !important;
+}
+
+/* Ensure all text in dark mode cards is readable */
+:root.dark-mode .kpi-card,
+:root.dark-mode .pipeline-section,
+:root.dark-mode .pending-actions-card,
+:root.dark-mode .vendors-card,
+:root.dark-mode .activity-section {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Fix any remaining hardcoded text colors */
+:root.dark-mode [style*="color: #374151"],
+:root.dark-mode [style*="color: #495057"],
+:root.dark-mode [style*="color: #212529"] {
+  color: var(--text-primary) !important;
+}
+
+:root.dark-mode [style*="color: #6c757d"],
+:root.dark-mode [style*="color: #718096"] {
+  color: var(--text-muted) !important;
 }

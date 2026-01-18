@@ -82,15 +82,15 @@
     <p>AI-powered compatibility checker helps you find the right parts for your equipment</p>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
         {% for part in parts[:3] %}
-        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 10px;">
-            <h3 style="margin-top: 0;">{{ part.name }}</h3>
-            <p><strong>Compatible with:</strong></p>
-            <ul style="margin: 0.5rem 0;">
+        <div style="background: var(--bg-secondary, rgba(241, 245, 249, 0.95)); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));">
+            <h3 style="margin-top: 0; color: var(--text-primary);">{{ part.name }}</h3>
+            <p style="color: var(--text-secondary);"><strong>Compatible with:</strong></p>
+            <ul style="margin: 0.5rem 0; color: var(--text-secondary);">
                 {% for asset in part.compatible_assets %}
                 <li>{{ asset }}</li>
                 {% endfor %}
             </ul>
-            <p style="margin-top: 1rem;"><strong>Monthly Usage:</strong> {{ part.monthly_usage }} units</p>
+            <p style="margin-top: 1rem; color: var(--text-secondary);"><strong>Monthly Usage:</strong> {{ part.monthly_usage }} units</p>
         </div>
         {% endfor %}
     </div>

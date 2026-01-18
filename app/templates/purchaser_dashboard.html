@@ -365,7 +365,7 @@
 
     /* Loading State */
     .loading-placeholder {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(90deg, var(--bg-secondary, #f0f0f0) 25%, var(--border-color, #e0e0e0) 50%, var(--bg-secondary, #f0f0f0) 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
         border-radius: 8px;
@@ -375,6 +375,20 @@
     @keyframes loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
+    }
+
+    /* Dark mode specific overrides */
+    :root.dark-mode .action-item {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    :root.dark-mode .action-item:hover {
+        background: rgba(102, 126, 234, 0.15);
+    }
+
+    :root.dark-mode .pipeline-stage::after,
+    :root.dark-mode .pipeline-stage::before {
+        background: var(--border-color, rgba(74, 85, 104, 0.3));
     }
 </style>
 {% endblock %}

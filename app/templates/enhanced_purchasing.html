@@ -54,7 +54,7 @@
 
     .tabs {
         display: flex;
-        border-bottom: 2px solid #e5e7eb;
+        border-bottom: 2px solid var(--border-color, #e5e7eb);
         margin-bottom: 2rem;
     }
 
@@ -64,6 +64,7 @@
         border-bottom: 3px solid transparent;
         transition: all 0.3s ease;
         font-weight: 500;
+        color: var(--text-primary, #374151);
     }
 
     .tab.active {
@@ -85,11 +86,12 @@
     }
 
     .po-form, .parts-form {
-        background: white;
+        background: var(--card-bg, #ffffff);
         padding: 2rem;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-card, 0 4px 6px rgba(0, 0, 0, 0.1));
         margin-bottom: 2rem;
+        border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
     }
 
     .form-grid {
@@ -107,15 +109,17 @@
 
     .form-group label {
         font-weight: 600;
-        color: #374151;
+        color: var(--text-primary, #374151);
     }
 
     .form-input {
         padding: 12px;
-        border: 2px solid #e5e7eb;
+        border: 2px solid var(--border-color, #e5e7eb);
         border-radius: 8px;
         font-size: 14px;
         transition: border-color 0.3s ease;
+        background: var(--input-bg, #ffffff);
+        color: var(--text-primary, #374151);
     }
 
     .form-input:focus {
@@ -125,18 +129,19 @@
     }
 
     .upload-zone {
-        border: 3px dashed #d1d5db;
+        border: 3px dashed var(--border-color, #d1d5db);
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s ease;
-        background: #f9fafb;
+        background: var(--bg-secondary, #f9fafb);
+        color: var(--text-primary, #374151);
     }
 
     .upload-zone:hover {
         border-color: #667eea;
-        background: #f3f4f6;
+        background: var(--bg-glass-hover, #f3f4f6);
     }
 
     .upload-zone.dragover {
@@ -145,20 +150,27 @@
     }
 
     .barcode-scanner {
-        background: white;
+        background: var(--card-bg, #ffffff);
         padding: 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-card, 0 4px 6px rgba(0, 0, 0, 0.1));
         margin: 1rem 0;
+        border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+        color: var(--text-primary, #374151);
+    }
+
+    .barcode-scanner h3, .barcode-scanner h4 {
+        color: var(--text-primary, #374151);
     }
 
     .scan-result {
         margin-top: 1rem;
         padding: 1rem;
         border-radius: 8px;
-        background: #f0f9ff;
+        background: var(--bg-secondary, #f0f9ff);
         border-left: 4px solid #0ea5e9;
         display: none;
+        color: var(--text-primary, #374151);
     }
 
     .parts-list {
@@ -167,14 +179,16 @@
     }
 
     .part-card {
-        background: white;
+        background: var(--card-bg, #ffffff);
         padding: 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-card, 0 2px 4px rgba(0, 0, 0, 0.1));
         display: flex;
         justify-content: space-between;
         align-items: center;
         transition: all 0.3s ease;
+        border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8));
+        color: var(--text-primary, #374151);
     }
 
     .part-card:hover {
@@ -236,22 +250,43 @@
         margin: 2rem 0;
     }
 
+    .invoice-scanner h3 {
+        color: white;
+    }
+
+    .invoice-scanner .upload-zone {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.4);
+        color: white;
+    }
+
+    .invoice-scanner .upload-zone:hover {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.6);
+    }
+
     .extraction-result {
         margin-top: 1rem;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.15);
         padding: 1rem;
         border-radius: 8px;
         backdrop-filter: blur(10px);
+        color: white;
+    }
+
+    .extraction-result h4 {
+        color: white;
     }
 
     .loading {
         display: none;
         text-align: center;
         padding: 2rem;
+        color: var(--text-primary, inherit);
     }
 
     .spinner {
-        border: 3px solid #f3f4f6;
+        border: 3px solid var(--border-color, #f3f4f6);
         border-top: 3px solid #667eea;
         border-radius: 50%;
         width: 40px;

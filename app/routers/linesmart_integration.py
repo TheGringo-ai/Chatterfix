@@ -5,6 +5,7 @@ Connects LineSmart training service with AI Team and Fix it Fred
 
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -16,6 +17,71 @@ from pydantic import BaseModel
 from ai_team.grpc_client import get_ai_team_client
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_prompt_input(value: str, max_length: int = 1000) -> str:
+    """
+    Sanitize user input before embedding in AI prompts to prevent prompt injection.
+
+    - Removes potential prompt manipulation patterns
+    - Limits length to prevent denial of service
+    - Escapes special characters that could alter prompt behavior
+    """
+    if not isinstance(value, str):
+        value = str(value)
+
+    # Truncate to max length
+    value = value[:max_length]
+
+    # Remove common prompt injection patterns
+    injection_patterns = [
+        r'ignore\s+(previous|above|all)\s+instructions?',
+        r'disregard\s+(previous|above|all)',
+        r'forget\s+(everything|all|previous)',
+        r'new\s+instructions?:',
+        r'system\s*:',
+        r'assistant\s*:',
+        r'human\s*:',
+        r'user\s*:',
+        r'\[INST\]',
+        r'\[/INST\]',
+        r'<<SYS>>',
+        r'<</SYS>>',
+    ]
+
+    for pattern in injection_patterns:
+        value = re.sub(pattern, '[FILTERED]', value, flags=re.IGNORECASE)
+
+    return value
+
+
+def sanitize_dict_for_prompt(data: Dict[str, Any], max_depth: int = 3) -> Dict[str, Any]:
+    """
+    Recursively sanitize dictionary values for safe inclusion in AI prompts.
+    """
+    if max_depth <= 0:
+        return {"_truncated": "Max depth reached"}
+
+    sanitized = {}
+    for key, value in data.items():
+        # Sanitize key
+        safe_key = sanitize_prompt_input(str(key), max_length=100)
+
+        if isinstance(value, str):
+            sanitized[safe_key] = sanitize_prompt_input(value)
+        elif isinstance(value, dict):
+            sanitized[safe_key] = sanitize_dict_for_prompt(value, max_depth - 1)
+        elif isinstance(value, list):
+            sanitized[safe_key] = [
+                sanitize_prompt_input(str(item)) if isinstance(item, str)
+                else sanitize_dict_for_prompt(item, max_depth - 1) if isinstance(item, dict)
+                else item
+                for item in value[:50]  # Limit list length
+            ]
+        else:
+            sanitized[safe_key] = value
+
+    return sanitized
 
 router = APIRouter(prefix="/linesmart", tags=["LineSmart Training"])
 
@@ -81,21 +147,26 @@ async def submit_training_data(request: TrainingDataRequest):
         analysis_id = str(uuid.uuid4())
         client = get_ai_team_client()
 
+        # Sanitize user inputs before embedding in AI prompt to prevent injection
+        safe_data_source = sanitize_prompt_input(request.data_source, max_length=100)
+        safe_category = sanitize_prompt_input(request.category, max_length=100)
+        safe_content = sanitize_dict_for_prompt(request.data_content)
+
         # Prepare AI team prompt for training data analysis
         ai_prompt = f"""
         TRAINING DATA ANALYSIS:
-        Data Source: {request.data_source}
-        Category: {request.category}
+        Data Source: {safe_data_source}
+        Category: {safe_category}
         Confidence Score: {request.confidence_score}
-        Content: {json.dumps(request.data_content, indent=2)}
-        
+        Content: {json.dumps(safe_content, indent=2)}
+
         Please analyze this training data and provide:
         1. Data quality assessment (0-1 score)
         2. Key insights for model improvement
         3. Recommendations for better data collection
         4. Specific model enhancement suggestions
         5. Potential bias or quality issues
-        
+
         Focus on actionable intelligence for improving AI models.
         """
 
@@ -156,18 +227,21 @@ async def analyze_skill_gaps(maintenance_data: Dict[str, Any]):
         gap_id = str(uuid.uuid4())
         client = get_ai_team_client()
 
+        # Sanitize user input before embedding in AI prompt to prevent injection
+        safe_maintenance_data = sanitize_dict_for_prompt(maintenance_data)
+
         # Prepare AI team prompt for skill gap analysis
         ai_prompt = f"""
         SKILL GAP ANALYSIS:
-        Maintenance Data: {json.dumps(maintenance_data, indent=2)}
-        
+        Maintenance Data: {json.dumps(safe_maintenance_data, indent=2)}
+
         Analyze this maintenance data to identify:
         1. Technical skill gaps in the maintenance team
         2. Knowledge areas needing improvement
         3. Training program recommendations
         4. Priority levels for different skill areas
         5. Specific courses or certifications needed
-        
+
         Focus on actionable training recommendations.
         """
 

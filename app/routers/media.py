@@ -46,6 +46,7 @@ ALLOWED_EXTENSIONS = {
 }
 
 # Allowed MIME types (must match extensions above)
+# SECURITY: Do NOT add application/octet-stream - it bypasses MIME type validation
 ALLOWED_MIME_TYPES = {
     # Images
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
@@ -58,8 +59,6 @@ ALLOWED_MIME_TYPES = {
     # Audio
     "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/wav", "audio/x-wav",
     "audio/mpeg", "audio/mp3", "audio/aac", "audio/ogg",
-    # Fallback for unknown types
-    "application/octet-stream",
 }
 
 
@@ -70,8 +69,8 @@ async def validate_file(file: UploadFile, check_size: bool = True) -> None:
     Raises HTTPException if validation fails.
 
     Checks:
-    1. File extension against whitelist
-    2. MIME/Content-Type against whitelist
+    1. File extension against whitelist (required)
+    2. MIME/Content-Type against whitelist (or allowed octet-stream if extension is valid)
     3. File size against limit (optional, requires reading file first)
     """
     if not file.filename:
@@ -80,7 +79,7 @@ async def validate_file(file: UploadFile, check_size: bool = True) -> None:
             detail="No filename provided"
         )
 
-    # 1. Check file extension
+    # 1. Check file extension (primary validation)
     _, ext = os.path.splitext(file.filename.lower())
     if ext not in ALLOWED_EXTENSIONS:
         logger.warning(f"Rejected file upload: invalid extension '{ext}' for file '{file.filename}'")
@@ -90,13 +89,21 @@ async def validate_file(file: UploadFile, check_size: bool = True) -> None:
         )
 
     # 2. Check MIME type (Content-Type header)
+    # Allow application/octet-stream ONLY when extension is already validated above
+    # This handles browsers that don't send proper MIME types
     content_type = file.content_type or "application/octet-stream"
-    if content_type not in ALLOWED_MIME_TYPES:
+    is_generic_mime = content_type == "application/octet-stream"
+    is_allowed_mime = content_type in ALLOWED_MIME_TYPES
+
+    if not is_allowed_mime and not is_generic_mime:
         logger.warning(f"Rejected file upload: invalid MIME type '{content_type}' for file '{file.filename}'")
         raise HTTPException(
             status_code=400,
             detail=f"Content type '{content_type}' is not allowed"
         )
+
+    if is_generic_mime:
+        logger.info(f"File upload with generic MIME type but valid extension: {file.filename}")
 
     logger.debug(f"File validation passed: {file.filename} ({content_type})")
 

@@ -1,9 +1,11 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from app.auth import require_auth_cookie
+from app.models.user import User
 from app.services.geolocation_service import geolocation_service
 
 router = APIRouter(prefix="/geolocation", tags=["geolocation"])
@@ -31,10 +33,13 @@ class PropertyBoundary(BaseModel):
 
 
 @router.post("/update")
-async def update_location(location: LocationUpdate, user_id: int = 1):
-    """Update user's current location"""
+async def update_location(
+    location: LocationUpdate,
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Update user's current location (requires authentication)"""
     result = geolocation_service.update_user_location(
-        user_id=user_id,
+        user_id=current_user.id,
         latitude=location.latitude,
         longitude=location.longitude,
         accuracy=location.accuracy,
@@ -44,9 +49,9 @@ async def update_location(location: LocationUpdate, user_id: int = 1):
 
 
 @router.get("/current")
-async def get_current_location(user_id: int = 1):
-    """Get user's current location"""
-    location = geolocation_service.get_user_location(user_id)
+async def get_current_location(current_user: User = Depends(require_auth_cookie)):
+    """Get user's current location (requires authentication)"""
+    location = geolocation_service.get_user_location(current_user.id)
 
     if location:
         return JSONResponse(content=location)
@@ -57,37 +62,46 @@ async def get_current_location(user_id: int = 1):
 
 
 @router.get("/team")
-async def get_team_locations(user_id: int = 1):
-    """Get locations of team members"""
-    locations = geolocation_service.get_team_locations(user_id)
+async def get_team_locations(current_user: User = Depends(require_auth_cookie)):
+    """Get locations of team members (requires authentication)"""
+    locations = geolocation_service.get_team_locations(current_user.id)
     return JSONResponse(content={"team_locations": locations})
 
 
 @router.get("/nearby-work-orders")
-async def get_nearby_work_orders(user_id: int = 1, radius: int = 500):
-    """Get work orders near user's location"""
-    work_orders = geolocation_service.get_nearby_work_orders(user_id, radius)
+async def get_nearby_work_orders(
+    radius: int = 500,
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Get work orders near user's location (requires authentication)"""
+    work_orders = geolocation_service.get_nearby_work_orders(current_user.id, radius)
     return JSONResponse(content={"work_orders": work_orders})
 
 
 @router.get("/history")
-async def get_location_history(user_id: int = 1, limit: int = 100):
-    """Get user's location history"""
-    history = geolocation_service.get_location_history(user_id, limit)
+async def get_location_history(
+    limit: int = 100,
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Get user's location history (requires authentication)"""
+    history = geolocation_service.get_location_history(current_user.id, limit)
     return JSONResponse(content={"history": history})
 
 
 @router.get("/privacy")
-async def get_privacy_settings(user_id: int = 1):
-    """Get user's location privacy settings"""
-    settings = geolocation_service.get_privacy_settings(user_id)
+async def get_privacy_settings(current_user: User = Depends(require_auth_cookie)):
+    """Get user's location privacy settings (requires authentication)"""
+    settings = geolocation_service.get_privacy_settings(current_user.id)
     return JSONResponse(content=settings)
 
 
 @router.post("/privacy")
-async def update_privacy_settings(settings: PrivacySettings, user_id: int = 1):
-    """Update user's location privacy settings"""
-    success = geolocation_service.update_privacy_settings(user_id, settings.dict())
+async def update_privacy_settings(
+    settings: PrivacySettings,
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Update user's location privacy settings (requires authentication)"""
+    success = geolocation_service.update_privacy_settings(current_user.id, settings.dict())
 
     return JSONResponse(
         content={
@@ -119,7 +133,7 @@ async def add_property_boundary(boundary: PropertyBoundary):
 
 
 @router.get("/check-permission")
-async def check_location_permission(user_id: int = 1):
-    """Check if user has location tracking enabled"""
-    enabled = geolocation_service.check_location_permission(user_id)
+async def check_location_permission(current_user: User = Depends(require_auth_cookie)):
+    """Check if user has location tracking enabled (requires authentication)"""
+    enabled = geolocation_service.check_location_permission(current_user.id)
     return JSONResponse(content={"location_tracking_enabled": enabled})

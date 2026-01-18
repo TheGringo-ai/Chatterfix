@@ -27,12 +27,21 @@ from app.services.tier_management_service import get_tier_manager
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin - Tier Management"])
 logger = logging.getLogger(__name__)
 
-# Simple admin secret for now (use proper admin auth in production)
-ADMIN_SECRET = os.getenv("ADMIN_SECRET", "chatterfix-admin-2024")
+# Admin secret MUST be set via environment variable - no default allowed
+# SECURITY: Never commit secrets or use hardcoded fallbacks
+ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 
 
 def verify_admin(x_admin_secret: str = Header(None)):
     """Verify admin secret header."""
+    # Fail if admin secret is not configured in environment
+    if not ADMIN_SECRET:
+        logger.error("ADMIN_SECRET environment variable is not configured")
+        raise HTTPException(
+            status_code=500,
+            detail="Admin authentication not configured. Contact system administrator.",
+        )
+
     if not x_admin_secret or x_admin_secret != ADMIN_SECRET:
         raise HTTPException(
             status_code=403,

@@ -119,12 +119,13 @@ class SubscriptionService:
 
         except Exception as e:
             logger.error(f"Error checking subscription status: {e}")
-            # Fail open for now - grant access on error
+            # SECURITY: Fail closed - deny access on error to prevent unauthorized access
             return {
-                "status": SubscriptionStatus.TRIAL,
-                "has_access": True,
-                "days_remaining": FREE_TRIAL_DAYS,
-                "message": "Free trial",
+                "status": SubscriptionStatus.EXPIRED,
+                "has_access": False,
+                "days_remaining": 0,
+                "message": "Unable to verify subscription status. Please try again or contact support.",
+                "error": True,
             }
 
     async def check_access(self, organization_id: str) -> bool:

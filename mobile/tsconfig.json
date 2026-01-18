@@ -14,10 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-native",
-    "allowSyntheticDefaultImports": true,
-    "typeRoots": [
-      "./node_modules/@types"
-    ]
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "**/*.ts",

@@ -116,6 +116,71 @@
     .training-container .card-header.bg-primary h5 {
         color: #ffffff !important;
     }
+
+    /* Form controls - ensure visibility in light mode */
+    .training-container .form-control,
+    .training-container .form-select,
+    .training-container textarea,
+    .training-container input[type="text"],
+    .training-container input[type="file"] {
+        background-color: #ffffff !important;
+        color: #212529 !important;
+        border: 1px solid #ced4da !important;
+    }
+
+    .training-container .form-control:focus,
+    .training-container .form-select:focus,
+    .training-container textarea:focus,
+    .training-container input:focus {
+        background-color: #ffffff !important;
+        color: #212529 !important;
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    .training-container .form-control::placeholder,
+    .training-container textarea::placeholder,
+    .training-container input::placeholder {
+        color: #6c757d !important;
+        opacity: 1 !important;
+    }
+
+    .training-container .form-label {
+        color: #212529 !important;
+    }
+
+    .training-container .card-footer {
+        background-color: #f8f9fa !important;
+        border-top: 1px solid #dee2e6 !important;
+    }
+
+    /* Card header variants */
+    .training-container .card-header.bg-success {
+        background: #198754 !important;
+        color: #ffffff !important;
+    }
+
+    .training-container .card-header.bg-success h5 {
+        color: #ffffff !important;
+    }
+
+    .training-container .card-header.bg-info {
+        background: #0dcaf0 !important;
+        color: #000000 !important;
+    }
+
+    .training-container .card-header.bg-info h5 {
+        color: #000000 !important;
+    }
+
+    .training-container .card-header.bg-warning {
+        background: #ffc107 !important;
+        color: #000000 !important;
+    }
+
+    .training-container .card-header.bg-warning h5 {
+        color: #000000 !important;
+    }
 </style>
 {% endblock %}
 
@@ -288,7 +353,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted small mb-3">Upload an equipment manual to automatically generate interactive training modules and Standard Operating Procedures (SOPs).</p>
-                    <form id="generate-training-form" enctype="multipart/form-data">
+                    <form id="generate-training-form" class="form-light" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label class="form-label">Equipment Manual (PDF/Image)</label>
                             <input type="file" name="manual_file" class="form-control" required>
@@ -324,7 +389,7 @@
                     <h5 class="mb-0">💡 Ask the AI Assistant</h5>
                 </div>
                 <div class="card-body">
-                    <form id="ask-question-form">
+                    <form id="ask-question-form" class="form-light">
                         <div class="mb-3">
                             <label class="form-label">Your Question</label>
                             <textarea name="question" class="form-control" rows="3"

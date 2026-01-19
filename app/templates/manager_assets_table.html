@@ -154,13 +154,13 @@
 </div>
 
 <!-- Bulk Location Update Modal -->
-<div id="bulkLocationModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 15% auto; width: 400px; padding: 30px;">
-        <h2><i class="fas fa-map-marker"></i> Bulk Update Location</h2>
-        <form id="bulkLocationForm">
+<div id="bulkLocationModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto;">
+    <div class="modal-content form-light" style="margin: 15% auto; width: 90%; max-width: 400px; padding: 30px;">
+        <h2 style="color: #212529;"><i class="fas fa-map-marker"></i> Bulk Update Location</h2>
+        <form id="bulkLocationForm" class="form-light">
             <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem;">New Location</label>
-                <input type="text" id="bulkLocationInput" placeholder="Building A - Floor 3" style="width: 100%; padding: 0.8rem; border: 1px solid #dee2e6; border-radius: 8px;">
+                <label class="form-label">New Location</label>
+                <input type="text" id="bulkLocationInput" class="form-control" placeholder="Building A - Floor 3">
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
                 <button type="button" onclick="document.getElementById('bulkLocationModal').style.display='none'" class="cmms-btn" style="background: #6c757d;">Cancel</button>

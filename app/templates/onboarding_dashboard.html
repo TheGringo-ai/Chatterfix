@@ -152,12 +152,12 @@
 </div>
 
 <!-- Role Selection Modal -->
-<div id="roleSelectionModal" class="modal" style="display:none;">
-    <div class="modal-content glass-panel" style="max-width: 600px; margin: 5% auto;">
-        <h2 id="selectedRoleTitle"></h2>
-        <div id="roleDetails"></div>
-        
-        <form id="startOnboardingForm">
+<div id="roleSelectionModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto;">
+    <div class="modal-content form-light" style="max-width: 600px; margin: 5% auto; padding: 30px;">
+        <h2 id="selectedRoleTitle" style="color: #212529;"></h2>
+        <div id="roleDetails" style="color: #495057;"></div>
+
+        <form id="startOnboardingForm" class="form-light">
             <div style="margin: 20px 0;">
                 <label>Your Name *</label>
                 <input type="text" id="userName" name="user_name" required class="form-control">

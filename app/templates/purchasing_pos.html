@@ -28,9 +28,9 @@
         <!-- Search Bar -->
         <div class="cmms-card">
             <h3>🔍 Part Search</h3>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <input type="text" id="part-search" placeholder="Search parts by name or part number..." 
-                    style="flex: 1; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            <div class="form-light" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <input type="text" id="part-search" class="form-control" placeholder="Search parts by name or part number..."
+                    style="flex: 1; padding: 0.8rem;">
                 <button onclick="searchParts()" class="cmms-btn">Search</button>
             </div>
             <div id="search-results" style="max-height: 300px; overflow-y: auto;">
@@ -41,15 +41,15 @@
         <!-- Shopping Cart -->
         <div class="cmms-card">
             <h3>🛒 Current Purchase Order</h3>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <select id="vendor-select" style="flex: 1; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+            <div class="form-light" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="vendor-select" class="form-select" style="flex: 1; padding: 0.8rem;">
                     <option value="">Select Vendor...</option>
                     {% for vendor in vendors %}
-                    <option value="{{ vendor.id }}" style="color: black;">{{ vendor.name }}</option>
+                    <option value="{{ vendor.id }}">{{ vendor.name }}</option>
                     {% endfor %}
                 </select>
-                <input type="text" id="po-number" placeholder="PO Number" 
-                    style="padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                <input type="text" id="po-number" class="form-control" placeholder="PO Number"
+                    style="padding: 0.8rem;">
             </div>
             
             <div id="cart-items" style="min-height: 200px;">
@@ -121,55 +121,55 @@
 </div>
 
 <!-- Add Part Modal -->
-<div id="addPartModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 5% auto; width: 600px; padding: 30px; max-height: 90vh; overflow-y: auto;">
-        <h2>📦 Add New Part</h2>
-        <form id="add-part-form" enctype="multipart/form-data">
+<div id="addPartModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 5% auto; width: 90%; max-width: 600px; padding: 30px;">
+        <h2 style="color: #212529;">📦 Add New Part</h2>
+        <form id="add-part-form" class="form-light" enctype="multipart/form-data">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div>
-                    <label>Part Name</label>
-                    <input type="text" name="name" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Part Name</label>
+                    <input type="text" name="name" class="form-control" required>
                 </div>
                 <div>
-                    <label>Part Number</label>
-                    <input type="text" name="part_number" required style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Part Number</label>
+                    <input type="text" name="part_number" class="form-control" required>
                 </div>
                 <div style="grid-column: 1 / -1;">
-                    <label>Description</label>
-                    <textarea name="description" rows="2" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;"></textarea>
+                    <label class="form-label">Description</label>
+                    <textarea name="description" rows="2" class="form-control"></textarea>
                 </div>
                 <div>
-                    <label>Category</label>
-                    <input type="text" name="category" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Category</label>
+                    <input type="text" name="category" class="form-control">
                 </div>
                 <div>
-                    <label>Vendor</label>
-                    <select name="vendor_id" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
-                        <option value="" style="color: black;">No Vendor</option>
+                    <label class="form-label">Vendor</label>
+                    <select name="vendor_id" class="form-select">
+                        <option value="">No Vendor</option>
                         {% for vendor in vendors %}
-                        <option value="{{ vendor.id }}" style="color: black;">{{ vendor.name }}</option>
+                        <option value="{{ vendor.id }}">{{ vendor.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div>
-                    <label>Unit Cost</label>
-                    <input type="number" step="0.01" name="unit_cost" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Unit Cost</label>
+                    <input type="number" step="0.01" name="unit_cost" class="form-control">
                 </div>
                 <div>
-                    <label>Current Stock</label>
-                    <input type="number" name="current_stock" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Current Stock</label>
+                    <input type="number" name="current_stock" class="form-control">
                 </div>
                 <div>
-                    <label>Minimum Stock</label>
-                    <input type="number" name="minimum_stock" value="5" style="width: 100%; padding: 0.8rem; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; color: #212529;">
+                    <label class="form-label">Minimum Stock</label>
+                    <input type="number" name="minimum_stock" value="5" class="form-control">
                 </div>
                 <div>
-                    <label>Location</label>
-                    <input type="text" name="location" placeholder="e.g., A1-B2" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" placeholder="e.g., A1-B2" class="form-control">
                 </div>
                 <div style="grid-column: 1 / -1;">
-                    <label>📸 Photos & Documents</label>
-                    <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+                    <label class="form-label">📸 Photos & Documents</label>
+                    <input type="file" name="files" multiple accept="image/*,.pdf,.doc,.docx" class="form-control">
                 </div>
             </div>
             <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
@@ -181,18 +181,17 @@
 </div>
 
 <!-- Barcode Scanner Modal -->
-<div id="barcodeModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000;">
-    <div class="modal-content glass-panel" style="margin: 10% auto; width: 400px; padding: 30px;">
-        <h2>📱 Barcode Scanner</h2>
+<div id="barcodeModal" class="modal modal-light" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y: auto;">
+    <div class="modal-content form-light" style="margin: 10% auto; width: 90%; max-width: 400px; padding: 30px;">
+        <h2 style="color: #212529;">📱 Barcode Scanner</h2>
         <div style="margin-bottom: 1rem;">
-            <input type="text" id="barcode-input" placeholder="Scan or enter barcode/part number"
-                style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: white;">
+            <input type="text" id="barcode-input" class="form-control" placeholder="Scan or enter barcode/part number">
         </div>
         <div style="display: flex; gap: 1rem;">
             <button onclick="lookupBarcode()" class="cmms-btn" style="flex: 1;">Lookup</button>
             <button onclick="document.getElementById('barcodeModal').style.display='none'" class="cmms-btn" style="background: #e74c3c;">Close</button>
         </div>
-        <div id="barcode-result" style="margin-top: 1rem;"></div>
+        <div id="barcode-result" style="margin-top: 1rem; color: #212529;"></div>
     </div>
 </div>
 

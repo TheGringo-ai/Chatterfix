@@ -1118,6 +1118,93 @@ await firestore_manager.get_org_training_modules(organization_id)  # YES!
 - [ ] Router gets org_id from `current_user.organization_id`
 - [ ] Missing org_id returns empty (not unfiltered data)
 
+#### **LESSON #24: Modal and Form Styling - Use modal-light and form-light Classes (CRITICAL)**
+**Problem**: Form controls (inputs, selects, textareas) in modals and pages have invisible text due to dark/light mode styling conflicts
+**Root Cause**: Templates using `glass-panel` class on modals or not wrapping forms in `form-light` class. When dark mode is active, form controls inherit dark backgrounds and light text, but when pages force light mode or users are in light mode, this creates visibility issues.
+**Symptoms**:
+- Black text on black background in form fields
+- White text on white background in modals
+- Placeholder text not visible
+- Form controls look correct in one mode but broken in the other
+
+**THE RULE - ALL MODALS AND FORMS MUST:**
+1. Use `modal modal-light` classes on the modal container
+2. Use `modal-content form-light` classes on the modal content wrapper
+3. Use `form-light` class on all form elements
+4. Use `form-control` and `form-select` classes on inputs/selects
+
+**CORRECT Modal Pattern:**
+```html
+<!-- Modal container -->
+<div id="myModal" class="modal modal-light" style="display:none; position:fixed; ...">
+    <!-- Modal content wrapper -->
+    <div class="modal-content form-light" style="margin: 5% auto; ...">
+        <h2 style="color: #212529;">Modal Title</h2>
+
+        <!-- Form with form-light class -->
+        <form class="form-light">
+            <label class="form-label">Field Label</label>
+            <input type="text" class="form-control">
+            <select class="form-select">...</select>
+            <textarea class="form-control"></textarea>
+        </form>
+    </div>
+</div>
+```
+
+**CORRECT Non-Modal Form Pattern (e.g., filter bars, search boxes):**
+```html
+<div class="form-light">
+    <input type="text" class="form-control" placeholder="Search...">
+    <select class="form-select">...</select>
+</div>
+```
+
+**WRONG Patterns (NEVER DO THESE):**
+```html
+<!-- WRONG: Using glass-panel instead of modal-light -->
+<div class="modal-content glass-panel">
+
+<!-- WRONG: Missing form-light on forms -->
+<form id="myForm">
+    <input type="text" style="background: #fff; color: #000;">
+</form>
+
+<!-- WRONG: Inline styles without form-light wrapper -->
+<input style="background: rgba(255,255,255,0.1); color: white;">
+
+<!-- WRONG: Using style="color: black;" on options -->
+<option value="x" style="color: black;">Option</option>
+```
+
+**CSS Classes Reference:**
+- `modal-light` - Ensures modal styling works in both dark/light modes
+- `form-light` - Forces light backgrounds and dark text on all form controls
+- `form-control` - Bootstrap class for inputs/textareas (works with form-light)
+- `form-select` - Bootstrap class for select dropdowns (works with form-light)
+- `form-label` - Bootstrap class for labels (works with form-light)
+
+**Files Fixed in Jan 2026 (Reference):**
+- `training_center.html` - Added explicit form control styles + form-light
+- `work_orders.html` - Filter bar now wrapped in form-light
+- `purchasing_pos.html` - Search, vendor select, Add Part modal, Barcode modal
+- `settings.html` - Forms now have form-light class
+- `assets_list.html` - Create Asset modal converted to modal-light
+- `asset_detail.html` - Edit Asset modal converted to modal-light
+- `onboarding_dashboard.html` - Role selection modal converted to modal-light
+- `manager_assets_table.html` - Bulk location modal converted to modal-light
+- `manager_parts_table.html` - All bulk modals converted to modal-light
+- `manager_work_orders_table.html` - Bulk assign modal converted to modal-light
+
+**Prevention Checklist:**
+- [ ] All modals use `class="modal modal-light"` on container
+- [ ] All modal content uses `class="modal-content form-light"`
+- [ ] All forms use `class="form-light"` on form element
+- [ ] All inputs use `class="form-control"` (not inline styles)
+- [ ] All selects use `class="form-select"` (not inline styles)
+- [ ] Never use `style="color: black;"` on option elements
+- [ ] Test forms in BOTH dark mode and light mode before deploying
+
 ---
 
 ## 🏗️ **APPLICATION ARCHITECTURE GUIDE** (AI Team Reference)

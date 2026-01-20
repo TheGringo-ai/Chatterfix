@@ -9,8 +9,8 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.auth import (
@@ -460,15 +460,74 @@ async def generate_quick_guide(
     return {"guide": guide}
 
 
+GUEST_QUERY_LIMIT = 10  # Number of free queries for guests before requiring sign-in
+
+
 @router.post("/ask")
 async def ask_question(
+    request: Request,
     question: str = Form(...),
     context: str = Form(None),
-    current_user: User = Depends(require_auth_cookie),
 ):
-    """Ask a technical question to the AI assistant - requires authentication"""
+    """
+    Ask a technical question to the AI assistant
+    - Authenticated users: unlimited queries
+    - Guests: 10 free queries, then prompted to sign in
+    """
+    # Try to get current user (optional authentication)
+    current_user = await get_current_user_from_cookie(request)
+
+    # If authenticated, allow unlimited queries
+    if current_user:
+        answer = await training_generator.answer_technical_question(question, context)
+        return {"answer": answer}
+
+    # For guests, check query count from cookie
+    guest_queries = request.cookies.get("guest_ai_queries", "0")
+    try:
+        query_count = int(guest_queries)
+    except ValueError:
+        query_count = 0
+
+    # Check if guest has exceeded free queries
+    if query_count >= GUEST_QUERY_LIMIT:
+        return JSONResponse(
+            content={
+                "answer": f"🔒 You've used all {GUEST_QUERY_LIMIT} free AI queries!\n\n"
+                          "**Sign up for free** to get unlimited access to:\n"
+                          "• AI Technical Assistant\n"
+                          "• Training Module Generation\n"
+                          "• Quick Reference Guides\n"
+                          "• And much more!\n\n"
+                          "[Click here to sign up](/auth/signup) or [log in](/auth/login) if you already have an account.",
+                "requires_login": True,
+                "queries_used": query_count,
+                "query_limit": GUEST_QUERY_LIMIT,
+            }
+        )
+
+    # Process the question for guest
     answer = await training_generator.answer_technical_question(question, context)
-    return {"answer": answer}
+
+    # Increment query count and set cookie
+    new_count = query_count + 1
+    remaining = GUEST_QUERY_LIMIT - new_count
+
+    # Add remaining queries notice if getting low
+    if remaining <= 3 and remaining > 0:
+        answer += f"\n\n---\n💡 *You have {remaining} free queries remaining. [Sign up](/auth/signup) for unlimited access!*"
+    elif remaining == 0:
+        answer += f"\n\n---\n⚠️ *This was your last free query. [Sign up](/auth/signup) to continue using the AI assistant!*"
+
+    response = JSONResponse(content={"answer": answer, "queries_remaining": remaining})
+    response.set_cookie(
+        key="guest_ai_queries",
+        value=str(new_count),
+        max_age=60 * 60 * 24 * 30,  # 30 days
+        path="/",
+        samesite="lax",
+    )
+    return response
 
 
 # ========== USER TRAINING MANAGEMENT ==========

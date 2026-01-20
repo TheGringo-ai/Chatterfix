@@ -663,7 +663,8 @@
         try {
             const response = await fetch('/training/generate', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
             const data = await response.json();
 
@@ -693,7 +694,8 @@
         try {
             const response = await fetch('/training/ask', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
             const data = await response.json();
 

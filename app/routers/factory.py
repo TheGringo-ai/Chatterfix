@@ -203,8 +203,8 @@ async def get_heartbeat_dashboard(
             try:
                 last_hb = datetime.fromisoformat(machine.last_heartbeat.replace('Z', '+00:00'))
                 seconds_since = int((now - last_hb).total_seconds())
-            except:
-                pass
+            except (ValueError, AttributeError) as e:
+                logger.warning(f"Failed to parse heartbeat timestamp for {machine.name}: {e}")
 
         # Determine status color
         status_color = {
@@ -464,9 +464,12 @@ async def create_production_run(
 
     machine = _machines[machine_id]
 
+    # Get org_id from authenticated user, fallback to demo_org for guests
+    organization_id = current_user.organization_id if current_user else "demo_org"
+
     run = ProductionRun(
         id=f"run_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
-        organization_id="demo_org",
+        organization_id=organization_id,
         machine_id=machine_id,
         machine_name=machine.name,
         target_count=target_count,

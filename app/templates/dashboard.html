@@ -745,7 +745,7 @@
         document.getElementById('aiReportContent').innerHTML = '<div class="loading-spinner">Generating insights...</div>';
 
         try {
-            const response = await fetch('/ai/kpi-report', { method: 'POST' });
+            const response = await fetch('/ai/kpi-report', { method: 'POST', credentials: 'include' });
             const data = await response.json();
             document.getElementById('aiReportContent').innerHTML = data.response;
         } catch (error) {

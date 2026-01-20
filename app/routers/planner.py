@@ -354,7 +354,7 @@ async def get_asset_pm_status(request: Request):
                             else:
                                 try:
                                     next_due_date = datetime.strptime(str(next_due)[:10], "%Y-%m-%d").date()
-                                except:
+                                except ValueError:
                                     continue
 
                             days_until = (next_due_date - today.date()).days
@@ -555,7 +555,7 @@ async def get_compliance(request: Request):
                             else:
                                 try:
                                     next_due_date = datetime.strptime(str(next_due)[:10], "%Y-%m-%d").date()
-                                except:
+                                except ValueError:
                                     continue
 
                             days_until = (next_due_date - today.date()).days

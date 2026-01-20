@@ -109,7 +109,8 @@ async def inspect_pallet_load(
 
             # Log near-misses and hazards for ROI tracking
             if result.status in [SafetyStatus.WARNING, SafetyStatus.DANGER]:
-                await _log_safety_incident(result, user_id, location_aisle, notes)
+                organization_id = current_user.organization_id if current_user else "demo_org"
+                await _log_safety_incident(result, user_id, organization_id, location_aisle, notes)
 
             return result
 
@@ -196,24 +197,27 @@ def _parse_safety_response(raw_response: str, location_aisle: Optional[str] = No
 async def _log_safety_incident(
     result: InspectionResult,
     user_id: Optional[str],
+    organization_id: str,
     location: Optional[str],
     notes: Optional[str]
 ):
-    """Log safety incident to Firestore for tracking and ROI reporting"""
+    """Log safety incident to Firestore for tracking and ROI reporting - org-scoped"""
     try:
         from app.core.firestore_db import FirestoreManager
 
         db = FirestoreManager()
 
         incident = SafetyIncident(
-            organization_id="demo_org",  # TODO: Get from user context
+            organization_id=organization_id,  # Multi-tenant isolation
             inspection_result=result,
             notes=notes
         )
 
-        await db.create_document(
+        # Use org-scoped document creation
+        await db.create_org_document(
             collection="safety_incidents",
-            data=incident.model_dump()
+            data=incident.model_dump(),
+            organization_id=organization_id
         )
 
         logger.info(f"Safety incident logged: {result.status} - {result.hazards_detected}")
@@ -230,7 +234,7 @@ async def get_safety_incidents(
     current_user = Depends(get_optional_current_user),
 ):
     """
-    Get recent safety incidents for reporting and ROI tracking.
+    Get recent safety incidents for reporting and ROI tracking - org-scoped.
 
     This shows the value of the system - every WARNING and DANGER
     is a potential accident that was prevented.
@@ -240,10 +244,13 @@ async def get_safety_incidents(
 
         db = FirestoreManager()
 
-        # Query incidents
+        # Get organization_id for multi-tenant filtering
+        organization_id = current_user.organization_id if current_user else "demo_org"
+
+        # Query incidents - filtered by organization for multi-tenant safety
         incidents = await db.query_documents(
             collection="safety_incidents",
-            filters=[],  # TODO: Add org filter
+            filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
             order_by="created_at",
             order_direction="DESCENDING",
             limit=limit
@@ -272,7 +279,7 @@ async def get_safety_stats(
     current_user = Depends(get_optional_current_user),
 ):
     """
-    Get safety statistics for the ROI dashboard.
+    Get safety statistics for the ROI dashboard - org-scoped.
 
     Shows: "We prevented X potential accidents this month"
     """
@@ -281,10 +288,13 @@ async def get_safety_stats(
 
         db = FirestoreManager()
 
-        # Get all incidents (in production, filter by date range and org)
+        # Get organization_id for multi-tenant filtering
+        organization_id = current_user.organization_id if current_user else "demo_org"
+
+        # Get all incidents filtered by organization
         incidents = await db.query_documents(
             collection="safety_incidents",
-            filters=[],
+            filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
             limit=1000
         )
 

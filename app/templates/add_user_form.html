@@ -549,7 +549,8 @@ async function createUser(event) {
     try {
         const response = await fetch('/user-management/add-user', {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'include'
         });
         
         const result = await response.json();
@@ -584,7 +585,9 @@ async function createUser(event) {
 // Load supervisors for dropdown
 async function loadSupervisors() {
     try {
-        const response = await fetch('/user-management/users?role=supervisor&status=active');
+        const response = await fetch('/user-management/users?role=supervisor&status=active', {
+            credentials: 'include'
+        });
         const supervisors = await response.json();
         
         const select = document.querySelector('select[name="supervisor_id"]');

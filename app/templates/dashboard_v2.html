@@ -646,7 +646,7 @@
 
     async function resetDashboard() {
         if (confirm('Reset dashboard to defaults?')) {
-            const response = await fetch(`/dashboard/reset?user_id=${userId}`, { method: 'POST' });
+            const response = await fetch(`/dashboard/reset?user_id=${userId}`, { method: 'POST', credentials: 'include' });
             if (response.ok) {
                 location.reload();
             }

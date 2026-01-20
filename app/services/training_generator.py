@@ -32,16 +32,21 @@ class TrainingGenerator:
 
     @staticmethod
     async def generate_from_manual(
-        manual_path: str, asset_type: str, skill_category: str
+        manual_path: str, asset_type: str, skill_category: str, organization_id: str = None
     ):
         """
         Generate training module from equipment manual
         Supports PDF, images, and text files
+        Requires organization_id for multi-tenant isolation
         """
         if not GEMINI_API_KEY or not GENAI_AVAILABLE:
             logger.warning(
                 "GEMINI_API_KEY not set or Google Generative AI not available, cannot generate training"
             )
+            return None
+
+        if not organization_id:
+            logger.warning("generate_from_manual called without organization_id - required for multi-tenant")
             return None
 
         try:
@@ -96,7 +101,7 @@ class TrainingGenerator:
             response = model.generate_content([prompt, manual_content])
             training_data = json.loads(response.text)
 
-            # Save to Firestore database
+            # Save to Firestore database with organization_id for multi-tenant isolation
             firestore_manager = get_firestore_manager()
             module_data = {
                 "title": training_data["title"],
@@ -110,12 +115,14 @@ class TrainingGenerator:
                 ],
                 "content_path": json.dumps(training_data),
                 "ai_generated": True,
+                "organization_id": organization_id,  # Multi-tenant isolation
             }
 
-            module_id = await firestore_manager.create_training_module(module_data)
+            # Use org-scoped method for multi-tenant safety
+            module_id = await firestore_manager.create_org_training_module(module_data, organization_id)
 
             logger.info(
-                f"Generated training module {module_id}: {training_data['title']}"
+                f"Generated training module {module_id}: {training_data['title']} for org {organization_id}"
             )
             return module_id
 

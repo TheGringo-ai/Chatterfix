@@ -413,8 +413,13 @@ async def generate_training(
     manual_file: UploadFile = File(...),
     asset_type: str = Form(...),
     skill_category: str = Form(...),
+    current_user: User = Depends(require_auth_cookie),
 ):
-    """Generate training from uploaded manual"""
+    """Generate training from uploaded manual - requires authentication"""
+    organization_id = current_user.organization_id
+    if not organization_id:
+        return {"success": False, "error": "Organization required"}
+
     try:
         # Save uploaded file
         import os
@@ -427,9 +432,9 @@ async def generate_training(
             content = await manual_file.read()
             f.write(content)
 
-        # Generate training
+        # Generate training with organization_id
         module_id = await training_generator.generate_from_manual(
-            file_path, asset_type, skill_category
+            file_path, asset_type, skill_category, organization_id
         )
 
         if module_id:
@@ -444,9 +449,11 @@ async def generate_training(
 
 @router.post("/quick-guide")
 async def generate_quick_guide(
-    equipment_name: str = Form(...), task_description: str = Form(...)
+    equipment_name: str = Form(...),
+    task_description: str = Form(...),
+    current_user: User = Depends(require_auth_cookie),
 ):
-    """Generate a quick reference guide"""
+    """Generate a quick reference guide - requires authentication"""
     guide = await training_generator.generate_quick_guide(
         equipment_name, task_description
     )
@@ -454,8 +461,12 @@ async def generate_quick_guide(
 
 
 @router.post("/ask")
-async def ask_question(question: str = Form(...), context: str = Form(None)):
-    """Ask a technical question to the AI assistant"""
+async def ask_question(
+    question: str = Form(...),
+    context: str = Form(None),
+    current_user: User = Depends(require_auth_cookie),
+):
+    """Ask a technical question to the AI assistant - requires authentication"""
     answer = await training_generator.answer_technical_question(question, context)
     return {"answer": answer}
 
@@ -467,38 +478,46 @@ async def ask_question(question: str = Form(...), context: str = Form(None)):
 async def start_training(
     module_id: str, current_user: User = Depends(require_auth_cookie)
 ):
-    """Start a training module for the current user"""
+    """Start a training module for the current user - org-scoped"""
     firestore_manager = get_firestore_manager()
     user_id = current_user.uid
+    organization_id = current_user.organization_id
+
+    if not organization_id:
+        return {"success": False, "error": "Organization required"}
+
     try:
-        # Check if already assigned
-        existing_training = await firestore_manager.get_collection(
-            "user_training",
-            filters=[
-                {"field": "user_id", "operator": "==", "value": user_id},
-                {"field": "training_module_id", "operator": "==", "value": module_id},
-            ],
-            limit=1,
+        # Check if already assigned - use org-scoped query
+        existing_training = await firestore_manager.get_org_user_training(
+            organization_id=organization_id,
+            user_id=user_id,
         )
 
-        if existing_training:
+        # Find specific module assignment
+        module_assignment = next(
+            (t for t in existing_training if t.get("training_module_id") == module_id),
+            None
+        )
+
+        if module_assignment:
             # Update existing to in_progress
             await firestore_manager.update_document(
                 "user_training",
-                existing_training[0]["id"],
+                module_assignment["id"],
                 {"status": "in_progress", "started_date": datetime.now()},
             )
         else:
-            # Create new training assignment
+            # Create new training assignment with org-scoping
             training_data = {
                 "user_id": user_id,
                 "training_module_id": module_id,
+                "organization_id": organization_id,  # Required for multi-tenant
                 "status": "in_progress",
                 "started_date": datetime.now(),
                 "completed_date": None,
                 "score": None,
             }
-            await firestore_manager.create_document("user_training", training_data)
+            await firestore_manager.create_org_user_training(training_data, organization_id)
 
         return {"success": True}
     except Exception as e:
@@ -584,6 +603,7 @@ async def assign_training(
         training_data = {
             "user_id": user_id,
             "training_module_id": module_id,
+            "organization_id": organization_id,  # Required for multi-tenant isolation
             "status": "assigned",
             "assigned_date": datetime.now(),
             "started_date": None,

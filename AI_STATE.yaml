@@ -1,0 +1,64 @@
+# AI Team State File - Human-approved memory only
+# Last updated: 2026-01-28
+
+project_state:
+  status: stable
+  last_deploy: 2026-01-28
+  production_url: https://chatterfix.com
+  last_action: mobile_security_audit_fix
+  ci_cd_status: passing
+
+decisions:
+  - id: use_nh3_over_bleach
+    reason: "bleach deprecated, nh3 is Rust-based and actively maintained"
+    date: 2026-01-28
+
+  - id: specific_firebase_exceptions
+    reason: "Catch InvalidIdTokenError, ExpiredIdTokenError, RevokedIdTokenError instead of broad Exception"
+    date: 2026-01-28
+
+  - id: auth_timeout_5_seconds
+    reason: "Prevent Firebase hangs with asyncio.wait_for timeout"
+    date: 2026-01-28
+
+  - id: configurable_admin_roles
+    reason: "ADMIN_ROLES set instead of hardcoded 'manager' string"
+    date: 2026-01-28
+
+  - id: async_storage_2x
+    reason: "firebase@12.8.0 requires async-storage ^2.2.0"
+    date: 2026-01-28
+
+  - id: ignore_expo_tar_vulnerability
+    reason: "Requires Expo 54 upgrade (breaking change), defer to planned SDK upgrade"
+    date: 2026-01-28
+
+known_issues:
+  - id: expo_tar_cacache_vuln
+    severity: high
+    status: deferred
+    reason: "Requires Expo SDK 50 -> 54 migration, not urgent for dev builds"
+
+  - id: node_dev_deps_alerts
+    severity: moderate
+    status: acknowledged
+    reason: "Dev dependencies only, not in production backend"
+
+preferences:
+  prefer_local: true
+  fix_production_first: true
+  avoid_scope_creep: true
+  stop_when_stable: true
+  commit_before_deploy: true
+  test_in_real_browser: true
+
+# Recent commits (for context)
+recent_commits:
+  - hash: 8874e32e
+    message: "fix: Update async-storage to 2.2.0 for firebase compatibility"
+  - hash: d39879c5
+    message: "security: Update python-multipart to 0.0.22 (CVE-2026-24486)"
+  - hash: b2b5495b
+    message: "refactor: Replace deprecated bleach with nh3 for HTML sanitization"
+  - hash: 990e466c
+    message: "fix: Improve auth.py error handling, timeouts, and role flexibility"

@@ -148,7 +148,6 @@ all_extended_routers = [
     "training",
     "user_management",
     "work_orders",
-    "repo_review",  # Public repo maintenance review tool
 ]
 
 # Import each router individually to avoid one failure breaking all
@@ -536,7 +535,6 @@ router_descriptions = {
     "quality_management": "QualityFix Premium Module - HACCP, ISO 22000, Food Safety compliance ($99/mo)",
     "safety_management": "SafetyFix Premium Module - OSHA compliance and incident tracking ($99/mo)",
     "iot": "IoT Advanced Premium Module - Real-time sensor monitoring and predictive analytics ($199/mo)",
-    "repo_review": "Public repo maintenance review tool - Read-only analysis for GitHub repos",
 }
 
 # Include each router that was successfully imported

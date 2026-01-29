@@ -13,12 +13,12 @@ aiofiles==25.1.0
 httpx==0.28.1
 
 # Database - Firebase/Firestore (Primary)
-google-cloud-firestore==2.21.0
+google-cloud-firestore==2.23.0
 firebase-admin==7.1.0
-pyrebase4==4.8.0
+pyrebase4==4.9.0
 
 # Speech-to-Text for hands-free operation
-google-cloud-speech==2.34.0
+google-cloud-speech==2.36.0
 
 # AI & ML
 openai==1.93.3
@@ -38,7 +38,7 @@ PyJWT==2.10.1
 cryptography==46.0.3
 email-validator==2.3.0
 nh3>=0.2.15
-google-cloud-secret-manager==2.25.0
+google-cloud-secret-manager==2.26.0
 
 # Utilities
 python-dotenv==1.2.1

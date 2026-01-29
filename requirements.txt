@@ -52,7 +52,7 @@ gunicorn==23.0.0
 mcp==1.23.0
 
 # Critical dependencies for security and functionality
-reportlab==4.4.6
+reportlab==4.4.7
 sentry-sdk==2.47.0
 
 # Computer Vision & OCR dependencies

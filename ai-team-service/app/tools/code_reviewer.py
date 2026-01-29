@@ -119,7 +119,7 @@ class CodeReviewer:
 
     # ChatterFix-specific patterns
     CHATTERFIX_PATTERNS = [
-        (r"datetime\.now\(\)", "CF001", "Use datetime.utcnow() for consistency", Severity.MEDIUM),
+        (r"datetime\.utcnow\(\)", "CF001", "Use datetime.now(timezone.utc) instead of deprecated utcnow()", Severity.MEDIUM),
         (r"\.strftime\s*\([^)]*%[^Y]", "CF002", "Non-standard date format", Severity.INFO),
         (r"async def.*:\s*\n\s*return", "CF003", "Async function with immediate return", Severity.INFO),
         (r"response\.json\(\)", "CF004", "Check for response.ok before .json()", Severity.MEDIUM),

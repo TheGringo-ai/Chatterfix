@@ -36,7 +36,7 @@ except Exception as e:
 async def health_check():
     """Basic health check endpoint for load balancers"""
     return JSONResponse(
-        {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+        {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
     )
 
 
@@ -46,7 +46,7 @@ async def detailed_health_check():
     start_time = time.time()
     health_data: Dict[str, Any] = {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "service": "chatterfix-cmms",
         "version": APP_VERSION,
     }
@@ -102,7 +102,7 @@ async def detailed_health_check():
             content={
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "response_time_ms": round((time.time() - start_time) * 1000, 2),
             },
         )
@@ -121,11 +121,11 @@ async def readiness_check():
                 content={
                     "ready": False,
                     "reason": "database_unavailable",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
             )
 
-        return JSONResponse({"ready": True, "timestamp": datetime.utcnow().isoformat()})
+        return JSONResponse({"ready": True, "timestamp": datetime.now(timezone.utc).isoformat()})
 
     except Exception:
         return JSONResponse(
@@ -133,7 +133,7 @@ async def readiness_check():
             content={
                 "ready": False,
                 "reason": "service_error",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -141,7 +141,7 @@ async def readiness_check():
 @router.get("/health/liveness")
 async def liveness_check():
     """Kubernetes liveness probe endpoint"""
-    return JSONResponse({"alive": True, "timestamp": datetime.utcnow().isoformat()})
+    return JSONResponse({"alive": True, "timestamp": datetime.now(timezone.utc).isoformat()})
 
 
 @router.get("/health/environment")
@@ -168,7 +168,7 @@ async def environment_info():
         "service": service_url,
         "revision": revision,
         "version": APP_VERSION,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     if is_production:

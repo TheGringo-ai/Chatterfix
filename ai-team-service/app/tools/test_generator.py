@@ -15,7 +15,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -181,8 +181,8 @@ class Test{name}Models:
         data = {{
             **self.VALID_DATA,
             "id": "test-id-123",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         }}
         model = {name}Response(**data)
 
@@ -642,8 +642,8 @@ def {snake}_response_data({snake}_data):
     return {{
         **{snake}_data,
         "id": "test-{snake}-001",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
         "is_deleted": False,
     }}
 

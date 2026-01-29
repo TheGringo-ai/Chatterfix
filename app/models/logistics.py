@@ -3,7 +3,7 @@ Logistics Safety Models
 Pydantic models for pallet inspection and warehouse safety analysis
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -39,7 +39,7 @@ class InspectionResult(BaseModel):
     recommended_action: str = Field(..., description="Immediate action for the forklift driver")
 
     # Metadata for logging and tracking
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     location_aisle: Optional[str] = Field(None, description="Aisle or location identifier")
     inspector_id: Optional[str] = Field(None, description="ID of the technician/driver who took the photo")
 
@@ -63,7 +63,7 @@ class SafetyIncident(BaseModel):
     organization_id: str
     inspection_result: InspectionResult
     image_url: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     resolved: bool = False
     resolved_at: Optional[str] = None
     resolved_by: Optional[str] = None

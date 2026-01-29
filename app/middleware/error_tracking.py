@@ -9,7 +9,7 @@ and returns user-friendly error responses.
 import logging
 import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable, Optional
 
 from fastapi import Request, Response
@@ -118,7 +118,7 @@ class ErrorTrackingMiddleware(BaseHTTPMiddleware):
         is_import_error = self._is_import_error(exc, traceback_str)
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "environment": self.environment,
             "error_type": type(exc).__name__,
             "error_message": str(exc),

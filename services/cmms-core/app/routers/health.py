@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -44,7 +44,7 @@ async def health_check():
         return JSONResponse(
             {
                 "status": "healthy",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "database": db_status,
                 "version": APP_VERSION,
                 "service": "chatterfix-cmms",
@@ -56,6 +56,6 @@ async def health_check():
             content={
                 "status": "unhealthy",
                 "error": "Service unavailable",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )

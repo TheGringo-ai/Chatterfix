@@ -11,14 +11,22 @@ Trial access checking:
 - Access is blocked when trial expires (unless paid subscription)
 """
 
+import asyncio
+import logging
 from typing import Annotated, Optional, Dict, Any
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
+from firebase_admin import auth
 
 from app.models.user import User
 from app.services.auth_service import verify_id_token_and_get_user, check_permission
 from app.services.subscription_service import get_subscription_service, SubscriptionStatus
+
+logger = logging.getLogger(__name__)
+
+# Configurable roles for role-based access control
+ADMIN_ROLES = {"owner", "admin", "manager", "supervisor"}
 
 # This tells FastAPI where the client can go to get a token.
 # Since Firebase handles this on the client-side, this is mainly for documentation purposes.
@@ -37,16 +45,52 @@ async def get_current_user_from_cookie(request: Request) -> Optional[User]:
     """
     Get user from session cookie - used for HTML page routes.
     Returns None if not authenticated (does not raise exception).
+
+    Includes:
+    - 5-second timeout for Firebase verification
+    - Specific exception handling for Firebase auth errors
+    - Logging for failed authentication attempts
     """
     session_token = request.cookies.get("session_token")
     if not session_token:
         return None
 
     try:
-        user = await verify_id_token_and_get_user(session_token)
+        # Add 5-second timeout for Firebase verification call
+        user = await asyncio.wait_for(
+            verify_id_token_and_get_user(session_token),
+            timeout=5.0
+        )
         return user
-    except Exception:
-        return None
+    except asyncio.TimeoutError:
+        logger.warning(
+            "Token verification timed out",
+            extra={"client": request.client.host if request.client else "unknown"}
+        )
+    except auth.InvalidIdTokenError:
+        logger.warning(
+            "Invalid token provided",
+            extra={"client": request.client.host if request.client else "unknown"}
+        )
+    except auth.ExpiredIdTokenError:
+        logger.info(
+            "Expired token - user needs to re-authenticate",
+            extra={"client": request.client.host if request.client else "unknown"}
+        )
+    except auth.RevokedIdTokenError:
+        logger.warning(
+            "Revoked token detected",
+            extra={"client": request.client.host if request.client else "unknown"}
+        )
+    except Exception as e:
+        logger.error(
+            f"Unexpected auth error: {type(e).__name__}",
+            extra={
+                "client": request.client.host if request.client else "unknown",
+                "path": request.url.path,
+            }
+        )
+    return None
 
 
 async def require_auth_cookie(request: Request) -> User:
@@ -121,19 +165,47 @@ async def get_current_active_user(
     return current_user
 
 
-# You can also create dependencies for specific roles
+# Role-based access control dependencies
 async def get_current_manager_user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
     """
-    FastAPI dependency to ensure the user has the 'manager' role.
+    FastAPI dependency to ensure the user has manager-level access.
+    Uses configurable ADMIN_ROLES set for flexibility.
     """
-    if current_user.role != "manager":
+    if current_user.role not in ADMIN_ROLES:
+        logger.warning(
+            f"Access denied: user {current_user.uid} with role '{current_user.role}' "
+            f"attempted to access manager-only resource"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="The user does not have the required 'manager' role.",
+            detail=f"Access denied. Required roles: {', '.join(sorted(ADMIN_ROLES))}",
         )
     return current_user
+
+
+def require_role(allowed_roles: set[str]):
+    """
+    Dependency factory for requiring specific roles (configurable).
+
+    Usage:
+        @router.get("/admin")
+        async def admin_page(user: User = Depends(require_role({"admin", "owner"}))):
+            ...
+    """
+    async def role_checker(current_user: User = Depends(get_current_active_user)):
+        if current_user.role not in allowed_roles:
+            logger.warning(
+                f"Role check failed: user {current_user.uid} role '{current_user.role}' "
+                f"not in {allowed_roles}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {', '.join(sorted(allowed_roles))}",
+            )
+        return current_user
+    return role_checker
 
 
 def require_permission(permission: str):

@@ -119,7 +119,10 @@ class DashboardService:
                             if completed_dt >= week_start:
                                 week_completed += 1
                                 week_hours += hours
-                        except:
+                        except (ValueError, TypeError, AttributeError):
+                            # ValueError: invalid datetime format
+                            # TypeError: non-string/datetime value
+                            # AttributeError: missing expected attributes
                             pass
 
             return {

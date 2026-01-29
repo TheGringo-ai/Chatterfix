@@ -77,7 +77,7 @@ else
 fi
 
 # Test basic API
-if curl -f "$SERVICE_URL/api/v1/models" -H "Authorization: Bearer chatterfix-ai-team-2025-secure-key" > /dev/null 2>&1; then
+if curl -f "$SERVICE_URL/api/v1/models" -H "Authorization: Bearer ${AI_TEAM_API_KEY:-demo-key}" > /dev/null 2>&1; then
     echo "✅ API endpoints accessible"
 else
     echo "⚠️  API endpoints may not be ready yet"

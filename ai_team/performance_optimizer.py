@@ -285,7 +285,7 @@ class AdvancedResponseCache:
                             cached = pickle.load(f)
                             if cached.timestamp < cutoff_time:
                                 os.remove(filepath)
-                    except:
+                    except Exception:
                         # Remove corrupted files
                         os.remove(filepath)
             

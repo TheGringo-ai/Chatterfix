@@ -80,7 +80,7 @@ class KPIAnalyticsService:
                 elif isinstance(created, str):
                     try:
                         created_dt = datetime.fromisoformat(created.replace('Z', '+00:00'))
-                    except:
+                    except ValueError:
                         continue
                 else:
                     continue
@@ -106,7 +106,7 @@ class KPIAnalyticsService:
                 filters=[{"field": "organization_id", "operator": "==", "value": organization_id}],
                 limit=500
             )
-        except:
+        except Exception:
             return []
 
     async def _get_pm_schedules(self, organization_id: str) -> List[Dict]:
@@ -116,7 +116,7 @@ class KPIAnalyticsService:
                 "pm_schedules",
                 filters=[{"field": "organization_id", "operator": "==", "value": organization_id}]
             )
-        except:
+        except Exception:
             return []
 
     async def _calculate_work_order_metrics(self, work_orders: List[Dict]) -> Dict[str, Any]:
@@ -157,7 +157,7 @@ class KPIAnalyticsService:
                         due_dt = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
                         if due_dt < now:
                             overdue += 1
-                    except:
+                    except ValueError:
                         pass
 
         completed = status_counts.get("Completed", 0)
@@ -393,7 +393,7 @@ class KPIAnalyticsService:
                             completed_on_time += 1
                         else:
                             completed_late += 1
-                    except:
+                    except ValueError:
                         completed_on_time += 1  # Assume on time if can't parse
                 else:
                     completed_on_time += 1
@@ -407,7 +407,7 @@ class KPIAnalyticsService:
 
                         if due_dt < now:
                             missed += 1
-                    except:
+                    except ValueError:
                         pass
 
         total = len(pm_work_orders)
@@ -554,7 +554,7 @@ class KPIAnalyticsService:
 
                         if completed_dt <= due_dt:
                             tech_stats[tech_name]["on_time"] += 1
-                    except:
+                    except ValueError:
                         pass
 
         # Calculate metrics per technician
@@ -647,7 +647,7 @@ class KPIAnalyticsService:
                 if isinstance(created, str):
                     try:
                         created = datetime.fromisoformat(created.replace('Z', '+00:00'))
-                    except:
+                    except ValueError:
                         continue
 
                 # Get week start (Monday)

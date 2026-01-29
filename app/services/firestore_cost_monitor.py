@@ -119,7 +119,7 @@ class FirestoreCostMonitor:
                         if isinstance(timestamp, str):
                             try:
                                 timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-                            except:
+                            except (ValueError, AttributeError):
                                 continue
                         if oldest_date is None or timestamp < oldest_date:
                             oldest_date = timestamp
@@ -161,7 +161,7 @@ class FirestoreCostMonitor:
                 return len(docs)
             # Estimate based on sample - this is rough
             return len(docs) * 2  # Assume 2x the sample
-        except:
+        except Exception:
             return 5000  # Default estimate
 
     async def get_all_stats(self) -> Dict[str, Any]:

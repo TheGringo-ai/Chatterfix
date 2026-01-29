@@ -3,15 +3,49 @@ Input Sanitization Utilities
 Centralized input sanitization for security across all routers.
 
 Prevents XSS, HTML injection, and other input-based attacks.
+
+Uses nh3 (Rust-based) instead of deprecated bleach library.
 """
 
 import re
-from typing import Optional
+from typing import Optional, Set, Dict, List
 
-import bleach
+import nh3
 
 # Characters that are safe in most contexts
 SAFE_PUNCTUATION = ".,!?;:'\"()-_/@#$%&*+=<>[]{}|\\~`"
+
+
+def _clean_html(
+    text: str,
+    tags: Optional[Set[str]] = None,
+    attributes: Optional[Dict[str, Set[str]]] = None,
+    strip: bool = True,
+) -> str:
+    """
+    Drop-in replacement for bleach.clean() using nh3.
+
+    Args:
+        text: HTML text to sanitize
+        tags: Allowed HTML tags (empty set = strip all)
+        attributes: Allowed attributes per tag
+        strip: Whether to strip disallowed tags (always True for nh3)
+
+    Returns:
+        Sanitized text
+    """
+    if not text:
+        return ""
+
+    allowed_tags = tags if tags is not None else set()
+    allowed_attrs = attributes if attributes is not None else {}
+
+    return nh3.clean(
+        text,
+        tags=allowed_tags,
+        attributes=allowed_attrs,
+        strip_comments=True,
+    )
 
 
 def sanitize_text(
@@ -37,7 +71,7 @@ def sanitize_text(
 
     # Remove HTML tags if requested
     if strip_html:
-        text = bleach.clean(text, tags=[], attributes={}, strip=True)
+        text = _clean_html(text, tags=set(), attributes={})
 
     # Remove null bytes and control characters
     if preserve_newlines:
@@ -81,12 +115,11 @@ def sanitize_html(
             'blockquote', 'pre', 'code', 'hr',
         ]
 
-    # Clean with allowed tags
-    text = bleach.clean(
+    # Clean with allowed tags using nh3
+    text = _clean_html(
         text,
-        tags=allowed_tags,
+        tags=set(allowed_tags),
         attributes={},
-        strip=True,
     )
 
     # Remove null bytes
@@ -122,7 +155,7 @@ def sanitize_identifier(
         return ""
 
     # Strip HTML first
-    text = bleach.clean(text, tags=[], attributes={}, strip=True)
+    text = _clean_html(text, tags=set(), attributes={})
 
     # Define allowed pattern
     if allow_spaces:

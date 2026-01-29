@@ -1,8 +1,9 @@
-import bleach
 import logging
 import os
 import asyncio
-from typing import Optional
+from typing import Optional, Set, Dict
+
+import nh3
 
 # Conditional import for google.cloud.secretmanager
 try:
@@ -23,13 +24,15 @@ def sanitize_html_input(text: str) -> str:
     """
     Sanitizes HTML input to prevent XSS attacks.
     Removes potentially dangerous tags and attributes.
+
+    Uses nh3 (Rust-based) instead of deprecated bleach library.
     """
     if not isinstance(text, str):
         return text  # Return as is if not a string
 
     # Define allowed tags and attributes for general content
     # This list should be carefully curated based on application needs
-    allowed_tags = [
+    allowed_tags: Set[str] = {
         "a",
         "abbr",
         "acronym",
@@ -43,24 +46,24 @@ def sanitize_html_input(text: str) -> str:
         "p",
         "strong",
         "ul",
-    ]
-    allowed_attributes = {
-        "a": ["href", "title"],
-        "abbr": ["title"],
-        "acronym": ["title"],
+    }
+    allowed_attributes: Dict[str, Set[str]] = {
+        "a": {"href", "title"},
+        "abbr": {"title"},
+        "acronym": {"title"},
     }
 
     try:
-        cleaned_text = bleach.clean(
+        cleaned_text = nh3.clean(
             text,
             tags=allowed_tags,
             attributes=allowed_attributes,
-            strip=True,  # Strip disallowed tags and their content
+            strip_comments=True,
         )
         return cleaned_text
     except Exception as e:
         logger.error(f"Error sanitizing HTML input: {e}")
-        return text  # Return original text on error, or an empty string
+        return text  # Return original text on error
 
 
 def escape_sql_input(text: str) -> str:

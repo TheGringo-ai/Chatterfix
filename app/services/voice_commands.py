@@ -14,7 +14,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
-import bleach
+import nh3
 
 # Import work order service for creating work orders from voice commands
 from app.services.work_order_service import work_order_service
@@ -71,12 +71,14 @@ def sanitize_input(text: str) -> str:
 
     Strips HTML/script tags and dangerous characters while
     preserving the natural language content.
+
+    Uses nh3 (Rust-based) instead of deprecated bleach library.
     """
     if not text:
         return ""
 
-    # Remove HTML tags and scripts
-    cleaned = bleach.clean(text, tags=[], attributes={}, strip=True)
+    # Remove HTML tags and scripts using nh3
+    cleaned = nh3.clean(text, tags=set(), strip_comments=True)
 
     # Remove null bytes and control characters (except newlines/tabs)
     cleaned = ''.join(char for char in cleaned if ord(char) >= 32 or char in '\n\r\t')
